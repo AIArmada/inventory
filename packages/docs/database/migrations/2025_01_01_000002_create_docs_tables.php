@@ -31,7 +31,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('doc_number')->unique();
             $table->string('doc_type')->default('invoice');
-            $table->foreignUuid('doc_template_id')->nullable()->constrained('doc_templates')->nullOnDelete();
+            $table->foreignUuid('doc_template_id')->nullable();
             $table->nullableUuidMorphs('docable');
             $table->string('status')->default('draft');
             $table->date('issue_date');
@@ -59,7 +59,7 @@ return new class extends Migration
 
         Schema::create('doc_status_histories', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('doc_id')->constrained('docs')->cascadeOnDelete();
+            $table->foreignUuid('doc_id');
             $table->string('status');
             $table->text('notes')->nullable();
             $table->string('changed_by')->nullable();

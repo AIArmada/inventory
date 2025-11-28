@@ -64,7 +64,7 @@ final class CartConditionResource extends Resource
         ];
     }
 
-    public static function getNavigationBadge(): string
+    public static function getNavigationBadge(): ?string
     {
         return (string) self::getModel()::count();
     }

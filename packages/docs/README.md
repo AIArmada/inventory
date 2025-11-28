@@ -156,7 +156,7 @@ Set default company details that appear on all documents:
     'address' => env('DOCS_COMPANY_ADDRESS'),
     'city' => env('DOCS_COMPANY_CITY'),
     'state' => env('DOCS_COMPANY_STATE'),
-    'postal_code' => env('DOCS_COMPANY_POSTAL_CODE'),
+    'postcode' => env('DOCS_COMPANY_POSTCODE'),
     'country' => env('DOCS_COMPANY_COUNTRY'),
     'phone' => env('DOCS_COMPANY_PHONE'),
     'email' => env('DOCS_COMPANY_EMAIL'),
@@ -174,7 +174,7 @@ DOCS_COMPANY_NAME="Your Company Name"
 DOCS_COMPANY_ADDRESS="123 Business Street"
 DOCS_COMPANY_CITY="Kuala Lumpur"
 DOCS_COMPANY_STATE="Federal Territory"
-DOCS_COMPANY_POSTAL_CODE="50000"
+DOCS_COMPANY_POSTCODE="50000"
 DOCS_COMPANY_COUNTRY="Malaysia"
 DOCS_COMPANY_PHONE="+60 3-1234-5678"
 DOCS_COMPANY_EMAIL="billing@yourcompany.com"
@@ -230,7 +230,7 @@ $document = $docService->createDoc(DocData::from([
         'address' => '123 Main St',
         'city' => 'Kuala Lumpur',
         'state' => 'Federal Territory',
-        'postal_code' => '50000',
+        'postcode' => '50000',
         'country' => 'Malaysia',
     ],
     'notes' => 'Thank you for your business!',
@@ -280,7 +280,7 @@ $document = $docService->createDoc(DocData::from([
         'email' => 'billing@acme.com',
         'address' => '456 Corporate Blvd',
         'city' => 'Singapore',
-        'postal_code' => '018956',
+        'postcode' => '018956',
         'country' => 'Singapore',
         'phone' => '+65 6123 4567',
     ],
@@ -610,7 +610,7 @@ Create a new template file:
                         <p>{{ $doc->company_data['address'] }}</p>
                     @endif
                     @if(!empty($doc->company_data['city']))
-                        <p>{{ $doc->company_data['city'] }}{{ !empty($doc->company_data['state']) ? ', '.$doc->company_data['state'] : '' }} {{ $doc->company_data['postal_code'] ?? '' }}</p>
+                        <p>{{ $doc->company_data['city'] }}{{ !empty($doc->company_data['state']) ? ', '.$doc->company_data['state'] : '' }} {{ $doc->company_data['postcode'] ?? '' }}</p>
                     @endif
                     @if(!empty($doc->company_data['email']))
                         <p>{{ $doc->company_data['email'] }}</p>
@@ -631,7 +631,7 @@ Create a new template file:
                         <p>{{ $doc->customer_data['address'] }}</p>
                     @endif
                     @if(!empty($doc->customer_data['city']))
-                        <p>{{ $doc->customer_data['city'] }}{{ !empty($doc->customer_data['state']) ? ', '.$doc->customer_data['state'] : '' }} {{ $doc->customer_data['postal_code'] ?? '' }}</p>
+                        <p>{{ $doc->customer_data['city'] }}{{ !empty($doc->customer_data['state']) ? ', '.$doc->customer_data['state'] : '' }} {{ $doc->customer_data['postcode'] ?? '' }}</p>
                     @endif
                 </div>
             </div>
@@ -812,7 +812,7 @@ $doc->docable             // Polymorphic relation (Order, Ticket, etc.)
     'address' => '123 Main St',
     'city' => 'Kuala Lumpur',
     'state' => 'Federal Territory',
-    'postal_code' => '50000',
+    'postcode' => '50000',
     'country' => 'Malaysia',
     'phone' => '+60 3-1234-5678',
 ]
@@ -960,7 +960,7 @@ $template->update(['is_default' => true]);
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 12.0+
 - Spatie Laravel PDF 1.5+
 - Node.js 18+ and npm

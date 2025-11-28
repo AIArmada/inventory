@@ -45,7 +45,7 @@ class PermissionResource extends Resource
     {
         $user = auth()->user();
 
-        return $user?->can('permission.viewAny') || $user?->can('permissions.viewAny') || $user?->hasRole(config('filament-permissions.super_admin_role'));
+        return $user?->can('permission.viewAny') || $user?->hasRole(config('filament-permissions.super_admin_role'));
     }
 
     public static function form(Schema $form): Schema

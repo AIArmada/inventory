@@ -20,7 +20,6 @@ class RolesRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         $guards = (array) config('filament-permissions.guards');
-        $defaultGuard = config('filament-permissions.default_guard_name', $guards[0] ?? 'web');
 
         return $table
             ->columns([

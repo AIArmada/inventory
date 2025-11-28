@@ -134,11 +134,6 @@ class UserResource extends Resource
         $relations[] = RelationManagers\RolesRelationManager::class;
         $relations[] = RelationManagers\PermissionsRelationManager::class;
 
-        // Add vouchers relation manager if filament-vouchers package is installed
-        if (class_exists(\AIArmada\FilamentVouchers\Models\Voucher::class)) {
-            $relations[] = RelationManagers\VouchersRelationManager::class;
-        }
-
         return $relations;
     }
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCart\Resources\ConditionResource\Pages;
 
-use AIArmada\FilamentCart\Models\Condition;
+use AIArmada\Cart\Models\Condition;
 use AIArmada\FilamentCart\Resources\ConditionResource;
 use AIArmada\FilamentCart\Services\CartConditionBatchRemoval;
 use Filament\Actions;

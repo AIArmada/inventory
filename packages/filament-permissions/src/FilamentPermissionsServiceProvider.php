@@ -59,7 +59,6 @@ class FilamentPermissionsServiceProvider extends ServiceProvider
     {
         Support\Macros\ActionMacros::register();
         Support\Macros\NavigationItemMacros::register();
-        Support\Macros\WidgetMacros::register();
         Support\Macros\TableComponentMacros::register();
     }
 }

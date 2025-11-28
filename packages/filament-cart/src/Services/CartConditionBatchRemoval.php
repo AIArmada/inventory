@@ -6,7 +6,7 @@ namespace AIArmada\FilamentCart\Services;
 
 use AIArmada\Cart\Cart;
 use AIArmada\FilamentCart\Models\Cart as CartModel;
-use AIArmada\FilamentCart\Models\Condition;
+use AIArmada\Cart\Models\Condition;
 use Exception;
 use Illuminate\Support\Facades\Log;
 

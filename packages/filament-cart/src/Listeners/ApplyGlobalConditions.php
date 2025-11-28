@@ -11,7 +11,7 @@ use AIArmada\Cart\Events\CartCreated;
 use AIArmada\Cart\Events\ItemAdded;
 use AIArmada\Cart\Events\ItemRemoved;
 use AIArmada\Cart\Events\ItemUpdated;
-use AIArmada\FilamentCart\Models\Condition;
+use AIArmada\Cart\Models\Condition;
 use AIArmada\FilamentCart\Services\CartInstanceManager;
 use InvalidArgumentException;
 

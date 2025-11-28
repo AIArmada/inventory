@@ -14,6 +14,11 @@ return [
     */
     'database' => [
         'json_column_type' => env('DOCS_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),
+        'tables' => [
+            'docs' => 'docs',
+            'doc_templates' => 'doc_templates',
+            'doc_status_histories' => 'doc_status_histories',
+        ],
     ],
 
     'storage' => [

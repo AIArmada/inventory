@@ -26,7 +26,10 @@ class DocTemplate extends Model
     use HasFactory;
     use HasUuids;
 
-    protected $table = 'doc_templates';
+    public function getTable(): string
+    {
+        return config('docs.database.tables.doc_templates', 'doc_templates');
+    }
 
     protected $fillable = [
         'name',

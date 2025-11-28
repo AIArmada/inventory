@@ -42,7 +42,17 @@ class Doc extends Model
     use HasFactory;
     use HasUuids;
 
-    protected $table = 'docs';
+    public function getTable(): string
+    {
+        return config('docs.database.tables.docs', 'docs');
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Doc $doc): void {
+            $doc->statusHistories()->delete();
+        });
+    }
 
     protected $fillable = [
         'doc_number',
@@ -117,25 +127,46 @@ class Doc extends Model
         return $this->status->isPayable();
     }
 
-    public function markAsPaid(): void
+    public function markAsPaid(?string $notes = null): void
     {
+        $oldStatus = $this->status;
+
         $this->update([
             'status' => DocStatus::PAID,
             'paid_at' => now(),
         ]);
+
+        $this->statusHistories()->create([
+            'status' => DocStatus::PAID,
+            'notes' => $notes ?? "Status changed from {$oldStatus->label()} to ".DocStatus::PAID->label(),
+        ]);
     }
 
-    public function markAsSent(): void
+    public function markAsSent(?string $notes = null): void
     {
         if ($this->status === DocStatus::DRAFT || $this->status === DocStatus::PENDING) {
+            $oldStatus = $this->status;
+
             $this->update(['status' => DocStatus::SENT]);
+
+            $this->statusHistories()->create([
+                'status' => DocStatus::SENT,
+                'notes' => $notes ?? "Status changed from {$oldStatus->label()} to ".DocStatus::SENT->label(),
+            ]);
         }
     }
 
-    public function cancel(): void
+    public function cancel(?string $notes = null): void
     {
         if ($this->status !== DocStatus::PAID) {
+            $oldStatus = $this->status;
+
             $this->update(['status' => DocStatus::CANCELLED]);
+
+            $this->statusHistories()->create([
+                'status' => DocStatus::CANCELLED,
+                'notes' => $notes ?? "Status changed from {$oldStatus->label()} to ".DocStatus::CANCELLED->label(),
+            ]);
         }
     }
 
@@ -145,7 +176,14 @@ class Doc extends Model
     public function updateStatus(): void
     {
         if ($this->isOverdue() && $this->status !== DocStatus::OVERDUE) {
+            $oldStatus = $this->status;
+
             $this->update(['status' => DocStatus::OVERDUE]);
+
+            $this->statusHistories()->create([
+                'status' => DocStatus::OVERDUE,
+                'notes' => "Status changed from {$oldStatus->label()} to ".DocStatus::OVERDUE->label()." (automatic overdue detection)",
+            ]);
         }
     }
 }

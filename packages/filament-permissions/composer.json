@@ -16,7 +16,7 @@
   "autoload": {
     "psr-4": {
       "AIArmada\\FilamentPermissions\\": "src/",
-      "AIArmada\\c\\Database\\Factories\\": "database/factories/",
+      "AIArmada\\FilamentPermissions\\Database\\Factories\\": "database/factories/",
       "AIArmada\\FilamentPermissions\\Database\\Seeders\\": "database/seeders/"
     }
   },

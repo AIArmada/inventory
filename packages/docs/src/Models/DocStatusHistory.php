@@ -15,7 +15,10 @@ class DocStatusHistory extends Model
     use HasFactory;
     use HasUuids;
 
-    protected $table = 'doc_status_histories';
+    public function getTable(): string
+    {
+        return config('docs.database.tables.doc_status_histories', 'doc_status_histories');
+    }
 
     protected $fillable = [
         'doc_id',

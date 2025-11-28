@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCart\Resources;
 
-use AIArmada\FilamentCart\Models\Condition;
+use AIArmada\Cart\Models\Condition;
 use AIArmada\FilamentCart\Resources\ConditionResource\Pages\CreateCondition;
 use AIArmada\FilamentCart\Resources\ConditionResource\Pages\EditCondition;
 use AIArmada\FilamentCart\Resources\ConditionResource\Pages\ListConditions;
