@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace AIArmada\Commerce\Tests;
 
-use AIArmada\Cart\CartServiceProvider;
-use AIArmada\FilamentPermissions\FilamentPermissionsServiceProvider;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\MessageBag;
 use Illuminate\Support\ViewErrorBag;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Spatie\Permission\PermissionServiceProvider;
 
 abstract class TestCase extends Orchestra
 {
@@ -47,7 +44,7 @@ abstract class TestCase extends Orchestra
             \Livewire\LivewireServiceProvider::class,
             \Filament\Support\SupportServiceProvider::class,
             \Filament\FilamentServiceProvider::class,
-            CartServiceProvider::class,
+            \AIArmada\Cart\CartServiceProvider::class,
             \AIArmada\Chip\ChipServiceProvider::class,
             \AIArmada\Jnt\JntServiceProvider::class,
             \AIArmada\Docs\DocsServiceProvider::class,
@@ -55,8 +52,8 @@ abstract class TestCase extends Orchestra
             \AIArmada\Vouchers\VoucherServiceProvider::class,
             \AIArmada\FilamentCart\FilamentCartServiceProvider::class,
             \AIArmada\FilamentChip\FilamentChipServiceProvider::class,
-            PermissionServiceProvider::class,
-            FilamentPermissionsServiceProvider::class,
+            \Spatie\Permission\PermissionServiceProvider::class,
+            \AIArmada\FilamentPermissions\FilamentPermissionsServiceProvider::class,
             \AIArmada\FilamentVouchers\FilamentVouchersServiceProvider::class,
             \AIArmada\Affiliates\AffiliatesServiceProvider::class,
             \AIArmada\FilamentAffiliates\FilamentAffiliatesServiceProvider::class,
