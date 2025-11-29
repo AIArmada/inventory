@@ -12,14 +12,21 @@ jobs:
       fail-fast: false
       matrix:
         package:
-          - csuite
-          - commerce-support
+          - affiliates
           - cart
+          - cashier
+          - cashier-chip
           - chip
+          - commerce-support
+          - csuite
           - docs
+          - filament-affiliates
           - filament-cart
           - filament-chip
+          - filament-docs
+          - filament-jnt
           - filament-permissions
+          - filament-stock
           - filament-vouchers
           - jnt
           - stock

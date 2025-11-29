@@ -8,53 +8,65 @@
 * @aiarmada/commerce-core
 
 # Meta-package and root configuration
-/composer.json @aiarmada/commerce-core @aiarmada/commerce-leads
+/composer.json @aiarmada/commerce-core
 /monorepo-builder.php @aiarmada/commerce-core
 /.github/ @aiarmada/commerce-core
 
 # Documentation
-/docs/ @aiarmada/commerce-core @aiarmada/commerce-docs
-/README.md @aiarmada/commerce-core @aiarmada/commerce-docs
-/CONTRIBUTING.md @aiarmada/commerce-docs
-/SECURITY.md @aiarmada/commerce-docs
+/docs/ @aiarmada/commerce-core
+/README.md @aiarmada/commerce-core
+/CONTRIBUTING.md @aiarmada/commerce-core
 
-# Package: Support
-/packages/support/ @aiarmada/commerce-core
+# Package: Commerce Support (core utilities)
+/packages/commerce-support/ @aiarmada/commerce-core
+
+# Package: CSuite
+/packages/csuite/ @aiarmada/commerce-core
 
 # Package: Cart
-/packages/cart/ @aiarmada/commerce-cart
-/packages/filament-cart/ @aiarmada/commerce-cart @aiarmada/commerce-filament
+/packages/cart/ @aiarmada/commerce-core
+/packages/filament-cart/ @aiarmada/commerce-core
 
-# Package: CHIP
-/packages/chip/ @aiarmada/commerce-payments
-/packages/filament-chip/ @aiarmada/commerce-payments @aiarmada/commerce-filament
+# Package: Cashier
+/packages/cashier/ @aiarmada/commerce-core
+/packages/cashier-chip/ @aiarmada/commerce-core
+
+# Package: CHIP (Payments)
+/packages/chip/ @aiarmada/commerce-core
+/packages/filament-chip/ @aiarmada/commerce-core
 
 # Package: Vouchers
-/packages/vouchers/ @aiarmada/commerce-vouchers
-/packages/filament-vouchers/ @aiarmada/commerce-vouchers @aiarmada/commerce-filament
+/packages/vouchers/ @aiarmada/commerce-core
+/packages/filament-vouchers/ @aiarmada/commerce-core
+
+# Package: Affiliates
+/packages/affiliates/ @aiarmada/commerce-core
+/packages/filament-affiliates/ @aiarmada/commerce-core
 
 # Package: JNT (Shipping)
-/packages/jnt/ @aiarmada/commerce-shipping
+/packages/jnt/ @aiarmada/commerce-core
+/packages/filament-jnt/ @aiarmada/commerce-core
 
-# Package: Stock
-/packages/stock/ @aiarmada/commerce-inventory
+# Package: Stock (Inventory)
+/packages/stock/ @aiarmada/commerce-core
+/packages/filament-stock/ @aiarmada/commerce-core
+
+# Package: Permissions
+/packages/filament-permissions/ @aiarmada/commerce-core
 
 # Package: Docs
-/packages/docs/ @aiarmada/commerce-docs
+/packages/docs/ @aiarmada/commerce-core
+/packages/filament-docs/ @aiarmada/commerce-core
 
 # Workflows and CI/CD
-/.github/workflows/ @aiarmada/commerce-core @aiarmada/commerce-devops
+/.github/workflows/ @aiarmada/commerce-core
 
 # Tests
 /tests/ @aiarmada/commerce-core
-**/tests/ @aiarmada/commerce-core
 
 # Configuration files
-phpstan.neon @aiarmada/commerce-core
-pint.json @aiarmada/commerce-core
-rector.php @aiarmada/commerce-core
-phpunit.xml @aiarmada/commerce-core
-
-# Dependency management
-composer.lock @aiarmada/commerce-core
-**/composer.json @aiarmada/commerce-core
+/phpstan.neon @aiarmada/commerce-core
+/pint.json @aiarmada/commerce-core
+/rector.php @aiarmada/commerce-core
+/phpunit.xml @aiarmada/commerce-core
+/.xml/ @aiarmada/commerce-core

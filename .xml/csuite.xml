@@ -5,13 +5,13 @@
          colors="true"
 >
     <testsuites>
-        <testsuite name="Vouchers">
-            <directory>tests/src/Vouchers</directory>
+        <testsuite name="Csuite">
+            <directory>tests/src/Csuite</directory>
         </testsuite>
     </testsuites>
     <source>
         <include>
-            <directory>packages/vouchers/src</directory>
+            <directory>packages/csuite/src</directory>
         </include>
     </source>
     <php>
@@ -31,8 +31,4 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
     </php>
-<<<<<<< HEAD
 </phpunit>
-=======
-</phpunit>
->>>>>>> expand-condition
