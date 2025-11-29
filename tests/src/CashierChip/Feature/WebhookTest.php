@@ -139,7 +139,7 @@ it('updates subscription on payment success', function (): void {
 
     // Create a subscription
     $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_PAST_DUE,
         'chip_price' => 'price_monthly',
@@ -154,7 +154,7 @@ it('updates subscription on payment success', function (): void {
             'status' => 'paid',
             'client' => ['id' => 'test-client-id'],
             'metadata' => [
-                'subscription_type' => 'default',
+                'subscription_type' => 'standard',
             ],
         ],
     ];
@@ -163,7 +163,7 @@ it('updates subscription on payment success', function (): void {
 
     $response->assertStatus(200);
 
-    $subscription = $this->user->subscription('default');
+    $subscription = $this->user->subscription('standard');
 
     expect($subscription->chip_status)->toBe(Subscription::STATUS_ACTIVE);
     expect($subscription->next_billing_at)->not->toBeNull();
@@ -174,7 +174,7 @@ it('updates subscription to past due on payment failure', function (): void {
 
     // Create a subscription
     $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -187,7 +187,7 @@ it('updates subscription to past due on payment failure', function (): void {
             'status' => 'error',
             'client' => ['id' => 'test-client-id'],
             'metadata' => [
-                'subscription_type' => 'default',
+                'subscription_type' => 'standard',
             ],
         ],
     ];
@@ -196,7 +196,7 @@ it('updates subscription to past due on payment failure', function (): void {
 
     $response->assertStatus(200);
 
-    $subscription = $this->user->subscription('default');
+    $subscription = $this->user->subscription('standard');
 
     expect($subscription->chip_status)->toBe(Subscription::STATUS_PAST_DUE);
 });

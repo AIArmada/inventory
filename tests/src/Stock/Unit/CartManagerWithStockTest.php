@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use AIArmada\Cart\CartManager;
+use AIArmada\Cart\Contracts\CartManagerInterface;
 use AIArmada\Cart\Storage\DatabaseStorage;
 use AIArmada\Commerce\Tests\Fixtures\Models\Product;
 use AIArmada\Stock\Cart\CartManagerWithStock;
@@ -21,37 +22,33 @@ describe('CartManagerWithStock', function (): void {
         // Create a storage instance for tests
         $this->storage = new DatabaseStorage(DB::connection('testing'), 'carts');
         $this->events = app(Illuminate\Contracts\Events\Dispatcher::class);
+
+        // Create a base CartManager instance
+        $this->baseManager = new CartManager(
+            storage: $this->storage,
+            events: $this->events,
+            eventsEnabled: true
+        );
     });
 
     describe('fromCartManager factory', function (): void {
         it('creates instance from existing CartManager', function (): void {
-            $originalManager = new CartManager(
-                storage: $this->storage,
-                events: $this->events,
-                eventsEnabled: true
-            );
-
-            $stockManager = CartManagerWithStock::fromCartManager($originalManager);
+            $stockManager = CartManagerWithStock::fromCartManager($this->baseManager);
 
             expect($stockManager)->toBeInstanceOf(CartManagerWithStock::class);
-            expect($stockManager)->toBeInstanceOf(CartManager::class);
+            expect($stockManager)->toBeInstanceOf(CartManagerInterface::class);
         });
 
         it('preserves state from original manager', function (): void {
-            $originalManager = new CartManager(
-                storage: $this->storage,
-                events: $this->events,
-                eventsEnabled: true
-            );
-            $originalManager->setIdentifier('test-user');
-            $originalManager->add([
+            $this->baseManager->setIdentifier('test-user');
+            $this->baseManager->add([
                 'id' => 'item-1',
                 'name' => 'Test Item',
                 'price' => 100,
                 'quantity' => 1,
             ]);
 
-            $stockManager = CartManagerWithStock::fromCartManager($originalManager);
+            $stockManager = CartManagerWithStock::fromCartManager($this->baseManager);
 
             // Should have access to the same cart data
             expect($stockManager->getCurrentCart()->getIdentifier())->toBe('test-user');
@@ -60,10 +57,7 @@ describe('CartManagerWithStock', function (): void {
 
     describe('setReservationService and getReservationService', function (): void {
         it('can set and get reservation service', function (): void {
-            $manager = new CartManagerWithStock(
-                storage: $this->storage,
-                events: $this->events
-            );
+            $manager = CartManagerWithStock::fromCartManager($this->baseManager);
             $service = app(StockReservationService::class);
 
             $manager->setReservationService($service);
@@ -72,10 +66,7 @@ describe('CartManagerWithStock', function (): void {
         });
 
         it('auto-resolves service from container when not set', function (): void {
-            $manager = new CartManagerWithStock(
-                storage: $this->storage,
-                events: $this->events
-            );
+            $manager = CartManagerWithStock::fromCartManager($this->baseManager);
 
             $service = $manager->getReservationService();
 
@@ -88,10 +79,7 @@ describe('CartManagerWithStock', function (): void {
             // Note: This test is simplified because database storage serializes associated models
             // Instead of testing through cart items, we test the reservation service directly
 
-            $manager = new CartManagerWithStock(
-                storage: $this->storage,
-                events: $this->events
-            );
+            $manager = CartManagerWithStock::fromCartManager($this->baseManager);
             $manager->setIdentifier('reserve-test');
             $cartId = 'reserve-test_default';
 
@@ -103,10 +91,7 @@ describe('CartManagerWithStock', function (): void {
         });
 
         it('skips items without associated model', function (): void {
-            $manager = new CartManagerWithStock(
-                storage: $this->storage,
-                events: $this->events
-            );
+            $manager = CartManagerWithStock::fromCartManager($this->baseManager);
             $manager->setIdentifier('no-model-test');
 
             // Add item without associatedModel
@@ -166,10 +151,7 @@ describe('CartManagerWithStock', function (): void {
 
     describe('validateStock', function (): void {
         it('returns available true for empty cart', function (): void {
-            $manager = new CartManagerWithStock(
-                storage: $this->storage,
-                events: $this->events
-            );
+            $manager = CartManagerWithStock::fromCartManager($this->baseManager);
             $manager->setIdentifier('validate-empty');
 
             $result = $manager->validateStock();
@@ -179,10 +161,7 @@ describe('CartManagerWithStock', function (): void {
         });
 
         it('skips items without associated model in validation', function (): void {
-            $manager = new CartManagerWithStock(
-                storage: $this->storage,
-                events: $this->events
-            );
+            $manager = CartManagerWithStock::fromCartManager($this->baseManager);
             $manager->setIdentifier('validate-no-model');
 
             // Add item without associatedModel

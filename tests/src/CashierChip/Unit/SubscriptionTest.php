@@ -16,7 +16,7 @@ beforeEach(function (): void {
 
 it('can create a subscription', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -26,13 +26,13 @@ it('can create a subscription', function (): void {
     ]);
 
     expect($subscription)->toBeInstanceOf(Subscription::class);
-    expect($subscription->type)->toBe('default');
+    expect($subscription->type)->toBe('standard');
     expect($subscription->chip_status)->toBe(Subscription::STATUS_ACTIVE);
 });
 
 it('can determine if subscription is active', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -44,7 +44,7 @@ it('can determine if subscription is active', function (): void {
 
 it('can determine if subscription is on trial', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_TRIALING,
         'chip_price' => 'price_monthly',
@@ -57,7 +57,7 @@ it('can determine if subscription is on trial', function (): void {
 
 it('can determine if subscription trial has expired', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -70,7 +70,7 @@ it('can determine if subscription trial has expired', function (): void {
 
 it('can determine if subscription is canceled', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -83,7 +83,7 @@ it('can determine if subscription is canceled', function (): void {
 
 it('can determine if subscription has ended', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_CANCELED,
         'chip_price' => 'price_monthly',
@@ -96,7 +96,7 @@ it('can determine if subscription has ended', function (): void {
 
 it('can determine if subscription is incomplete', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_INCOMPLETE,
         'chip_price' => 'price_monthly',
@@ -107,7 +107,7 @@ it('can determine if subscription is incomplete', function (): void {
 
 it('can determine if subscription is past due', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_PAST_DUE,
         'chip_price' => 'price_monthly',
@@ -119,7 +119,7 @@ it('can determine if subscription is past due', function (): void {
 
 it('can determine if subscription is recurring', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -132,7 +132,7 @@ it('can cancel subscription at period end', function (): void {
     $nextBilling = Carbon::now()->addMonth();
 
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -147,7 +147,7 @@ it('can cancel subscription at period end', function (): void {
 
 it('can cancel subscription immediately', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -161,7 +161,7 @@ it('can cancel subscription immediately', function (): void {
 
 it('can resume a canceled subscription on grace period', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -176,7 +176,7 @@ it('can resume a canceled subscription on grace period', function (): void {
 
 it('cannot resume a subscription that has ended', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_CANCELED,
         'chip_price' => 'price_monthly',
@@ -188,7 +188,7 @@ it('cannot resume a subscription that has ended', function (): void {
 
 it('can skip trial', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_TRIALING,
         'chip_price' => 'price_monthly',
@@ -202,7 +202,7 @@ it('can skip trial', function (): void {
 
 it('can extend trial', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_TRIALING,
         'chip_price' => 'price_monthly',
@@ -217,7 +217,7 @@ it('can extend trial', function (): void {
 
 it('cannot extend trial to past date', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_TRIALING,
         'chip_price' => 'price_monthly',
@@ -229,7 +229,7 @@ it('cannot extend trial to past date', function (): void {
 
 it('can update quantity', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -249,7 +249,7 @@ it('can update quantity', function (): void {
 
 it('can increment quantity', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -269,7 +269,7 @@ it('can increment quantity', function (): void {
 
 it('can decrement quantity', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -289,7 +289,7 @@ it('can decrement quantity', function (): void {
 
 it('can check for specific price', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -301,7 +301,7 @@ it('can check for specific price', function (): void {
 
 it('can get owner', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -313,7 +313,7 @@ it('can get owner', function (): void {
 
 it('has subscription items relationship', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -333,7 +333,7 @@ it('has subscription items relationship', function (): void {
 
 it('can swap prices', function (): void {
     $subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',

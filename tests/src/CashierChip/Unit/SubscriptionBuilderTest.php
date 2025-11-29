@@ -15,14 +15,14 @@ beforeEach(function (): void {
 });
 
 it('can create subscription builder', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
 
     expect($builder)->toBeInstanceOf(SubscriptionBuilder::class);
-    expect($builder->getType())->toBe('default');
+    expect($builder->getType())->toBe('standard');
 });
 
 it('can add price to subscription', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default');
+    $builder = new SubscriptionBuilder($this->user, 'standard');
 
     $builder->price('price_monthly', 1);
 
@@ -31,7 +31,7 @@ it('can add price to subscription', function (): void {
 });
 
 it('can add multiple prices', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default');
+    $builder = new SubscriptionBuilder($this->user, 'standard');
 
     $builder->price('price_basic', 1)
         ->price('price_addon', 2);
@@ -40,7 +40,7 @@ it('can add multiple prices', function (): void {
 });
 
 it('can set quantity', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
 
     $builder->quantity(5);
 
@@ -48,7 +48,7 @@ it('can set quantity', function (): void {
 });
 
 it('can set trial days', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
 
     $builder->trialDays(14);
 
@@ -62,14 +62,14 @@ it('can set trial days', function (): void {
 it('can set trial until date', function (): void {
     $trialEnd = Carbon::now()->addMonth();
 
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
     $builder->trialUntil($trialEnd);
 
     expect($builder->getTrialEnd()->toDateString())->toBe($trialEnd->toDateString());
 });
 
 it('can skip trial', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
 
     $builder->trialDays(14)->skipTrial();
 
@@ -78,7 +78,7 @@ it('can skip trial', function (): void {
 });
 
 it('can set monthly billing', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
 
     $result = $builder->monthly();
 
@@ -89,7 +89,7 @@ it('can set monthly billing', function (): void {
 });
 
 it('can set yearly billing', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_yearly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_yearly');
 
     $result = $builder->yearly();
 
@@ -99,7 +99,7 @@ it('can set yearly billing', function (): void {
 });
 
 it('can set weekly billing', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_weekly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_weekly');
 
     $result = $builder->weekly();
 
@@ -109,7 +109,7 @@ it('can set weekly billing', function (): void {
 });
 
 it('can set custom billing interval', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_biweekly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_biweekly');
 
     $result = $builder->billingInterval('week', 2);
 
@@ -121,7 +121,7 @@ it('can set custom billing interval', function (): void {
 it('can anchor billing cycle', function (): void {
     $anchor = Carbon::now()->addDays(15);
 
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
     $result = $builder->anchorBillingCycleOn($anchor);
 
     expect($result)->toBeInstanceOf(SubscriptionBuilder::class);
@@ -130,7 +130,7 @@ it('can anchor billing cycle', function (): void {
 });
 
 it('can add metadata', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
 
     $result = $builder->withMetadata(['plan_name' => 'Premium']);
 
@@ -138,17 +138,17 @@ it('can add metadata', function (): void {
 });
 
 it('can create subscription without payment using add', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
 
     $subscription = $builder->add();
 
     expect($subscription)->toBeInstanceOf(AIArmada\CashierChip\Subscription::class);
-    expect($subscription->type)->toBe('default');
+    expect($subscription->type)->toBe('standard');
     expect($subscription->chip_price)->toBe('price_monthly');
 });
 
 it('can create subscription with recurring token', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
 
     // Create subscription with a recurring token
     $subscription = $builder->create('test-recurring-token');
@@ -158,7 +158,7 @@ it('can create subscription with recurring token', function (): void {
 });
 
 it('creates subscription items for each price', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default');
+    $builder = new SubscriptionBuilder($this->user, 'standard');
 
     $builder->price('price_basic', 1)
         ->price('price_addon', 2);
@@ -177,7 +177,7 @@ it('creates subscription items for each price', function (): void {
 });
 
 it('requires price for quantity when multiple prices', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default');
+    $builder = new SubscriptionBuilder($this->user, 'standard');
 
     $builder->price('price_basic')
         ->price('price_addon');
@@ -186,7 +186,7 @@ it('requires price for quantity when multiple prices', function (): void {
 })->throws(InvalidArgumentException::class);
 
 it('can use conditionable trait', function (): void {
-    $builder = new SubscriptionBuilder($this->user, 'default', 'price_monthly');
+    $builder = new SubscriptionBuilder($this->user, 'standard', 'price_monthly');
 
     $result = $builder->when(true, function ($builder) {
         return $builder->trialDays(14);

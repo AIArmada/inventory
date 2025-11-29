@@ -11,7 +11,7 @@ beforeEach(function (): void {
     $this->user = $this->createUser();
 
     $this->subscription = $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',

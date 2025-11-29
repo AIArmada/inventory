@@ -112,8 +112,8 @@ abstract class CashierChipTestCase extends Orchestra
 
         // Subscriptions table
         Schema::create('chip_subscriptions', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('user_id');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('user_id');
             $table->string('type');
             $table->string('chip_id')->unique();
             $table->string('chip_status');
@@ -132,8 +132,8 @@ abstract class CashierChipTestCase extends Orchestra
 
         // Subscription items table
         Schema::create('chip_subscription_items', function (Blueprint $table): void {
-            $table->id();
-            $table->foreignId('subscription_id');
+            $table->uuid('id')->primary();
+            $table->foreignUuid('subscription_id');
             $table->string('chip_id')->unique();
             $table->string('chip_product')->nullable();
             $table->string('chip_price')->nullable();

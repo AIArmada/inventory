@@ -91,16 +91,16 @@ it('can update default payment method', function (): void {
 // Subscription Tests
 
 it('can start a new subscription', function (): void {
-    $builder = $this->user->newSubscription('default', 'price_monthly');
+    $builder = $this->user->newSubscription('standard', 'price_monthly');
 
     expect($builder)->toBeInstanceOf(AIArmada\CashierChip\SubscriptionBuilder::class);
 });
 
 it('can check if subscribed', function (): void {
-    expect($this->user->subscribed('default'))->toBeFalse();
+    expect($this->user->subscribed('standard'))->toBeFalse();
 
     $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -109,42 +109,42 @@ it('can check if subscribed', function (): void {
     // Refresh the model to reload relationships
     $this->user->refresh();
 
-    expect($this->user->subscribed('default'))->toBeTrue();
+    expect($this->user->subscribed('standard'))->toBeTrue();
 });
 
 it('can check if subscribed to specific price', function (): void {
     $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
     ]);
 
-    expect($this->user->subscribedToPrice('price_monthly', 'default'))->toBeTrue();
-    expect($this->user->subscribedToPrice('price_yearly', 'default'))->toBeFalse();
+    expect($this->user->subscribedToPrice('price_monthly', 'standard'))->toBeTrue();
+    expect($this->user->subscribedToPrice('price_yearly', 'standard'))->toBeFalse();
 });
 
 it('can get specific subscription', function (): void {
     $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
     ]);
 
-    $subscription = $this->user->subscription('default');
+    $subscription = $this->user->subscription('standard');
 
     expect($subscription)->toBeInstanceOf(Subscription::class);
-    expect($subscription->type)->toBe('default');
+    expect($subscription->type)->toBe('standard');
 });
 
 it('returns null for non-existent subscription', function (): void {
-    expect($this->user->subscription('default'))->toBeNull();
+    expect($this->user->subscription('standard'))->toBeNull();
 });
 
 it('can have multiple subscriptions', function (): void {
     $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-1',
         'chip_status' => Subscription::STATUS_ACTIVE,
         'chip_price' => 'price_monthly',
@@ -158,15 +158,15 @@ it('can have multiple subscriptions', function (): void {
     ]);
 
     expect($this->user->subscriptions)->toHaveCount(2);
-    expect($this->user->subscribed('default'))->toBeTrue();
+    expect($this->user->subscribed('standard'))->toBeTrue();
     expect($this->user->subscribed('swimming'))->toBeTrue();
 });
 
 it('can check if on trial', function (): void {
-    expect($this->user->onTrial('default'))->toBeFalse();
+    expect($this->user->onTrial('standard'))->toBeFalse();
 
     $this->user->subscriptions()->create([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
         'chip_status' => Subscription::STATUS_TRIALING,
         'chip_price' => 'price_monthly',
@@ -176,7 +176,7 @@ it('can check if on trial', function (): void {
     // Refresh the model to reload relationships
     $this->user->refresh();
 
-    expect($this->user->onTrial('default'))->toBeTrue();
+    expect($this->user->onTrial('standard'))->toBeTrue();
 });
 
 it('can check generic trial on model', function (): void {

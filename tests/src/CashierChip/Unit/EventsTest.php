@@ -49,7 +49,7 @@ it('can create payment failed event', function (): void {
 
 it('can create subscription created event', function (): void {
     $subscription = new Subscription([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
     ]);
 
@@ -60,7 +60,7 @@ it('can create subscription created event', function (): void {
 
 it('can create subscription canceled event', function (): void {
     $subscription = new Subscription([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_id' => 'test-sub-id',
     ]);
 

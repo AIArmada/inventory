@@ -88,7 +88,7 @@ it('can create incomplete payment exception for expired', function (): void {
 
 it('can create subscription update failure for incomplete subscription', function (): void {
     $subscription = new Subscription([
-        'type' => 'default',
+        'type' => 'standard',
         'chip_status' => Subscription::STATUS_INCOMPLETE,
     ]);
 
@@ -101,7 +101,7 @@ it('can create subscription update failure for incomplete subscription', functio
 
 it('can create subscription update failure for duplicate price', function (): void {
     $subscription = new Subscription([
-        'type' => 'default',
+        'type' => 'standard',
     ]);
 
     $exception = SubscriptionUpdateFailure::duplicatePrice($subscription, 'price_monthly');
@@ -113,7 +113,7 @@ it('can create subscription update failure for duplicate price', function (): vo
 
 it('can create subscription update failure for deleting last price', function (): void {
     $subscription = new Subscription([
-        'type' => 'default',
+        'type' => 'standard',
     ]);
 
     $exception = SubscriptionUpdateFailure::cannotDeleteLastPrice($subscription);
