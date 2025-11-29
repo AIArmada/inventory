@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use AIArmada\Affiliates\Contracts\AffiliateOwnerResolver;
 use AIArmada\Affiliates\Events\AffiliateAttributed;
 use AIArmada\Affiliates\Events\AffiliateConversionRecorded;
-use AIArmada\Affiliates\Contracts\AffiliateOwnerResolver;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateAttribution;
 use AIArmada\Affiliates\Models\AffiliateConversion;
@@ -228,7 +228,7 @@ test('self referral is blocked when owner matches current owner', function (): v
 
     Cart::attachAffiliate($selfAffiliate->code);
 
-    expect(\AIArmada\Affiliates\Models\AffiliateAttribution::count())->toBe(0);
+    expect(AffiliateAttribution::count())->toBe(0);
 });
 
 test('consent is required when configured', function (): void {
@@ -245,7 +245,7 @@ test('consent is required when configured', function (): void {
         ->first(fn ($cookie): bool => $cookie->getName() === $cookieName);
 
     expect($cookie)->toBeNull()
-        ->and(\AIArmada\Affiliates\Models\AffiliateAttribution::count())->toBe(0);
+        ->and(AffiliateAttribution::count())->toBe(0);
 
     $consentedRequest = Request::create('/landing?aff='.$this->affiliate->code.'&affiliate_consent=1', 'GET');
     app()->instance('request', $consentedRequest);
@@ -256,7 +256,7 @@ test('consent is required when configured', function (): void {
         ->first(fn ($cookie): bool => $cookie->getName() === $cookieName);
 
     expect($cookieWithConsent)->not()->toBeNull()
-        ->and(\AIArmada\Affiliates\Models\AffiliateAttribution::count())->toBe(1);
+        ->and(AffiliateAttribution::count())->toBe(1);
 });
 
 test('rate limiting blocks excessive attributions from the same IP', function (): void {
@@ -308,11 +308,11 @@ class StaticOwnerResolver implements AffiliateOwnerResolver
 
 class AffiliateTestOwner extends Model
 {
+    public $incrementing = false;
+
     protected $table = 'test_products';
 
     protected $guarded = [];
-
-    public $incrementing = false;
 
     protected $keyType = 'string';
 }

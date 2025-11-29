@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace AIArmada\Affiliates\Support\Links;
 
 use Illuminate\Support\Arr;
+use InvalidArgumentException;
 
 final class AffiliateLinkGenerator
 {
     /**
-    * @param  array<string, string>  $params
-    */
+     * @param  array<string, string>  $params
+     */
     public function generate(string $affiliateCode, string $url, array $params = [], ?int $ttlSeconds = null): string
     {
         $this->assertHostAllowed($url);
@@ -50,8 +51,8 @@ final class AffiliateLinkGenerator
     }
 
     /**
-    * @param  array<string, mixed>  $query
-    */
+     * @param  array<string, mixed>  $query
+     */
     private function buildUrl(string $url, array $query): string
     {
         $parts = parse_url($url) ?: [];
@@ -69,8 +70,8 @@ final class AffiliateLinkGenerator
     }
 
     /**
-    * @param  array<string, mixed>  $query
-    */
+     * @param  array<string, mixed>  $query
+     */
     private function sign(string $url, array $query): string
     {
         $key = (string) config('affiliates.links.signing_key', config('app.key'));
@@ -104,6 +105,6 @@ final class AffiliateLinkGenerator
             return;
         }
 
-        throw new \InvalidArgumentException('Link host is not allowed.');
+        throw new InvalidArgumentException('Link host is not allowed.');
     }
 }

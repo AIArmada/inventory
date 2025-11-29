@@ -7,8 +7,8 @@ namespace AIArmada\Affiliates;
 use AIArmada\Affiliates\Contracts\AffiliateOwnerResolver;
 use AIArmada\Affiliates\Services\AffiliatePayoutService;
 use AIArmada\Affiliates\Services\AffiliateService;
-use AIArmada\Affiliates\Services\CommissionCalculator;
 use AIArmada\Affiliates\Services\AttributionModel;
+use AIArmada\Affiliates\Services\CommissionCalculator;
 use AIArmada\Affiliates\Support\Integrations\CartIntegrationRegistrar;
 use AIArmada\Affiliates\Support\Integrations\VoucherIntegrationRegistrar;
 use AIArmada\Affiliates\Support\Middleware\TrackAffiliateCookie;
@@ -30,7 +30,7 @@ final class AffiliatesServiceProvider extends PackageServiceProvider
             ->runsMigrations()
             ->hasRoute('api')
             ->hasCommands([
-                \AIArmada\Affiliates\Console\Commands\ExportAffiliatePayoutCommand::class,
+                Console\Commands\ExportAffiliatePayoutCommand::class,
             ]);
     }
 

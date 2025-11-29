@@ -59,22 +59,22 @@ final class AffiliateForm
                             ->label('Default Voucher Code')
                             ->maxLength(64),
 
-                    TextInput::make('tracking_domain')
-                        ->label('Tracking Domain')
-                        ->placeholder('track.example.com'),
+                        TextInput::make('tracking_domain')
+                            ->label('Tracking Domain')
+                            ->placeholder('track.example.com'),
 
-                    TextInput::make('payout_terms')
-                        ->label('Payout Terms')
-                        ->placeholder('Net-30'),
-                    Select::make('parent_affiliate_id')
-                        ->label('Parent Affiliate (Upline)')
-                        ->relationship('parent', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->helperText('Optional upline for multi-level commission sharing')
-                        ->disableOptionWhen(fn ($value, callable $get): bool => $value === $get('id')),
+                        TextInput::make('payout_terms')
+                            ->label('Payout Terms')
+                            ->placeholder('Net-30'),
+                        Select::make('parent_affiliate_id')
+                            ->label('Parent Affiliate (Upline)')
+                            ->relationship('parent', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->helperText('Optional upline for multi-level commission sharing')
+                            ->disableOptionWhen(fn ($value, callable $get): bool => $value === $get('id')),
+                    ]),
                 ]),
-            ]),
 
             Section::make('Commission Policy')
                 ->schema([

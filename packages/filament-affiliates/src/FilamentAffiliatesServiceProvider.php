@@ -8,8 +8,8 @@ use AIArmada\FilamentAffiliates\Services\AffiliateStatsAggregator;
 use AIArmada\FilamentAffiliates\Services\PayoutExportService;
 use AIArmada\FilamentAffiliates\Support\Integrations\CartBridge;
 use AIArmada\FilamentAffiliates\Support\Integrations\VoucherBridge;
-use Illuminate\Support\Facades\Gate;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Gate;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -38,6 +38,6 @@ final class FilamentAffiliatesServiceProvider extends PackageServiceProvider
             app(VoucherBridge::class)->warm();
         });
 
-        Gate::policy(\AIArmada\Affiliates\Models\AffiliatePayout::class, \AIArmada\FilamentAffiliates\Policies\AffiliatePayoutPolicy::class);
+        Gate::policy(\AIArmada\Affiliates\Models\AffiliatePayout::class, Policies\AffiliatePayoutPolicy::class);
     }
 }

@@ -23,7 +23,7 @@ class WebhookDispatcher
         $headers = (array) config('affiliates.webhooks.headers', []);
 
         foreach ($endpoints as $url) {
-            $trimmed = trim((string) $url);
+            $trimmed = mb_trim((string) $url);
 
             if ($trimmed === '') {
                 continue;

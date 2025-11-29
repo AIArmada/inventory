@@ -123,19 +123,19 @@ return [
     |--------------------------------------------------------------------------
     */
 
-'commissions' => [
-    'auto_approve' => env('AFFILIATES_AUTO_APPROVE', false),
-    'default_status' => 'pending',
-],
-
-'payouts' => [
-    'currency' => env('AFFILIATES_PAYOUT_CURRENCY', env('AFFILIATES_DEFAULT_CURRENCY', 'USD')),
-    'reference_prefix' => env('AFFILIATES_PAYOUT_REF_PREFIX', 'PO-'),
-    'multi_level' => [
-        'enabled' => env('AFFILIATES_MULTI_LEVEL_ENABLED', false),
-        'levels' => array_filter(array_map('floatval', explode(',', (string) env('AFFILIATES_MULTI_LEVEL_LEVELS', '0.1,0.05')))), // percentages of commission (0.1 = 10%)
+    'commissions' => [
+        'auto_approve' => env('AFFILIATES_AUTO_APPROVE', false),
+        'default_status' => 'pending',
     ],
-],
+
+    'payouts' => [
+        'currency' => env('AFFILIATES_PAYOUT_CURRENCY', env('AFFILIATES_DEFAULT_CURRENCY', 'USD')),
+        'reference_prefix' => env('AFFILIATES_PAYOUT_REF_PREFIX', 'PO-'),
+        'multi_level' => [
+            'enabled' => env('AFFILIATES_MULTI_LEVEL_ENABLED', false),
+            'levels' => array_filter(array_map('floatval', explode(',', (string) env('AFFILIATES_MULTI_LEVEL_LEVELS', '0.1,0.05')))), // percentages of commission (0.1 = 10%)
+        ],
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -165,57 +165,57 @@ return [
     |--------------------------------------------------------------------------
     */
 
-'events' => [
-    'dispatch_attributed' => env('AFFILIATES_EVENT_ATTRIBUTED', true),
-    'dispatch_conversion' => env('AFFILIATES_EVENT_CONVERSION', true),
-    'dispatch_webhooks' => env('AFFILIATES_EVENT_WEBHOOKS', false),
-],
+    'events' => [
+        'dispatch_attributed' => env('AFFILIATES_EVENT_ATTRIBUTED', true),
+        'dispatch_conversion' => env('AFFILIATES_EVENT_CONVERSION', true),
+        'dispatch_webhooks' => env('AFFILIATES_EVENT_WEBHOOKS', false),
+    ],
 
-/*
+    /*
 |--------------------------------------------------------------------------
 | Webhooks
 |--------------------------------------------------------------------------
 */
 
-'webhooks' => [
-    'endpoints' => [
-        'attribution' => explode(',', (string) env('AFFILIATES_WEBHOOKS_ATTRIBUTION', '')),
-        'conversion' => explode(',', (string) env('AFFILIATES_WEBHOOKS_CONVERSION', '')),
-        'payout' => explode(',', (string) env('AFFILIATES_WEBHOOKS_PAYOUT', '')),
+    'webhooks' => [
+        'endpoints' => [
+            'attribution' => explode(',', (string) env('AFFILIATES_WEBHOOKS_ATTRIBUTION', '')),
+            'conversion' => explode(',', (string) env('AFFILIATES_WEBHOOKS_CONVERSION', '')),
+            'payout' => explode(',', (string) env('AFFILIATES_WEBHOOKS_PAYOUT', '')),
+        ],
+        'headers' => [
+            'X-Affiliates-Signature' => env('AFFILIATES_WEBHOOKS_SIGNATURE'),
+        ],
     ],
-    'headers' => [
-        'X-Affiliates-Signature' => env('AFFILIATES_WEBHOOKS_SIGNATURE'),
-    ],
-],
 
-/*
+    /*
 |--------------------------------------------------------------------------
 | Links
 |--------------------------------------------------------------------------
 */
 
-'links' => [
-    'signing_key' => env('AFFILIATES_LINK_SIGNING_KEY', env('APP_KEY')),
-    'default_ttl_minutes' => env('AFFILIATES_LINK_TTL', 60 * 24 * 7),
-    'parameter' => env('AFFILIATES_LINK_PARAM', 'aff'),
-    'allowed_hosts' => array_filter(explode(',', (string) env('AFFILIATES_LINK_ALLOWED_HOSTS', ''))),
-],
+    'links' => [
+        'signing_key' => env('AFFILIATES_LINK_SIGNING_KEY', env('APP_KEY')),
+        'default_ttl_minutes' => env('AFFILIATES_LINK_TTL', 60 * 24 * 7),
+        'parameter' => env('AFFILIATES_LINK_PARAM', 'aff'),
+        'allowed_hosts' => array_filter(explode(',', (string) env('AFFILIATES_LINK_ALLOWED_HOSTS', ''))),
+    ],
 
-/*
+    /*
 |--------------------------------------------------------------------------
 | Public API
 |--------------------------------------------------------------------------
 */
 
-'api' => [
-    'enabled' => env('AFFILIATES_API_ENABLED', false),
-    'prefix' => env('AFFILIATES_API_PREFIX', 'api/affiliates'),
-    'middleware' => ['api', 'throttle:60,1'],
-    'auth' => env('AFFILIATES_API_AUTH', 'token'), // token | none
-    'token' => env('AFFILIATES_API_TOKEN'), // static token for simple setups
-],
+    'api' => [
+        'enabled' => env('AFFILIATES_API_ENABLED', false),
+        'prefix' => env('AFFILIATES_API_PREFIX', 'api/affiliates'),
+        'middleware' => ['api', 'throttle:60,1'],
+        'auth' => env('AFFILIATES_API_AUTH', 'token'), // token | none
+        'token' => env('AFFILIATES_API_TOKEN'), // static token for simple setups
+    ],
 
-/*
+    /*
 |--------------------------------------------------------------------------
 | Database Options
 |--------------------------------------------------------------------------

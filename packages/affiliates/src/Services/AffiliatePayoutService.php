@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 final class AffiliatePayoutService
 {
     public function __construct(private readonly WebhookDispatcher $webhooks) {}
+
     /**
      * @param  array<int, string>  $conversionIds
      * @param  array<string, mixed>  $attributes

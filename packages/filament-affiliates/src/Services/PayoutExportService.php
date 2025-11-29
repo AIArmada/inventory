@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AIArmada\FilamentAffiliates\Services;
 
 use AIArmada\Affiliates\Models\AffiliatePayout;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use League\Csv\Writer;
 use SplTempFileObject;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class PayoutExportService
 {

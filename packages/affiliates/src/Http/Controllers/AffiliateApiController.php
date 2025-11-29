@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Http\Controllers;
 
-use AIArmada\Affiliates\Models\Affiliate;
-use AIArmada\Affiliates\Support\Links\AffiliateLinkGenerator;
 use AIArmada\Affiliates\Services\AffiliateReportService;
 use AIArmada\Affiliates\Services\AffiliateService;
+use AIArmada\Affiliates\Support\Links\AffiliateLinkGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use InvalidArgumentException;
 
 final class AffiliateApiController extends Controller
 {
@@ -45,7 +45,7 @@ final class AffiliateApiController extends Controller
 
         try {
             $link = $this->links->generate($affiliate->code, $url, $params, $ttl ?: null);
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
 

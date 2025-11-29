@@ -12,11 +12,6 @@ class AffiliatePayoutEvent extends Model
 {
     use HasUuids;
 
-    public function getTable(): string
-    {
-        return config('affiliates.table_names.payout_events', parent::getTable());
-    }
-
     protected $fillable = [
         'affiliate_payout_id',
         'from_status',
@@ -28,6 +23,11 @@ class AffiliatePayoutEvent extends Model
     protected $casts = [
         'metadata' => 'array',
     ];
+
+    public function getTable(): string
+    {
+        return config('affiliates.table_names.payout_events', parent::getTable());
+    }
 
     public function payout(): BelongsTo
     {

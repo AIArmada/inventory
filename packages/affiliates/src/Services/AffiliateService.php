@@ -16,7 +16,6 @@ use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateAttribution;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliateTouchpoint;
-use AIArmada\Affiliates\Services\AttributionModel;
 use AIArmada\Affiliates\Support\Webhooks\WebhookDispatcher;
 use AIArmada\Cart\Cart;
 use Illuminate\Cache\Repository as CacheRepository;
@@ -147,38 +146,6 @@ final class AffiliateService
         }
 
         return $attributionData;
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    private function recordTouchpoint(
-        AffiliateAttribution $attribution,
-        Affiliate $affiliate,
-        array $payload
-    ): void {
-        AffiliateTouchpoint::create([
-            'affiliate_attribution_id' => $attribution->getKey(),
-            'affiliate_id' => $affiliate->getKey(),
-            'affiliate_code' => $affiliate->code,
-            'source' => $payload['source'] ?? null,
-            'medium' => $payload['medium'] ?? null,
-            'campaign' => $payload['campaign'] ?? null,
-            'term' => $payload['term'] ?? null,
-            'content' => $payload['content'] ?? null,
-            'metadata' => [
-                'cart_identifier' => $attribution->cart_identifier,
-                'cart_instance' => $attribution->cart_instance,
-                'utm' => [
-                    'source' => $payload['source'] ?? null,
-                    'medium' => $payload['medium'] ?? null,
-                    'campaign' => $payload['campaign'] ?? null,
-                    'term' => $payload['term'] ?? null,
-                    'content' => $payload['content'] ?? null,
-                ],
-            ],
-            'touched_at' => now(),
-        ]);
     }
 
     public function attachAffiliateFromCookie(Cart $cart, string $cookieValue, array $context = []): ?AffiliateAttributionData
@@ -365,6 +332,38 @@ final class AffiliateService
         $this->applyMultiLevelCommissions($conversions, $autoApprove, $statusEnum, $attribution?->getKey());
 
         return $conversions[0] ?? null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function recordTouchpoint(
+        AffiliateAttribution $attribution,
+        Affiliate $affiliate,
+        array $payload
+    ): void {
+        AffiliateTouchpoint::create([
+            'affiliate_attribution_id' => $attribution->getKey(),
+            'affiliate_id' => $affiliate->getKey(),
+            'affiliate_code' => $affiliate->code,
+            'source' => $payload['source'] ?? null,
+            'medium' => $payload['medium'] ?? null,
+            'campaign' => $payload['campaign'] ?? null,
+            'term' => $payload['term'] ?? null,
+            'content' => $payload['content'] ?? null,
+            'metadata' => [
+                'cart_identifier' => $attribution->cart_identifier,
+                'cart_instance' => $attribution->cart_instance,
+                'utm' => [
+                    'source' => $payload['source'] ?? null,
+                    'medium' => $payload['medium'] ?? null,
+                    'campaign' => $payload['campaign'] ?? null,
+                    'term' => $payload['term'] ?? null,
+                    'content' => $payload['content'] ?? null,
+                ],
+            ],
+            'touched_at' => now(),
+        ]);
     }
 
     /**
@@ -690,7 +689,7 @@ final class AffiliateService
     }
 
     /**
-     * @param  array<int, \AIArmada\Affiliates\Data\AffiliateConversionData>  $baseConversions
+     * @param  array<int, AffiliateConversionData>  $baseConversions
      */
     private function applyMultiLevelCommissions(array $baseConversions, bool $autoApprove, ConversionStatus $statusEnum, ?string $attributionId): void
     {

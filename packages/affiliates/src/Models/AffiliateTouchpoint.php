@@ -12,11 +12,6 @@ class AffiliateTouchpoint extends Model
 {
     use HasUuids;
 
-    public function getTable(): string
-    {
-        return config('affiliates.table_names.touchpoints', parent::getTable());
-    }
-
     protected $fillable = [
         'affiliate_attribution_id',
         'affiliate_id',
@@ -34,6 +29,11 @@ class AffiliateTouchpoint extends Model
         'metadata' => 'array',
         'touched_at' => 'datetime',
     ];
+
+    public function getTable(): string
+    {
+        return config('affiliates.table_names.touchpoints', parent::getTable());
+    }
 
     public function attribution(): BelongsTo
     {

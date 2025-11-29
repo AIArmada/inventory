@@ -12,11 +12,6 @@ class AffiliatePayout extends Model
 {
     use HasUuids;
 
-    public function getTable(): string
-    {
-        return config('affiliates.table_names.payouts', parent::getTable());
-    }
-
     protected $fillable = [
         'reference',
         'status',
@@ -35,6 +30,11 @@ class AffiliatePayout extends Model
         'scheduled_at' => 'datetime',
         'paid_at' => 'datetime',
     ];
+
+    public function getTable(): string
+    {
+        return config('affiliates.table_names.payouts', parent::getTable());
+    }
 
     /**
      * @return HasMany<AffiliateConversion, self>

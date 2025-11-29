@@ -12,7 +12,7 @@ if (! config('affiliates.api.enabled', false)) {
 Route::prefix(config('affiliates.api.prefix', 'api/affiliates'))
     ->middleware(config('affiliates.api.middleware', ['api']))
     ->group(function (): void {
-        Route::middleware(\AIArmada\Affiliates\Support\Middleware\EnsureApiAuthorized::class)->group(function (): void {
+        Route::middleware(AIArmada\Affiliates\Support\Middleware\EnsureApiAuthorized::class)->group(function (): void {
             Route::get('{code}/summary', [AffiliateApiController::class, 'summary']);
             Route::get('{code}/links', [AffiliateApiController::class, 'links']);
             Route::get('{code}/creatives', [AffiliateApiController::class, 'creatives']);
