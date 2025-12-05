@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AIArmada\Jnt\Models;
 
 use AIArmada\Jnt\Enums\ScanTypeCode;
+use AIArmada\Jnt\Enums\TrackingStatus;
+use AIArmada\Jnt\Services\JntStatusMapper;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -145,6 +147,18 @@ class JntTrackingEvent extends Model
     public function hasProblem(): bool
     {
         return $this->problem_type !== null;
+    }
+
+    /**
+     * Get the normalized tracking status.
+     */
+    public function getNormalizedStatus(): TrackingStatus
+    {
+        if ($this->scan_type_code === null) {
+            return TrackingStatus::Pending;
+        }
+
+        return app(JntStatusMapper::class)->fromCode($this->scan_type_code);
     }
 
     /**

@@ -16,6 +16,8 @@ use AIArmada\Jnt\Console\Commands\OrderTrackCommand;
 use AIArmada\Jnt\Console\Commands\WebhookTestCommand;
 use AIArmada\Jnt\Http\Middleware\VerifyWebhookSignature;
 use AIArmada\Jnt\Services\JntExpressService;
+use AIArmada\Jnt\Services\JntStatusMapper;
+use AIArmada\Jnt\Services\JntTrackingService;
 use AIArmada\Jnt\Services\WebhookService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\Router;
@@ -112,6 +114,17 @@ class JntServiceProvider extends PackageServiceProvider
         $this->app->singleton(WebhookService::class, fn (Application $app): WebhookService => new WebhookService(
             privateKey: $app['config']['jnt']['private_key']
         ));
+
+        // Register status mapper service
+        $this->app->singleton(JntStatusMapper::class, fn (): JntStatusMapper => new JntStatusMapper);
+        $this->app->alias(JntStatusMapper::class, 'jnt.status-mapper');
+
+        // Register tracking service
+        $this->app->singleton(JntTrackingService::class, fn (Application $app): JntTrackingService => new JntTrackingService(
+            expressService: $app->make(JntExpressService::class),
+            statusMapper: $app->make(JntStatusMapper::class),
+        ));
+        $this->app->alias(JntTrackingService::class, 'jnt.tracking');
     }
 
     /**

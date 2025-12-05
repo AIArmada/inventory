@@ -1,266 +1,153 @@
-# Chip Vision Progress Tracker
+# Chip Vision Progress
 
 > **Package:** `aiarmada/chip` + `aiarmada/filament-chip`  
-> **Last Updated:** Auto-generated  
-> **Overall Progress:** 0%
+> **Last Updated:** January 3, 2025  
+> **Scope:** API-Constrained (Chip API only)
 
 ---
 
-## Quick Status
+## Implementation Status
 
 | Phase | Status | Progress |
 |-------|--------|----------|
-| Phase 1: Foundation & Database | 🔴 Not Started | 0% |
-| Phase 2: Subscription Infrastructure | 🔴 Not Started | 0% |
-| Phase 3: Billing Templates | 🔴 Not Started | 0% |
-| Phase 4: Dispute Management | 🔴 Not Started | 0% |
-| Phase 5: Analytics Engine | 🔴 Not Started | 0% |
-| Phase 6: Enhanced Webhooks | 🔴 Not Started | 0% |
-| Phase 7: Filament Integration | 🔴 Not Started | 0% |
-| Phase 8: Testing & Optimization | 🔴 Not Started | 0% |
+| Phase 1: Recurring Payments | 🟢 Completed | 100% |
+| Phase 2: Enhanced Webhooks | 🔴 Not Started | 0% |
+| Phase 3: Local Analytics | 🔴 Not Started | 0% |
+| Phase 4: Filament Integration | 🟢 Completed | 100% |
 
 ---
 
-## Phase 1: Foundation & Database
+## Phase 1: Recurring Payments (App-Layer)
 
-**Status:** 🔴 Not Started  
-**Progress:** 0/18 items
-
-### Database Migrations
-- [ ] `create_chip_plans_table`
-- [ ] `create_chip_subscriptions_table`
-- [ ] `create_chip_subscription_items_table`
-- [ ] `create_chip_billing_templates_table`
-- [ ] `create_chip_billing_instances_table`
-- [ ] `create_chip_disputes_table`
-- [ ] `create_chip_dispute_evidence_table`
-- [ ] `create_chip_daily_metrics_table`
-- [ ] `create_chip_subscription_metrics_table`
-- [ ] `alter_chip_purchases_table`
-- [ ] `alter_chip_webhook_logs_table`
+### Database
+- [x] `create_chip_recurring_schedules_table`
+- [x] `create_chip_recurring_charges_table`
 
 ### Models
-- [ ] `ChipPlan` model
-- [ ] `ChipSubscription` model
-- [ ] `ChipSubscriptionItem` model
-- [ ] `ChipBillingTemplate` model
-- [ ] `ChipBillingInstance` model
-- [ ] `ChipDispute` model
-- [ ] `ChipDisputeEvidence` model
-- [ ] `ChipDailyMetric` model
-- [ ] `ChipSubscriptionMetric` model
+- [x] `RecurringSchedule` model
+- [x] `RecurringCharge` model
 
 ### Enums
-- [ ] `SubscriptionStatus` enum
-- [ ] `SubscriptionInterval` enum
-- [ ] `DisputeStatus` enum
-- [ ] `DisputeReason` enum
-- [ ] `EvidenceType` enum
-
-### Config
-- [ ] Add subscription config section
-- [ ] Add analytics config section
-
----
-
-## Phase 2: Subscription Infrastructure
-
-**Status:** 🔴 Not Started  
-**Progress:** 0/15 items
+- [x] `RecurringStatus` enum
+- [x] `RecurringInterval` enum
+- [x] `ChargeStatus` enum
 
 ### Services
-- [ ] `SubscriptionService::create()`
-- [ ] `SubscriptionService::activate()`
-- [ ] `SubscriptionService::renew()`
-- [ ] `SubscriptionService::cancel()`
-- [ ] `SubscriptionService::pause()`
-- [ ] `SubscriptionService::resume()`
-- [ ] `PlanService` implementation
-- [ ] `ProrationCalculator` implementation
-- [ ] `TrialManager` implementation
+- [x] `RecurringService::createSchedule()`
+- [x] `RecurringService::createScheduleFromPurchase()`
+- [x] `RecurringService::processCharge()`
+- [x] `RecurringService::handleFailure()`
+- [x] `RecurringService::cancel()`
+- [x] `RecurringService::pause()`
+- [x] `RecurringService::resume()`
+- [x] `RecurringService::getDueSchedules()`
+- [x] `RecurringService::processAllDue()`
 
-### Jobs
-- [ ] `ProcessSubscriptionRenewal` job
-- [ ] `ProcessTrialEnding` job
-- [ ] `SyncSubscriptionStatus` job
+### Commands
+- [x] `chip:process-recurring` command
 
 ### Events
-- [ ] `SubscriptionCreated` event
-- [ ] `SubscriptionActivated` event
-- [ ] `SubscriptionRenewed` event
-- [ ] `SubscriptionCanceled` event
-- [ ] `SubscriptionPaymentFailed` event
+- [x] `RecurringChargeSucceeded`
+- [x] `RecurringChargeRetryScheduled`
+- [x] `RecurringScheduleFailed`
+- [x] `RecurringScheduleCancelled`
+- [x] `RecurringScheduleCreated`
 
-### Commands
-- [ ] `chip:process-renewals` command
-- [ ] `chip:check-trials` command
-
----
-
-## Phase 3: Billing Templates
-
-**Status:** 🔴 Not Started  
-**Progress:** 0/8 items
-
-### Services
-- [ ] `BillingTemplateService::create()`
-- [ ] `BillingTemplateService::generateLink()`
-- [ ] `BillingTemplateService::processPayment()`
-- [ ] `CustomFieldValidator` implementation
-
-### Controllers
-- [ ] `BillingController::show()`
-- [ ] `BillingController::process()`
-- [ ] `BillingController::success()`
-
-### Views
-- [ ] `billing/show.blade.php`
-- [ ] `billing/success.blade.php`
+### Tests
+- [ ] `RecurringScheduleTest`
+- [ ] `ChargeProcessingTest`
+- [ ] `RetryLogicTest`
 
 ---
 
-## Phase 4: Dispute Management
+## Phase 2: Enhanced Webhooks
 
-**Status:** 🔴 Not Started  
-**Progress:** 0/12 items
-
-### Services
-- [ ] `DisputeService::create()`
-- [ ] `DisputeService::accept()`
-- [ ] `DisputeService::resolve()`
-- [ ] `DisputeEvidenceService::submit()`
-- [ ] `DisputeReasonResolver` implementation
-
-### Notifiers
-- [ ] `DisputeNotifier::notifyOpened()`
-- [ ] `DisputeNotifier::notifyEvidenceRequired()`
-- [ ] `DisputeNotifier::notifyResolved()`
-
-### Analytics
-- [ ] `DisputeAnalytics::getDisputeRate()`
-- [ ] `DisputeAnalytics::getReasonBreakdown()`
-
-### Webhook Handlers
-- [ ] `DisputeOpenedHandler`
-- [ ] `DisputeEvidenceHandler`
-- [ ] `DisputeResolvedHandler`
-
----
-
-## Phase 5: Analytics Engine
-
-**Status:** 🔴 Not Started  
-**Progress:** 0/10 items
-
-### Aggregators
-- [ ] `MetricsAggregator::aggregateForDate()`
-- [ ] `MetricsAggregator::aggregateTotals()`
-
-### Calculators
-- [ ] `RevenueCalculator` implementation
-- [ ] `MrrCalculator` implementation
-
-### Analyzers
-- [ ] `PaymentMethodAnalyzer` implementation
-- [ ] `FailureAnalyzer` implementation
-- [ ] `CustomerCohortAnalyzer` implementation
-
-### Services
-- [ ] `ChipAnalyticsService::getDashboardMetrics()`
-- [ ] `ChipAnalyticsService::getRealTimeMetrics()`
-- [ ] `ChipAnalyticsService::getRevenueBreakdown()`
-
-### Commands
-- [ ] `chip:aggregate-metrics` command
-
----
-
-## Phase 6: Enhanced Webhooks
-
-**Status:** 🔴 Not Started  
-**Progress:** 0/10 items
-
-### Pipeline
+### Pipeline Components
 - [ ] `WebhookValidator` implementation
 - [ ] `WebhookEnricher` implementation
 - [ ] `WebhookRouter` implementation
 - [ ] `WebhookLogger` enhancements
 
+### DTOs
+- [ ] `EnrichedWebhookPayload` DTO
+- [ ] `WebhookResult` DTO
+
 ### Handlers
-- [ ] `SubscriptionCreatedHandler`
-- [ ] `SubscriptionRenewedHandler`
-- [ ] `SubscriptionPaymentFailedHandler`
+- [ ] `PurchasePaidHandler`
+- [ ] `PurchaseCancelledHandler`
+- [ ] `PurchaseRefundedHandler`
+- [ ] `PaymentFailedHandler`
+- [ ] `SendCompletedHandler`
 
 ### Retry System
 - [ ] `WebhookRetryManager` implementation
 
 ### Monitoring
 - [ ] `WebhookMonitor` implementation
+- [ ] `WebhookHealth` DTO
 
 ### Commands
 - [ ] `chip:retry-webhooks` command
 - [ ] `chip:clean-webhooks` command
 
+### Tests
+- [ ] `WebhookValidationTest`
+- [ ] `WebhookRoutingTest`
+- [ ] `RetryLogicTest`
+
 ---
 
-## Phase 7: Filament Integration
+## Phase 3: Local Analytics
 
-**Status:** 🔴 Not Started  
-**Progress:** 0/12 items
+### Database
+- [ ] `create_chip_daily_metrics_table`
+
+### Models
+- [ ] `ChipDailyMetric` model
+
+### Services
+- [ ] `ChipLocalAnalyticsService::getDashboardMetrics()`
+- [ ] `ChipLocalAnalyticsService::getRevenueMetrics()`
+- [ ] `ChipLocalAnalyticsService::getPaymentMethodBreakdown()`
+- [ ] `ChipLocalAnalyticsService::getFailureAnalysis()`
+- [ ] `ChipLocalAnalyticsService::getRevenueTrend()`
+
+### Aggregators
+- [ ] `MetricsAggregator::aggregateForDate()`
+- [ ] `MetricsAggregator::aggregateTotals()`
+
+### DTOs
+- [ ] `DashboardMetrics` DTO
+- [ ] `RevenueMetrics` DTO
+
+### Commands
+- [ ] `chip:aggregate-metrics` command
+
+### Tests
+- [ ] `AggregationTest`
+- [ ] `AnalyticsServiceTest`
+
+---
+
+## Phase 4: Filament Integration
 
 ### Dashboard Widgets
-- [ ] `RevenueStatsWidget`
-- [ ] `RevenueChartWidget`
-- [ ] `PaymentMethodsWidget`
-- [ ] `RecentTransactionsWidget`
+- [x] `ChipStatsWidget` - Today/week/month revenue and success rate
+- [x] `RecurringStatsWidget` - Active/due/paused schedules and success rate
+- [x] `RevenueChartWidget` - 30-day revenue trend line chart
+- [x] `PaymentMethodsWidget` - Payment method breakdown with amounts
+- [x] `RecentTransactionsWidget` - Last 10 transactions table
 
 ### Resources
-- [ ] `SubscriptionResource` complete
-- [ ] `PlanResource` complete
-- [ ] `DisputeResource` complete
-- [ ] `BillingTemplateResource` complete
+- [x] `PurchaseResource` (existing, fully functional)
+- [x] `RecurringScheduleResource` - Full resource with table, infolist, ChargesRelationManager
 
 ### Pages
-- [ ] `PaymentAnalyticsPage`
-- [ ] `SubscriptionMetricsPage`
-- [ ] `WebhookMonitorPage`
+- [ ] `WebhookMonitorPage` (requires Phase 2)
+- [ ] `AnalyticsDashboardPage` (requires Phase 3)
 
-### Navigation
-- [ ] Navigation structure updated
-
----
-
-## Phase 8: Testing & Optimization
-
-**Status:** 🔴 Not Started  
-**Progress:** 0/12 items
-
-### Unit Tests
-- [ ] `SubscriptionServiceTest`
-- [ ] `DisputeServiceTest`
-- [ ] `ChipAnalyticsServiceTest`
-- [ ] `ProrationCalculatorTest`
-- [ ] `MetricsAggregatorTest`
-
-### Feature Tests
-- [ ] `SubscriptionLifecycleTest`
-- [ ] `BillingTemplateFlowTest`
-- [ ] `DisputeWorkflowTest`
-- [ ] `WebhookProcessingTest`
-
-### Performance
-- [ ] Index optimization
-- [ ] Query optimization
-- [ ] Cache implementation
-
-### Documentation
-- [ ] README updates
-- [ ] API documentation
-- [ ] Migration guide
-
-### Quality
-- [ ] Test coverage ≥ 85%
-- [ ] PHPStan level 6 pass
+### Tests
+- [ ] `FilamentResourceTests`
 
 ---
 
@@ -268,19 +155,60 @@
 
 | Document | Status |
 |----------|--------|
-| [01-executive-summary.md](01-executive-summary.md) | ✅ Complete |
-| [02-subscription-management.md](02-subscription-management.md) | ✅ Complete |
-| [03-billing-templates.md](03-billing-templates.md) | ✅ Complete |
-| [04-dispute-management.md](04-dispute-management.md) | ✅ Complete |
-| [05-analytics-insights.md](05-analytics-insights.md) | ✅ Complete |
-| [06-enhanced-webhooks.md](06-enhanced-webhooks.md) | ✅ Complete |
-| [07-database-evolution.md](07-database-evolution.md) | ✅ Complete |
-| [08-filament-enhancements.md](08-filament-enhancements.md) | ✅ Complete |
-| [09-implementation-roadmap.md](09-implementation-roadmap.md) | ✅ Complete |
-| PROGRESS.md | ✅ Complete |
+| [01-executive-summary.md](01-executive-summary.md) | ✅ Revised |
+| [02-recurring-payments.md](02-recurring-payments.md) | ✅ New |
+| [03-enhanced-webhooks.md](03-enhanced-webhooks.md) | ✅ New |
+| [04-local-analytics.md](04-local-analytics.md) | ✅ New |
+| [05-implementation-roadmap.md](05-implementation-roadmap.md) | ✅ New |
+
+---
+
+## Removed from Scope
+
+These features were removed because Chip API does not support them:
+
+| Feature | Reason |
+|---------|--------|
+| Subscription Management | No Chip subscription API |
+| Billing Templates | No Chip template API |
+| Dispute Management | No Chip dispute API |
+| API-based Analytics | Chip only provides balance/turnover |
+
+---
+
+## Legend
+
+| Symbol | Meaning |
+|--------|---------|
+| 🔴 | Not Started |
+| 🟡 | In Progress |
+| 🟢 | Completed |
 
 ---
 
 ## Notes
 
-_Implementation notes and decisions will be logged here as work progresses._
+### December 5, 2025
+- **Phase 4 (Filament Integration) fully completed**
+  - Created ChipStatsWidget with revenue metrics (today/week/month/success rate)
+  - Created RevenueChartWidget with 30-day trend visualization
+  - Created PaymentMethodsWidget with payment method breakdown
+  - Created RecentTransactionsWidget showing last 10 transactions
+  - All 5 widgets registered in FilamentChipPlugin
+- Vision documents revised to API-constrained scope
+- Removed subscription, billing templates, disputes (no API support)
+- Focus on app-layer recurring payments using existing token + charge APIs
+- Analytics limited to local data aggregation from `chip_purchases`
+
+### January 3, 2025
+- Phase 1 (Recurring Payments) fully implemented
+- Created RecurringSchedule and RecurringCharge models with migrations
+- Created RecurringService with full schedule lifecycle management
+- Implemented exponential backoff retry logic for failed charges
+- Added ProcessRecurringCommand for scheduled processing
+- Created 5 events for recurring payment lifecycle
+- **Filament Integration Started:**
+  - Created RecurringStatsWidget with 4 metrics (active, due, paused, success rate)
+  - Created RecurringScheduleResource with table, infolist, and ChargesRelationManager
+  - Updated FilamentChipPlugin to register new resource and widget
+- Tests pending

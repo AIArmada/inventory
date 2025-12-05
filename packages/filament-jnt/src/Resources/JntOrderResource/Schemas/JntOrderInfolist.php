@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentJnt\Resources\JntOrderResource\Schemas;
 
+use AIArmada\Jnt\Enums\TrackingStatus;
 use AIArmada\Jnt\Models\JntOrder;
+use AIArmada\Jnt\Models\JntTrackingEvent;
+use AIArmada\Jnt\Services\JntStatusMapper;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Fieldset;
@@ -34,10 +37,12 @@ final class JntOrderInfolist
                                 ->copyable()
                                 ->weight(FontWeight::SemiBold)
                                 ->placeholder('—'),
-                            TextEntry::make('last_status')
+                            TextEntry::make('last_status_code')
                                 ->label('Status')
                                 ->badge()
-                                ->color(fn (JntOrder $record): string => self::getStatusColor($record->last_status_code)),
+                                ->icon(fn (JntOrder $record): string => self::getNormalizedStatus($record)->icon())
+                                ->color(fn (JntOrder $record): string => self::getNormalizedStatus($record)->color())
+                                ->formatStateUsing(fn (JntOrder $record): string => self::getNormalizedStatus($record)->label()),
                         ]),
                     Grid::make(4)
                         ->schema([
@@ -250,10 +255,12 @@ final class JntOrderInfolist
                             TextEntry::make('scan_time')
                                 ->label('Time')
                                 ->dateTime(config('filament-jnt.tables.datetime_format', 'Y-m-d H:i:s')),
-                            TextEntry::make('scan_type_name')
+                            TextEntry::make('scan_type_code')
                                 ->label('Status')
                                 ->badge()
-                                ->color(fn ($record): string => self::getStatusColor($record->scan_type_code ?? null)),
+                                ->icon(fn (JntTrackingEvent $record): string => $record->getNormalizedStatus()->icon())
+                                ->color(fn (JntTrackingEvent $record): string => $record->getNormalizedStatus()->color())
+                                ->formatStateUsing(fn (JntTrackingEvent $record): string => $record->getNormalizedStatus()->label()),
                             TextEntry::make('description')
                                 ->label('Description')
                                 ->columnSpanFull()
@@ -328,14 +335,12 @@ final class JntOrderInfolist
         ]);
     }
 
-    private static function getStatusColor(?string $statusCode): string
+    private static function getNormalizedStatus(JntOrder $order): TrackingStatus
     {
-        return match ($statusCode) {
-            '100' => 'success',      // Delivered
-            '10', '20', '30', '94' => 'info',  // In transit
-            '110', '172', '173' => 'warning', // Problem/Return
-            '200', '201', '300', '301', '302', '303', '304', '305', '306' => 'danger', // Terminal
-            default => 'secondary',
-        };
+        if ($order->last_status_code === null) {
+            return TrackingStatus::Pending;
+        }
+
+        return app(JntStatusMapper::class)->fromCode($order->last_status_code);
     }
 }

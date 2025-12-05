@@ -1,8 +1,37 @@
 # Chip Vision: Executive Summary
 
-> **Document:** 01 of 10  
+> **Document:** 01 of 05  
 > **Package:** `aiarmada/chip` + `aiarmada/filament-chip`  
-> **Status:** Vision
+> **Status:** Vision (API-Constrained)  
+> **Last Updated:** December 5, 2025
+
+---
+
+## API Boundaries
+
+This vision is constrained to what the **Chip API actually supports**:
+
+### Chip Collect API
+- ✅ Purchases (create, get, cancel, refund, capture, release)
+- ✅ Recurring tokens (create via `forceRecurring`, charge, delete)
+- ✅ Clients (CRUD operations)
+- ✅ Account (balance, turnover, company statements)
+- ✅ Webhooks (CRUD, signature verification)
+- ✅ Payment methods listing
+
+### Chip Send API
+- ✅ Send instructions (disbursements)
+- ✅ Bank accounts (CRUD)
+- ✅ Groups (organize bank accounts)
+- ✅ Send limits
+- ✅ Webhooks for Send events
+
+### NOT Available in Chip API
+- ❌ Native subscription management
+- ❌ Billing templates API
+- ❌ Dispute/chargeback endpoints
+- ❌ Analytics/reporting API
+- ❌ Rate quotes
 
 ---
 
@@ -26,38 +55,37 @@ aiarmada/chip                    ← Core payment gateway SDK
 | FPX Banking | ✅ Complete | Malaysian bank transfers |
 | E-Wallets | ✅ Complete | Touch 'n Go, Boost, etc. |
 | Card Payments | ✅ Complete | Visa, Mastercard |
-| Webhooks | ✅ Complete | 24 event types handled |
-| Payout Operations | ✅ Complete | Mass payouts, bills |
-| Recurring Tokens | ✅ Partial | Token storage, limited lifecycle |
+| Webhooks | ✅ Complete | All event types handled |
+| Payout Operations | ✅ Complete | Mass payouts via Chip Send |
+| Recurring Tokens | ✅ Partial | Token storage, charge capability |
 
-### Current Gaps
+### Realistic Gaps (Addressable)
 
-| Gap | Impact | Priority |
-|-----|--------|----------|
-| No subscription management | Can't handle recurring billing | Critical |
-| Limited billing templates | Manual invoice creation | High |
-| No dispute/chargeback workflow | Manual handling required | High |
-| Basic analytics | No revenue insights | Medium |
-| Limited Filament coverage | Minimal admin tools | Medium |
+| Gap | Solution | Priority |
+|-----|----------|----------|
+| No recurring automation | App-layer scheduling | High |
+| Basic webhook handling | Enhanced pipeline | Medium |
+| Limited analytics | Local data aggregation | Medium |
+| Minimal Filament coverage | Enhanced admin tools | Medium |
 
 ---
 
-## Vision Pillars
+## Vision Pillars (API-Constrained)
 
-### 1. Subscription Management
-Full subscription lifecycle with trials, grace periods, plan changes, and automated renewal.
+### 1. Recurring Payment Automation
+Build **app-layer** recurring payment scheduling using Chip's existing token + charge APIs.
 
-### 2. Billing Templates
-Reusable invoice/payment link templates with custom fields and branding.
+### 2. Enhanced Webhook Pipeline
+Improve webhook processing with enrichment, routing, retry logic, and monitoring.
 
-### 3. Dispute & Chargeback
-Complete workflow for handling payment disputes and chargebacks.
+### 3. Local Analytics Dashboard
+Aggregate metrics from local `chip_purchases` data - NOT from Chip API.
 
-### 4. Analytics Dashboard
-Revenue analytics, payment method insights, and failure analysis.
+### 4. Improved Filament Admin
+Comprehensive admin interface for purchases, tokens, and webhooks.
 
-### 5. Enhanced Filament
-Comprehensive admin interface with bulk operations and real-time monitoring.
+### 5. Developer Experience
+Better builders, validation, error handling, and testing utilities.
 
 ---
 
@@ -65,10 +93,9 @@ Comprehensive admin interface with bulk operations and real-time monitoring.
 
 | Feature | Business Value | Technical Complexity | Priority |
 |---------|---------------|---------------------|----------|
-| Subscription Management | 🔴 Critical | High | P0 |
-| Billing Templates | 🟡 High | Medium | P1 |
-| Dispute Workflow | 🟡 High | Medium | P1 |
-| Analytics Dashboard | 🟢 Medium | Low | P2 |
+| Recurring Automation | 🔴 Critical | Medium | P0 |
+| Enhanced Webhooks | 🟡 High | Low | P1 |
+| Local Analytics | 🟢 Medium | Low | P2 |
 | Filament Enhancements | 🟢 Medium | Medium | P2 |
 
 ---
@@ -77,78 +104,61 @@ Comprehensive admin interface with bulk operations and real-time monitoring.
 
 | # | Document | Description |
 |---|----------|-------------|
-| 01 | [Executive Summary](01-executive-summary.md) | This document |
-| 02 | [Subscription Management](02-subscription-management.md) | Recurring billing system |
-| 03 | [Billing Templates](03-billing-templates.md) | Reusable payment templates |
-| 04 | [Dispute Management](04-dispute-management.md) | Chargeback workflow |
-| 05 | [Analytics & Insights](05-analytics-insights.md) | Revenue analytics |
-| 06 | [Enhanced Webhooks](06-enhanced-webhooks.md) | Advanced webhook handling |
-| 07 | [Database Evolution](07-database-evolution.md) | Schema enhancements |
-| 08 | [Filament Enhancements](08-filament-enhancements.md) | Admin dashboard |
-| 09 | [Implementation Roadmap](09-implementation-roadmap.md) | Phased delivery plan |
+| 01 | Executive Summary | This document |
+| 02 | [Recurring Payments](02-recurring-payments.md) | App-layer recurring billing |
+| 03 | [Enhanced Webhooks](03-enhanced-webhooks.md) | Advanced webhook handling |
+| 04 | [Local Analytics](04-local-analytics.md) | Revenue analytics from local data |
+| 05 | [Implementation Roadmap](05-implementation-roadmap.md) | Phased delivery plan |
 
 ---
 
-## Key Metrics
+## Key Constraints
 
-### Current State
-- 24 webhook event types
-- 6 payment methods supported
-- Basic recurring token support
-
-### Target State
-- Full subscription lifecycle
-- Billing template system
-- Dispute resolution workflow
-- Revenue analytics dashboard
-- Comprehensive Filament admin
+1. **No Chip Subscription API** - All subscription logic must be app-layer
+2. **No Chip Analytics API** - All metrics computed from local database
+3. **No Dispute API** - Cannot implement chargeback workflows
+4. **Package Scope** - This package handles Chip API only, not general billing
 
 ---
 
 ## Dependencies
 
 ### External
-- Chip API (payment gateway)
+- Chip Collect API
+- Chip Send API
 - Webhook delivery infrastructure
 
 ### Internal Packages
 - `aiarmada/commerce-support` - Money handling
-- `aiarmada/docs` - Invoice generation (optional)
 
 ---
 
 ## Roadmap Overview
 
 ```
-Phase 1: Subscriptions (6-8 weeks)
+Phase 1: Recurring Payments (3-4 weeks)
     │
-    ├── ChipSubscription model
-    ├── ChipPlan model
-    ├── Subscription lifecycle
-    └── Billing cycle automation
+    ├── ChipRecurringSchedule model (local)
+    ├── Scheduled payment jobs
+    ├── Token lifecycle management
+    └── Retry logic for failed charges
 
-Phase 2: Billing Templates (3-4 weeks)
+Phase 2: Enhanced Webhooks (2 weeks)
     │
-    ├── ChipBillingTemplate model
-    ├── Template rendering
-    └── Custom fields
+    ├── Enriched payload processing
+    ├── Improved routing
+    └── Retry & monitoring
 
-Phase 3: Disputes (3-4 weeks)
+Phase 3: Local Analytics (2 weeks)
     │
-    ├── ChipDispute model
-    ├── Evidence submission
-    └── Resolution workflow
-
-Phase 4: Analytics (2-3 weeks)
-    │
-    ├── Revenue aggregation
-    ├── Payment method insights
-    └── Failure analysis
-
-Phase 5: Filament (4-6 weeks)
-    │
+    ├── Aggregation from purchases
     ├── Dashboard widgets
+    └── Export functionality
+
+Phase 4: Filament (2-3 weeks)
+    │
     ├── Enhanced resources
+    ├── Dashboard widgets
     └── Bulk operations
 ```
 
@@ -156,10 +166,9 @@ Phase 5: Filament (4-6 weeks)
 
 ## Success Criteria
 
-- [ ] Full subscription lifecycle management
-- [ ] Billing templates with custom branding
-- [ ] Automated dispute workflow
-- [ ] Real-time revenue analytics
+- [ ] Recurring payments work via app-layer scheduler
+- [ ] Webhook processing is reliable with retry
+- [ ] Revenue metrics computed from local data
 - [ ] Comprehensive Filament admin
 - [ ] PHPStan Level 6 compliance
 - [ ] ≥85% test coverage
@@ -168,4 +177,4 @@ Phase 5: Filament (4-6 weeks)
 
 ## Navigation
 
-**Next:** [02-subscription-management.md](02-subscription-management.md)
+**Next:** [02-recurring-payments.md](02-recurring-payments.md)

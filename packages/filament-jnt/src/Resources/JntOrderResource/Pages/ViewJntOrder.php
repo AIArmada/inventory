@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentJnt\Resources\JntOrderResource\Pages;
 
+use AIArmada\FilamentJnt\Actions\CancelOrderAction;
+use AIArmada\FilamentJnt\Actions\SyncTrackingAction;
 use AIArmada\FilamentJnt\Resources\JntOrderResource;
 use AIArmada\FilamentJnt\Resources\Pages\ReadOnlyViewRecord;
 use Filament\Support\Icons\Heroicon;
@@ -24,5 +26,14 @@ final class ViewJntOrder extends ReadOnlyViewRecord
     public function getHeadingIcon(): Heroicon
     {
         return Heroicon::OutlinedTruck;
+    }
+
+    #[Override]
+    protected function getHeaderActions(): array
+    {
+        return [
+            SyncTrackingAction::make(),
+            CancelOrderAction::make(),
+        ];
     }
 }

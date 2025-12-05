@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentJnt\Widgets;
 
+use AIArmada\Jnt\Enums\TrackingStatus;
 use AIArmada\Jnt\Models\JntOrder;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -21,6 +22,7 @@ final class JntStatsWidget extends BaseWidget
             ->count();
         $problemCount = JntOrder::where('has_problem', true)->count();
         $pendingCount = JntOrder::whereNull('tracking_number')->count();
+        $returningCount = JntOrder::whereIn('last_status_code', ['172', '173'])->count();
 
         $deliveryRate = $totalOrders > 0
             ? round(($deliveredCount / $totalOrders) * 100, 1)
@@ -47,6 +49,11 @@ final class JntStatsWidget extends BaseWidget
                 ->descriptionIcon(Heroicon::Clock)
                 ->color('warning'),
 
+            Stat::make('Returns', $returningCount)
+                ->description('Being returned')
+                ->descriptionIcon(Heroicon::ArrowUturnLeft)
+                ->color($returningCount > 0 ? 'purple' : 'gray'),
+
             Stat::make('Problems', $problemCount)
                 ->description('Requires attention')
                 ->descriptionIcon(Heroicon::ExclamationTriangle)
@@ -56,6 +63,6 @@ final class JntStatsWidget extends BaseWidget
 
     protected function getColumns(): int
     {
-        return 5;
+        return 6;
     }
 }

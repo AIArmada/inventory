@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentJnt\Resources\JntOrderResource\Tables;
 
+use AIArmada\Jnt\Enums\TrackingStatus;
 use AIArmada\Jnt\Models\JntOrder;
+use AIArmada\Jnt\Services\JntStatusMapper;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\IconColumn;
@@ -53,11 +55,12 @@ final class JntOrderTable
                     ->badge()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('last_status')
+                TextColumn::make('last_status_code')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (JntOrder $record): string => self::getStatusColor($record->last_status_code))
-                    ->searchable()
+                    ->icon(fn (JntOrder $record): string => self::getNormalizedStatus($record)->icon())
+                    ->color(fn (JntOrder $record): string => self::getNormalizedStatus($record)->color())
+                    ->formatStateUsing(fn (JntOrder $record): string => self::getNormalizedStatus($record)->label())
                     ->sortable(),
                 IconColumn::make('has_problem')
                     ->label('Problem')
@@ -94,6 +97,32 @@ final class JntOrderTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('normalized_status')
+                    ->label('Status')
+                    ->options(TrackingStatus::class)
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['value'])) {
+                            return $query;
+                        }
+
+                        $status = TrackingStatus::from($data['value']);
+
+                        return match ($status) {
+                            TrackingStatus::Pending => $query->whereNull('tracking_number'),
+                            TrackingStatus::Delivered => $query->whereNotNull('delivered_at'),
+                            TrackingStatus::Exception => $query->where('has_problem', true),
+                            TrackingStatus::InTransit => $query->whereNull('delivered_at')
+                                ->whereNotNull('tracking_number')
+                                ->where('has_problem', false)
+                                ->whereIn('last_status_code', ['20', '30', '401', '402']),
+                            TrackingStatus::AtHub => $query->whereIn('last_status_code', ['403', '404', '405']),
+                            TrackingStatus::OutForDelivery => $query->where('last_status_code', '94'),
+                            TrackingStatus::PickedUp => $query->whereIn('last_status_code', ['10', '400']),
+                            TrackingStatus::ReturnInitiated => $query->where('last_status_code', '172'),
+                            TrackingStatus::Returned => $query->where('last_status_code', '173'),
+                            TrackingStatus::DeliveryAttempted => $query->where('last_status_code', '110'),
+                        };
+                    }),
                 SelectFilter::make('express_type')
                     ->label('Express Type')
                     ->options([
@@ -130,14 +159,12 @@ final class JntOrderTable
             ->poll(config('filament-jnt.polling_interval', '30s'));
     }
 
-    private static function getStatusColor(?string $statusCode): string
+    private static function getNormalizedStatus(JntOrder $order): TrackingStatus
     {
-        return match ($statusCode) {
-            '100' => 'success',      // Delivered
-            '10', '20', '30', '94' => 'info',  // In transit
-            '110', '172', '173' => 'warning', // Problem/Return
-            '200', '201', '300', '301', '302', '303', '304', '305', '306' => 'danger', // Terminal
-            default => 'secondary',
-        };
+        if ($order->last_status_code === null) {
+            return TrackingStatus::Pending;
+        }
+
+        return app(JntStatusMapper::class)->fromCode($order->last_status_code);
     }
 }

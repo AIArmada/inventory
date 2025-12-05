@@ -1,347 +1,199 @@
-# Vision Implementation Progress
+# JNT Vision Progress
 
-> **Package:** `aiarmada/jnt` → `aiarmada/shipping`  
-> **Total Phases:** 8  
-> **Estimated Duration:** 19 weeks
-
----
-
-## Quick Status
-
-| Phase | Name | Status | Progress |
-|-------|------|--------|----------|
-| 1 | Multi-Carrier Abstraction | 🔴 Not Started | 0% |
-| 2 | Unified Data Model | 🔴 Not Started | 0% |
-| 3 | Rate Shopping Engine | 🔴 Not Started | 0% |
-| 4 | Carrier Selection Rules | 🔴 Not Started | 0% |
-| 5 | Enhanced Tracking | 🔴 Not Started | 0% |
-| 6 | Returns & RMA | 🔴 Not Started | 0% |
-| 7 | Filament Dashboard | 🔴 Not Started | 0% |
-| 8 | Analytics & Reporting | 🔴 Not Started | 0% |
-
-**Overall Progress:** 0%
+> **Package:** `aiarmada/jnt` + `aiarmada/filament-jnt`  
+> **Last Updated:** January 3, 2025  
+> **Scope:** API-Constrained (J&T Express API only)
 
 ---
 
-## Phase 1: Multi-Carrier Abstraction
+## Implementation Status
 
-**Target Duration:** 3 weeks  
-**Status:** 🔴 Not Started
-
-### Tasks
-
-**Contracts:**
-- [ ] Create `CarrierContract` interface
-- [ ] Create `CarrierCapabilities` value object
-- [ ] Create `RateProviderContract` interface
-
-**Core Services:**
-- [ ] Create `ShippingManager` - carrier registry
-- [ ] Create `CarrierFactory` - driver instantiation
-- [ ] Create `CarrierResolver` - credential management
-
-**Adapters:**
-- [ ] Refactor JNT into `JntCarrier` adapter
-- [ ] Create `JntMapper` for DTO transformations
-
-**DTOs:**
-- [ ] Create `ShipmentData`, `AddressData`, `PackageData`
-- [ ] Create `ShipmentResult`, `TrackingResult`
-- [ ] Create `LabelResult`, `CancellationResult`
-
-**Configuration:**
-- [ ] Design multi-carrier config structure
-- [ ] Implement credential encryption
-
-**Tests:**
-- [ ] Test carrier registration
-- [ ] Test JNT adapter operations
-- [ ] Test DTO transformations
-
-### Notes
-_No notes yet_
+| Phase | Status | Progress |
+|-------|--------|----------|
+| Phase 1: Enhanced Orders | 🟡 In Progress | 80% |
+| Phase 2: Tracking & Status | 🟢 Completed | 100% |
+| Phase 3: Notifications | 🔴 Not Started | 0% |
+| Phase 4: Filament Integration | 🟢 Completed | 100% |
 
 ---
 
-## Phase 2: Unified Data Model
+## Phase 1: Enhanced Orders
 
-**Target Duration:** 2 weeks  
-**Status:** 🔴 Not Started  
-**Depends On:** Phase 1
+### Models
+- [x] `JntOrder` model (enhanced with tracking fields)
+- [ ] `JntOrderStatus` enum
 
-### Tasks
+### Services
+- [x] `JntExpressService::createOrder()`
+- [x] `JntExpressService::cancelOrder()`
+- [ ] `JntOrderService::syncStatus()`
 
-**Database:**
-- [ ] Create `carriers` table
-- [ ] Create `carrier_credentials` table (encrypted)
-- [ ] Create `shipments` unified table
-- [ ] Create `shipment_packages` table
-- [ ] Create `tracking_events` unified table
+### Builder
+- [x] `OrderBuilder::orderId()`
+- [x] `OrderBuilder::sender()`
+- [x] `OrderBuilder::receiver()`
+- [x] `OrderBuilder::addItem()`
+- [x] `OrderBuilder::packageInfo()`
+- [x] `OrderBuilder::cashOnDelivery()`
+- [x] `OrderBuilder::build()`
 
-**Models:**
-- [ ] Create `Carrier` model
-- [ ] Create `CarrierCredential` model
-- [ ] Create `Shipment` model
-- [ ] Create `TrackingEvent` model
+### Events
+- [x] `OrderCreatedEvent`
+- [x] `OrderCancelledEvent`
 
-**Migrations:**
-- [ ] Create new table migrations
-- [ ] Create JNT data migration script
-- [ ] Seed carrier registry
-
-**Tests:**
-- [ ] Test model relationships
-- [ ] Test credential encryption
-- [ ] Test data migration accuracy
-
-### Notes
-_No notes yet_
+### Tests
+- [ ] `OrderCreationTest`
+- [ ] `OrderCancellationTest`
+- [ ] `OrderBuilderTest`
 
 ---
 
-## Phase 3: Rate Shopping Engine
+## Phase 2: Tracking & Status
 
-**Target Duration:** 3 weeks  
-**Status:** 🔴 Not Started  
-**Depends On:** Phase 2
+### Database
+- [x] `create_jnt_tracking_events_table` (existing)
 
-### Tasks
+### Models
+- [x] `JntTrackingEvent` model (enhanced with getNormalizedStatus)
 
-**Database:**
-- [ ] Create `carrier_rate_cards` table
-- [ ] Create `shipping_zones` table
-- [ ] Create `zone_postcodes` table
+### Enums
+- [x] `TrackingStatus` enum (normalized)
+- [x] `ScanTypeCode` enum (existing)
 
-**Services:**
-- [ ] Create `RateCalculatorService`
-- [ ] Create `ZoneMapper`
-- [ ] Create `SurchargeCalculator`
-- [ ] Create `RateCardService`
+### Services
+- [x] `JntStatusMapper` implementation
+- [x] `JntTrackingService::track()`
+- [x] `JntTrackingService::syncOrderTracking()`
+- [x] `JntTrackingService::parseTrackingData()`
+- [x] `JntTrackingService::getNormalizedStatus()`
+- [x] `JntTrackingService::getCurrentStatus()`
+- [x] `JntTrackingService::batchSyncTracking()`
+- [x] `JntTrackingService::getOrdersNeedingTrackingUpdate()`
 
-**DTOs:**
-- [ ] Create `RateRequest`, `RateQuote`
-- [ ] Create `RateCollection`, `RateComparisonResult`
+### DTOs
+- [x] `TrackingData` DTO (existing)
+- [x] `TrackingDetailData` DTO (existing)
 
-**API:**
-- [ ] Create rate comparison endpoint
-- [ ] Implement rate caching
+### Events
+- [x] `JntOrderStatusChanged` event
+- [x] `TrackingUpdatedEvent` (existing)
 
-**Tests:**
-- [ ] Test zone calculation
-- [ ] Test rate card parsing
-- [ ] Test surcharge application
-- [ ] Test multi-carrier comparison
+### Webhook
+- [x] Enhanced webhook handler
 
-### Notes
-_No notes yet_
-
----
-
-## Phase 4: Carrier Selection Rules
-
-**Target Duration:** 2 weeks  
-**Status:** 🔴 Not Started  
-**Depends On:** Phase 3
-
-### Tasks
-
-**Database:**
-- [ ] Create `shipping_rules` table
-
-**Models:**
-- [ ] Create `ShippingRule` model
-
-**Enums:**
-- [ ] Create `RuleType` enum
-- [ ] Create `ConditionType` enum
-
-**Services:**
-- [ ] Create `CarrierSelectionEngine`
-- [ ] Create `RuleEvaluator`
-- [ ] Create `PerformanceScorer`
-
-**API:**
-- [ ] Create auto-select carrier endpoint
-
-**Tests:**
-- [ ] Test rule evaluation
-- [ ] Test priority ordering
-- [ ] Test performance scoring
-- [ ] Test fallback selection
-
-### Notes
-_No notes yet_
+### Tests
+- [ ] `StatusMappingTest`
+- [ ] `TrackingServiceTest`
+- [ ] `WebhookHandlerTest`
 
 ---
 
-## Phase 5: Enhanced Tracking
+## Phase 3: Notifications (App-Layer)
 
-**Target Duration:** 2 weeks  
-**Status:** 🔴 Not Started  
-**Depends On:** Phase 2
+### Notifications
+- [ ] `JntShipmentNotification::shipped`
+- [ ] `JntShipmentNotification::outForDelivery`
+- [ ] `JntShipmentNotification::delivered`
+- [ ] `JntShipmentNotification::failed`
 
-### Tasks
+### Listeners
+- [ ] `SendShipmentNotifications` listener
 
-**Enums:**
-- [ ] Create `TrackingStatus` unified enum
-- [ ] Create `TrackingStage` enum
-- [ ] Create `NotificationChannel` enum
+### Config
+- [ ] Notification settings in config
 
-**Services:**
-- [ ] Create `TrackingNormalizer`
-- [ ] Create `DeliveryEstimationService`
-- [ ] Create `ShipmentNotificationService`
-- [ ] Create `WebhookProcessingService`
-
-**Models:**
-- [ ] Update `TrackingEvent` with normalized status
-
-**Notifications:**
-- [ ] Create email templates
-- [ ] Create SMS templates
-- [ ] Create notification preferences
-
-**Tests:**
-- [ ] Test status normalization
-- [ ] Test ETA calculation
-- [ ] Test notification dispatch
-
-### Notes
-_No notes yet_
+### Tests
+- [ ] `NotificationTest`
 
 ---
 
-## Phase 6: Returns & RMA
+## Phase 4: Filament Integration
 
-**Target Duration:** 3 weeks  
-**Status:** 🔴 Not Started  
-**Depends On:** Phase 5
+### Resources
+- [x] `JntOrderResource` (enhanced with normalized status display)
+- [x] `JntTrackingEventResource` (enhanced with normalized status)
+- [x] `TrackingEventsRelationManager` (existing)
 
-### Tasks
+### Widgets
+- [x] `JntStatsWidget` (enhanced with returns tracking, 6 stats)
 
-**Database:**
-- [ ] Create `return_requests` table
-- [ ] Create `return_request_items` table
+### Pages
+- [x] `ViewJntOrder` (enhanced with sync action header)
 
-**Models:**
-- [ ] Create `ReturnRequest` model
-- [ ] Create `ReturnRequestItem` model
+### Actions
+- [x] `CancelOrderAction` - Cancel order with reason selection
+- [x] `SyncTrackingAction`
 
-**Enums:**
-- [ ] Create `ReturnStatus` enum
-- [ ] Create `ReturnReason` enum
-- [ ] Create `ResolutionType` enum
+### Tables/Infolists
+- [x] `JntOrderTable` - Normalized status badges with icons
+- [x] `JntOrderInfolist` - Normalized status display
+- [x] `JntTrackingEventTable` - Normalized status with filters
 
-**Services:**
-- [ ] Create `ReturnService`
-- [ ] Create `ReturnPolicyService`
-- [ ] Create `CustomerReturnPortal`
-
-**Events:**
-- [ ] Implement `ReturnRequested` event
-- [ ] Implement `ReturnApproved` event
-- [ ] Implement `ReturnReceived` event
-- [ ] Implement `ReturnResolved` event
-
-**Tests:**
-- [ ] Test return eligibility
-- [ ] Test label generation
-- [ ] Test status transitions
-- [ ] Test refund calculation
-
-### Notes
-_No notes yet_
+### Tests
+- [ ] `FilamentResourceTests`
 
 ---
 
-## Phase 7: Filament Dashboard
+## Vision Documents
 
-**Target Duration:** 2 weeks  
-**Status:** 🔴 Not Started  
-**Depends On:** All Previous Phases
-
-### Tasks
-
-**Widgets:**
-- [ ] Create `ShippingOverviewWidget`
-- [ ] Create `CarrierPerformanceWidget`
-- [ ] Create `ExceptionAlertsWidget`
-- [ ] Create `PendingReturnsWidget`
-
-**Resources:**
-- [ ] Create `ShipmentResource`
-- [ ] Create `CarrierResource`
-- [ ] Create `ReturnRequestResource`
-- [ ] Create `ShippingRuleResource`
-
-**Pages:**
-- [ ] Create `RateComparisonPage`
-- [ ] Create `ShipmentCreateWizard`
-
-**Actions:**
-- [ ] Implement bulk label printing
-- [ ] Implement manual tracking update
-- [ ] Implement return approval flow
-
-**Tests:**
-- [ ] Test widget data accuracy
-- [ ] Test resource CRUD
-- [ ] Test action workflows
-
-### Notes
-_No notes yet_
+| Document | Status |
+|----------|--------|
+| [01-executive-summary.md](01-executive-summary.md) | ✅ Revised |
+| [02-enhanced-orders.md](02-enhanced-orders.md) | ✅ New |
+| [03-tracking-status.md](03-tracking-status.md) | ✅ New |
+| [04-notifications.md](04-notifications.md) | ✅ New |
+| [05-implementation-roadmap.md](05-implementation-roadmap.md) | ✅ New |
 
 ---
 
-## Phase 8: Analytics & Reporting
+## Removed from Scope
 
-**Target Duration:** 2 weeks  
-**Status:** 🔴 Not Started  
-**Depends On:** Phase 7
+These features were removed because J&T API does not support them:
 
-### Tasks
-
-**Database:**
-- [ ] Create `carrier_metrics` table
-- [ ] Create `transit_history` table
-
-**Services:**
-- [ ] Create `CarrierMetricsService`
-- [ ] Create `PerformanceReportService`
-- [ ] Create `CostAnalysisService`
-
-**Commands:**
-- [ ] Create `shipping:calculate-metrics` command
-- [ ] Create `shipping:generate-report` command
-
-**Reports:**
-- [ ] Create Carrier Performance Report
-- [ ] Create Delivery Time Analysis
-- [ ] Create Cost per Shipment Report
-- [ ] Create Exception Analysis
-
-**Tests:**
-- [ ] Test metric calculation
-- [ ] Test report generation
-- [ ] Test historical comparisons
-
-### Notes
-_No notes yet_
-
----
-
-## Changelog
-
-| Date | Phase | Change |
-|------|-------|--------|
-| _TBD_ | - | Vision documents created |
+| Feature | Reason |
+|---------|--------|
+| Multi-carrier abstraction | Wrong package scope (J&T only) |
+| Rate shopping engine | No rate/quote API |
+| Carrier selection rules | Single carrier only |
+| Returns/RMA management | No returns API |
+| Address validation | No validation API |
 
 ---
 
 ## Legend
 
-- 🔴 Not Started
-- 🟡 In Progress
-- 🟢 Completed
-- ⏸️ On Hold
-- ❌ Blocked
+| Symbol | Meaning |
+|--------|---------|
+| 🔴 | Not Started |
+| 🟡 | In Progress |
+| 🟢 | Completed |
+
+---
+
+## Notes
+
+### January 3, 2025
+- Phase 2 (Tracking & Status) fully implemented
+- Created TrackingStatus enum with normalized statuses
+- Created JntStatusMapper to map ScanTypeCode to TrackingStatus
+- Created JntTrackingService with full sync functionality
+- Added JntOrderStatusChanged event for status transitions
+- Enhanced JntTrackingEvent model with getNormalizedStatus method
+- Registered new services in JntServiceProvider
+- **Filament Integration Completed:**
+  - Enhanced JntOrderTable with normalized status badges and icons
+  - Enhanced JntOrderInfolist with normalized status display
+  - Enhanced JntTrackingEventTable with normalized status filters
+  - Enhanced JntStatsWidget with 6 stats including returns tracking
+  - Created SyncTrackingAction for manual tracking sync
+  - Added sync action to ViewJntOrder page header
+- Tests pending
+
+### December 5, 2025
+- **Phase 4 (Filament Integration) fully completed**
+  - Created CancelOrderAction with grouped cancellation reasons from CancellationReason enum
+  - Added cancel action to ViewJntOrder page header alongside sync action
+- Vision documents revised to API-constrained scope
+- Package remains J&T only (not multi-carrier)
+- Removed rate shopping, returns, carrier selection (no API support)
+- Focus on enhanced order management, status normalization, app-layer notifications

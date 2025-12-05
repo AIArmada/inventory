@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentJnt\Resources\JntTrackingEventResource\Tables;
 
+use AIArmada\Jnt\Enums\TrackingStatus;
 use AIArmada\Jnt\Models\JntTrackingEvent;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
@@ -35,11 +36,12 @@ final class JntTrackingEventTable
                     ->searchable()
                     ->sortable()
                     ->placeholder('—'),
-                TextColumn::make('scan_type_name')
+                TextColumn::make('scan_type_code')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (JntTrackingEvent $record): string => self::getStatusColor($record->scan_type_code))
-                    ->searchable()
+                    ->icon(fn (JntTrackingEvent $record): string => $record->getNormalizedStatus()->icon())
+                    ->color(fn (JntTrackingEvent $record): string => $record->getNormalizedStatus()->color())
+                    ->formatStateUsing(fn (JntTrackingEvent $record): string => $record->getNormalizedStatus()->label())
                     ->sortable(),
                 TextColumn::make('scan_time')
                     ->label('Scan Time')
@@ -78,18 +80,29 @@ final class JntTrackingEventTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                SelectFilter::make('scan_type_code')
-                    ->label('Status Type')
-                    ->options([
-                        '10' => 'Parcel Pickup',
-                        '20' => 'Outbound Scan',
-                        '30' => 'Arrival',
-                        '94' => 'Delivery Scan',
-                        '100' => 'Parcel Signed',
-                        '110' => 'Problematic',
-                        '172' => 'Return Scan',
-                        '173' => 'Return Sign',
-                    ]),
+                SelectFilter::make('normalized_status')
+                    ->label('Status')
+                    ->options(TrackingStatus::class)
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['value'])) {
+                            return $query;
+                        }
+
+                        $status = TrackingStatus::from($data['value']);
+
+                        return match ($status) {
+                            TrackingStatus::Pending => $query->whereNull('scan_type_code'),
+                            TrackingStatus::Delivered => $query->where('scan_type_code', '100'),
+                            TrackingStatus::Exception => $query->whereNotNull('problem_type'),
+                            TrackingStatus::InTransit => $query->whereIn('scan_type_code', ['20', '30', '401', '402']),
+                            TrackingStatus::AtHub => $query->whereIn('scan_type_code', ['403', '404', '405']),
+                            TrackingStatus::OutForDelivery => $query->where('scan_type_code', '94'),
+                            TrackingStatus::PickedUp => $query->whereIn('scan_type_code', ['10', '400']),
+                            TrackingStatus::ReturnInitiated => $query->where('scan_type_code', '172'),
+                            TrackingStatus::Returned => $query->where('scan_type_code', '173'),
+                            TrackingStatus::DeliveryAttempted => $query->where('scan_type_code', '110'),
+                        };
+                    }),
                 Filter::make('has_problem')
                     ->label('Has Problem')
                     ->toggle()
@@ -107,16 +120,5 @@ final class JntTrackingEventTable
             ->defaultSort('scan_time', 'desc')
             ->paginated([25, 50, 100])
             ->poll(config('filament-jnt.polling_interval', '30s'));
-    }
-
-    private static function getStatusColor(?string $statusCode): string
-    {
-        return match ($statusCode) {
-            '100' => 'success',      // Delivered
-            '10', '20', '30', '94' => 'info',  // In transit
-            '110', '172', '173' => 'warning', // Problem/Return
-            '200', '201', '300', '301', '302', '303', '304', '305', '306' => 'danger', // Terminal
-            default => 'secondary',
-        };
     }
 }

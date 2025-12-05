@@ -1,147 +1,115 @@
-# Executive Summary
+# JNT Vision: Executive Summary
 
-> **Document:** 1 of 9  
+> **Document:** 01 of 05  
 > **Package:** `aiarmada/jnt` + `aiarmada/filament-jnt`  
-> **Status:** Vision
+> **Status:** Vision (API-Constrained)  
+> **Last Updated:** December 5, 2025
 
 ---
 
-## Current State
+## API Boundaries
 
-The JNT package provides a **complete J&T Express Malaysia integration** with:
+This vision is constrained to what the **J&T Express API actually supports**:
 
-- ✅ Order creation (single & batch) with fluent builder
-- ✅ Order cancellation with type-safe reasons
-- ✅ Parcel tracking by order ID or tracking number
-- ✅ Waybill/label printing (PDF URL)
-- ✅ Webhook processing with signature verification
-- ✅ Multi-tenancy support via owner polymorphic
-- ✅ 7 Artisan commands for CLI operations
-- ✅ Filament admin panel (read-only)
+### J&T Express API Capabilities
+- ✅ Orders: Create (single/batch), cancel, query
+- ✅ Tracking: By order ID or tracking number (single/batch)
+- ✅ Waybills: PDF label generation
+- ✅ Webhooks: Tracking status updates
 
-**API Coverage:** All 5 core J&T endpoints implemented
-**Database:** 5 tables (orders, items, parcels, events, webhooks)
+### NOT Available in J&T API
+- ❌ Rate quotes / shipping cost calculation
+- ❌ Multi-carrier abstraction
+- ❌ Returns/RMA management
+- ❌ Address validation
+- ❌ Carrier selection rules
+- ❌ Service level comparison
 
 ---
 
-## Vision Pillars
-
-### 1. Multi-Carrier Abstraction
-
-Transform from single-carrier to **unified shipping platform**:
+## Package Hierarchy
 
 ```
-┌─────────────────────────────────────────────────┐
-│              ShippingManager                     │
-│    (Single API for All Carriers)                │
-├─────────────────────────────────────────────────┤
-│                                                  │
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────┐ │
-│  │  J&T    │ │ PosLaju │ │  DHL    │ │ Ninja │ │
-│  │ Express │ │         │ │ eComm   │ │  Van  │ │
-│  └────┬────┘ └────┬────┘ └────┬────┘ └───┬───┘ │
-│       │           │           │          │      │
-│       └───────────┴─────┬─────┴──────────┘      │
-│                         ▼                        │
-│              CarrierContract                     │
-│   createShipment() | track() | cancel()         │
-│   getLabel() | getRates() | validateAddress()   │
-│                                                  │
-└─────────────────────────────────────────────────┘
+aiarmada/jnt                    ← Core J&T Express SDK
+    └── aiarmada/filament-jnt   ← Filament admin integration
 ```
 
-### 2. Rate Shopping Engine
+---
 
-Compare carriers in real-time:
+## Current State Assessment
 
-- Query multiple carriers simultaneously
-- Display delivery times vs costs
-- Include all surcharges (fuel, remote, residential)
-- Cache rate cards for performance
-- Present optimized recommendations
+### Existing Capabilities
 
-### 3. Intelligent Carrier Selection
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Order Creation | ✅ Complete | Single and batch |
+| Order Cancellation | ✅ Complete | Via API |
+| Order Query | ✅ Complete | Status lookup |
+| Parcel Tracking | ✅ Complete | Single and batch |
+| Waybill Generation | ✅ Complete | PDF labels |
+| Webhook Handling | ✅ Complete | Status updates |
 
-Automated carrier routing:
+### Realistic Gaps (Addressable)
 
-- Rules engine with priority-based conditions
-- Weight/dimension thresholds
-- Zone-based preferences
-- Performance-based scoring
-- Cost vs speed optimization
-
-### 4. Returns & Reverse Logistics
-
-Complete RMA workflow:
-
-- Return authorization generation
-- Customer self-service portal
-- Pickup scheduling for returns
-- Return reason analytics
-- Refund/exchange automation triggers
-
-### 5. Delivery Promise Engine
-
-Accurate customer expectations:
-
-- Transit time calculation
-- Cut-off time awareness
-- Real-time delay adjustments
-- "Arrives by" promises
-- SLA monitoring and alerts
+| Gap | Solution | Priority |
+|-----|----------|----------|
+| Basic tracking UI | Enhanced tracking page | High |
+| No status normalization | Unified status enum | High |
+| Limited notifications | App-layer notifications | Medium |
+| Basic Filament coverage | Enhanced admin tools | Medium |
 
 ---
 
-## Impact Assessment
+## Vision Pillars (API-Constrained)
 
-| Area | Current | Future |
-|------|---------|--------|
-| Carriers | 1 (J&T) | Unlimited |
-| Rate Visibility | None | Real-time comparison |
-| Carrier Selection | Manual | AI-driven automation |
-| Returns | None | Full RMA workflow |
-| Analytics | Basic stats | Comprehensive SLA tracking |
-| Customer Experience | Tracking only | Branded journey |
+### 1. Enhanced Order Management
+Improve order lifecycle with better validation, status sync, and batch operations.
 
----
+### 2. Tracking Normalization
+Unified status mapping and enhanced tracking display.
 
-## Package Scope
+### 3. App-Layer Notifications
+Customer notifications via Laravel events (not J&T API).
 
-### Core Package (`aiarmada/jnt` → `aiarmada/shipping`)
-
-- Multi-carrier abstraction layer
-- Rate shopping engine
-- Carrier selection rules
-- Returns workflow
-- Enhanced tracking
-- Document generation
-
-### Filament Package (`aiarmada/filament-shipping`)
-
-- Rate comparison widget
-- Carrier performance dashboard
-- Shipment creation wizard
-- Return management
-- Analytics & reporting
+### 4. Improved Filament Admin
+Comprehensive admin interface for orders, tracking, and webhooks.
 
 ---
 
-## Document Index
+## Vision Documents
 
-| # | Document | Focus |
-|---|----------|-------|
+| # | Document | Description |
+|---|----------|-------------|
 | 01 | Executive Summary | This document |
-| 02 | Multi-Carrier Abstraction | Unified carrier interface |
-| 03 | Rate Shopping Engine | Real-time rate comparison |
-| 04 | Carrier Selection Rules | Automated routing |
-| 05 | Returns & Reverse Logistics | RMA workflow |
-| 06 | Tracking & Notifications | Enhanced customer experience |
-| 07 | Database Evolution | Schema enhancements |
-| 08 | Filament Enhancements | Admin UI vision |
-| 09 | Implementation Roadmap | Phased delivery plan |
+| 02 | [Enhanced Orders](02-enhanced-orders.md) | Order management improvements |
+| 03 | [Tracking & Status](03-tracking-status.md) | Status normalization |
+| 04 | [Notifications](04-notifications.md) | App-layer notifications |
+| 05 | [Implementation Roadmap](05-implementation-roadmap.md) | Phased delivery |
+
+---
+
+## Key Constraints
+
+1. **J&T Only** - This package handles J&T Express only, not multi-carrier
+2. **No Rate API** - Cannot provide shipping quotes
+3. **No Returns API** - Cannot manage RMA via API
+4. **Package Scope** - Courier integration only
+
+---
+
+## Roadmap Overview
+
+```
+Phase 1: Enhanced Orders (2-3 weeks)
+Phase 2: Tracking & Status (2 weeks)
+Phase 3: Notifications (1-2 weeks)
+Phase 4: Filament (2 weeks)
+```
+
+**Total: 7-9 weeks**
 
 ---
 
 ## Navigation
 
-**Next:** [02-multi-carrier-abstraction.md](02-multi-carrier-abstraction.md)
+**Next:** [02-enhanced-orders.md](02-enhanced-orders.md)

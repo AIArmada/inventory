@@ -7,12 +7,14 @@ namespace AIArmada\Chip;
 use AIArmada\Chip\Clients\ChipCollectClient;
 use AIArmada\Chip\Clients\ChipSendClient;
 use AIArmada\Chip\Commands\ChipHealthCheckCommand;
+use AIArmada\Chip\Commands\ProcessRecurringCommand;
 use AIArmada\Chip\Events\WebhookReceived;
 use AIArmada\Chip\Gateways\ChipGateway;
 use AIArmada\Chip\Http\Middleware\VerifyWebhookSignature;
 use AIArmada\Chip\Listeners\StoreWebhookData;
 use AIArmada\Chip\Services\ChipCollectService;
 use AIArmada\Chip\Services\ChipSendService;
+use AIArmada\Chip\Services\RecurringService;
 use AIArmada\Chip\Services\WebhookService;
 use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
@@ -35,7 +37,10 @@ final class ChipServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->discoversMigrations()
             ->runsMigrations()
-            ->hasCommand(ChipHealthCheckCommand::class);
+            ->hasCommands([
+                ChipHealthCheckCommand::class,
+                ProcessRecurringCommand::class,
+            ]);
     }
 
     public function configureWebhookRoutes(): void
@@ -77,6 +82,7 @@ final class ChipServiceProvider extends PackageServiceProvider
             ChipCollectService::class,
             ChipSendService::class,
             WebhookService::class,
+            RecurringService::class,
             ChipCollectClient::class,
             ChipSendClient::class,
             ChipGateway::class,
@@ -85,6 +91,7 @@ final class ChipServiceProvider extends PackageServiceProvider
             'chip.collect',
             'chip.send',
             'chip.gateway',
+            'chip.recurring',
         ];
     }
 
@@ -131,9 +138,16 @@ final class ChipServiceProvider extends PackageServiceProvider
             return new WebhookService;
         });
 
+        $this->app->singleton(RecurringService::class, function ($app): RecurringService {
+            return new RecurringService(
+                $app->make(ChipCollectService::class)
+            );
+        });
+
         $this->app->alias(ChipCollectService::class, 'chip.collect');
         $this->app->alias(ChipSendService::class, 'chip.send');
         $this->app->alias(WebhookService::class, 'chip.webhook');
+        $this->app->alias(RecurringService::class, 'chip.recurring');
     }
 
     protected function registerClients(): void
