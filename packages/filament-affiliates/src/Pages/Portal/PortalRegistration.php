@@ -11,12 +11,30 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Auth\Register as FilamentRegister;
 use Filament\Schemas\Components\Component;
 use Filament\Schemas\Components\TextInput;
-use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 
 class PortalRegistration extends FilamentRegister
 {
     protected static string $view = 'filament-affiliates::pages.portal.registration';
+
+    protected bool $registrationEnabled;
+
+    protected string $approvalMode;
+
+    public function mount(): void
+    {
+        $this->registrationEnabled = (bool) config('affiliates.registration.enabled', true);
+        $this->approvalMode = (string) config('affiliates.registration.approval_mode', 'admin');
+
+        if (! $this->registrationEnabled) {
+            $this->redirect(filament()->getLoginUrl());
+
+            return;
+        }
+
+        parent::mount();
+    }
 
     /**
      * @return array<int, Component>
@@ -57,12 +75,22 @@ class PortalRegistration extends FilamentRegister
 
     public function register(): ?Model
     {
+        if (! $this->registrationEnabled) {
+            Notification::make()
+                ->title(__('Registration Disabled'))
+                ->body(__('Affiliate registration is currently not available.'))
+                ->danger()
+                ->send();
+
+            return null;
+        }
+
         $data = $this->form->getState();
 
         $user = $this->getUserModel()::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => $data['password'],
+            'password' => Hash::make($data['password']),
         ]);
 
         $this->createAffiliateForUser($user, $data);
@@ -101,13 +129,11 @@ class PortalRegistration extends FilamentRegister
 
     public function getSubheading(): ?string
     {
-        if (! config('affiliates.registration.enabled', true)) {
+        if (! $this->registrationEnabled) {
             return __('Registration is currently closed.');
         }
 
-        $approvalMode = config('affiliates.registration.approval_mode', 'admin');
-
-        return match ($approvalMode) {
+        return match ($this->approvalMode) {
             'auto' => __('Your affiliate account will be automatically activated.'),
             'open' => __('Your account will be created with pending status.'),
             'admin' => __('Your application will be reviewed by an administrator.'),
@@ -115,11 +141,14 @@ class PortalRegistration extends FilamentRegister
         };
     }
 
+    public function isRegistrationEnabled(): bool
+    {
+        return $this->registrationEnabled;
+    }
+
     protected function afterRegister(): void
     {
-        $approvalMode = config('affiliates.registration.approval_mode', 'admin');
-
-        $message = match ($approvalMode) {
+        $message = match ($this->approvalMode) {
             'auto' => __('Your affiliate account has been activated. You can start sharing links!'),
             'open' => __('Your affiliate account has been created. It is currently pending activation.'),
             'admin' => __('Your affiliate application has been submitted. We will notify you once it is reviewed.'),

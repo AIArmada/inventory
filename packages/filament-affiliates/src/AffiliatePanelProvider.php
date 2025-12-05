@@ -40,37 +40,69 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
  */
 class AffiliatePanelProvider extends PanelProvider
 {
+    /**
+     * @var array<string, mixed>|null
+     */
+    protected ?array $portalConfig = null;
+
     public function panel(Panel $panel): Panel
     {
-        $panelId = config('filament-affiliates.portal.panel_id', 'affiliate');
-        $panelPath = config('filament-affiliates.portal.path', 'affiliate');
-        $brandName = config('filament-affiliates.portal.brand_name', 'Affiliate Portal');
+        $config = $this->getPortalConfig();
 
         $panel = $panel
-            ->id($panelId)
-            ->path($panelPath)
-            ->brandName($brandName)
+            ->id($config['panel_id'])
+            ->path($config['path'])
+            ->brandName($config['brand_name'])
             ->colors([
-                'primary' => config('filament-affiliates.portal.primary_color', '#6366f1'),
+                'primary' => $config['primary_color'],
             ])
             ->pages($this->getPages())
             ->middleware($this->getMiddleware())
             ->authMiddleware($this->getAuthMiddleware());
 
-        if ((bool) config('filament-affiliates.portal.login_enabled', true)) {
+        if ($config['login_enabled']) {
             $panel->login();
         }
 
-        if ((bool) config('filament-affiliates.portal.registration_enabled', true)) {
+        if ($config['registration_enabled']) {
             $panel->registration(PortalRegistration::class);
         }
 
-        $guard = config('filament-affiliates.portal.auth_guard', 'web');
-        if ($guard) {
-            $panel->authGuard($guard);
+        if ($config['auth_guard']) {
+            $panel->authGuard($config['auth_guard']);
         }
 
         return $panel;
+    }
+
+    /**
+     * Get portal configuration with defaults.
+     *
+     * @return array<string, mixed>
+     */
+    protected function getPortalConfig(): array
+    {
+        if ($this->portalConfig !== null) {
+            return $this->portalConfig;
+        }
+
+        $this->portalConfig = [
+            'panel_id' => config('filament-affiliates.portal.panel_id', 'affiliate'),
+            'path' => config('filament-affiliates.portal.path', 'affiliate'),
+            'brand_name' => config('filament-affiliates.portal.brand_name', 'Affiliate Portal'),
+            'primary_color' => config('filament-affiliates.portal.primary_color', '#6366f1'),
+            'login_enabled' => (bool) config('filament-affiliates.portal.login_enabled', true),
+            'registration_enabled' => (bool) config('filament-affiliates.portal.registration_enabled', true),
+            'auth_guard' => config('filament-affiliates.portal.auth_guard', 'web'),
+            'features' => config('filament-affiliates.portal.features', [
+                'dashboard' => true,
+                'links' => true,
+                'conversions' => true,
+                'payouts' => true,
+            ]),
+        ];
+
+        return $this->portalConfig;
     }
 
     /**
@@ -79,7 +111,7 @@ class AffiliatePanelProvider extends PanelProvider
     protected function getPages(): array
     {
         $pages = [];
-        $features = config('filament-affiliates.portal.features', []);
+        $features = $this->getPortalConfig()['features'];
 
         if ($features['dashboard'] ?? true) {
             $pages[] = PortalDashboard::class;

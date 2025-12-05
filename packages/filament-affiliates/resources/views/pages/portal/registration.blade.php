@@ -9,7 +9,7 @@
         </x-slot>
     @endif
 
-    @if(!config('affiliates.registration.enabled', true))
+    @if(!$this->isRegistrationEnabled())
         <x-filament::section>
             <div class="text-center py-8">
                 <x-heroicon-o-lock-closed class="mx-auto h-12 w-12 text-gray-400" />

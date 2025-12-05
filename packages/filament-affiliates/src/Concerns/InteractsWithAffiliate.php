@@ -151,12 +151,21 @@ trait InteractsWithAffiliate
 
     /**
      * Format amount for display.
+     *
+     * Uses the affiliate's currency or falls back to the default currency.
+     * Formats with 2 decimal places which is standard for most currencies.
      */
     public function formatAmount(int $amount, ?string $currency = null): string
     {
         $affiliate = $this->getAffiliate();
         $currency = $currency ?? $affiliate?->currency ?? config('affiliates.currency.default', 'USD');
 
-        return $currency.' '.number_format($amount / 100, 2);
+        // Determine decimal places based on currency (most use 2, some use 0)
+        $zeroDecimalCurrencies = ['JPY', 'KRW', 'VND', 'IDR', 'CLP', 'PYG', 'UGX', 'RWF'];
+        $decimals = in_array(strtoupper($currency), $zeroDecimalCurrencies, true) ? 0 : 2;
+
+        $divisor = $decimals === 0 ? 1 : 100;
+
+        return $currency.' '.number_format($amount / $divisor, $decimals);
     }
 }

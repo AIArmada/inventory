@@ -136,9 +136,15 @@ final class AffiliateRegistrationService
      */
     private function generateCode(string $name = ''): string
     {
-        $base = $name !== ''
-            ? Str::upper(Str::substr(Str::slug($name, ''), 0, 6))
+        $slug = Str::slug($name, '');
+        $base = ($slug !== '' && mb_strlen($slug) > 0)
+            ? Str::upper(Str::substr($slug, 0, 6))
             : 'AFF';
+
+        // Ensure base is not empty after all transformations
+        if ($base === '' || mb_strlen($base) === 0) {
+            $base = 'AFF';
+        }
 
         $suffix = Str::upper(Str::random(4));
 

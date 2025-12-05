@@ -11,9 +11,9 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\TextInput;
-use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
+use InvalidArgumentException;
 use Livewire\Attributes\Computed;
 
 class PortalLinks extends Page
@@ -74,7 +74,8 @@ class PortalLinks extends Page
                 $affiliate->code,
                 url('/')
             );
-        } catch (\Exception) {
+        } catch (InvalidArgumentException) {
+            // Fallback to simple URL parameter if link generator fails validation
             $param = config('affiliates.links.parameter', 'aff');
 
             return url('/').'?'.$param.'='.$affiliate->code;
@@ -108,10 +109,10 @@ class PortalLinks extends Page
                 ->title(__('Link generated successfully'))
                 ->success()
                 ->send();
-        } catch (\Exception $e) {
+        } catch (InvalidArgumentException $e) {
             Notification::make()
                 ->title(__('Failed to generate link'))
-                ->body($e->getMessage())
+                ->body(__('The provided URL is invalid or not allowed.'))
                 ->danger()
                 ->send();
         }
