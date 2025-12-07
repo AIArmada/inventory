@@ -32,7 +32,7 @@ final class ApplyGlobalConditions
      */
     public function handleCartCreated(CartCreated $event): void
     {
-        if (! config('filament-cart.enable_global_conditions', true)) {
+        if (! config('filament-cart.features.global_conditions', true)) {
             return;
         }
 
@@ -48,7 +48,7 @@ final class ApplyGlobalConditions
      */
     public function handleItemChanged(ItemAdded|ItemUpdated|ItemRemoved $event): void
     {
-        if (! config('filament-cart.enable_global_conditions', true)) {
+        if (! config('filament-cart.features.global_conditions', true)) {
             return;
         }
 

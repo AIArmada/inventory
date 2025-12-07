@@ -29,6 +29,15 @@ use Throwable;
  * @property int $total
  * @property int $savings
  * @property string $currency
+ * @property \Illuminate\Support\Carbon|null $last_activity_at
+ * @property \Illuminate\Support\Carbon|null $checkout_started_at
+ * @property \Illuminate\Support\Carbon|null $checkout_abandoned_at
+ * @property int $recovery_attempts
+ * @property \Illuminate\Support\Carbon|null $recovered_at
+ * @property bool $is_collaborative
+ * @property int $collaborator_count
+ * @property string|null $fraud_risk_level
+ * @property float|null $fraud_score
  */
 class Cart extends Model
 {
@@ -55,6 +64,15 @@ class Cart extends Model
         'total',
         'savings',
         'currency',
+        'last_activity_at',
+        'checkout_started_at',
+        'checkout_abandoned_at',
+        'recovery_attempts',
+        'recovered_at',
+        'is_collaborative',
+        'collaborator_count',
+        'fraud_risk_level',
+        'fraud_score',
     ];
 
     protected $casts = [
@@ -68,6 +86,14 @@ class Cart extends Model
         'savings' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'last_activity_at' => 'datetime',
+        'checkout_started_at' => 'datetime',
+        'checkout_abandoned_at' => 'datetime',
+        'recovery_attempts' => 'integer',
+        'recovered_at' => 'datetime',
+        'is_collaborative' => 'boolean',
+        'collaborator_count' => 'integer',
+        'fraud_score' => 'float',
     ];
 
     protected $attributes = [
@@ -80,6 +106,9 @@ class Cart extends Model
         'total' => 0,
         'savings' => 0,
         'currency' => 'USD',
+        'recovery_attempts' => 0,
+        'is_collaborative' => false,
+        'collaborator_count' => 0,
     ];
 
     public function getTable(): string
@@ -219,6 +248,109 @@ class Cart extends Model
     protected function withSavings(Builder $query): void
     {
         $query->where('savings', '>', 0);
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function abandoned(Builder $query): void
+    {
+        $query->whereNotNull('checkout_abandoned_at')
+            ->whereNull('recovered_at');
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function recovered(Builder $query): void
+    {
+        $query->whereNotNull('recovered_at');
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function inCheckout(Builder $query): void
+    {
+        $query->whereNotNull('checkout_started_at')
+            ->whereNull('checkout_abandoned_at');
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function collaborative(Builder $query): void
+    {
+        $query->where('is_collaborative', true);
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function highFraudRisk(Builder $query): void
+    {
+        $query->whereIn('fraud_risk_level', ['high', 'medium']);
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     */
+    #[\Illuminate\Database\Eloquent\Attributes\Scope]
+    protected function needsRecovery(Builder $query): void
+    {
+        $query->whereNotNull('checkout_abandoned_at')
+            ->whereNull('recovered_at')
+            ->where('recovery_attempts', '<', 3);
+    }
+
+    /**
+     * Check if cart is abandoned.
+     */
+    public function isAbandoned(): bool
+    {
+        return $this->checkout_abandoned_at !== null && $this->recovered_at === null;
+    }
+
+    /**
+     * Check if cart is in checkout process.
+     */
+    public function isInCheckout(): bool
+    {
+        return $this->checkout_started_at !== null && $this->checkout_abandoned_at === null;
+    }
+
+    /**
+     * Check if cart was recovered.
+     */
+    public function isRecovered(): bool
+    {
+        return $this->recovered_at !== null;
+    }
+
+    /**
+     * Check if cart has fraud risk.
+     */
+    public function hasFraudRisk(): bool
+    {
+        return in_array($this->fraud_risk_level, ['high', 'medium'], true);
+    }
+
+    /**
+     * Get fraud risk color for display.
+     */
+    public function getFraudRiskColor(): string
+    {
+        return match ($this->fraud_risk_level) {
+            'high' => 'danger',
+            'medium' => 'warning',
+            'low' => 'info',
+            default => 'gray',
+        };
     }
 
     /** @return Attribute<string, never> */

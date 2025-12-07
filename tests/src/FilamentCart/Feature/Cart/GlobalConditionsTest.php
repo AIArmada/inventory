@@ -79,7 +79,7 @@ it('re-evaluates rules whenever items are added', function (): void {
 });
 
 it('respects the enable_global_conditions flag', function (): void {
-    config(['filament-cart.enable_global_conditions' => false]);
+    config(['filament-cart.features.global_conditions' => false]);
 
     Condition::factory()->create([
         'name' => 'disabled-tax',
@@ -95,7 +95,7 @@ it('respects the enable_global_conditions flag', function (): void {
 
     expect(CartFacade::getConditions()->has('disabled-tax'))->toBeFalse();
 
-    config(['filament-cart.enable_global_conditions' => true]);
+    config(['filament-cart.features.global_conditions' => true]);
 });
 
 // Multiple Conditions Tests

@@ -35,6 +35,7 @@ final class FilamentCartServiceProvider extends PackageServiceProvider
         $package
             ->name('filament-cart')
             ->hasConfigFile('filament-cart')
+            ->hasViews('filament-cart')
             ->discoversMigrations()
             ->runsMigrations();
     }
