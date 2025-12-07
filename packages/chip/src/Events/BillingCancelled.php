@@ -24,7 +24,7 @@ final class BillingCancelled
      */
     public function __construct(
         public readonly BillingTemplateClientData $billingTemplateClient,
-        public readonly array                     $payload,
+        public readonly array $payload,
     ) {}
 
     /**

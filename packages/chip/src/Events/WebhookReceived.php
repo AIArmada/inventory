@@ -28,10 +28,10 @@ class WebhookReceived
      * @param  array<string, mixed>  $payload
      */
     public function __construct(
-        public readonly string                     $eventType,
-        public readonly array                      $payload,
-        public readonly ?PurchaseData              $purchase = null,
-        public readonly ?PayoutData                $payout = null,
+        public readonly string $eventType,
+        public readonly array $payload,
+        public readonly ?PurchaseData $purchase = null,
+        public readonly ?PayoutData $payout = null,
         public readonly ?BillingTemplateClientData $billingTemplateClient = null,
     ) {}
 

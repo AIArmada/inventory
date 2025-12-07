@@ -26,7 +26,7 @@ abstract class PurchaseEvent
      */
     public function __construct(
         public readonly PurchaseData $purchase,
-        public readonly array        $payload,
+        public readonly array $payload,
     ) {}
 
     /**

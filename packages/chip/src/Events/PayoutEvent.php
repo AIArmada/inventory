@@ -24,7 +24,7 @@ abstract class PayoutEvent
      */
     public function __construct(
         public readonly PayoutData $payout,
-        public readonly array      $payload,
+        public readonly array $payload,
     ) {}
 
     /**
