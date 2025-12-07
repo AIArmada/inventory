@@ -7,6 +7,7 @@ namespace AIArmada\Cart\Blockchain;
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Models\CartItem;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 /**
  * Generates cryptographic proofs for cart state using Merkle trees.
@@ -73,7 +74,7 @@ final class CartProofGenerator
         $itemHash = $itemHashes[$itemId] ?? null;
 
         if (! $itemHash) {
-            throw new \InvalidArgumentException("Item {$itemId} not found in cart");
+            throw new InvalidArgumentException("Item {$itemId} not found in cart");
         }
 
         $proofPath = $this->generateProofPath($itemHash, $itemHashes, $merkleTree);
@@ -126,7 +127,7 @@ final class CartProofGenerator
     /**
      * Build a Merkle tree from leaf hashes.
      *
-     * @param array<string, string> $leafHashes
+     * @param  array<string, string>  $leafHashes
      * @return array<string>
      */
     private function buildMerkleTree(array $leafHashes): array
@@ -150,7 +151,7 @@ final class CartProofGenerator
             for ($i = 0; $i < count($currentLevel); $i += 2) {
                 $left = $currentLevel[$i];
                 $right = $currentLevel[$i + 1] ?? $left;
-                $combined = hash('sha256', $left . $right);
+                $combined = hash('sha256', $left.$right);
                 $nextLevel[] = $combined;
             }
 
@@ -164,8 +165,8 @@ final class CartProofGenerator
     /**
      * Generate proof path for a specific item.
      *
-     * @param array<string, string> $itemHashes
-     * @param array<string> $merkleTree
+     * @param  array<string, string>  $itemHashes
+     * @param  array<string>  $merkleTree
      * @return array<array{hash: string, position: string}>
      */
     private function generateProofPath(string $itemHash, array $itemHashes, array $merkleTree): array
@@ -208,12 +209,12 @@ final class CartProofGenerator
     /**
      * Sign the proof with HMAC.
      *
-     * @param array<string, mixed> $metadata
+     * @param  array<string, mixed>  $metadata
      */
     private function sign(string $rootHash, array $metadata): string
     {
         $key = config('cart.blockchain.signing_key', config('app.key'));
-        $data = $rootHash . json_encode($metadata, JSON_THROW_ON_ERROR);
+        $data = $rootHash.json_encode($metadata, JSON_THROW_ON_ERROR);
 
         return hash_hmac('sha256', $data, $key);
     }

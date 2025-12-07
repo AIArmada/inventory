@@ -6,7 +6,6 @@ namespace AIArmada\Cart\Events\Store;
 
 use AIArmada\Cart\Models\CartEvent;
 use AIArmada\CommerceSupport\Contracts\Events\CartEventInterface;
-use Illuminate\Support\Str;
 
 /**
  * Eloquent implementation of cart event repository.

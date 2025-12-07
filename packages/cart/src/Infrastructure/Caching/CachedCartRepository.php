@@ -31,7 +31,7 @@ final class CachedCartRepository implements StorageInterface
     ) {}
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function withOwner(?Model $owner): static
     {
@@ -75,7 +75,7 @@ final class CachedCartRepository implements StorageInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getInstances(string $identifier): array
     {
@@ -97,7 +97,7 @@ final class CachedCartRepository implements StorageInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getItems(string $identifier, string $instance): array
     {
@@ -109,7 +109,7 @@ final class CachedCartRepository implements StorageInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getConditions(string $identifier, string $instance): array
     {
@@ -121,7 +121,7 @@ final class CachedCartRepository implements StorageInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function putItems(string $identifier, string $instance, array $items): void
     {
@@ -130,7 +130,7 @@ final class CachedCartRepository implements StorageInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function putConditions(string $identifier, string $instance, array $conditions): void
     {
@@ -139,7 +139,7 @@ final class CachedCartRepository implements StorageInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function putBoth(string $identifier, string $instance, array $items, array $conditions): void
     {
@@ -154,7 +154,7 @@ final class CachedCartRepository implements StorageInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function putMetadataBatch(string $identifier, string $instance, array $metadata): void
     {
@@ -172,7 +172,7 @@ final class CachedCartRepository implements StorageInterface
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public function getAllMetadata(string $identifier, string $instance): array
     {
@@ -343,6 +343,19 @@ final class CachedCartRepository implements StorageInterface
         $this->storage->markSnapshotTaken($identifier, $instance);
     }
 
+    /**
+     * Warm the cache for a specific cart.
+     */
+    public function warmCache(string $identifier, string $instance): void
+    {
+        // Pre-fetch commonly accessed data
+        $this->getItems($identifier, $instance);
+        $this->getConditions($identifier, $instance);
+        $this->getAllMetadata($identifier, $instance);
+        $this->getVersion($identifier, $instance);
+        $this->getId($identifier, $instance);
+    }
+
     // =========================================================================
     // Cache Management
     // =========================================================================
@@ -354,10 +367,10 @@ final class CachedCartRepository implements StorageInterface
     {
         $ownerPart = '';
         if ($this->getOwnerType() !== null && $this->getOwnerId() !== null) {
-            $ownerPart = ':' . $this->getOwnerType() . ':' . $this->getOwnerId();
+            $ownerPart = ':'.$this->getOwnerType().':'.$this->getOwnerId();
         }
 
-        return self::CACHE_PREFIX . $identifier . ':' . $instance . $ownerPart . ':' . $property;
+        return self::CACHE_PREFIX.$identifier.':'.$instance.$ownerPart.':'.$property;
     }
 
     /**
@@ -377,18 +390,5 @@ final class CachedCartRepository implements StorageInterface
 
         // Also invalidate instances cache
         $this->cache->forget($this->cacheKey($identifier, '*', 'instances'));
-    }
-
-    /**
-     * Warm the cache for a specific cart.
-     */
-    public function warmCache(string $identifier, string $instance): void
-    {
-        // Pre-fetch commonly accessed data
-        $this->getItems($identifier, $instance);
-        $this->getConditions($identifier, $instance);
-        $this->getAllMetadata($identifier, $instance);
-        $this->getVersion($identifier, $instance);
-        $this->getId($identifier, $instance);
     }
 }

@@ -7,6 +7,7 @@ namespace AIArmada\Cart\Checkout;
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Checkout\Contracts\CheckoutStageInterface;
 use AIArmada\Cart\Checkout\Exceptions\CheckoutException;
+use Throwable;
 
 /**
  * Checkout pipeline orchestrating the multi-stage checkout process.
@@ -94,7 +95,7 @@ final class CheckoutPipeline
                 context: $this->context,
                 completedStages: $this->completedStages,
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->rollback();
 
             if ($e instanceof CheckoutException) {
@@ -110,19 +111,39 @@ final class CheckoutPipeline
     }
 
     /**
+     * Get the list of completed stages.
+     *
+     * @return array<string>
+     */
+    public function getCompletedStages(): array
+    {
+        return $this->completedStages;
+    }
+
+    /**
+     * Get the current context.
+     *
+     * @return array<string, mixed>
+     */
+    public function getContext(): array
+    {
+        return $this->context;
+    }
+
+    /**
      * Execute a single stage.
      */
     private function executeStage(CheckoutStageInterface $stage): void
     {
         $stageName = $stage->getName();
 
-        if (!$stage->shouldExecute($this->cart, $this->context)) {
+        if (! $stage->shouldExecute($this->cart, $this->context)) {
             return;
         }
 
         $result = $stage->execute($this->cart, $this->context);
 
-        if (!$result->success) {
+        if (! $result->success) {
             throw CheckoutException::stageFailed($stageName, $result->message);
         }
 
@@ -144,7 +165,7 @@ final class CheckoutPipeline
             if ($stage !== null && $stage->supportsRollback()) {
                 try {
                     $stage->rollback($this->cart, $this->context);
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     // Log but continue rollback
                 }
             }
@@ -163,25 +184,5 @@ final class CheckoutPipeline
         }
 
         return null;
-    }
-
-    /**
-     * Get the list of completed stages.
-     *
-     * @return array<string>
-     */
-    public function getCompletedStages(): array
-    {
-        return $this->completedStages;
-    }
-
-    /**
-     * Get the current context.
-     *
-     * @return array<string, mixed>
-     */
-    public function getContext(): array
-    {
-        return $this->context;
     }
 }

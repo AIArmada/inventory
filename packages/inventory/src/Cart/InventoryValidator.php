@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Cart;
 
 use AIArmada\Cart\Cart;
-use AIArmada\Cart\Models\CartItem;
 use AIArmada\Cart\Contracts\CartValidationResult;
 use AIArmada\Cart\Contracts\CartValidatorInterface;
+use AIArmada\Cart\Models\CartItem;
 use AIArmada\Inventory\Services\InventoryAllocationService;
 use Illuminate\Database\Eloquent\Model;
 

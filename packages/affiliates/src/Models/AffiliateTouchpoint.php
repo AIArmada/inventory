@@ -55,18 +55,6 @@ class AffiliateTouchpoint extends Model
     }
 
     /**
-     * Get the IP address from the parent attribution.
-     *
-     * @return Attribute<string|null, never>
-     */
-    protected function ipAddress(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->attribution?->ip_address,
-        );
-    }
-
-    /**
      * @return BelongsTo<AffiliateAttribution, $this>
      */
     public function attribution(): BelongsTo
@@ -80,5 +68,17 @@ class AffiliateTouchpoint extends Model
     public function affiliate(): BelongsTo
     {
         return $this->belongsTo(Affiliate::class);
+    }
+
+    /**
+     * Get the IP address from the parent attribution.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function ipAddress(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->attribution?->ip_address,
+        );
     }
 }

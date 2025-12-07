@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\CommerceSupport\Contracts\Events;
 
+use DateTimeImmutable;
+
 /**
  * Base interface for all commerce-related events.
  *
@@ -32,9 +34,9 @@ interface CommerceEventInterface
     /**
      * Get the timestamp when the event occurred.
      *
-     * @return \DateTimeImmutable When the event was created
+     * @return DateTimeImmutable When the event was created
      */
-    public function getOccurredAt(): \DateTimeImmutable;
+    public function getOccurredAt(): DateTimeImmutable;
 
     /**
      * Get the event payload as an array.

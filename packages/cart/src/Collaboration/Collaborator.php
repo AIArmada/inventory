@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Cart\Collaboration;
 
+use DateTimeImmutable;
 use DateTimeInterface;
 
 /**
@@ -32,7 +33,7 @@ final readonly class Collaborator
             email: $data['email'] ?? null,
             role: $data['role'] ?? 'viewer',
             status: $data['status'] ?? 'pending',
-            joinedAt: isset($data['joined_at']) ? new \DateTime($data['joined_at']) : null,
+            joinedAt: isset($data['joined_at']) ? new DateTimeImmutable($data['joined_at']) : null,
             invitationToken: $data['invitation_token'] ?? null
         );
     }

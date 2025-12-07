@@ -14,7 +14,6 @@ final readonly class OptimizationResult
     /**
      * @param  int  $strategiesAnalyzed  Number of strategies analyzed
      * @param  array<array{strategy: string, action: string, reason: string}>  $improvementsApplied
-     * @param  DateTimeInterface  $optimizedAt
      */
     public function __construct(
         public int $strategiesAnalyzed,

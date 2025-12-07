@@ -189,7 +189,7 @@ class Shipment extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (Shipment $shipment) {
+        static::creating(function (Shipment $shipment): void {
             if (empty($shipment->ulid)) {
                 $shipment->ulid = (string) Str::ulid();
             }

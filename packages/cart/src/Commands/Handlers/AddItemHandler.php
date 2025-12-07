@@ -22,6 +22,14 @@ final class AddItemHandler
     ) {}
 
     /**
+     * Handle the command via __invoke for Laravel's command bus.
+     */
+    public function __invoke(AddItemCommand $command): CartItem
+    {
+        return $this->handle($command);
+    }
+
+    /**
      * Handle the add item command.
      *
      * @return CartItem The added or updated cart item
@@ -41,13 +49,5 @@ final class AddItemHandler
             attributes: $command->attributes,
             associatedModel: $command->associatedModel,
         );
-    }
-
-    /**
-     * Handle the command via __invoke for Laravel's command bus.
-     */
-    public function __invoke(AddItemCommand $command): CartItem
-    {
-        return $this->handle($command);
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Cart\AI;
 
+use DateTimeInterface;
+
 /**
  * Represents a cart recovery strategy.
  */
@@ -37,7 +39,7 @@ final readonly class RecoveryStrategy
     /**
      * Get the scheduled execution time.
      */
-    public function getScheduledTime(): \DateTimeInterface
+    public function getScheduledTime(): DateTimeInterface
     {
         return now()->addMinutes($this->delayMinutes);
     }

@@ -12,9 +12,7 @@ use AIArmada\Shipping\Services\FreeShippingResult;
 // Stub class for testing since Cart is final
 class CartStub
 {
-    public function __construct(private int $subtotal = 0)
-    {
-    }
+    public function __construct(private int $subtotal = 0) {}
 
     public function getSubtotal(): int
     {

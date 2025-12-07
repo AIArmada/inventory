@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
+use Throwable;
 
 /**
  * Job to execute a cart recovery intervention.
@@ -95,7 +96,7 @@ final class ExecuteRecoveryIntervention implements ShouldQueue
                 'type' => $type,
                 'result' => $result,
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to execute recovery intervention', [
                 'cart_id' => $this->cartId,
                 'strategy_id' => $this->strategyId,
@@ -104,6 +105,16 @@ final class ExecuteRecoveryIntervention implements ShouldQueue
 
             throw $e;
         }
+    }
+
+    /**
+     * Get job tags.
+     *
+     * @return array<string>
+     */
+    public function tags(): array
+    {
+        return ['cart-recovery', "cart:{$this->cartId}", "strategy:{$this->strategyId}"];
     }
 
     /**
@@ -297,15 +308,5 @@ final class ExecuteRecoveryIntervention implements ShouldQueue
         $url = $this->generateRecoveryUrl($cartRecord);
 
         return "{$appName}: Your cart ({$total}) is waiting! Complete your order: {$url}";
-    }
-
-    /**
-     * Get job tags.
-     *
-     * @return array<string>
-     */
-    public function tags(): array
-    {
-        return ['cart-recovery', "cart:{$this->cartId}", "strategy:{$this->strategyId}"];
     }
 }

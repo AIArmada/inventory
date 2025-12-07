@@ -6,6 +6,7 @@ namespace AIArmada\Cart\Collaboration;
 
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 /**
  * Manages cart collaborators and invitations.
@@ -84,7 +85,7 @@ final class CollaboratorManager
     public function updateRole(string $cartId, string $userId, string $newRole): bool
     {
         if (! in_array($newRole, ['viewer', 'editor', 'admin'], true)) {
-            throw new \InvalidArgumentException("Invalid role: {$newRole}");
+            throw new InvalidArgumentException("Invalid role: {$newRole}");
         }
 
         return true;

@@ -17,6 +17,14 @@ final class ClearCartHandler
     ) {}
 
     /**
+     * Handle the command via __invoke for Laravel's command bus.
+     */
+    public function __invoke(ClearCartCommand $command): void
+    {
+        $this->handle($command);
+    }
+
+    /**
      * Handle the clear cart command.
      */
     public function handle(ClearCartCommand $command): void
@@ -27,13 +35,5 @@ final class ClearCartHandler
             ->getCurrentCart();
 
         $cart->clear();
-    }
-
-    /**
-     * Handle the command via __invoke for Laravel's command bus.
-     */
-    public function __invoke(ClearCartCommand $command): void
-    {
-        $this->handle($command);
     }
 }

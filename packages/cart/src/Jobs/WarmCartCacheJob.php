@@ -13,6 +13,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Job to warm cart cache proactively.
@@ -55,7 +56,7 @@ final class WarmCartCacheJob implements ShouldQueue
                     'owner_type' => $this->ownerType,
                     'owner_id' => $this->ownerId,
                 ]);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::warning('Failed to warm cart cache', [
                     'identifier' => $this->identifier,
                     'instance' => $instance,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Cart\Collaboration;
 
+use DateTimeImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
@@ -251,7 +252,7 @@ final class CartCRDT
 
         foreach ($existingOperations as $existing) {
             if ($existing['item_id'] === $operation->itemId) {
-                $existingTime = new \DateTime($existing['timestamp']);
+                $existingTime = new DateTimeImmutable($existing['timestamp']);
 
                 if ($existingTime > $latestTimestamp) {
                     return false;

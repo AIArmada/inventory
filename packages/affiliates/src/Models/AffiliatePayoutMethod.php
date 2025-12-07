@@ -54,27 +54,6 @@ class AffiliatePayoutMethod extends Model
     }
 
     /**
-     * Get a human-readable label for this payout method.
-     *
-     * @return Attribute<string, never>
-     */
-    protected function label(): Attribute
-    {
-        return Attribute::make(
-            get: function (): string {
-                $details = $this->details ?? [];
-
-                return match ($this->type) {
-                    PayoutMethodType::BankTransfer => $details['bank_name'] ?? 'Bank Transfer',
-                    PayoutMethodType::PayPal => $details['email'] ?? 'PayPal',
-                    PayoutMethodType::StripeConnect => 'Stripe Connect',
-                    default => $this->type?->value ?? 'Unknown',
-                };
-            },
-        );
-    }
-
-    /**
      * @return BelongsTo<Affiliate, $this>
      */
     public function affiliate(): BelongsTo
@@ -123,6 +102,27 @@ class AffiliatePayoutMethod extends Model
             ],
             default => [],
         };
+    }
+
+    /**
+     * Get a human-readable label for this payout method.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function label(): Attribute
+    {
+        return Attribute::make(
+            get: function (): string {
+                $details = $this->details ?? [];
+
+                return match ($this->type) {
+                    PayoutMethodType::BankTransfer => $details['bank_name'] ?? 'Bank Transfer',
+                    PayoutMethodType::PayPal => $details['email'] ?? 'PayPal',
+                    PayoutMethodType::StripeConnect => 'Stripe Connect',
+                    default => $this->type?->value ?? 'Unknown',
+                };
+            },
+        );
     }
 
     private function maskEmail(string $email): string

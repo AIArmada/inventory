@@ -66,8 +66,6 @@ final class FraudDetectionEngine
 
     /**
      * Analyze a cart for fraud signals.
-     *
-     * @return FraudAnalysisResult
      */
     public function analyze(Cart $cart, ?string $userId = null, ?string $ipAddress = null): FraudAnalysisResult
     {

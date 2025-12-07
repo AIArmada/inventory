@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use AIArmada\Shipping\Data\RateQuoteData;
+use AIArmada\Shipping\Strategies\BalancedRateStrategy;
 use AIArmada\Shipping\Strategies\CheapestRateStrategy;
 use AIArmada\Shipping\Strategies\FastestRateStrategy;
 use AIArmada\Shipping\Strategies\PreferredCarrierStrategy;
-use AIArmada\Shipping\Strategies\BalancedRateStrategy;
 
 // ============================================
 // CheapestRateStrategy Tests

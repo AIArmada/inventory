@@ -119,16 +119,16 @@ class JntServiceProvider extends PackageServiceProvider
         $this->app->alias(JntExpressService::class, 'jnt-express');
 
         // Register webhook service
-        $this->app->singleton(WebhookService::class, fn(Application $app): WebhookService => new WebhookService(
+        $this->app->singleton(WebhookService::class, fn (Application $app): WebhookService => new WebhookService(
             privateKey: $app['config']['jnt']['private_key']
         ));
 
         // Register status mapper service
-        $this->app->singleton(JntStatusMapper::class, fn(): JntStatusMapper => new JntStatusMapper);
+        $this->app->singleton(JntStatusMapper::class, fn (): JntStatusMapper => new JntStatusMapper);
         $this->app->alias(JntStatusMapper::class, 'jnt.status-mapper');
 
         // Register tracking service
-        $this->app->singleton(JntTrackingService::class, fn(Application $app): JntTrackingService => new JntTrackingService(
+        $this->app->singleton(JntTrackingService::class, fn (Application $app): JntTrackingService => new JntTrackingService(
             expressService: $app->make(JntExpressService::class),
             statusMapper: $app->make(JntStatusMapper::class),
         ));
@@ -143,7 +143,7 @@ class JntServiceProvider extends PackageServiceProvider
         // Register shipping calculator
         $this->app->singleton(
             JntShippingCalculator::class,
-            fn(Application $app): JntShippingCalculator => new JntShippingCalculator(
+            fn (Application $app): JntShippingCalculator => new JntShippingCalculator(
                 $app->make(JntExpressService::class)
             )
         );
@@ -151,7 +151,7 @@ class JntServiceProvider extends PackageServiceProvider
         // Register shipping condition provider
         $this->app->singleton(
             JntShippingConditionProvider::class,
-            fn(Application $app): JntShippingConditionProvider => new JntShippingConditionProvider(
+            fn (Application $app): JntShippingConditionProvider => new JntShippingConditionProvider(
                 $app->make(JntExpressService::class),
                 $app->make(JntShippingCalculator::class)
             )
@@ -163,7 +163,7 @@ class JntServiceProvider extends PackageServiceProvider
         // Register JNT shipping driver
         $this->app->singleton(
             JntShippingDriver::class,
-            fn(Application $app): JntShippingDriver => new JntShippingDriver(
+            fn (Application $app): JntShippingDriver => new JntShippingDriver(
                 $app->make(JntExpressService::class),
                 $app->make(JntTrackingService::class),
                 $app->make(JntStatusMapper::class),
@@ -197,13 +197,13 @@ class JntServiceProvider extends PackageServiceProvider
     protected function registerShippingDriver(): void
     {
         // Only register if the shipping package is installed
-        if (!class_exists(ShippingManager::class)) {
+        if (! class_exists(ShippingManager::class)) {
             return;
         }
 
         /** @var ShippingManager $shippingManager */
         $shippingManager = $this->app->make(ShippingManager::class);
 
-        $shippingManager->extend('jnt', fn(Application $app): JntShippingDriver => $app->make(JntShippingDriver::class));
+        $shippingManager->extend('jnt', fn (Application $app): JntShippingDriver => $app->make(JntShippingDriver::class));
     }
 }

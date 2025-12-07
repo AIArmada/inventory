@@ -71,6 +71,30 @@ class AffiliatePayout extends Model
     }
 
     /**
+     * @return HasMany<AffiliateConversion, self>
+     */
+    public function conversions(): HasMany
+    {
+        return $this->hasMany(AffiliateConversion::class, 'affiliate_payout_id');
+    }
+
+    /**
+     * @return HasMany<AffiliatePayoutEvent, self>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(AffiliatePayoutEvent::class, 'affiliate_payout_id')->latest();
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $payout): void {
+            $payout->events()->delete();
+            $payout->conversions()->update(['affiliate_payout_id' => null]);
+        });
+    }
+
+    /**
      * Get the affiliate (alias for owner when owner is an Affiliate).
      *
      * @return Attribute<Affiliate|null, never>
@@ -116,29 +140,5 @@ class AffiliatePayout extends Model
         return Attribute::make(
             get: fn () => $this->metadata['notes'] ?? null,
         );
-    }
-
-    /**
-     * @return HasMany<AffiliateConversion, self>
-     */
-    public function conversions(): HasMany
-    {
-        return $this->hasMany(AffiliateConversion::class, 'affiliate_payout_id');
-    }
-
-    /**
-     * @return HasMany<AffiliatePayoutEvent, self>
-     */
-    public function events(): HasMany
-    {
-        return $this->hasMany(AffiliatePayoutEvent::class, 'affiliate_payout_id')->latest();
-    }
-
-    protected static function booted(): void
-    {
-        static::deleting(function (self $payout): void {
-            $payout->events()->delete();
-            $payout->conversions()->update(['affiliate_payout_id' => null]);
-        });
     }
 }

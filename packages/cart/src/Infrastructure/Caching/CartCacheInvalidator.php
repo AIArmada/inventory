@@ -40,16 +40,16 @@ final class CartCacheInvalidator
     {
         $ownerPart = '';
         if ($ownerType !== null && $ownerId !== null) {
-            $ownerPart = ':' . $ownerType . ':' . $ownerId;
+            $ownerPart = ':'.$ownerType.':'.$ownerId;
         }
 
         foreach (self::CACHE_KEYS as $key) {
-            $cacheKey = self::CACHE_PREFIX . $identifier . ':' . $instance . $ownerPart . ':' . $key;
+            $cacheKey = self::CACHE_PREFIX.$identifier.':'.$instance.$ownerPart.':'.$key;
             $this->cache->forget($cacheKey);
         }
 
         // Also invalidate instances cache
-        $this->cache->forget(self::CACHE_PREFIX . $identifier . ':*' . $ownerPart . ':instances');
+        $this->cache->forget(self::CACHE_PREFIX.$identifier.':*'.$ownerPart.':instances');
 
         Log::debug('Cart cache invalidated', [
             'identifier' => $identifier,
@@ -68,11 +68,11 @@ final class CartCacheInvalidator
     {
         $ownerPart = '';
         if ($ownerType !== null && $ownerId !== null) {
-            $ownerPart = ':' . $ownerType . ':' . $ownerId;
+            $ownerPart = ':'.$ownerType.':'.$ownerId;
         }
 
         foreach ($keys as $key) {
-            $cacheKey = self::CACHE_PREFIX . $identifier . ':' . $instance . $ownerPart . ':' . $key;
+            $cacheKey = self::CACHE_PREFIX.$identifier.':'.$instance.$ownerPart.':'.$key;
             $this->cache->forget($cacheKey);
         }
     }
@@ -91,10 +91,10 @@ final class CartCacheInvalidator
         // Invalidate the instances list itself
         $ownerPart = '';
         if ($ownerType !== null && $ownerId !== null) {
-            $ownerPart = ':' . $ownerType . ':' . $ownerId;
+            $ownerPart = ':'.$ownerType.':'.$ownerId;
         }
 
-        $this->cache->forget(self::CACHE_PREFIX . $identifier . ':*' . $ownerPart . ':instances');
+        $this->cache->forget(self::CACHE_PREFIX.$identifier.':*'.$ownerPart.':instances');
     }
 
     /**

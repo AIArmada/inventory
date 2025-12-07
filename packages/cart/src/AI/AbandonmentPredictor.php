@@ -6,6 +6,7 @@ namespace AIArmada\Cart\AI;
 
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Storage\StorageInterface;
+use DateTimeImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -183,6 +184,18 @@ final class AbandonmentPredictor
     }
 
     /**
+     * Load weights from cache/storage.
+     */
+    public function loadWeights(): void
+    {
+        $savedWeights = Cache::get('cart:abandonment_model:weights');
+
+        if ($savedWeights && is_array($savedWeights)) {
+            $this->featureWeights = array_merge($this->featureWeights, $savedWeights);
+        }
+    }
+
+    /**
      * Calculate prediction for a cart.
      */
     private function calculatePrediction(Cart $cart, ?string $userId): AbandonmentPrediction
@@ -213,7 +226,7 @@ final class AbandonmentPredictor
 
         if ($this->storage) {
             $lastActivityStr = $this->storage->getLastActivityAt($cart->getIdentifier(), $cart->instance());
-            $lastActivity = $lastActivityStr ? new \DateTime($lastActivityStr) : null;
+            $lastActivity = $lastActivityStr ? new DateTimeImmutable($lastActivityStr) : null;
         }
 
         $minutesSinceActivity = $lastActivity
@@ -364,7 +377,7 @@ final class AbandonmentPredictor
                 ->selectRaw('SUM(CASE WHEN checkout_abandoned_at IS NOT NULL THEN 1 ELSE 0 END) as abandoned')
                 ->first();
 
-            if (! $stats || $stats->total == 0) {
+            if (! $stats || $stats->total === 0) {
                 return 0.5;
             }
 
@@ -477,17 +490,5 @@ final class AbandonmentPredictor
     private function saveWeights(): void
     {
         Cache::put('cart:abandonment_model:weights', $this->featureWeights, 86400 * 30);
-    }
-
-    /**
-     * Load weights from cache/storage.
-     */
-    public function loadWeights(): void
-    {
-        $savedWeights = Cache::get('cart:abandonment_model:weights');
-
-        if ($savedWeights && is_array($savedWeights)) {
-            $this->featureWeights = array_merge($this->featureWeights, $savedWeights);
-        }
     }
 }

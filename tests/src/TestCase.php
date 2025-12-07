@@ -22,7 +22,7 @@ abstract class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(function (string $modelName) {
-            return Str::replace('Models', 'Database\\Factories', $modelName) . 'Factory';
+            return Str::replace('Models', 'Database\\Factories', $modelName).'Factory';
         });
 
         // Start session for Livewire/Filament tests
@@ -83,7 +83,7 @@ abstract class TestCase extends Orchestra
     protected function defineEnvironment($app): void
     {
         // Setup the test environment
-        $app['config']->set('app.key', 'base64:' . base64_encode(random_bytes(32)));
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('app.env', 'testing');
         $app['config']->set('database.default', 'testing');
 
@@ -176,10 +176,10 @@ abstract class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../../packages/chip/database/migrations');
-        $this->loadMigrationsFrom(__DIR__ . '/../../packages/vouchers/database/migrations');
-        $this->loadMigrationsFrom(__DIR__ . '/../../vendor/spatie/laravel-permission/database/migrations');
-        $this->loadMigrationsFrom(__DIR__ . '/../../packages/affiliates/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../packages/chip/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../packages/vouchers/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../vendor/spatie/laravel-permission/database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../packages/affiliates/database/migrations');
     }
 
     protected function setUpDatabase(): void

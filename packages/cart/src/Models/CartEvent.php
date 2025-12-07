@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Cart\Models;
 
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -98,6 +99,14 @@ class CartEvent extends Model
     }
 
     /**
+     * Boot the model.
+     */
+    protected static function booted(): void
+    {
+        // No cascade deletes needed - cart_events are immutable audit logs
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -154,7 +163,7 @@ class CartEvent extends Model
      * @param  Builder<self>  $query
      */
     #[\Illuminate\Database\Eloquent\Attributes\Scope]
-    protected function occurredBetween(Builder $query, \DateTimeInterface $start, \DateTimeInterface $end): void
+    protected function occurredBetween(Builder $query, DateTimeInterface $start, DateTimeInterface $end): void
     {
         $query->whereBetween('occurred_at', [$start, $end]);
     }
@@ -168,13 +177,5 @@ class CartEvent extends Model
     protected function orderedForReplay(Builder $query): void
     {
         $query->orderBy('stream_position', 'asc');
-    }
-
-    /**
-     * Boot the model.
-     */
-    protected static function booted(): void
-    {
-        // No cascade deletes needed - cart_events are immutable audit logs
     }
 }

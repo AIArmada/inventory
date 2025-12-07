@@ -7,10 +7,14 @@ namespace AIArmada\Cart\Collaboration;
 use AIArmada\Cart\Broadcasting\CartChannel;
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\CartManager;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Shared cart implementation for collaborative shopping.
@@ -34,7 +38,7 @@ final class SharedCart
 
     private ?string $shareToken = null;
 
-    private ?\DateTimeInterface $shareExpiresAt = null;
+    private ?DateTimeInterface $shareExpiresAt = null;
 
     public function __construct(
         private readonly CartManager $cartManager,
@@ -374,7 +378,7 @@ final class SharedCart
         $this->ensureCollaborative();
 
         if (! in_array($mode, ['view', 'edit'], true)) {
-            throw new \InvalidArgumentException("Invalid collaboration mode: {$mode}");
+            throw new InvalidArgumentException("Invalid collaboration mode: {$mode}");
         }
 
         $this->collaborationMode = $mode;
@@ -389,7 +393,7 @@ final class SharedCart
     private function ensureCollaborative(): void
     {
         if (! $this->isCollaborative) {
-            throw new \RuntimeException('Cart is not collaborative');
+            throw new RuntimeException('Cart is not collaborative');
         }
     }
 
@@ -399,7 +403,7 @@ final class SharedCart
     private function ensureCanEdit(string $userId): void
     {
         if (! $this->hasCollaborator($userId)) {
-            throw new \RuntimeException('User is not a collaborator');
+            throw new RuntimeException('User is not a collaborator');
         }
 
         if ($this->isOwner($userId)) {
@@ -409,7 +413,7 @@ final class SharedCart
         foreach ($this->collaborators as $collaborator) {
             if ($collaborator->userId === $userId) {
                 if ($collaborator->role === 'viewer') {
-                    throw new \RuntimeException('User does not have edit permissions');
+                    throw new RuntimeException('User does not have edit permissions');
                 }
 
                 return;
@@ -428,7 +432,7 @@ final class SharedCart
             ->value('max_collaborators') ?? 5;
 
         if (count($this->collaborators) >= $maxCollaborators) {
-            throw new \RuntimeException("Maximum collaborators ({$maxCollaborators}) reached");
+            throw new RuntimeException("Maximum collaborators ({$maxCollaborators}) reached");
         }
     }
 
@@ -450,7 +454,7 @@ final class SharedCart
         $this->ownerUserId = $record->owner_user_id ?? null;
         $this->collaborationMode = $record->collaboration_mode ?? 'edit';
         $this->shareToken = $record->share_token ?? null;
-        $this->shareExpiresAt = $record->share_expires_at ? new \DateTime($record->share_expires_at) : null;
+        $this->shareExpiresAt = $record->share_expires_at ? new DateTimeImmutable($record->share_expires_at) : null;
 
         $collaboratorsJson = $record->collaborators ?? '[]';
         $collaboratorsData = json_decode($collaboratorsJson, true) ?: [];

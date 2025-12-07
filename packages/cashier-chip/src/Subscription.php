@@ -47,7 +47,7 @@ use LogicException;
  * @property \Illuminate\Support\Carbon|null $coupon_applied_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Model $owner
+ * @property-read Model $owner
  * @property-read \Illuminate\Database\Eloquent\Collection<int, SubscriptionItem> $items
  */
 class Subscription extends Model

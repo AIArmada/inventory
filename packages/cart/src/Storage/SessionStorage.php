@@ -363,6 +363,210 @@ final readonly class SessionStorage implements StorageInterface
         return is_string($timestamp) ? $timestamp : null;
     }
 
+    // =========================================================================
+    // AI & Analytics Methods (Phase 0.2) - Stub implementations for session storage
+    // =========================================================================
+
+    /**
+     * Get cart expiration timestamp.
+     */
+    public function getExpiresAt(string $identifier, string $instance): ?string
+    {
+        $timestamp = $this->session->get($this->getExpiresAtKey($identifier, $instance));
+
+        return is_string($timestamp) ? $timestamp : null;
+    }
+
+    /**
+     * Check if a cart has expired.
+     */
+    public function isExpired(string $identifier, string $instance): bool
+    {
+        $expiresAt = $this->getExpiresAt($identifier, $instance);
+
+        if ($expiresAt === null) {
+            return false;
+        }
+
+        return now()->isAfter($expiresAt);
+    }
+
+    /**
+     * Get last activity timestamp for engagement tracking.
+     */
+    public function getLastActivityAt(string $identifier, string $instance): ?string
+    {
+        $timestamp = $this->session->get($this->getLastActivityAtKey($identifier, $instance));
+
+        return is_string($timestamp) ? $timestamp : null;
+    }
+
+    /**
+     * Update last activity timestamp.
+     */
+    public function touchLastActivity(string $identifier, string $instance): void
+    {
+        $this->session->put(
+            $this->getLastActivityAtKey($identifier, $instance),
+            now()->toDateTimeString()
+        );
+    }
+
+    /**
+     * Get checkout started timestamp.
+     */
+    public function getCheckoutStartedAt(string $identifier, string $instance): ?string
+    {
+        $timestamp = $this->session->get($this->getCheckoutStartedAtKey($identifier, $instance));
+
+        return is_string($timestamp) ? $timestamp : null;
+    }
+
+    /**
+     * Mark checkout as started for conversion funnel tracking.
+     */
+    public function markCheckoutStarted(string $identifier, string $instance): void
+    {
+        $this->session->put(
+            $this->getCheckoutStartedAtKey($identifier, $instance),
+            now()->toDateTimeString()
+        );
+    }
+
+    /**
+     * Get checkout abandoned timestamp.
+     */
+    public function getCheckoutAbandonedAt(string $identifier, string $instance): ?string
+    {
+        $timestamp = $this->session->get($this->getCheckoutAbandonedAtKey($identifier, $instance));
+
+        return is_string($timestamp) ? $timestamp : null;
+    }
+
+    /**
+     * Mark checkout as abandoned for recovery tracking.
+     */
+    public function markCheckoutAbandoned(string $identifier, string $instance): void
+    {
+        $this->session->put(
+            $this->getCheckoutAbandonedAtKey($identifier, $instance),
+            now()->toDateTimeString()
+        );
+    }
+
+    /**
+     * Get number of recovery attempts made.
+     */
+    public function getRecoveryAttempts(string $identifier, string $instance): int
+    {
+        $attempts = $this->session->get($this->getRecoveryAttemptsKey($identifier, $instance));
+
+        return $attempts !== null ? (int) $attempts : 0;
+    }
+
+    /**
+     * Increment recovery attempts counter.
+     */
+    public function incrementRecoveryAttempts(string $identifier, string $instance): void
+    {
+        $key = $this->getRecoveryAttemptsKey($identifier, $instance);
+        $current = $this->getRecoveryAttempts($identifier, $instance);
+        $this->session->put($key, $current + 1);
+    }
+
+    /**
+     * Get recovered at timestamp.
+     */
+    public function getRecoveredAt(string $identifier, string $instance): ?string
+    {
+        $timestamp = $this->session->get($this->getRecoveredAtKey($identifier, $instance));
+
+        return is_string($timestamp) ? $timestamp : null;
+    }
+
+    /**
+     * Mark cart as recovered (user returned after abandonment).
+     */
+    public function markRecovered(string $identifier, string $instance): void
+    {
+        $this->session->put(
+            $this->getRecoveredAtKey($identifier, $instance),
+            now()->toDateTimeString()
+        );
+    }
+
+    /**
+     * Clear all abandonment tracking data (checkout started, abandoned, recovery).
+     */
+    public function clearAbandonmentTracking(string $identifier, string $instance): void
+    {
+        $this->session->forget($this->getCheckoutStartedAtKey($identifier, $instance));
+        $this->session->forget($this->getCheckoutAbandonedAtKey($identifier, $instance));
+        $this->session->forget($this->getRecoveryAttemptsKey($identifier, $instance));
+        $this->session->forget($this->getRecoveredAtKey($identifier, $instance));
+    }
+
+    // =========================================================================
+    // Event Sourcing Methods (Phase 0.3) - Stub implementations for session storage
+    // =========================================================================
+
+    /**
+     * Get current event stream position for replay.
+     */
+    public function getEventStreamPosition(string $identifier, string $instance): int
+    {
+        $position = $this->session->get($this->getEventStreamPositionKey($identifier, $instance));
+
+        return $position !== null ? (int) $position : 0;
+    }
+
+    /**
+     * Update event stream position after recording events.
+     */
+    public function setEventStreamPosition(string $identifier, string $instance, int $position): void
+    {
+        $this->session->put($this->getEventStreamPositionKey($identifier, $instance), $position);
+    }
+
+    /**
+     * Get aggregate schema version for migrations.
+     */
+    public function getAggregateVersion(string $identifier, string $instance): string
+    {
+        $version = $this->session->get($this->getAggregateVersionKey($identifier, $instance));
+
+        return is_string($version) ? $version : '1.0';
+    }
+
+    /**
+     * Update aggregate schema version.
+     */
+    public function setAggregateVersion(string $identifier, string $instance, string $version): void
+    {
+        $this->session->put($this->getAggregateVersionKey($identifier, $instance), $version);
+    }
+
+    /**
+     * Get last snapshot timestamp.
+     */
+    public function getSnapshotAt(string $identifier, string $instance): ?string
+    {
+        $timestamp = $this->session->get($this->getSnapshotAtKey($identifier, $instance));
+
+        return is_string($timestamp) ? $timestamp : null;
+    }
+
+    /**
+     * Update snapshot timestamp after taking a snapshot.
+     */
+    public function markSnapshotTaken(string $identifier, string $instance): void
+    {
+        $this->session->put(
+            $this->getSnapshotAtKey($identifier, $instance),
+            now()->toDateTimeString()
+        );
+    }
+
     /**
      * Get the base key prefix including owner scope when set
      */
@@ -609,210 +813,6 @@ final readonly class SessionStorage implements StorageInterface
     private function getMetadataKey(string $identifier, string $instance, string $key): string
     {
         return "{$this->getBasePrefix()}.{$identifier}.{$instance}.metadata.{$key}";
-    }
-
-    // =========================================================================
-    // AI & Analytics Methods (Phase 0.2) - Stub implementations for session storage
-    // =========================================================================
-
-    /**
-     * Get cart expiration timestamp.
-     */
-    public function getExpiresAt(string $identifier, string $instance): ?string
-    {
-        $timestamp = $this->session->get($this->getExpiresAtKey($identifier, $instance));
-
-        return is_string($timestamp) ? $timestamp : null;
-    }
-
-    /**
-     * Check if a cart has expired.
-     */
-    public function isExpired(string $identifier, string $instance): bool
-    {
-        $expiresAt = $this->getExpiresAt($identifier, $instance);
-
-        if ($expiresAt === null) {
-            return false;
-        }
-
-        return now()->isAfter($expiresAt);
-    }
-
-    /**
-     * Get last activity timestamp for engagement tracking.
-     */
-    public function getLastActivityAt(string $identifier, string $instance): ?string
-    {
-        $timestamp = $this->session->get($this->getLastActivityAtKey($identifier, $instance));
-
-        return is_string($timestamp) ? $timestamp : null;
-    }
-
-    /**
-     * Update last activity timestamp.
-     */
-    public function touchLastActivity(string $identifier, string $instance): void
-    {
-        $this->session->put(
-            $this->getLastActivityAtKey($identifier, $instance),
-            now()->toDateTimeString()
-        );
-    }
-
-    /**
-     * Get checkout started timestamp.
-     */
-    public function getCheckoutStartedAt(string $identifier, string $instance): ?string
-    {
-        $timestamp = $this->session->get($this->getCheckoutStartedAtKey($identifier, $instance));
-
-        return is_string($timestamp) ? $timestamp : null;
-    }
-
-    /**
-     * Mark checkout as started for conversion funnel tracking.
-     */
-    public function markCheckoutStarted(string $identifier, string $instance): void
-    {
-        $this->session->put(
-            $this->getCheckoutStartedAtKey($identifier, $instance),
-            now()->toDateTimeString()
-        );
-    }
-
-    /**
-     * Get checkout abandoned timestamp.
-     */
-    public function getCheckoutAbandonedAt(string $identifier, string $instance): ?string
-    {
-        $timestamp = $this->session->get($this->getCheckoutAbandonedAtKey($identifier, $instance));
-
-        return is_string($timestamp) ? $timestamp : null;
-    }
-
-    /**
-     * Mark checkout as abandoned for recovery tracking.
-     */
-    public function markCheckoutAbandoned(string $identifier, string $instance): void
-    {
-        $this->session->put(
-            $this->getCheckoutAbandonedAtKey($identifier, $instance),
-            now()->toDateTimeString()
-        );
-    }
-
-    /**
-     * Get number of recovery attempts made.
-     */
-    public function getRecoveryAttempts(string $identifier, string $instance): int
-    {
-        $attempts = $this->session->get($this->getRecoveryAttemptsKey($identifier, $instance));
-
-        return $attempts !== null ? (int) $attempts : 0;
-    }
-
-    /**
-     * Increment recovery attempts counter.
-     */
-    public function incrementRecoveryAttempts(string $identifier, string $instance): void
-    {
-        $key = $this->getRecoveryAttemptsKey($identifier, $instance);
-        $current = $this->getRecoveryAttempts($identifier, $instance);
-        $this->session->put($key, $current + 1);
-    }
-
-    /**
-     * Get recovered at timestamp.
-     */
-    public function getRecoveredAt(string $identifier, string $instance): ?string
-    {
-        $timestamp = $this->session->get($this->getRecoveredAtKey($identifier, $instance));
-
-        return is_string($timestamp) ? $timestamp : null;
-    }
-
-    /**
-     * Mark cart as recovered (user returned after abandonment).
-     */
-    public function markRecovered(string $identifier, string $instance): void
-    {
-        $this->session->put(
-            $this->getRecoveredAtKey($identifier, $instance),
-            now()->toDateTimeString()
-        );
-    }
-
-    /**
-     * Clear all abandonment tracking data (checkout started, abandoned, recovery).
-     */
-    public function clearAbandonmentTracking(string $identifier, string $instance): void
-    {
-        $this->session->forget($this->getCheckoutStartedAtKey($identifier, $instance));
-        $this->session->forget($this->getCheckoutAbandonedAtKey($identifier, $instance));
-        $this->session->forget($this->getRecoveryAttemptsKey($identifier, $instance));
-        $this->session->forget($this->getRecoveredAtKey($identifier, $instance));
-    }
-
-    // =========================================================================
-    // Event Sourcing Methods (Phase 0.3) - Stub implementations for session storage
-    // =========================================================================
-
-    /**
-     * Get current event stream position for replay.
-     */
-    public function getEventStreamPosition(string $identifier, string $instance): int
-    {
-        $position = $this->session->get($this->getEventStreamPositionKey($identifier, $instance));
-
-        return $position !== null ? (int) $position : 0;
-    }
-
-    /**
-     * Update event stream position after recording events.
-     */
-    public function setEventStreamPosition(string $identifier, string $instance, int $position): void
-    {
-        $this->session->put($this->getEventStreamPositionKey($identifier, $instance), $position);
-    }
-
-    /**
-     * Get aggregate schema version for migrations.
-     */
-    public function getAggregateVersion(string $identifier, string $instance): string
-    {
-        $version = $this->session->get($this->getAggregateVersionKey($identifier, $instance));
-
-        return is_string($version) ? $version : '1.0';
-    }
-
-    /**
-     * Update aggregate schema version.
-     */
-    public function setAggregateVersion(string $identifier, string $instance, string $version): void
-    {
-        $this->session->put($this->getAggregateVersionKey($identifier, $instance), $version);
-    }
-
-    /**
-     * Get last snapshot timestamp.
-     */
-    public function getSnapshotAt(string $identifier, string $instance): ?string
-    {
-        $timestamp = $this->session->get($this->getSnapshotAtKey($identifier, $instance));
-
-        return is_string($timestamp) ? $timestamp : null;
-    }
-
-    /**
-     * Update snapshot timestamp after taking a snapshot.
-     */
-    public function markSnapshotTaken(string $identifier, string $instance): void
-    {
-        $this->session->put(
-            $this->getSnapshotAtKey($identifier, $instance),
-            now()->toDateTimeString()
-        );
     }
 
     // =========================================================================

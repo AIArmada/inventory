@@ -98,30 +98,6 @@ final class Affiliate extends Model
     }
 
     /**
-     * Alias for contact_email.
-     *
-     * @return Attribute<string|null, never>
-     */
-    protected function email(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->contact_email,
-        );
-    }
-
-    /**
-     * Alias for commission_rate.
-     *
-     * @return Attribute<int, never>
-     */
-    protected function commissionRateBasisPoints(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->commission_rate,
-        );
-    }
-
-    /**
      * @return HasMany<AffiliateAttribution, self>
      */
     public function attributions(): HasMany
@@ -344,6 +320,30 @@ final class Affiliate extends Model
             $affiliate->conversions()->delete();
             $affiliate->children()->update(['parent_affiliate_id' => null]);
         });
+    }
+
+    /**
+     * Alias for contact_email.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->contact_email,
+        );
+    }
+
+    /**
+     * Alias for commission_rate.
+     *
+     * @return Attribute<int, never>
+     */
+    protected function commissionRateBasisPoints(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->commission_rate,
+        );
     }
 
     /**

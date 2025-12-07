@@ -14,6 +14,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Job to analyze carts for abandonment and trigger recovery strategies.
@@ -63,6 +64,18 @@ final class AnalyzeCartForAbandonment implements ShouldQueue
     }
 
     /**
+     * Get the tags for the job.
+     *
+     * @return array<string>
+     */
+    public function tags(): array
+    {
+        return $this->cartId
+            ? ['cart-abandonment', "cart:{$this->cartId}"]
+            : ['cart-abandonment', 'batch'];
+    }
+
+    /**
      * Analyze a specific cart.
      */
     private function analyzeSpecificCart(
@@ -100,7 +113,7 @@ final class AnalyzeCartForAbandonment implements ShouldQueue
                     'risk_level' => $prediction->riskLevel,
                 ]);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('Failed to analyze cart for abandonment', [
                 'cart_id' => $cartId,
                 'error' => $e->getMessage(),
@@ -136,7 +149,7 @@ final class AnalyzeCartForAbandonment implements ShouldQueue
                 }
 
                 $analyzed++;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::warning('Failed to analyze cart', [
                     'cart_id' => $cartData['cart_id'] ?? 'unknown',
                     'error' => $e->getMessage(),
@@ -170,17 +183,5 @@ final class AnalyzeCartForAbandonment implements ShouldQueue
                 'recovery_attempts' => DB::raw('recovery_attempts + 1'),
                 'updated_at' => now(),
             ]);
-    }
-
-    /**
-     * Get the tags for the job.
-     *
-     * @return array<string>
-     */
-    public function tags(): array
-    {
-        return $this->cartId
-            ? ['cart-abandonment', "cart:{$this->cartId}"]
-            : ['cart-abandonment', 'batch'];
     }
 }

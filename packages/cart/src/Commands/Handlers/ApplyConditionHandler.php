@@ -19,6 +19,14 @@ final class ApplyConditionHandler
     ) {}
 
     /**
+     * Handle the command via __invoke for Laravel's command bus.
+     */
+    public function __invoke(ApplyConditionCommand $command): CartCondition
+    {
+        return $this->handle($command);
+    }
+
+    /**
      * Handle the apply condition command.
      */
     public function handle(ApplyConditionCommand $command): CartCondition
@@ -40,13 +48,5 @@ final class ApplyConditionHandler
         $cart->addCondition($condition);
 
         return $condition;
-    }
-
-    /**
-     * Handle the command via __invoke for Laravel's command bus.
-     */
-    public function __invoke(ApplyConditionCommand $command): CartCondition
-    {
-        return $this->handle($command);
     }
 }

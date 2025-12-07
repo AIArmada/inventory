@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('return_authorizations', function (Blueprint $table) {
+        Schema::create('return_authorizations', function (Blueprint $table): void {
             $table->id();
             $table->morphs('owner');
 
@@ -41,7 +41,7 @@ return new class extends Migration
             $table->index(['owner_id', 'owner_type', 'status']);
         });
 
-        Schema::create('return_authorization_items', function (Blueprint $table) {
+        Schema::create('return_authorization_items', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('return_authorization_id')
                 ->constrained('return_authorizations')

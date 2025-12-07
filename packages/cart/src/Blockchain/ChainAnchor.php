@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Cart\Blockchain;
 
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * Anchors cart proofs to external blockchain or timestamping services.
@@ -53,7 +54,7 @@ final class ChainAnchor
     /**
      * Batch anchor multiple proof hashes.
      *
-     * @param array<string> $proofHashes
+     * @param  array<string>  $proofHashes
      * @return array{
      *     success: bool,
      *     batch_root: string,
@@ -131,7 +132,7 @@ final class ChainAnchor
      */
     private function anchorInternal(string $proofHash): array
     {
-        $anchorId = hash('sha256', $proofHash . now()->timestamp);
+        $anchorId = hash('sha256', $proofHash.now()->timestamp);
 
         return [
             'success' => true,
@@ -177,7 +178,7 @@ final class ChainAnchor
                 'params' => [
                     [
                         'to' => $contractAddress,
-                        'data' => '0x' . bin2hex($proofHash),
+                        'data' => '0x'.bin2hex($proofHash),
                     ],
                 ],
             ]);
@@ -201,7 +202,7 @@ final class ChainAnchor
                 'transaction_id' => null,
                 'error' => $response->body(),
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'anchor_id' => null,
@@ -275,7 +276,7 @@ final class ChainAnchor
                 'transaction_id' => null,
                 'error' => 'OpenTimestamps request failed',
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'anchor_id' => null,
@@ -290,7 +291,7 @@ final class ChainAnchor
     /**
      * Compute batch Merkle root.
      *
-     * @param array<string> $hashes
+     * @param  array<string>  $hashes
      */
     private function computeBatchRoot(array $hashes): string
     {
@@ -306,7 +307,7 @@ final class ChainAnchor
             for ($i = 0; $i < count($current); $i += 2) {
                 $left = $current[$i];
                 $right = $current[$i + 1] ?? $left;
-                $next[] = hash('sha256', $left . $right);
+                $next[] = hash('sha256', $left.$right);
             }
 
             $current = $next;
@@ -318,7 +319,7 @@ final class ChainAnchor
     /**
      * Generate individual proofs for batch.
      *
-     * @param array<string> $hashes
+     * @param  array<string>  $hashes
      * @return array<string, array{position: int, siblings: array<string>}>
      */
     private function generateBatchProofs(array $hashes): array

@@ -70,6 +70,11 @@ class AffiliateDailyStat extends Model
         return config('affiliates.table_names.daily_stats', 'affiliate_daily_stats');
     }
 
+    public function affiliate(): BelongsTo
+    {
+        return $this->belongsTo(Affiliate::class);
+    }
+
     /**
      * Alias for revenue_cents.
      *
@@ -92,10 +97,5 @@ class AffiliateDailyStat extends Model
         return Attribute::make(
             get: fn () => $this->commission_cents,
         );
-    }
-
-    public function affiliate(): BelongsTo
-    {
-        return $this->belongsTo(Affiliate::class);
     }
 }
