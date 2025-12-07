@@ -7,6 +7,7 @@ namespace AIArmada\Cart\Checkout\Stages;
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Checkout\Contracts\CheckoutStageInterface;
 use AIArmada\Cart\Checkout\StageResult;
+use Throwable;
 
 /**
  * Fulfillment stage for checkout pipeline.
@@ -75,7 +76,7 @@ final class FulfillmentStage implements CheckoutStageInterface
         try {
             $result = ($this->createOrderCallback)($cart, $context);
 
-            if (!isset($result['order_id'])) {
+            if (! isset($result['order_id'])) {
                 return StageResult::failure('Order creation did not return an order ID');
             }
 
@@ -89,9 +90,9 @@ final class FulfillmentStage implements CheckoutStageInterface
             }
 
             return StageResult::success('Order created', $data);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return StageResult::failure(
-                'Order creation failed: ' . $e->getMessage(),
+                'Order creation failed: '.$e->getMessage(),
                 ['fulfillment' => $e->getMessage()]
             );
         }
@@ -115,7 +116,7 @@ final class FulfillmentStage implements CheckoutStageInterface
 
         try {
             ($this->cancelOrderCallback)($orderId);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Log but don't fail rollback
         }
     }

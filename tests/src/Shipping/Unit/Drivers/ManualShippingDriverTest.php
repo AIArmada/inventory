@@ -26,7 +26,7 @@ it('returns correct carrier name', function (): void {
     expect($this->driver->getCarrierName())->toBe('Manual Shipping');
 });
 
-it('reports no supported capabilities', function () {
+it('reports no supported capabilities', function (): void {
     $driver = new ManualShippingDriver();
 
     // Manual driver doesn't support any automated capabilities

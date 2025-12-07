@@ -206,6 +206,51 @@ class Cart extends Model
     }
 
     /**
+     * Check if cart is abandoned.
+     */
+    public function isAbandoned(): bool
+    {
+        return $this->checkout_abandoned_at !== null && $this->recovered_at === null;
+    }
+
+    /**
+     * Check if cart is in checkout process.
+     */
+    public function isInCheckout(): bool
+    {
+        return $this->checkout_started_at !== null && $this->checkout_abandoned_at === null;
+    }
+
+    /**
+     * Check if cart was recovered.
+     */
+    public function isRecovered(): bool
+    {
+        return $this->recovered_at !== null;
+    }
+
+    /**
+     * Check if cart has fraud risk.
+     */
+    public function hasFraudRisk(): bool
+    {
+        return in_array($this->fraud_risk_level, ['high', 'medium'], true);
+    }
+
+    /**
+     * Get fraud risk color for display.
+     */
+    public function getFraudRiskColor(): string
+    {
+        return match ($this->fraud_risk_level) {
+            'high' => 'danger',
+            'medium' => 'warning',
+            'low' => 'info',
+            default => 'gray',
+        };
+    }
+
+    /**
      * @param  Builder<self>  $query
      */
     #[\Illuminate\Database\Eloquent\Attributes\Scope]
@@ -306,51 +351,6 @@ class Cart extends Model
         $query->whereNotNull('checkout_abandoned_at')
             ->whereNull('recovered_at')
             ->where('recovery_attempts', '<', 3);
-    }
-
-    /**
-     * Check if cart is abandoned.
-     */
-    public function isAbandoned(): bool
-    {
-        return $this->checkout_abandoned_at !== null && $this->recovered_at === null;
-    }
-
-    /**
-     * Check if cart is in checkout process.
-     */
-    public function isInCheckout(): bool
-    {
-        return $this->checkout_started_at !== null && $this->checkout_abandoned_at === null;
-    }
-
-    /**
-     * Check if cart was recovered.
-     */
-    public function isRecovered(): bool
-    {
-        return $this->recovered_at !== null;
-    }
-
-    /**
-     * Check if cart has fraud risk.
-     */
-    public function hasFraudRisk(): bool
-    {
-        return in_array($this->fraud_risk_level, ['high', 'medium'], true);
-    }
-
-    /**
-     * Get fraud risk color for display.
-     */
-    public function getFraudRiskColor(): string
-    {
-        return match ($this->fraud_risk_level) {
-            'high' => 'danger',
-            'medium' => 'warning',
-            'low' => 'info',
-            default => 'gray',
-        };
     }
 
     /** @return Attribute<string, never> */

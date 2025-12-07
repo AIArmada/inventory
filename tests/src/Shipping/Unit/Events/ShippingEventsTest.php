@@ -2,16 +2,15 @@
 
 declare(strict_types=1);
 
+use AIArmada\Shipping\Enums\ShipmentStatus;
 use AIArmada\Shipping\Events\ShipmentCancelled;
 use AIArmada\Shipping\Events\ShipmentCreated;
 use AIArmada\Shipping\Events\ShipmentDelivered;
 use AIArmada\Shipping\Events\ShipmentShipped;
 use AIArmada\Shipping\Events\ShipmentStatusChanged;
 use AIArmada\Shipping\Events\TrackingUpdated;
-use AIArmada\Shipping\Enums\ShipmentStatus;
 use AIArmada\Shipping\Models\Shipment;
 use AIArmada\Shipping\Models\ShipmentEvent;
-use Illuminate\Support\Collection;
 
 // ============================================
 // ShipmentCreated Event Tests

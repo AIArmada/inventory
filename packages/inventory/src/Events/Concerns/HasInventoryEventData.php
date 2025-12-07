@@ -32,13 +32,9 @@ trait HasInventoryEventData
     protected bool $persist = true;
 
     /**
-     * Initialize event data. Call in constructor.
+     * Get the event type name.
      */
-    protected function initializeEventData(): void
-    {
-        $this->eventId = (string) Str::uuid();
-        $this->occurredAt = new DateTimeImmutable();
-    }
+    abstract public function getEventType(): string;
 
     /**
      * Get the unique event identifier.
@@ -47,11 +43,6 @@ trait HasInventoryEventData
     {
         return $this->eventId;
     }
-
-    /**
-     * Get the event type name.
-     */
-    abstract public function getEventType(): string;
 
     /**
      * Get when the event occurred.
@@ -192,5 +183,14 @@ trait HasInventoryEventData
             'version' => '1.0',
             'timestamp' => $this->occurredAt->format('c'),
         ];
+    }
+
+    /**
+     * Initialize event data. Call in constructor.
+     */
+    protected function initializeEventData(): void
+    {
+        $this->eventId = (string) Str::uuid();
+        $this->occurredAt = new DateTimeImmutable();
     }
 }

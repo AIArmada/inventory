@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use AIArmada\Shipping\Data\AddressData;
 use AIArmada\Shipping\Data\PackageData;
-use AIArmada\Shipping\Data\RateQuoteData;
 use AIArmada\Shipping\Drivers\FlatRateShippingDriver;
 use AIArmada\Shipping\Enums\DriverCapability;
 
@@ -94,7 +93,7 @@ it('applies custom flat rate from configuration', function (): void {
 });
 
 it('creates shipment with generated tracking number', function (): void {
-    $shipmentData = new \AIArmada\Shipping\Data\ShipmentData(
+    $shipmentData = new AIArmada\Shipping\Data\ShipmentData(
         reference: 'TEST-001',
         carrierCode: 'flat_rate',
         serviceCode: 'standard',

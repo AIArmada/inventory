@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Cart\Blockchain;
 
 use AIArmada\Cart\Cart;
+use Throwable;
 
 /**
  * Verifies cart proofs and blockchain anchors.
@@ -88,9 +89,9 @@ final class ProofVerifier
 
         foreach ($itemProof['proof_path'] as $step) {
             if ($step['position'] === 'left') {
-                $currentHash = hash('sha256', $step['hash'] . $currentHash);
+                $currentHash = hash('sha256', $step['hash'].$currentHash);
             } else {
-                $currentHash = hash('sha256', $currentHash . $step['hash']);
+                $currentHash = hash('sha256', $currentHash.$step['hash']);
             }
         }
 
@@ -229,7 +230,7 @@ final class ProofVerifier
     private function verifySignature(array $proof): bool
     {
         $key = config('cart.blockchain.signing_key', config('app.key'));
-        $data = $proof['root_hash'] . json_encode($proof['metadata'], JSON_THROW_ON_ERROR);
+        $data = $proof['root_hash'].json_encode($proof['metadata'], JSON_THROW_ON_ERROR);
         $expectedSignature = hash_hmac('sha256', $data, $key);
 
         return hash_equals($expectedSignature, $proof['signature']);
@@ -238,8 +239,8 @@ final class ProofVerifier
     /**
      * Verify Merkle tree construction.
      *
-     * @param array<string, string> $itemHashes
-     * @param array<string> $merkleTree
+     * @param  array<string, string>  $itemHashes
+     * @param  array<string>  $merkleTree
      */
     private function verifyMerkleTree(
         array $itemHashes,
@@ -264,7 +265,7 @@ final class ProofVerifier
             for ($i = 0; $i < count($current); $i += 2) {
                 $left = $current[$i];
                 $right = $current[$i + 1] ?? $left;
-                $next[] = hash('sha256', $left . $right);
+                $next[] = hash('sha256', $left.$right);
             }
 
             $current = $next;
@@ -276,7 +277,7 @@ final class ProofVerifier
     /**
      * Verify metadata structure.
      *
-     * @param array<string, mixed> $metadata
+     * @param  array<string, mixed>  $metadata
      */
     private function verifyMetadata(array $metadata): bool
     {
@@ -304,7 +305,7 @@ final class ProofVerifier
             $proofTime = \Carbon\Carbon::parse($timestamp);
 
             return $proofTime->lte(now());
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return false;
         }
     }
@@ -312,8 +313,8 @@ final class ProofVerifier
     /**
      * Find differences between stored and current item hashes.
      *
-     * @param array<string, string> $storedHashes
-     * @param array<string, string> $currentHashes
+     * @param  array<string, string>  $storedHashes
+     * @param  array<string, string>  $currentHashes
      * @return array<string>
      */
     private function findDifferences(array $storedHashes, array $currentHashes): array
@@ -340,7 +341,7 @@ final class ProofVerifier
     /**
      * Determine overall verification status.
      *
-     * @param array<string, mixed> $report
+     * @param  array<string, mixed>  $report
      */
     private function determineOverallStatus(array $report): string
     {
@@ -355,7 +356,8 @@ final class ProofVerifier
         if ($proofValid && $integrityValid) {
             if ($anchorValid === true) {
                 return 'verified_anchored';
-            } elseif ($anchorValid === false) {
+            }
+            if ($anchorValid === false) {
                 return 'verified_not_anchored';
             }
 

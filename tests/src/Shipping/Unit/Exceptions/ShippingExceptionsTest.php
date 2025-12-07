@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use AIArmada\Shipping\Enums\ShipmentStatus;
 use AIArmada\Shipping\Exceptions\InvalidStatusTransitionException;
 use AIArmada\Shipping\Exceptions\ShipmentAlreadyShippedException;
 use AIArmada\Shipping\Exceptions\ShipmentCreationFailedException;
 use AIArmada\Shipping\Exceptions\ShipmentNotCancellableException;
-use AIArmada\Shipping\Enums\ShipmentStatus;
 use AIArmada\Shipping\Models\Shipment;
 
 // ============================================

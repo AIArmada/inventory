@@ -26,7 +26,7 @@ beforeEach(function (): void {
     });
 
     // Mock config repository
-    $config = Mockery::mock(\Illuminate\Contracts\Config\Repository::class);
+    $config = Mockery::mock(Illuminate\Contracts\Config\Repository::class);
     $config->shouldReceive('get')->with('shipping.drivers', [])->andReturn([
         'null' => ['driver' => 'null'],
         'manual' => ['driver' => 'manual'],
@@ -71,7 +71,7 @@ it('allows extending with custom drivers', function (): void {
     $customDriver = Mockery::mock(ShippingDriverInterface::class);
     $customDriver->shouldReceive('getCarrierCode')->andReturn('custom');
 
-    $this->manager->extend('custom', fn() => $customDriver);
+    $this->manager->extend('custom', fn () => $customDriver);
 
     $driver = $this->manager->driver('custom');
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Cart\Collaboration;
 
+use DateTimeImmutable;
 use DateTimeInterface;
 
 /**
@@ -47,7 +48,7 @@ final readonly class CRDTOperation
             itemId: $data['item_id'],
             data: $data['data'] ?? [],
             vectorClock: $data['vector_clock'] ?? [],
-            timestamp: new \DateTime($data['timestamp'])
+            timestamp: new DateTimeImmutable($data['timestamp'])
         );
     }
 

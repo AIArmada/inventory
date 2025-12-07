@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Cart\Queries;
 
 use AIArmada\Cart\ReadModels\CartReadModel;
+use DateTimeInterface;
 
 /**
  * Query handler for cart read operations.
@@ -65,7 +66,7 @@ final class CartQueryHandler
      *
      * @return array<string, mixed>
      */
-    public function getStatistics(\DateTimeInterface $since): array
+    public function getStatistics(DateTimeInterface $since): array
     {
         return $this->readModel->getCartStatistics($since);
     }

@@ -26,18 +26,18 @@ beforeEach(function (): void {
         $table->bigInteger('total')->default(0);
         $table->bigInteger('savings')->default(0);
         $table->string('currency', 3)->default('USD');
-        
+
         // AI/Analytics columns
         $table->timestamp('last_activity_at')->nullable();
         $table->timestamp('checkout_started_at')->nullable();
         $table->timestamp('checkout_abandoned_at')->nullable();
         $table->unsignedTinyInteger('recovery_attempts')->default(0);
         $table->timestamp('recovered_at')->nullable();
-        
+
         // Collaborative Cart Support
         $table->boolean('is_collaborative')->default(false);
         $table->unsignedSmallInteger('collaborator_count')->default(0);
-        
+
         $table->timestamps();
     });
 });

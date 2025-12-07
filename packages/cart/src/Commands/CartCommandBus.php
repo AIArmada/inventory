@@ -10,6 +10,7 @@ use AIArmada\Cart\Commands\Handlers\ClearCartHandler;
 use AIArmada\Cart\Commands\Handlers\RemoveItemHandler;
 use AIArmada\Cart\Commands\Handlers\UpdateItemQuantityHandler;
 use Illuminate\Contracts\Container\Container;
+use InvalidArgumentException;
 
 /**
  * Command bus for cart CQRS operations.
@@ -42,14 +43,14 @@ final class CartCommandBus
      * @param  object  $command  The command to dispatch
      * @return mixed The result from the handler
      *
-     * @throws \InvalidArgumentException If no handler is registered for the command
+     * @throws InvalidArgumentException If no handler is registered for the command
      */
     public function dispatch(object $command): mixed
     {
         $commandClass = $command::class;
 
-        if (!isset(self::HANDLERS[$commandClass])) {
-            throw new \InvalidArgumentException(
+        if (! isset(self::HANDLERS[$commandClass])) {
+            throw new InvalidArgumentException(
                 "No handler registered for command: {$commandClass}"
             );
         }

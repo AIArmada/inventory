@@ -7,6 +7,7 @@ namespace AIArmada\Cart\Checkout\Stages;
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Checkout\Contracts\CheckoutStageInterface;
 use AIArmada\Cart\Checkout\StageResult;
+use Throwable;
 
 /**
  * Reservation stage for checkout pipeline.
@@ -80,21 +81,21 @@ final class ReservationStage implements CheckoutStageInterface
             try {
                 $reserved = ($this->reserveCallback)($item->id, $item->quantity, $cart);
 
-                if (!$reserved) {
+                if (! $reserved) {
                     $errors[$item->id] = "Failed to reserve {$item->quantity} units of '{$item->name}'";
 
                     break;
                 }
 
                 $reservedItems[$item->id] = $item->quantity;
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $errors[$item->id] = $e->getMessage();
 
                 break;
             }
         }
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             // Rollback already reserved items
             $this->rollbackReservedItems($cart, $reservedItems);
 
@@ -136,7 +137,7 @@ final class ReservationStage implements CheckoutStageInterface
         foreach ($reservedItems as $itemId => $quantity) {
             try {
                 ($this->releaseCallback)($itemId, $quantity, $cart);
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Log but continue rollback
             }
         }

@@ -7,6 +7,7 @@ namespace AIArmada\Cart\Checkout\Stages;
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Checkout\Contracts\CheckoutStageInterface;
 use AIArmada\Cart\Checkout\StageResult;
+use Throwable;
 
 /**
  * Payment stage for checkout pipeline.
@@ -80,7 +81,7 @@ final class PaymentStage implements CheckoutStageInterface
         try {
             $result = ($this->processCallback)($cart, $context);
 
-            if (!($result['success'] ?? false)) {
+            if (! ($result['success'] ?? false)) {
                 return StageResult::failure(
                     $result['message'] ?? 'Payment processing failed',
                     ['payment' => $result['message'] ?? 'Unknown error']
@@ -102,9 +103,9 @@ final class PaymentStage implements CheckoutStageInterface
             }
 
             return StageResult::success('Payment processed', $data);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return StageResult::failure(
-                'Payment processing failed: ' . $e->getMessage(),
+                'Payment processing failed: '.$e->getMessage(),
                 ['payment' => $e->getMessage()]
             );
         }
@@ -130,7 +131,7 @@ final class PaymentStage implements CheckoutStageInterface
 
         try {
             ($this->refundCallback)($transactionId, $amountCents);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Log but don't fail rollback
         }
     }

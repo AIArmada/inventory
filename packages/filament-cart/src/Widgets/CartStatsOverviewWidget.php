@@ -46,12 +46,12 @@ final class CartStatsOverviewWidget extends BaseWidget
                 ->color('info'),
 
             Stat::make('Abandoned Carts', number_format($stats['abandoned_carts']))
-                ->description($this->getAbandonmentRate($stats) . '% abandonment rate')
+                ->description($this->getAbandonmentRate($stats).'% abandonment rate')
                 ->descriptionIcon(Heroicon::OutlinedExclamationTriangle)
                 ->color($stats['abandoned_carts'] > 0 ? 'warning' : 'success'),
 
             Stat::make('Recovered', number_format($stats['recovered_carts']))
-                ->description($this->getRecoveryRate($stats) . '% recovery rate')
+                ->description($this->getRecoveryRate($stats).'% recovery rate')
                 ->descriptionIcon(Heroicon::OutlinedCheckCircle)
                 ->color($stats['recovered_carts'] > 0 ? 'success' : 'gray'),
 

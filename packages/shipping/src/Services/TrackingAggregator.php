@@ -120,7 +120,7 @@ class TrackingAggregator
                 ShipmentStatus::ReturnToSender,
             ])
             ->where('created_at', '>', now()->subDays($maxAge))
-            ->where(function ($query) use ($syncInterval) {
+            ->where(function ($query) use ($syncInterval): void {
                 $query->whereNull('last_tracking_sync')
                     ->orWhere('last_tracking_sync', '<', now()->subSeconds($syncInterval));
             })

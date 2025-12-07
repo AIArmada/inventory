@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AIArmada\Cart\AI;
 
 use AIArmada\Cart\Cart;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * AI-powered recovery strategy optimizer.
@@ -41,8 +41,6 @@ final class RecoveryOptimizer
 
     /**
      * Get the optimal recovery strategy for a cart.
-     *
-     * @return RecoveryStrategy
      */
     public function getOptimalStrategy(Cart $cart, AbandonmentPrediction $prediction): RecoveryStrategy
     {
@@ -426,7 +424,7 @@ final class RecoveryOptimizer
                 'discount_used_cents' => $discountUsedCents,
                 'created_at' => now(),
             ]);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Table may not exist - silently ignore
         }
     }

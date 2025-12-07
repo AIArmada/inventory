@@ -94,7 +94,7 @@ class ShippingRate extends Model
      */
     public function scopeForCarrier(Builder $query, ?string $carrierCode): Builder
     {
-        return $query->where(function ($q) use ($carrierCode) {
+        return $query->where(function ($q) use ($carrierCode): void {
             $q->whereNull('carrier_code')
                 ->orWhere('carrier_code', $carrierCode);
         });

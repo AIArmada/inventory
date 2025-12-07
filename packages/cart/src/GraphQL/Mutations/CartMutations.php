@@ -12,6 +12,7 @@ use AIArmada\Cart\Commands\CartCommandBus;
 use AIArmada\Cart\Commands\ClearCartCommand;
 use AIArmada\Cart\Commands\RemoveItemCommand;
 use AIArmada\Cart\Commands\UpdateItemQuantityCommand;
+use Throwable;
 
 /**
  * GraphQL Mutation resolvers for Cart.
@@ -145,7 +146,7 @@ GRAPHQL;
                 'cart' => $this->transformCart($cart),
                 'errors' => [],
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'cart' => null,
@@ -188,7 +189,7 @@ GRAPHQL;
                 'cart' => $this->transformCart($cart),
                 'errors' => [],
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'cart' => null,
@@ -228,7 +229,7 @@ GRAPHQL;
                 'cart' => $this->transformCart($cart),
                 'errors' => [],
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'cart' => null,
@@ -274,7 +275,7 @@ GRAPHQL;
                 'cart' => $this->transformCart($cart),
                 'errors' => [],
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'cart' => null,
@@ -308,7 +309,7 @@ GRAPHQL;
                 'cart' => $this->transformCart($cart),
                 'errors' => [],
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'cart' => null,
@@ -347,7 +348,7 @@ GRAPHQL;
                 'cart' => $this->transformCart($cart),
                 'errors' => [],
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'cart' => null,
@@ -393,7 +394,7 @@ GRAPHQL;
                 'paymentUrl' => $result->getPaymentUrl(),
                 'errors' => [],
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'success' => false,
                 'orderId' => null,

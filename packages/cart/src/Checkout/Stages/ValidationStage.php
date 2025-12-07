@@ -6,7 +6,6 @@ namespace AIArmada\Cart\Checkout\Stages;
 
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Checkout\Contracts\CheckoutStageInterface;
-use AIArmada\Cart\Checkout\Exceptions\CheckoutException;
 use AIArmada\Cart\Checkout\StageResult;
 use AIArmada\Cart\Contracts\CartValidatorInterface;
 
@@ -74,12 +73,12 @@ final class ValidationStage implements CheckoutStageInterface
         foreach ($sortedValidators as $validator) {
             $result = $validator->validateCart($cart);
 
-            if (!$result->isValid) {
+            if (! $result->isValid) {
                 $allErrors[$validator->getType()] = $result->message;
             }
         }
 
-        if (!empty($allErrors)) {
+        if (! empty($allErrors)) {
             return StageResult::failure(
                 'Cart validation failed',
                 $allErrors

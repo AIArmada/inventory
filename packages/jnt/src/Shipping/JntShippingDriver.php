@@ -7,7 +7,6 @@ namespace AIArmada\Jnt\Shipping;
 use AIArmada\Jnt\Data\AddressData as JntAddressData;
 use AIArmada\Jnt\Data\ItemData;
 use AIArmada\Jnt\Data\PackageInfoData;
-use AIArmada\Jnt\Data\TrackingData as JntTrackingData;
 use AIArmada\Jnt\Enums\CancellationReason;
 use AIArmada\Jnt\Enums\TrackingStatus as JntTrackingStatus;
 use AIArmada\Jnt\Services\JntExpressService;
@@ -28,6 +27,7 @@ use AIArmada\Shipping\Enums\DriverCapability;
 use AIArmada\Shipping\Enums\TrackingStatus;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Throwable;
 
 /**
  * J&T Express shipping driver implementation.
@@ -40,8 +40,7 @@ class JntShippingDriver implements ShippingDriverInterface
         protected readonly JntExpressService $jntService,
         protected readonly JntTrackingService $trackingService,
         protected readonly JntStatusMapper $statusMapper,
-    ) {
-    }
+    ) {}
 
     public function getCarrierCode(): string
     {
@@ -104,7 +103,7 @@ class JntShippingDriver implements ShippingDriverInterface
         array $packages,
         array $options = []
     ): Collection {
-        $totalWeight = array_sum(array_map(fn(PackageData $p) => $p->weight, $packages));
+        $totalWeight = array_sum(array_map(fn (PackageData $p) => $p->weight, $packages));
 
         // Calculate rate based on weight
         $rate = $this->calculateWeightBasedRate($totalWeight, $destination);
@@ -151,7 +150,7 @@ class JntShippingDriver implements ShippingDriverInterface
                 try {
                     $printResponse = $this->jntService->printOrder($data->reference, $trackingNumber);
                     $labelUrl = $printResponse['data']['url'] ?? null;
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     // Label generation may fail, continue without it
                 }
             }
@@ -163,7 +162,7 @@ class JntShippingDriver implements ShippingDriverInterface
                 labelUrl: $labelUrl,
                 rawResponse: $orderData->toArray(),
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return new ShipmentResultData(
                 success: false,
                 error: $e->getMessage(),
@@ -180,7 +179,7 @@ class JntShippingDriver implements ShippingDriverInterface
             );
 
             return isset($response['success']) && $response['success'];
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return false;
         }
     }
@@ -257,7 +256,7 @@ class JntShippingDriver implements ShippingDriverInterface
     public function servicesDestination(AddressData $destination): bool
     {
         // JNT services Malaysia
-        return in_array(strtoupper($destination->countryCode), ['MY', 'MYS'], true);
+        return in_array(mb_strtoupper($destination->countryCode), ['MY', 'MYS'], true);
     }
 
     /**

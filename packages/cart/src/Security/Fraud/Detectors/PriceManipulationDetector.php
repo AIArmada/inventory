@@ -79,6 +79,15 @@ final class PriceManipulationDetector implements FraudDetectorInterface
     }
 
     /**
+     * Store catalog price for comparison.
+     */
+    public function storeCatalogPrice(string $itemId, int $price): void
+    {
+        $key = "catalog:price:{$itemId}";
+        Cache::put($key, $price, 86400);
+    }
+
+    /**
      * Check for negative prices or quantities.
      *
      * @return array<FraudSignal>
@@ -283,15 +292,6 @@ final class PriceManipulationDetector implements FraudDetectorInterface
         $key = "catalog:price:{$itemId}";
 
         return Cache::get($key);
-    }
-
-    /**
-     * Store catalog price for comparison.
-     */
-    public function storeCatalogPrice(string $itemId, int $price): void
-    {
-        $key = "catalog:price:{$itemId}";
-        Cache::put($key, $price, 86400);
     }
 
     /**

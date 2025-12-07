@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('shipments', function (Blueprint $table) {
+        Schema::create('shipments', function (Blueprint $table): void {
             $table->id();
             $table->ulid('ulid')->unique();
 

@@ -17,15 +17,11 @@ interface CartValidatorInterface
 {
     /**
      * Validate the entire cart.
-     *
-     * @return CartValidationResult
      */
     public function validateCart(Cart $cart): CartValidationResult;
 
     /**
      * Validate a specific cart item.
-     *
-     * @return CartValidationResult
      */
     public function validateItem(CartItem $item, Cart $cart): CartValidationResult;
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Cart\Checkout\Exceptions;
 
 use AIArmada\Cart\Exceptions\CartException;
+use Throwable;
 
 /**
  * Exception thrown during checkout process.
@@ -24,7 +25,7 @@ final class CheckoutException extends CartException
     public static function stageFailed(
         string $stage,
         string $message,
-        ?\Throwable $previous = null
+        ?Throwable $previous = null
     ): self {
         $exception = new self(
             "Checkout failed at stage '{$stage}': {$message}",
@@ -44,7 +45,7 @@ final class CheckoutException extends CartException
     public static function validationFailed(array $errors): self
     {
         $exception = new self(
-            'Cart validation failed: ' . implode(', ', $errors)
+            'Cart validation failed: '.implode(', ', $errors)
         );
         $exception->stageName = 'validation';
         $exception->stageErrors = $errors;

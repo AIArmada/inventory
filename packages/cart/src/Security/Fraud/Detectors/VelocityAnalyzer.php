@@ -82,6 +82,22 @@ final class VelocityAnalyzer implements FraudDetectorInterface
     }
 
     /**
+     * Record a failed checkout for IP.
+     */
+    public function recordFailedCheckout(string $ipAddress): void
+    {
+        $this->incrementCounter("ip:{$ipAddress}:failed_checkouts", 3600);
+    }
+
+    /**
+     * Record a checkout attempt for user.
+     */
+    public function recordCheckoutAttempt(string $userId): void
+    {
+        $this->incrementCounter("user:{$userId}:checkouts", 3600);
+    }
+
+    /**
      * Check overall operation velocity.
      *
      * @return array<FraudSignal>
@@ -465,21 +481,5 @@ final class VelocityAnalyzer implements FraudDetectorInterface
         $timestamps = array_slice($timestamps, -100);
 
         Cache::put($key, $timestamps, 3600);
-    }
-
-    /**
-     * Record a failed checkout for IP.
-     */
-    public function recordFailedCheckout(string $ipAddress): void
-    {
-        $this->incrementCounter("ip:{$ipAddress}:failed_checkouts", 3600);
-    }
-
-    /**
-     * Record a checkout attempt for user.
-     */
-    public function recordCheckoutAttempt(string $userId): void
-    {
-        $this->incrementCounter("user:{$userId}:checkouts", 3600);
     }
 }

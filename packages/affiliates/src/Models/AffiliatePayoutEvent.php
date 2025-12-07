@@ -42,6 +42,11 @@ class AffiliatePayoutEvent extends Model
         return config('affiliates.table_names.payout_events', parent::getTable());
     }
 
+    public function payout(): BelongsTo
+    {
+        return $this->belongsTo(AffiliatePayout::class, 'affiliate_payout_id');
+    }
+
     /**
      * Alias for to_status.
      *
@@ -52,10 +57,5 @@ class AffiliatePayoutEvent extends Model
         return Attribute::make(
             get: fn () => $this->to_status,
         );
-    }
-
-    public function payout(): BelongsTo
-    {
-        return $this->belongsTo(AffiliatePayout::class, 'affiliate_payout_id');
     }
 }

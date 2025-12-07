@@ -68,7 +68,7 @@ class ShippingManager
     {
         $driver ??= $this->getDefaultDriver();
 
-        if (!isset($this->drivers[$driver])) {
+        if (! isset($this->drivers[$driver])) {
             $this->drivers[$driver] = $this->createDriver($driver);
         }
 
@@ -143,8 +143,8 @@ class ShippingManager
     public function getDriversForDestination(AddressData $destination): Collection
     {
         return collect($this->getAvailableDrivers())
-            ->map(fn(string $name) => $this->driver($name))
-            ->filter(fn(ShippingDriverInterface $driver) => $driver->servicesDestination($destination))
+            ->map(fn (string $name) => $this->driver($name))
+            ->filter(fn (ShippingDriverInterface $driver) => $driver->servicesDestination($destination))
             ->values();
     }
 
@@ -168,7 +168,7 @@ class ShippingManager
         }
 
         // Check for built-in drivers
-        $method = 'create' . ucfirst($driver) . 'Driver';
+        $method = 'create'.ucfirst($driver).'Driver';
 
         if (method_exists($this, $method)) {
             return $this->{$method}();

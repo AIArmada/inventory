@@ -8,6 +8,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Collects and stores fraud signals for analysis and reporting.
@@ -334,7 +335,7 @@ final class FraudSignalCollector
                     'metadata' => json_encode($signal->metadata),
                     'created_at' => now(),
                 ]);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::warning('Failed to persist fraud signal', [
                     'error' => $e->getMessage(),
                     'signal' => $signal->toArray(),

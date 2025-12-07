@@ -175,7 +175,7 @@ class ReturnAuthorization extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (ReturnAuthorization $rma) {
+        static::creating(function (ReturnAuthorization $rma): void {
             if (empty($rma->rma_number)) {
                 $rma->rma_number = static::generateRmaNumber();
             }

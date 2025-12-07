@@ -19,8 +19,7 @@ class PackageData extends Data
         public readonly ?int $declaredValue = null, // in cents
         public readonly ?string $packagingType = null,
         public readonly int $quantity = 1,
-    ) {
-    }
+    ) {}
 
     public function getWeightKg(): float
     {

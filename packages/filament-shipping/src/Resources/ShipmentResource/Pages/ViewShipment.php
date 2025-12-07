@@ -27,7 +27,7 @@ class ViewShipment extends ViewRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->visible(fn (Shipment $record) => $record->isPending())
-                ->action(function (Shipment $record) {
+                ->action(function (Shipment $record): void {
                     try {
                         app(ShipmentService::class)->ship($record);
 
@@ -51,7 +51,7 @@ class ViewShipment extends ViewRecord
                 ->color('danger')
                 ->requiresConfirmation()
                 ->visible(fn (Shipment $record) => $record->isCancellable())
-                ->action(function (Shipment $record) {
+                ->action(function (Shipment $record): void {
                     try {
                         app(ShipmentService::class)->cancel($record);
 

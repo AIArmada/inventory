@@ -60,5 +60,3 @@ it('validates required fields are present', function (): void {
     expect($address->address)->not->toBeEmpty();
     expect($address->postCode)->not->toBeEmpty();
 });
-
-

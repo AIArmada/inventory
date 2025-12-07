@@ -18,6 +18,14 @@ final class UpdateItemQuantityHandler
     ) {}
 
     /**
+     * Handle the command via __invoke for Laravel's command bus.
+     */
+    public function __invoke(UpdateItemQuantityCommand $command): ?CartItem
+    {
+        return $this->handle($command);
+    }
+
+    /**
      * Handle the update quantity command.
      *
      * @return CartItem|null The updated item or null if not found
@@ -44,13 +52,5 @@ final class UpdateItemQuantityHandler
         return $cart->update($command->itemId, [
             'quantity' => $command->newQuantity,
         ]);
-    }
-
-    /**
-     * Handle the command via __invoke for Laravel's command bus.
-     */
-    public function __invoke(UpdateItemQuantityCommand $command): ?CartItem
-    {
-        return $this->handle($command);
     }
 }

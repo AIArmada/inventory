@@ -9,6 +9,7 @@ use AIArmada\Cart\Queries\CartQueryHandler;
 use AIArmada\Cart\Queries\GetAbandonedCartsQuery;
 use AIArmada\Cart\Queries\GetCartSummaryQuery;
 use AIArmada\Cart\Queries\SearchCartsQuery;
+use DateTimeImmutable;
 
 /**
  * GraphQL Query resolvers for Cart.
@@ -128,7 +129,7 @@ GRAPHQL;
      */
     public function abandonedCarts(mixed $root, array $args): array
     {
-        $olderThan = new \DateTimeImmutable($args['olderThan']);
+        $olderThan = new DateTimeImmutable($args['olderThan']);
 
         $query = new GetAbandonedCartsQuery(
             olderThan: $olderThan,
@@ -150,8 +151,8 @@ GRAPHQL;
         $query = new SearchCartsQuery(
             identifier: $args['identifier'] ?? null,
             instance: $args['instance'] ?? null,
-            createdAfter: isset($args['createdAfter']) ? new \DateTimeImmutable($args['createdAfter']) : null,
-            createdBefore: isset($args['createdBefore']) ? new \DateTimeImmutable($args['createdBefore']) : null,
+            createdAfter: isset($args['createdAfter']) ? new DateTimeImmutable($args['createdAfter']) : null,
+            createdBefore: isset($args['createdBefore']) ? new DateTimeImmutable($args['createdBefore']) : null,
             minItems: $args['minItems'] ?? null,
             limit: $args['limit'] ?? 50,
             offset: $args['offset'] ?? 0

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Cart\Events\Concerns;
 
+use DateTimeImmutable;
 use Illuminate\Support\Str;
 
 /**
@@ -16,20 +17,11 @@ trait HasCartEventData
 {
     private string $eventId;
 
-    private \DateTimeImmutable $occurredAt;
+    private DateTimeImmutable $occurredAt;
 
     private int $aggregateVersion = 1;
 
     private bool $shouldPersist = true;
-
-    /**
-     * Initialize event data. Call this in the event constructor.
-     */
-    protected function initializeEventData(): void
-    {
-        $this->eventId = (string) Str::uuid();
-        $this->occurredAt = new \DateTimeImmutable();
-    }
 
     /**
      * Get a unique identifier for this event occurrence.
@@ -42,9 +34,9 @@ trait HasCartEventData
     /**
      * Get the timestamp when the event occurred.
      */
-    public function getOccurredAt(): \DateTimeImmutable
+    public function getOccurredAt(): DateTimeImmutable
     {
-        return $this->occurredAt ?? new \DateTimeImmutable();
+        return $this->occurredAt ?? new DateTimeImmutable();
     }
 
     /**
@@ -115,5 +107,14 @@ trait HasCartEventData
         }
 
         return [];
+    }
+
+    /**
+     * Initialize event data. Call this in the event constructor.
+     */
+    protected function initializeEventData(): void
+    {
+        $this->eventId = (string) Str::uuid();
+        $this->occurredAt = new DateTimeImmutable();
     }
 }

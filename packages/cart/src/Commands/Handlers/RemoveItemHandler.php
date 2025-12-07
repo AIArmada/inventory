@@ -17,6 +17,14 @@ final class RemoveItemHandler
     ) {}
 
     /**
+     * Handle the command via __invoke for Laravel's command bus.
+     */
+    public function __invoke(RemoveItemCommand $command): bool
+    {
+        return $this->handle($command);
+    }
+
+    /**
      * Handle the remove item command.
      *
      * @return bool True if item was removed, false if not found
@@ -37,13 +45,5 @@ final class RemoveItemHandler
         $cart->remove($command->itemId);
 
         return true;
-    }
-
-    /**
-     * Handle the command via __invoke for Laravel's command bus.
-     */
-    public function __invoke(RemoveItemCommand $command): bool
-    {
-        return $this->handle($command);
     }
 }

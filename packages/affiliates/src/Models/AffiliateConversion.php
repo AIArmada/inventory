@@ -71,30 +71,6 @@ final class AffiliateConversion extends Model
     }
 
     /**
-     * Alias for order_reference.
-     *
-     * @return Attribute<string|null, never>
-     */
-    protected function orderId(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->order_reference,
-        );
-    }
-
-    /**
-     * Alias for commission_currency.
-     *
-     * @return Attribute<string, never>
-     */
-    protected function currency(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->commission_currency,
-        );
-    }
-
-    /**
      * @return BelongsTo<Affiliate, $this>
      */
     public function affiliate(): BelongsTo
@@ -116,6 +92,30 @@ final class AffiliateConversion extends Model
     public function payout(): BelongsTo
     {
         return $this->belongsTo(AffiliatePayout::class, 'affiliate_payout_id');
+    }
+
+    /**
+     * Alias for order_reference.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function orderId(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->order_reference,
+        );
+    }
+
+    /**
+     * Alias for commission_currency.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function currency(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->commission_currency,
+        );
     }
 
     /**

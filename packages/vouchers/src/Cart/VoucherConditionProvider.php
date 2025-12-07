@@ -135,8 +135,8 @@ final readonly class VoucherConditionProvider implements ConditionProviderInterf
     private function calculateConditionValue(VoucherData $voucher): ?string
     {
         return match ($voucher->type) {
-            VoucherType::Fixed => '-' . (string) (int) $voucher->value,
-            VoucherType::Percentage => '-' . $voucher->value . '%',
+            VoucherType::Fixed => '-'.(string) (int) $voucher->value,
+            VoucherType::Percentage => '-'.$voucher->value.'%',
             VoucherType::FreeShipping => '-100%',
             default => null,
         };

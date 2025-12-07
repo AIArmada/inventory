@@ -18,6 +18,78 @@ final class CartChannel
     ) {}
 
     /**
+     * Get the channel instance for a cart.
+     */
+    public static function channelFor(string $cartId): PresenceChannel
+    {
+        return new PresenceChannel("cart.{$cartId}");
+    }
+
+    /**
+     * Get the private channel for a cart.
+     */
+    public static function privateChannelFor(string $cartId): Channel
+    {
+        return new Channel("cart.{$cartId}");
+    }
+
+    /**
+     * Broadcast an item added event.
+     *
+     * @param  array<string, mixed>  $itemData
+     */
+    public static function broadcastItemAdded(string $cartId, array $itemData): void
+    {
+        broadcast(new Events\CartItemAdded($cartId, $itemData))->toOthers();
+    }
+
+    /**
+     * Broadcast an item updated event.
+     *
+     * @param  array<string, mixed>  $itemData
+     */
+    public static function broadcastItemUpdated(string $cartId, array $itemData): void
+    {
+        broadcast(new Events\CartItemUpdated($cartId, $itemData))->toOthers();
+    }
+
+    /**
+     * Broadcast an item removed event.
+     */
+    public static function broadcastItemRemoved(string $cartId, string $itemId): void
+    {
+        broadcast(new Events\CartItemRemoved($cartId, $itemId))->toOthers();
+    }
+
+    /**
+     * Broadcast a cart sync event with full state.
+     *
+     * @param  array<string, mixed>  $cartState
+     */
+    public static function broadcastSync(string $cartId, array $cartState): void
+    {
+        broadcast(new Events\CartSynced($cartId, $cartState))->toOthers();
+    }
+
+    /**
+     * Broadcast when a collaborator joins.
+     *
+     * @param  array<string, mixed>  $collaborator
+     */
+    public static function broadcastCollaboratorJoined(string $cartId, array $collaborator): void
+    {
+        broadcast(new Events\CollaboratorJoined($cartId, $collaborator));
+    }
+
+    /**
+     * Broadcast when a collaborator leaves.
+     */
+    public static function broadcastCollaboratorLeft(string $cartId, string $userId): void
+    {
+        broadcast(new Events\CollaboratorLeft($cartId, $userId));
+    }
+
+    /**
      * Authenticate the user's access to the cart channel.
      *
      * @return array<string, mixed>|false
@@ -47,78 +119,6 @@ final class CartChannel
     }
 
     /**
-     * Get the channel instance for a cart.
-     */
-    public static function channelFor(string $cartId): PresenceChannel
-    {
-        return new PresenceChannel("cart.{$cartId}");
-    }
-
-    /**
-     * Get the private channel for a cart.
-     */
-    public static function privateChannelFor(string $cartId): Channel
-    {
-        return new Channel("cart.{$cartId}");
-    }
-
-    /**
-     * Broadcast an item added event.
-     *
-     * @param array<string, mixed> $itemData
-     */
-    public static function broadcastItemAdded(string $cartId, array $itemData): void
-    {
-        broadcast(new Events\CartItemAdded($cartId, $itemData))->toOthers();
-    }
-
-    /**
-     * Broadcast an item updated event.
-     *
-     * @param array<string, mixed> $itemData
-     */
-    public static function broadcastItemUpdated(string $cartId, array $itemData): void
-    {
-        broadcast(new Events\CartItemUpdated($cartId, $itemData))->toOthers();
-    }
-
-    /**
-     * Broadcast an item removed event.
-     */
-    public static function broadcastItemRemoved(string $cartId, string $itemId): void
-    {
-        broadcast(new Events\CartItemRemoved($cartId, $itemId))->toOthers();
-    }
-
-    /**
-     * Broadcast a cart sync event with full state.
-     *
-     * @param array<string, mixed> $cartState
-     */
-    public static function broadcastSync(string $cartId, array $cartState): void
-    {
-        broadcast(new Events\CartSynced($cartId, $cartState))->toOthers();
-    }
-
-    /**
-     * Broadcast when a collaborator joins.
-     *
-     * @param array<string, mixed> $collaborator
-     */
-    public static function broadcastCollaboratorJoined(string $cartId, array $collaborator): void
-    {
-        broadcast(new Events\CollaboratorJoined($cartId, $collaborator));
-    }
-
-    /**
-     * Broadcast when a collaborator leaves.
-     */
-    public static function broadcastCollaboratorLeft(string $cartId, string $userId): void
-    {
-        broadcast(new Events\CollaboratorLeft($cartId, $userId));
-    }
-
-    /**
      * Get cart data from storage.
      *
      * @return array<string, mixed>|null
@@ -142,7 +142,7 @@ final class CartChannel
     /**
      * Check if user can access the cart.
      *
-     * @param array<string, mixed> $cartData
+     * @param  array<string, mixed>  $cartData
      */
     private function canAccessCart(mixed $user, array $cartData): bool
     {
@@ -164,7 +164,7 @@ final class CartChannel
     /**
      * Get user's role in the cart.
      *
-     * @param array<string, mixed> $cartData
+     * @param  array<string, mixed>  $cartData
      */
     private function getUserRole(mixed $user, array $cartData): string
     {
