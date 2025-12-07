@@ -35,7 +35,7 @@ class FreeShippingEvaluator
             return null;
         }
 
-        $cartTotal = $cart->getSubtotal();
+        $cartTotal = $cart->subtotal()->getAmount();
 
         // Check if cart meets threshold
         if ($cartTotal >= $threshold) {
