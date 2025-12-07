@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Affiliates\Services\Payouts;
 
 use AIArmada\Affiliates\Contracts\PayoutProcessorInterface;
-use AIArmada\Affiliates\Data\PayoutResultData;
+use AIArmada\Affiliates\Data\PayoutResult;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use DateTimeInterface;
 use Illuminate\Support\Str;
@@ -15,9 +15,9 @@ use Illuminate\Support\Str;
  */
 final class ManualPayoutProcessor implements PayoutProcessorInterface
 {
-    public function process(AffiliatePayout $payout): PayoutResultData
+    public function process(AffiliatePayout $payout): PayoutResult
     {
-        return PayoutResultData::pending(
+        return PayoutResult::pending(
             externalReference: 'MANUAL-'.Str::upper(Str::random(12)),
             metadata: [
                 'type' => 'manual',

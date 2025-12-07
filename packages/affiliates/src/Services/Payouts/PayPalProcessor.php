@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Affiliates\Services\Payouts;
 
 use AIArmada\Affiliates\Contracts\PayoutProcessorInterface;
-use AIArmada\Affiliates\Data\PayoutResultData;
+use AIArmada\Affiliates\Data\PayoutResult;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use DateTimeInterface;
 use Exception;
@@ -34,10 +34,10 @@ final class PayPalProcessor implements PayoutProcessorInterface
             : 'https://api-m.paypal.com';
     }
 
-    public function process(AffiliatePayout $payout): PayoutResultData
+    public function process(AffiliatePayout $payout): PayoutResult
     {
         if (empty($this->clientId) || empty($this->clientSecret)) {
-            return PayoutResultData::failure('PayPal credentials not configured', 'PAYPAL_NOT_CONFIGURED');
+            return PayoutResult::failure('PayPal credentials not configured', 'PAYPAL_NOT_CONFIGURED');
         }
 
         $payoutMethod = $payout->affiliate->payoutMethods()
@@ -46,20 +46,20 @@ final class PayPalProcessor implements PayoutProcessorInterface
             ->first();
 
         if (! $payoutMethod) {
-            return PayoutResultData::failure('No PayPal account configured', 'NO_PAYPAL_ACCOUNT');
+            return PayoutResult::failure('No PayPal account configured', 'NO_PAYPAL_ACCOUNT');
         }
 
         $paypalEmail = $payoutMethod->details['email'] ?? null;
 
         if (! $paypalEmail) {
-            return PayoutResultData::failure('PayPal email missing', 'INVALID_PAYPAL_ACCOUNT');
+            return PayoutResult::failure('PayPal email missing', 'INVALID_PAYPAL_ACCOUNT');
         }
 
         try {
             $token = $this->getAccessToken();
 
             if (! $token) {
-                return PayoutResultData::failure('Failed to authenticate with PayPal', 'PAYPAL_AUTH_FAILED');
+                return PayoutResult::failure('Failed to authenticate with PayPal', 'PAYPAL_AUTH_FAILED');
             }
 
             $netAmount = $payout->amount_minor - $this->getFees($payout->amount_minor, $payout->currency);
@@ -87,7 +87,7 @@ final class PayPalProcessor implements PayoutProcessorInterface
                 $data = $response->json();
                 $batchId = $data['batch_header']['payout_batch_id'] ?? null;
 
-                return PayoutResultData::success(
+                return PayoutResult::success(
                     externalReference: $batchId,
                     metadata: ['payout_batch_id' => $batchId]
                 );
@@ -95,7 +95,7 @@ final class PayPalProcessor implements PayoutProcessorInterface
 
             $error = $response->json();
 
-            return PayoutResultData::failure(
+            return PayoutResult::failure(
                 reason: $error['message'] ?? 'PayPal payout failed',
                 code: $error['name'] ?? 'PAYPAL_ERROR'
             );
@@ -105,7 +105,7 @@ final class PayPalProcessor implements PayoutProcessorInterface
                 'error' => $e->getMessage(),
             ]);
 
-            return PayoutResultData::failure($e->getMessage(), 'PAYPAL_EXCEPTION');
+            return PayoutResult::failure($e->getMessage(), 'PAYPAL_EXCEPTION');
         }
     }
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Affiliates\Services\Payouts;
 
 use AIArmada\Affiliates\Contracts\PayoutProcessorInterface;
-use AIArmada\Affiliates\Data\PayoutResultData;
+use AIArmada\Affiliates\Data\PayoutResult;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use DateTimeInterface;
 use Exception;
@@ -26,10 +26,10 @@ final class StripeConnectProcessor implements PayoutProcessorInterface
         $this->apiKey = config('affiliates.payouts.stripe.secret_key', '');
     }
 
-    public function process(AffiliatePayout $payout): PayoutResultData
+    public function process(AffiliatePayout $payout): PayoutResult
     {
         if (empty($this->apiKey)) {
-            return PayoutResultData::failure('Stripe API key not configured', 'STRIPE_NOT_CONFIGURED');
+            return PayoutResult::failure('Stripe API key not configured', 'STRIPE_NOT_CONFIGURED');
         }
 
         $payoutMethod = $payout->affiliate->payoutMethods()
@@ -38,13 +38,13 @@ final class StripeConnectProcessor implements PayoutProcessorInterface
             ->first();
 
         if (! $payoutMethod) {
-            return PayoutResultData::failure('No Stripe Connect account configured', 'NO_STRIPE_ACCOUNT');
+            return PayoutResult::failure('No Stripe Connect account configured', 'NO_STRIPE_ACCOUNT');
         }
 
         $stripeAccountId = $payoutMethod->details['stripe_account_id'] ?? null;
 
         if (! $stripeAccountId) {
-            return PayoutResultData::failure('Stripe account ID missing', 'INVALID_STRIPE_ACCOUNT');
+            return PayoutResult::failure('Stripe account ID missing', 'INVALID_STRIPE_ACCOUNT');
         }
 
         try {
@@ -64,7 +64,7 @@ final class StripeConnectProcessor implements PayoutProcessorInterface
             if ($response->successful()) {
                 $data = $response->json();
 
-                return PayoutResultData::success(
+                return PayoutResult::success(
                     externalReference: $data['id'],
                     metadata: ['transfer_id' => $data['id']]
                 );
@@ -72,7 +72,7 @@ final class StripeConnectProcessor implements PayoutProcessorInterface
 
             $error = $response->json();
 
-            return PayoutResultData::failure(
+            return PayoutResult::failure(
                 reason: $error['error']['message'] ?? 'Stripe transfer failed',
                 code: $error['error']['code'] ?? 'STRIPE_ERROR'
             );
@@ -82,7 +82,7 @@ final class StripeConnectProcessor implements PayoutProcessorInterface
                 'error' => $e->getMessage(),
             ]);
 
-            return PayoutResultData::failure($e->getMessage(), 'STRIPE_EXCEPTION');
+            return PayoutResult::failure($e->getMessage(), 'STRIPE_EXCEPTION');
         }
     }
 

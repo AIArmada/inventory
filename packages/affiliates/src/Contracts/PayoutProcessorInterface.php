@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Contracts;
 
-use AIArmada\Affiliates\Data\PayoutResultData;
+use AIArmada\Affiliates\Data\PayoutResult;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use DateTimeInterface;
 
@@ -13,7 +13,7 @@ interface PayoutProcessorInterface
     /**
      * Process a payout.
      */
-    public function process(AffiliatePayout $payout): PayoutResultData;
+    public function process(AffiliatePayout $payout): PayoutResult;
 
     /**
      * Get the current status of a payout from the processor.

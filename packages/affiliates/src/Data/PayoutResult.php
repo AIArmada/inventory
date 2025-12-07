@@ -14,7 +14,7 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
  */
 #[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]
-class PayoutResultData extends Data
+class PayoutResult extends Data
 {
     /**
      * @param  array<string, mixed>  $metadata
@@ -27,6 +27,9 @@ class PayoutResultData extends Data
         public readonly array $metadata = [],
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
     public static function success(string $externalReference, array $metadata = []): self
     {
         return new self(
@@ -45,6 +48,9 @@ class PayoutResultData extends Data
         );
     }
 
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
     public static function pending(string $externalReference, array $metadata = []): self
     {
         return new self(

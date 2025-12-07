@@ -8,37 +8,57 @@ use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
+use Spatie\LaravelData\Attributes\MapInputName;
+use Spatie\LaravelData\Attributes\MapOutputName;
+use Spatie\LaravelData\Attributes\WithCast;
+use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
+use Spatie\LaravelData\Data;
+use Spatie\LaravelData\Mappers\SnakeCaseMapper;
 
-readonly class VoucherData
+/**
+ * Voucher data transfer object.
+ *
+ * Represents a voucher with all its properties and configuration.
+ */
+#[MapInputName(SnakeCaseMapper::class)]
+#[MapOutputName(SnakeCaseMapper::class)]
+class VoucherData extends Data
 {
+    /**
+     * @param  array<string, mixed>|null  $valueConfig  Configuration for compound voucher types
+     * @param  array<string, mixed>|null  $targetDefinition  Target definition for condition application
+     * @param  array<string, mixed>|null  $metadata  Additional metadata
+     */
     public function __construct(
-        public string $id,
-        public string $code,
-        public string $name,
-        public ?string $description,
-        public VoucherType $type,
-        public float $value,
-        /** @var ?array<string, mixed> Configuration for compound voucher types */
-        public ?array $valueConfig,
-        public ?string $creditDestination,
-        public int $creditDelayHours,
-        public string $currency,
-        public ?float $minCartValue,
-        public ?float $maxDiscount,
-        public ?int $usageLimit,
-        public ?int $usageLimitPerUser,
-        public bool $allowsManualRedemption,
-        public int|string|null $ownerId,
-        public ?string $ownerType,
-        public ?DateTimeInterface $startsAt,
-        public ?DateTimeInterface $expiresAt,
-        public VoucherStatus $status,
-        /** @var ?array<string, mixed> */
-        public ?array $targetDefinition,
-        /** @var ?array<string, mixed> */
-        public ?array $metadata,
+        public readonly string $id,
+        public readonly string $code,
+        public readonly string $name,
+        public readonly ?string $description,
+        public readonly VoucherType $type,
+        public readonly float $value,
+        public readonly ?array $valueConfig,
+        public readonly ?string $creditDestination,
+        public readonly int $creditDelayHours,
+        public readonly string $currency,
+        public readonly ?float $minCartValue,
+        public readonly ?float $maxDiscount,
+        public readonly ?int $usageLimit,
+        public readonly ?int $usageLimitPerUser,
+        public readonly bool $allowsManualRedemption,
+        public readonly int|string|null $ownerId,
+        public readonly ?string $ownerType,
+        #[WithCast(DateTimeInterfaceCast::class)]
+        public readonly ?DateTimeInterface $startsAt,
+        #[WithCast(DateTimeInterfaceCast::class)]
+        public readonly ?DateTimeInterface $expiresAt,
+        public readonly VoucherStatus $status,
+        public readonly ?array $targetDefinition,
+        public readonly ?array $metadata,
     ) {}
 
+    /**
+     * Create from a Voucher model.
+     */
     public static function fromModel(\AIArmada\Vouchers\Models\Voucher $voucher): self
     {
         $type = $voucher->type;
@@ -80,17 +100,26 @@ readonly class VoucherData
     }
 
     /**
+     * Create from an array.
+     *
+     * This method provides backward compatibility with existing code
+     * that uses the fromArray factory method.
+     *
      * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
         $startsAt = isset($data['starts_at']) && is_string($data['starts_at'])
             ? CarbonImmutable::parse($data['starts_at'])
-            : null;
+            : (isset($data['starts_at']) && $data['starts_at'] instanceof DateTimeInterface
+                ? $data['starts_at']
+                : null);
 
         $expiresAt = isset($data['expires_at']) && is_string($data['expires_at'])
             ? CarbonImmutable::parse($data['expires_at'])
-            : null;
+            : (isset($data['expires_at']) && $data['expires_at'] instanceof DateTimeInterface
+                ? $data['expires_at']
+                : null);
 
         /** @var string|int $typeValue */
         $typeValue = $data['type'] ?? VoucherType::Fixed->value;
@@ -142,12 +171,20 @@ readonly class VoucherData
         /** @var scalar|null $creditDelayHours */
         $creditDelayHours = $data['credit_delay_hours'] ?? 0;
 
+        $type = $typeValue instanceof VoucherType
+            ? $typeValue
+            : VoucherType::from((string) $typeValue);
+
+        $status = $statusValue instanceof VoucherStatus
+            ? $statusValue
+            : VoucherStatus::from((string) $statusValue);
+
         return new self(
             id: (string) $id,
             code: (string) $code,
             name: (string) $name,
             description: $description !== null ? (string) $description : null,
-            type: VoucherType::from($typeValue),
+            type: $type,
             value: (float) $value,
             valueConfig: $valueConfig,
             creditDestination: $creditDestination !== null ? (string) $creditDestination : null,
@@ -162,40 +199,113 @@ readonly class VoucherData
             ownerType: $ownerType !== null ? (string) $ownerType : null,
             startsAt: $startsAt,
             expiresAt: $expiresAt,
-            status: VoucherStatus::from($statusValue),
+            status: $status,
             targetDefinition: $targetDefinition,
             metadata: $metadata,
         );
     }
 
     /**
-     * @return array<string, mixed>
+     * Check if the voucher is currently active.
      */
-    public function toArray(): array
+    public function isActive(): bool
     {
-        return [
-            'id' => $this->id,
-            'code' => $this->code,
-            'name' => $this->name,
-            'description' => $this->description,
-            'type' => $this->type->value,
-            'value' => $this->value,
-            'value_config' => $this->valueConfig,
-            'currency' => $this->currency,
-            'min_cart_value' => $this->minCartValue,
-            'max_discount' => $this->maxDiscount,
-            'usage_limit' => $this->usageLimit,
-            'usage_limit_per_user' => $this->usageLimitPerUser,
-            'allows_manual_redemption' => $this->allowsManualRedemption,
-            'owner_id' => $this->ownerId,
-            'owner_type' => $this->ownerType,
-            'starts_at' => $this->startsAt?->format('Y-m-d H:i:s'),
-            'expires_at' => $this->expiresAt?->format('Y-m-d H:i:s'),
-            'status' => $this->status->value,
-            'target_definition' => $this->targetDefinition,
-            'metadata' => $this->metadata,
-            'credit_destination' => $this->creditDestination,
-            'credit_delay_hours' => $this->creditDelayHours,
-        ];
+        return $this->status === VoucherStatus::Active;
+    }
+
+    /**
+     * Check if the voucher is a percentage discount.
+     */
+    public function isPercentage(): bool
+    {
+        return $this->type === VoucherType::Percentage;
+    }
+
+    /**
+     * Check if the voucher is a fixed amount discount.
+     */
+    public function isFixed(): bool
+    {
+        return $this->type === VoucherType::Fixed;
+    }
+
+    /**
+     * Check if the voucher provides free shipping.
+     */
+    public function isFreeShipping(): bool
+    {
+        return $this->type === VoucherType::FreeShipping;
+    }
+
+    /**
+     * Check if the voucher is a compound type.
+     */
+    public function isCompound(): bool
+    {
+        return $this->type->isCompound();
+    }
+
+    /**
+     * Check if the voucher has expired.
+     */
+    public function hasExpired(): bool
+    {
+        if ($this->expiresAt === null) {
+            return false;
+        }
+
+        return $this->expiresAt < now();
+    }
+
+    /**
+     * Check if the voucher has started.
+     */
+    public function hasStarted(): bool
+    {
+        if ($this->startsAt === null) {
+            return true;
+        }
+
+        return $this->startsAt <= now();
+    }
+
+    /**
+     * Check if the voucher is within its valid date range.
+     */
+    public function isWithinDateRange(): bool
+    {
+        return $this->hasStarted() && ! $this->hasExpired();
+    }
+
+    /**
+     * Check if the voucher has a minimum cart value requirement.
+     */
+    public function hasMinCartValue(): bool
+    {
+        return $this->minCartValue !== null && $this->minCartValue > 0;
+    }
+
+    /**
+     * Check if a cart value meets the minimum requirement.
+     */
+    public function meetsMinCartValue(float $cartValue): bool
+    {
+        if (! $this->hasMinCartValue()) {
+            return true;
+        }
+
+        return $cartValue >= $this->minCartValue;
+    }
+
+    /**
+     * Get the formatted value for display.
+     */
+    public function getFormattedValue(): string
+    {
+        if ($this->isPercentage()) {
+            return $this->value.'%';
+        }
+
+        return $this->currency.' '.number_format($this->value, 2);
     }
 }
