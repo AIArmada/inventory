@@ -7,6 +7,8 @@ namespace AIArmada\Jnt;
 use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\CommerceSupport\Traits\ValidatesConfiguration;
+use AIArmada\Jnt\Cart\JntShippingCalculator;
+use AIArmada\Jnt\Cart\JntShippingConditionProvider;
 use AIArmada\Jnt\Console\Commands\ConfigCheckCommand;
 use AIArmada\Jnt\Console\Commands\HealthCheckCommand;
 use AIArmada\Jnt\Console\Commands\OrderCancelCommand;
@@ -19,6 +21,9 @@ use AIArmada\Jnt\Services\JntExpressService;
 use AIArmada\Jnt\Services\JntStatusMapper;
 use AIArmada\Jnt\Services\JntTrackingService;
 use AIArmada\Jnt\Services\WebhookService;
+use AIArmada\Jnt\Shipping\JntShippingDriver;
+use AIArmada\Jnt\Support\Integrations\CartIntegrationRegistrar;
+use AIArmada\Shipping\ShippingManager;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\Router;
 use Spatie\LaravelPackageTools\Package;
@@ -64,6 +69,7 @@ class JntServiceProvider extends PackageServiceProvider
     {
         $this->registerOwnerResolver();
         $this->registerServices();
+        $this->registerShippingServices();
     }
 
     /**
@@ -78,6 +84,8 @@ class JntServiceProvider extends PackageServiceProvider
         ]);
 
         $this->registerMiddleware();
+        $this->registerCartIntegration();
+        $this->registerShippingDriver();
     }
 
     /**
@@ -111,20 +119,56 @@ class JntServiceProvider extends PackageServiceProvider
         $this->app->alias(JntExpressService::class, 'jnt-express');
 
         // Register webhook service
-        $this->app->singleton(WebhookService::class, fn (Application $app): WebhookService => new WebhookService(
+        $this->app->singleton(WebhookService::class, fn(Application $app): WebhookService => new WebhookService(
             privateKey: $app['config']['jnt']['private_key']
         ));
 
         // Register status mapper service
-        $this->app->singleton(JntStatusMapper::class, fn (): JntStatusMapper => new JntStatusMapper);
+        $this->app->singleton(JntStatusMapper::class, fn(): JntStatusMapper => new JntStatusMapper);
         $this->app->alias(JntStatusMapper::class, 'jnt.status-mapper');
 
         // Register tracking service
-        $this->app->singleton(JntTrackingService::class, fn (Application $app): JntTrackingService => new JntTrackingService(
+        $this->app->singleton(JntTrackingService::class, fn(Application $app): JntTrackingService => new JntTrackingService(
             expressService: $app->make(JntExpressService::class),
             statusMapper: $app->make(JntStatusMapper::class),
         ));
         $this->app->alias(JntTrackingService::class, 'jnt.tracking');
+    }
+
+    /**
+     * Register shipping-related services.
+     */
+    protected function registerShippingServices(): void
+    {
+        // Register shipping calculator
+        $this->app->singleton(
+            JntShippingCalculator::class,
+            fn(Application $app): JntShippingCalculator => new JntShippingCalculator(
+                $app->make(JntExpressService::class)
+            )
+        );
+
+        // Register shipping condition provider
+        $this->app->singleton(
+            JntShippingConditionProvider::class,
+            fn(Application $app): JntShippingConditionProvider => new JntShippingConditionProvider(
+                $app->make(JntExpressService::class),
+                $app->make(JntShippingCalculator::class)
+            )
+        );
+
+        // Register cart integration registrar
+        $this->app->singleton(CartIntegrationRegistrar::class);
+
+        // Register JNT shipping driver
+        $this->app->singleton(
+            JntShippingDriver::class,
+            fn(Application $app): JntShippingDriver => new JntShippingDriver(
+                $app->make(JntExpressService::class),
+                $app->make(JntTrackingService::class),
+                $app->make(JntStatusMapper::class),
+            )
+        );
     }
 
     /**
@@ -135,5 +179,31 @@ class JntServiceProvider extends PackageServiceProvider
         /** @var Router $router */
         $router = $this->app->make(Router::class);
         $router->aliasMiddleware('jnt.verify.signature', VerifyWebhookSignature::class);
+    }
+
+    /**
+     * Register cart integration if enabled.
+     */
+    protected function registerCartIntegration(): void
+    {
+        if (config('jnt.cart.register_manager_proxy', true)) {
+            $this->app->make(CartIntegrationRegistrar::class)->register();
+        }
+    }
+
+    /**
+     * Register JNT as a shipping driver if shipping package is available.
+     */
+    protected function registerShippingDriver(): void
+    {
+        // Only register if the shipping package is installed
+        if (!class_exists(ShippingManager::class)) {
+            return;
+        }
+
+        /** @var ShippingManager $shippingManager */
+        $shippingManager = $this->app->make(ShippingManager::class);
+
+        $shippingManager->extend('jnt', fn(Application $app): JntShippingDriver => $app->make(JntShippingDriver::class));
     }
 }
