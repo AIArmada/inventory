@@ -28,7 +28,27 @@ use LogicException;
  * Unlike Stripe, CHIP doesn't have native subscription management.
  * This model manages subscriptions locally with CHIP recurring tokens for payment.
  *
- * @property Billable&Model $owner
+ * @property string $id
+ * @property string $user_id
+ * @property string $type
+ * @property string $chip_id
+ * @property string $chip_status
+ * @property string|null $chip_price
+ * @property int|null $quantity
+ * @property string|null $recurring_token
+ * @property string $billing_interval
+ * @property int $billing_interval_count
+ * @property \Illuminate\Support\Carbon|null $trial_ends_at
+ * @property \Illuminate\Support\Carbon|null $next_billing_at
+ * @property \Illuminate\Support\Carbon|null $ends_at
+ * @property string|null $coupon_id
+ * @property int|null $coupon_discount
+ * @property string|null $coupon_duration
+ * @property \Illuminate\Support\Carbon|null $coupon_applied_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Model $owner
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, SubscriptionItem> $items
  */
 class Subscription extends Model
 {

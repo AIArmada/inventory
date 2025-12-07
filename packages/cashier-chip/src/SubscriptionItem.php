@@ -16,7 +16,16 @@ use Illuminate\Support\Facades\DB;
 /**
  * CHIP Subscription Item Model
  *
- * @property Subscription|null $subscription
+ * @property string $id
+ * @property string $subscription_id
+ * @property string $chip_id
+ * @property string|null $chip_product
+ * @property string|null $chip_price
+ * @property int|null $quantity
+ * @property int|null $unit_amount
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read Subscription|null $subscription
  */
 class SubscriptionItem extends Model
 {
