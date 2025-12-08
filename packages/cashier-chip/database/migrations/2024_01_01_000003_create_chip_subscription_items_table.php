@@ -22,7 +22,7 @@ return new class extends Migration
             return;
         }
 
-        Schema::create($tableName, function (Blueprint $table) use ($tableName): void {
+        Schema::create($tableName, function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('subscription_id');
             $table->string('chip_id')->unique();

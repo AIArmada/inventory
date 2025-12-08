@@ -26,7 +26,7 @@ final class PaymentData extends ChipData
      * Create a Payment from array data (typically from CHIP API response).
      * Amounts in the array are expected to be in cents (minor units).
      *
-        * @param  array<string, mixed>|self  ...$payloads
+     * @param  array<string, mixed>|self  ...$payloads
      */
     public static function from(mixed ...$payloads): static
     {

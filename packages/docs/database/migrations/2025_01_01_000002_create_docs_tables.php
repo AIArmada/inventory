@@ -65,7 +65,7 @@ return new class extends Migration
             $table->index('due_date', $docsTable.'_due_date_index');
         });
 
-        Schema::create($statusTable, function (Blueprint $table) use ($statusTable, $docsTable): void {
+        Schema::create($statusTable, function (Blueprint $table) use ($statusTable): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('doc_id');
             $table->string('status');

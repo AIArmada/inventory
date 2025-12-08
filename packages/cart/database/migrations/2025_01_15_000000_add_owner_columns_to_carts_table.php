@@ -11,7 +11,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-    * Add owner columns to support multi-tenancy scoping regardless of runtime configuration.
+     * Add owner columns to support multi-tenancy scoping regardless of runtime configuration.
      */
     public function up(): void
     {

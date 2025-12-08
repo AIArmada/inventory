@@ -69,7 +69,7 @@ class PurchaseData extends ChipData
     ) {}
 
     /**
-        * @param  array<string, mixed>|self  ...$payloads
+     * @param  array<string, mixed>|self  ...$payloads
      */
     public static function from(mixed ...$payloads): static
     {

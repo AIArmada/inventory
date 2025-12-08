@@ -12,7 +12,7 @@ abstract class ChipData extends Data
     /**
      * Resolve the incoming payload for a data object.
      *
-        * @param  array<string, mixed>|self  ...$payloads
+     * @param  array<string, mixed>|self  ...$payloads
      * @return array<string, mixed>
      */
     protected static function resolvePayload(mixed ...$payloads): array
