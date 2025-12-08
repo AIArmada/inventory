@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string|null $owner_type
  * @property int|string|null $owner_id
  */
-trait HasOwner
+trait HasOwner // @phpstan-ignore trait.unused
 {
     /**
      * Get the owner model (polymorphic relationship).

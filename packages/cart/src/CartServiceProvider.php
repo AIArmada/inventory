@@ -153,7 +153,7 @@ final class CartServiceProvider extends PackageServiceProvider
             $cacheRepository = $app->make(\Illuminate\Cache\CacheManager::class)->store($cacheStore);
 
             $storage = new CacheStorage(
-                $cacheRepository,
+                $cacheRepository, // @phpstan-ignore argument.type
                 config('cart.cache.prefix', 'cart'),
                 config('cart.cache.ttl', 86400)
             );

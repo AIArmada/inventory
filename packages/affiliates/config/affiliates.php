@@ -316,8 +316,4 @@ return [
     | Respect the monorepo helper for JSON column type (json/jsonb).
     |
     */
-
-    'database' => [
-        'json_column_type' => env('AFFILIATES_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),
-    ],
 ];
