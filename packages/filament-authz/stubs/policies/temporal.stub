@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ userModel }};
+use {{ model }};
+use AIArmada\FilamentAuthz\Services\PermissionAggregator;
+use AIArmada\FilamentAuthz\Services\TemporalPermissionService;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class {{ class }}
+{
+    use HandlesAuthorization;
+
+    public function __construct(
+        protected PermissionAggregator $aggregator,
+        protected TemporalPermissionService $temporal
+    ) {}
+
+    /**
+     * Check for active temporal permission grant.
+     */
+    protected function hasTemporalGrant({{ user }} $user, string $permission): bool
+    {
+        return $this->temporal->hasActiveGrant($user, $permission);
+    }
+
+{{ methods }}
+}

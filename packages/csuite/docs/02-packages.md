@@ -220,7 +220,7 @@ J&T Express admin panel.
 composer require aiarmada/filament-jnt
 ```
 
-### filament-permissions
+### filament-authz
 
 Role & permission management.
 
@@ -231,7 +231,7 @@ Role & permission management.
 | Users | User role assignment |
 
 ```bash
-composer require aiarmada/filament-permissions
+composer require aiarmada/filament-authz
 ```
 
 ## Package Selection Guide

@@ -1,0 +1,61 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ userModel }};
+use {{ model }};
+use AIArmada\FilamentAuthz\Services\PolicyEngine;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class {{ class }}
+{
+    use HandlesAuthorization;
+
+    public function __construct(
+        protected PolicyEngine $policyEngine
+    ) {}
+
+    /**
+     * Evaluate ABAC policy with full context.
+     */
+    protected function evaluatePolicy({{ user }} $user, string $action, ?{{ modelVariable }} ${{ modelVariable }} = null): bool
+    {
+        $context = [
+            'user' => [
+                'id' => $user->id,
+                'roles' => method_exists($user, 'getRoleNames') ? $user->getRoleNames()->toArray() : [],
+                'teams' => $user->teams?->pluck('id')->toArray() ?? [],
+                'department' => $user->department ?? null,
+                'created_at' => $user->created_at,
+            ],
+            'resource' => ${{ modelVariable }} ? [
+                'id' => ${{ modelVariable }}->id,
+                'owner_id' => ${{ modelVariable }}->user_id ?? ${{ modelVariable }}->owner_id ?? null,
+                'team_id' => ${{ modelVariable }}->team_id ?? null,
+                'status' => ${{ modelVariable }}->status ?? null,
+                'created_at' => ${{ modelVariable }}->created_at ?? null,
+            ] : null,
+            'environment' => [
+                'ip' => request()->ip(),
+                'time' => now(),
+                'day_of_week' => now()->dayOfWeek,
+            ],
+        ];
+
+        $result = $this->policyEngine->evaluate("{{ permissionPrefix }}.{$action}", $context);
+
+        return $result->isPermitted();
+    }
+
+    /**
+     * Check if user owns the resource.
+     */
+    protected function isOwner({{ user }} $user, {{ modelVariable }} ${{ modelVariable }}): bool
+    {
+        return (${{ modelVariable }}->user_id ?? ${{ modelVariable }}->owner_id ?? null) === $user->id;
+    }
+
+{{ methods }}
+}

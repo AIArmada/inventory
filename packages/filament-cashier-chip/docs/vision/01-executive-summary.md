@@ -117,7 +117,7 @@ Real-time widgets showing MRR, active subscribers, churn rate, trial conversions
 Create, view, email, and export invoices with line-item management and PDF generation.
 
 ### 5. Seamless Integration
-Works out-of-box with `filament-chip` for unified billing admin, and `filament-permissions` for role-based access.
+Works out-of-box with `filament-chip` for unified billing admin, and `filament-authz` for role-based access.
 
 ---
 
@@ -217,7 +217,7 @@ src/
 
 ### Optional
 - `aiarmada/filament-chip` - Enhanced integration with purchase resources
-- `aiarmada/filament-permissions` - Role-based access control
+- `aiarmada/filament-authz` - Role-based access control
 
 ---
 

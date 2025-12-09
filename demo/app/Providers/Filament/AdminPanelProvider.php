@@ -9,7 +9,7 @@ use AIArmada\FilamentCart\FilamentCartPlugin;
 use AIArmada\FilamentChip\FilamentChipPlugin;
 use AIArmada\FilamentInventory\FilamentInventoryPlugin;
 use AIArmada\FilamentJnt\FilamentJntPlugin;
-use AIArmada\FilamentPermissions\FilamentPermissionsPlugin;
+use AIArmada\FilamentAuthz\FilamentAuthzPlugin;
 use AIArmada\FilamentStock\FilamentStockPlugin;
 use AIArmada\FilamentVouchers\FilamentVouchersPlugin;
 use Filament\Http\Middleware\Authenticate;
@@ -81,7 +81,7 @@ final class AdminPanelProvider extends PanelProvider
                 FilamentAffiliatesPlugin::make(),
                 FilamentChipPlugin::make(),
                 FilamentJntPlugin::make(),
-                FilamentPermissionsPlugin::make(),
+                FilamentAuthzPlugin::make(),
             ])
             ->middleware([
                 EncryptCookies::class,

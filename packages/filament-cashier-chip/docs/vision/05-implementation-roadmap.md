@@ -455,7 +455,7 @@ Finalize package with testing, documentation, and polish.
 
 ### Optional Integrations
 - [ ] `filament-chip` for unified billing UI
-- [ ] `filament-permissions` for RBAC
+- [ ] `filament-authz` for RBAC
 
 ---
 

@@ -5,12 +5,15 @@ declare(strict_types=1);
 $tablePrefix = env('AUTHZ_TABLE_PREFIX', env('COMMERCE_TABLE_PREFIX', ''));
 
 $tables = [
-    'permission_groups' => $tablePrefix.'authz_permission_groups',
-    'role_templates' => $tablePrefix.'authz_role_templates',
-    'permission_group_permission' => $tablePrefix.'authz_permission_group_permission',
-    'scoped_permissions' => $tablePrefix.'authz_scoped_permissions',
-    'access_policies' => $tablePrefix.'authz_access_policies',
-    'audit_logs' => $tablePrefix.'authz_audit_logs',
+    'permission_groups' => $tablePrefix . 'authz_permission_groups',
+    'role_templates' => $tablePrefix . 'authz_role_templates',
+    'permission_group_permission' => $tablePrefix . 'authz_permission_group_permission',
+    'scoped_permissions' => $tablePrefix . 'authz_scoped_permissions',
+    'access_policies' => $tablePrefix . 'authz_access_policies',
+    'audit_logs' => $tablePrefix . 'authz_audit_logs',
+    'permission_snapshots' => $tablePrefix . 'authz_permission_snapshots',
+    'permission_requests' => $tablePrefix . 'authz_permission_requests',
+    'delegations' => $tablePrefix . 'authz_delegations',
 ];
 
 return [
@@ -121,6 +124,17 @@ return [
         'combining_algorithm' => 'deny_overrides',
         'cache_policies' => true,
         'cache_ttl' => 300,
+        'default_type' => 'basic', // basic, hierarchical, contextual, temporal, abac, composite
+        'stubs_path' => null, // Custom stubs directory, defaults to package stubs
+        'methods' => [
+            'viewAny',
+            'view',
+            'create',
+            'update',
+            'delete',
+            'restore',
+            'forceDelete',
+        ],
     ],
 
     /*
@@ -128,18 +142,78 @@ return [
     | Permission Discovery
     |--------------------------------------------------------------------------
     |
-    | Auto-discover permissions from Filament resources implementing
-    | RegistersPermissions interface.
+    | Auto-discover permissions from Filament resources, pages, and widgets.
     |
     */
     'discovery' => [
-        'enabled' => env('AUTHZ_DISCOVERY_ENABLED', false),
+        'enabled' => env('AUTHZ_DISCOVERY_ENABLED', true),
         'auto_sync' => env('AUTHZ_DISCOVERY_AUTO_SYNC', false),
-        'namespaces' => [
-            // Add namespaces to scan for resources with permission registration
-            // 'AIArmada\\FilamentVouchers\\Resources',
-            // 'AIArmada\\FilamentCart\\Resources',
-            // 'AIArmada\\FilamentInventory\\Resources',
+        'discover_all_panels' => true,
+        'panels' => [], // Leave empty to discover all panels
+
+        // Cache settings
+        'cache' => [
+            'enabled' => true,
+            'ttl' => 3600, // 1 hour
         ],
+
+        // Namespace filtering
+        'namespaces' => [
+            'include' => [
+                // 'App\\Filament\\*',
+            ],
+            'exclude' => [
+                // 'App\\Filament\\Admin\\Resources\\Shield*',
+            ],
+        ],
+
+        // Exclude specific classes
+        'exclude' => [
+            // 'App\\Filament\\Resources\\ShieldResource',
+        ],
+
+        // Exclude patterns (applied to class basename)
+        'exclude_patterns' => [
+            // 'Shield*',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Enterprise Features
+    |--------------------------------------------------------------------------
+    */
+    'enterprise' => [
+        // Permission Versioning
+        'versioning' => [
+            'enabled' => true,
+            'auto_snapshot_on_sync' => false,
+            'max_snapshots' => 50,
+        ],
+
+        // Permission Delegation
+        'delegation' => [
+            'enabled' => true,
+            'max_delegation_depth' => 3,
+            'allow_redelegation' => false,
+        ],
+
+        // Approval Workflows
+        'approvals' => [
+            'enabled' => false,
+            'auto_approve_for_roles' => [],
+            'notification_channels' => ['mail', 'database'],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Panel Access Configuration
+    |--------------------------------------------------------------------------
+    */
+    'panel_user_role' => null, // Role auto-assigned to new users for panel access
+    'panel_roles' => [
+        // 'admin' => ['Super Admin', 'Admin'],
+        // 'app' => ['Super Admin', 'User'],
     ],
 ];

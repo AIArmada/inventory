@@ -85,6 +85,8 @@ parameters:
         - message: '#Type Spatie\\Permission\\Models\\Role in generic type.*is not subtype of template type.*#'
         # Ignore unused traits in filament-permissions (they're part of the public API)
         - message: '#Trait AIArmada\\FilamentPermissions\\Concerns\\.*is used zero times and is not analysed\.#'
+        # Ignore unused traits in filament-authz (they're part of the public API)
+        - message: '#Trait AIArmada\\FilamentAuthz\\Concerns\\.*is used zero times and is not analysed\.#'
         # Ignore unused traits in inventory (they're part of the public API for other packages)
         - message: '#Trait AIArmada\\Inventory\\Traits\\HasInventory is used zero times and is not analysed\.#'
         - message: '#Trait AIArmada\\Inventory\\Traits\\HasSerialNumbers is used zero times and is not analysed\.#'

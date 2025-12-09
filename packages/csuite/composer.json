@@ -19,7 +19,7 @@
         "aiarmada/filament-chip": "self.version",
         "aiarmada/filament-docs": "self.version",
         "aiarmada/filament-jnt": "self.version",
-        "aiarmada/filament-permissions": "self.version",
+        "aiarmada/filament-authz": "self.version",
         "aiarmada/filament-stock": "self.version",
         "aiarmada/filament-vouchers": "self.version",
         "aiarmada/jnt": "self.version",

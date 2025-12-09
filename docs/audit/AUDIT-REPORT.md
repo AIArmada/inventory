@@ -11,7 +11,7 @@
 | Severity | Count | Packages Affected |
 |----------|-------|-------------------|
 | **Critical** | 4 | cashier-chip, vouchers, filament-docs |
-| **High** | 9 | affiliates, cashier-chip, filament-affiliates, filament-permissions |
+| **High** | 9 | affiliates, cashier-chip, filament-affiliates, filament-authz |
 | **Medium** | 35+ | Nearly all packages |
 | **Low** | 60+ | All packages |
 
@@ -77,13 +77,13 @@
 **Impact**: Deprecated API in Filament 5  
 **Fix**: Update to Schema API
 
-### 6. filament-permissions - shouldRegisterNavigation() Returns Nullable
+### 6. filament-authz - shouldRegisterNavigation() Returns Nullable
 **Files**: `RoleResource.php`, `PermissionResource.php`, `UserResource.php`  
 **Issue**: `$user?->can()` can return `null` but method expects `bool`  
 **Impact**: Potential type errors  
 **Fix**: Explicitly cast to bool
 
-### 7. filament-permissions - Missing DB Import
+### 7. filament-authz - Missing DB Import
 **File**: `PermissionStatsWidget.php`  
 **Issue**: Uses `DB` facade without import  
 **Impact**: Relies on global alias  
@@ -117,7 +117,7 @@
 | stock | Uses `table_name` at root level (inconsistent) |
 | filament-affiliates | Navigation group inconsistency ('E-commerce' vs 'E-Commerce') |
 | filament-jnt | Config keys don't match resource navigation_sort keys |
-| filament-permissions | Missing feature flags referenced in Plugin |
+| filament-authz | Missing feature flags referenced in Plugin |
 
 ### Service Providers
 
@@ -136,8 +136,8 @@
 | filament-affiliates | Using deprecated `BadgeColumn` |
 | filament-cart | Hardcoded navigation sort values |
 | filament-cart | `getNavigationBadge()` return type should be `?string` |
-| filament-permissions | Not using PackageServiceProvider pattern |
-| filament-permissions | `canPerform()` missing proper user type hint |
+| filament-authz | Not using PackageServiceProvider pattern |
+| filament-authz | `canPerform()` missing proper user type hint |
 
 ---
 
@@ -155,7 +155,7 @@
 | vouchers | Models not marked as `final` |
 | All filament-* | Missing `php` requirement in composer.json |
 | filament-chip | PHPStan ignore comments for macro methods |
-| filament-permissions | Hardcoded package paths in discovery |
+| filament-authz | Hardcoded package paths in discovery |
 
 ### Consistency Issues
 
@@ -183,17 +183,17 @@
 3. `packages/filament-affiliates/src/FilamentAffiliatesPlugin.php`
 4. `packages/filament-affiliates/src/Resources/AffiliateFraudSignalResource.php`
 5. `packages/filament-affiliates/src/Resources/AffiliateProgramResource.php`
-6. `packages/filament-permissions/src/Resources/RoleResource.php`
-7. `packages/filament-permissions/src/Resources/PermissionResource.php`
-8. `packages/filament-permissions/src/Resources/UserResource.php`
-9. `packages/filament-permissions/src/Widgets/PermissionStatsWidget.php`
+6. `packages/filament-authz/src/Resources/RoleResource.php`
+7. `packages/filament-authz/src/Resources/PermissionResource.php`
+8. `packages/filament-authz/src/Resources/UserResource.php`
+9. `packages/filament-authz/src/Widgets/PermissionStatsWidget.php`
 
 ### Medium Priority Files
 1. `packages/stock/config/stock.php`
 2. `packages/docs/src/Models/*.php`
 3. `packages/affiliates/src/Models/*.php`
 4. `packages/filament-cart/src/Models/*.php`
-5. `packages/filament-permissions/config/filament-permissions.php`
+5. `packages/filament-authz/config/filament-authz.php`
 6. `packages/filament-jnt/config/filament-jnt.php`
 
 ---

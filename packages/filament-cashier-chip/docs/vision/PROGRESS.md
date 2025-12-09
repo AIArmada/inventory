@@ -40,7 +40,7 @@ Chip Payment Gateway API (External)
 ### Core Configuration
 - [ ] Panel configuration options
 - [ ] Navigation group/sort settings
-- [ ] Permission integration with `filament-permissions`
+- [ ] Permission integration with `filament-authz`
 - [ ] Multi-tenancy support configuration
 
 ### Dependencies
@@ -175,7 +175,7 @@ Chip Payment Gateway API (External)
 | Package | Integration |
 |---------|-------------|
 | `aiarmada/filament-chip` | Shared resources for Chip purchases |
-| `aiarmada/filament-permissions` | Role-based access to billing features |
+| `aiarmada/filament-authz` | Role-based access to billing features |
 
 ### Constraints
 - All subscription logic delegated to `cashier-chip` package

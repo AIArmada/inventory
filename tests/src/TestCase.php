@@ -22,7 +22,7 @@ abstract class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(function (string $modelName) {
-            return Str::replace('Models', 'Database\\Factories', $modelName).'Factory';
+            return Str::replace('Models', 'Database\\Factories', $modelName) . 'Factory';
         });
 
         // Start session for Livewire/Filament tests
@@ -61,7 +61,7 @@ abstract class TestCase extends Orchestra
             \AIArmada\FilamentCart\FilamentCartServiceProvider::class,
             \AIArmada\FilamentChip\FilamentChipServiceProvider::class,
             \Spatie\Permission\PermissionServiceProvider::class,
-            \AIArmada\FilamentPermissions\FilamentPermissionsServiceProvider::class,
+            \AIArmada\FilamentAuthz\FilamentAuthzServiceProvider::class,
             \AIArmada\FilamentVouchers\FilamentVouchersServiceProvider::class,
             \AIArmada\Affiliates\AffiliatesServiceProvider::class,
             \AIArmada\FilamentAffiliates\FilamentAffiliatesServiceProvider::class,
@@ -83,7 +83,7 @@ abstract class TestCase extends Orchestra
     protected function defineEnvironment($app): void
     {
         // Setup the test environment
-        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        $app['config']->set('app.key', 'base64:' . base64_encode(random_bytes(32)));
         $app['config']->set('app.env', 'testing');
         $app['config']->set('database.default', 'testing');
 
@@ -121,12 +121,58 @@ abstract class TestCase extends Orchestra
             'serialize' => false,
         ]);
 
+        // Configure Spatie Laravel Data settings for testing
+        $app['config']->set('data.date_format', DATE_ATOM);
+        $app['config']->set('data.date_timezone', null);
+        $app['config']->set('data.max_transformation_depth', 512);
+        $app['config']->set('data.throw_when_max_transformation_depth_reached', true);
+        $app['config']->set('data.features.cast_and_transform_iterables', true);
+        $app['config']->set('data.transformers', [
+            \DateTimeInterface::class => \Spatie\LaravelData\Transformers\DateTimeInterfaceTransformer::class,
+            \Illuminate\Contracts\Support\Arrayable::class => \Spatie\LaravelData\Transformers\ArrayableTransformer::class,
+            \BackedEnum::class => \Spatie\LaravelData\Transformers\EnumTransformer::class,
+        ]);
+        $app['config']->set('data.casts', [
+            \DateTimeInterface::class => \Spatie\LaravelData\Casts\DateTimeInterfaceCast::class,
+            \BackedEnum::class => \Spatie\LaravelData\Casts\EnumCast::class,
+        ]);
+
         // Configure cart settings for testing
         $app['config']->set('cart.storage', 'database');
         $app['config']->set('cart.database.connection', 'testing');
         $app['config']->set('cart.database.table', 'carts');
         $app['config']->set('cart.events', true);
 
+        // Configure docs settings for testing
+        $app['config']->set('docs.types', [
+            'invoice' => [
+                'default_template' => 'doc-default',
+                'numbering' => [
+                    'strategy' => \AIArmada\Docs\Numbering\Strategies\DefaultNumberStrategy::class,
+                    'prefix' => 'INV',
+                ],
+            ],
+            'receipt' => [
+                'default_template' => 'doc-default',
+                'numbering' => [
+                    'strategy' => \AIArmada\Docs\Numbering\Strategies\DefaultNumberStrategy::class,
+                    'prefix' => 'RCP',
+                ],
+            ],
+            'credit_note' => [
+                'default_template' => 'doc-default',
+                'numbering' => [
+                    'strategy' => \AIArmada\Docs\Numbering\Strategies\DefaultNumberStrategy::class,
+                    'prefix' => 'CN',
+                ],
+            ],
+        ]);
+        $app['config']->set('docs.numbering.format', [
+            'date_format' => 'Ymd',
+            'separator' => '-',
+            'use_sequence' => true,
+            'sequence_padding' => 5,
+        ]);
         // Configure CHIP settings for testing
         $app['config']->set('chip.collect.api_key', 'test_secret_key');
         $app['config']->set('chip.collect.secret_key', 'test_secret_key'); // For backward compatibility with tests
@@ -149,6 +195,12 @@ abstract class TestCase extends Orchestra
         $app['config']->set('filament-chip.navigation_badge_color', 'primary');
         $app['config']->set('filament-chip.polling_interval', '45s');
 
+        // Configure vouchers settings for testing
+        $app['config']->set('vouchers.redemption', [
+            'manual_requires_flag' => true,
+            'manual_channel' => 'manual',
+        ]);
+
         // Configure Spatie Permission settings for testing
         $app['config']->set('permission.models.permission', \Spatie\Permission\Models\Permission::class);
         $app['config']->set('permission.models.role', \Spatie\Permission\Models\Role::class);
@@ -165,10 +217,15 @@ abstract class TestCase extends Orchestra
             'model_morph_key' => 'model_id',
             'team_foreign_key' => 'team_id',
         ]);
+        $app['config']->set('permission.cache', [
+            'key' => 'spatie.permission.cache',
+            'store' => 'array',
+            'expiration_time' => \DateInterval::createFromDateString('24 hours'),
+        ]);
 
-        // Configure filament-permissions settings for testing
-        $app['config']->set('filament-permissions.guards', ['web', 'admin']);
-        $app['config']->set('filament-permissions.super_admin_role', 'Super Admin');
+        // Configure filament-authz settings for testing
+        $app['config']->set('filament-authz.guards', ['web', 'admin']);
+        $app['config']->set('filament-authz.super_admin_role', 'Super Admin');
 
         // Configure auth to use our test User model
         $app['config']->set('auth.providers.users.model', Fixtures\Models\User::class);
@@ -176,10 +233,10 @@ abstract class TestCase extends Orchestra
 
     protected function defineDatabaseMigrations(): void
     {
-        $this->loadMigrationsFrom(__DIR__.'/../../packages/chip/database/migrations');
-        $this->loadMigrationsFrom(__DIR__.'/../../packages/vouchers/database/migrations');
-        $this->loadMigrationsFrom(__DIR__.'/../../vendor/spatie/laravel-permission/database/migrations');
-        $this->loadMigrationsFrom(__DIR__.'/../../packages/affiliates/database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../../packages/chip/database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../../packages/vouchers/database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../../vendor/spatie/laravel-permission/database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../../packages/affiliates/database/migrations');
     }
 
     protected function setUpDatabase(): void
@@ -214,7 +271,7 @@ abstract class TestCase extends Orchestra
             $table->id();
             $table->string('name');
             $table->string('guard_name');
-            // Hierarchy columns for filament-permissions
+            // Hierarchy columns for filament-authz
             $table->foreignUuid('parent_role_id')->nullable();
             $table->foreignUuid('template_id')->nullable();
             $table->text('description')->nullable();

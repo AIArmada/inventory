@@ -18,7 +18,7 @@ pest()->extend(TestCase::class)->in(
     'src/Docs',
     'src/FilamentCart',
     'src/FilamentChip',
-    'src/FilamentPermissions',
+    'src/FilamentAuthz',
     'src/FilamentAffiliates',
     'src/Jnt',
     'src/Stock',

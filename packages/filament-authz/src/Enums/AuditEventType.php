@@ -73,6 +73,14 @@ enum AuditEventType: string
     // Role Removal
     case RoleRemoved = 'role.removed';
 
+    // Snapshot Events
+    case SnapshotCreated = 'snapshot.created';
+    case SnapshotRestored = 'snapshot.restored';
+
+    // Delegation Events
+    case PermissionDelegated = 'delegation.granted';
+    case PermissionDelegationRevoked = 'delegation.revoked';
+
     public function label(): string
     {
         return match ($this) {
@@ -121,6 +129,10 @@ enum AuditEventType: string
             self::UnauthorizedAccess => 'Unauthorized Access',
             self::BulkOperation => 'Bulk Operation',
             self::RoleRemoved => 'Role Removed',
+            self::SnapshotCreated => 'Snapshot Created',
+            self::SnapshotRestored => 'Snapshot Restored',
+            self::PermissionDelegated => 'Permission Delegated',
+            self::PermissionDelegationRevoked => 'Permission Delegation Revoked',
         };
     }
 
@@ -182,6 +194,12 @@ enum AuditEventType: string
             self::UnauthorizedAccess => 'security',
 
             self::RoleRemoved => 'role',
+
+            self::SnapshotCreated,
+            self::SnapshotRestored => 'snapshot',
+
+            self::PermissionDelegated,
+            self::PermissionDelegationRevoked => 'delegation',
         };
     }
 
@@ -198,6 +216,8 @@ enum AuditEventType: string
             'system' => 'heroicon-o-cog-6-tooth',
             'auth' => 'heroicon-o-user-circle',
             'security' => 'heroicon-o-shield-exclamation',
+            'snapshot' => 'heroicon-o-camera',
+            'delegation' => 'heroicon-o-arrow-path',
             default => 'heroicon-o-information-circle',
         };
     }

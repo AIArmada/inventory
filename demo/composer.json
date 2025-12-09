@@ -72,7 +72,7 @@
         },
         {
             "type": "path",
-            "url": "../packages/filament-permissions"
+            "url": "../packages/filament-authz"
         },
         {
             "type": "path",
@@ -103,7 +103,7 @@
         "aiarmada/filament-affiliates": "*",
         "aiarmada/filament-chip": "*",
         "aiarmada/filament-jnt": "*",
-        "aiarmada/filament-permissions": "*",
+        "aiarmada/filament-authz": "*",
         "aiarmada/inventory": "*",
         "aiarmada/filament-inventory": "*",
         "laravel/cashier": "^16.0"

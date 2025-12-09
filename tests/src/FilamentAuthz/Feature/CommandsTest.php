@@ -8,13 +8,13 @@ use Spatie\Permission\PermissionRegistrar;
 
 test('sync command creates permissions and roles', function (): void {
     config([
-        'filament-permissions.sync.permissions' => ['users.viewAny', 'users.create'],
-        'filament-permissions.sync.roles' => [
+        'filament-authz.sync.permissions' => ['users.viewAny', 'users.create'],
+        'filament-authz.sync.roles' => [
             'Admin' => ['users.viewAny', 'users.create'],
         ],
     ]);
 
-    $this->artisan('permissions:sync', ['--flush-cache' => true])
+    $this->artisan('authz:sync', ['--flush-cache' => true])
         ->assertSuccessful();
 
     expect(Permission::where('name', 'users.viewAny')->exists())->toBeTrue()
@@ -24,7 +24,7 @@ test('sync command creates permissions and roles', function (): void {
 test('doctor command detects unused permissions', function (): void {
     Permission::create(['name' => 'orphaned.permission', 'guard_name' => 'web']);
 
-    $this->artisan('permissions:doctor')
+    $this->artisan('authz:doctor')
         ->expectsOutputToContain('orphaned.permission')
         ->assertFailed();
 });
@@ -35,7 +35,7 @@ test('export command creates json file', function (): void {
 
     $path = storage_path('test-permissions.json');
 
-    $this->artisan('permissions:export', ['path' => $path])
+    $this->artisan('authz:export', ['path' => $path])
         ->assertSuccessful();
 
     expect(file_exists($path))->toBeTrue();
@@ -63,7 +63,7 @@ test('import command loads json file', function (): void {
     $path = storage_path('import-test.json');
     file_put_contents($path, json_encode($data));
 
-    $this->artisan('permissions:import', ['path' => $path, '--flush-cache' => true])
+    $this->artisan('authz:import', ['path' => $path, '--flush-cache' => true])
         ->assertSuccessful();
 
     expect(Permission::where('name', 'imported.permission')->exists())->toBeTrue()

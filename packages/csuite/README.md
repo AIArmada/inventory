@@ -58,7 +58,7 @@ Or install individual packages as needed (see below).
 | [filament-docs](../filament-docs) | Document management admin panel |
 | [filament-chip](../filament-chip) | CHIP payment admin panel |
 | [filament-jnt](../filament-jnt) | J&T Express admin panel |
-| [filament-permissions](../filament-permissions) | Role & permission management |
+| [filament-authz](../filament-authz) | Role & permission management |
 
 ## Quick Start
 

@@ -8,6 +8,8 @@ use AIArmada\FilamentAuthz\Listeners\PermissionEventSubscriber;
 use AIArmada\FilamentAuthz\Services\AuditLogger;
 use AIArmada\FilamentAuthz\Services\ComplianceReportService;
 use AIArmada\FilamentAuthz\Services\ContextualAuthorizationService;
+use AIArmada\FilamentAuthz\Services\DelegationService;
+use AIArmada\FilamentAuthz\Services\EntityDiscoveryService;
 use AIArmada\FilamentAuthz\Services\ImplicitPermissionService;
 use AIArmada\FilamentAuthz\Services\PermissionAggregator;
 use AIArmada\FilamentAuthz\Services\PermissionCacheService;
@@ -15,7 +17,9 @@ use AIArmada\FilamentAuthz\Services\PermissionGroupService;
 use AIArmada\FilamentAuthz\Services\PermissionImpactAnalyzer;
 use AIArmada\FilamentAuthz\Services\PermissionRegistry;
 use AIArmada\FilamentAuthz\Services\PermissionTester;
+use AIArmada\FilamentAuthz\Services\PermissionVersioningService;
 use AIArmada\FilamentAuthz\Services\PolicyEngine;
+use AIArmada\FilamentAuthz\Services\PolicyGeneratorService;
 use AIArmada\FilamentAuthz\Services\RoleComparer;
 use AIArmada\FilamentAuthz\Services\RoleInheritanceService;
 use AIArmada\FilamentAuthz\Services\RoleTemplateService;
@@ -31,26 +35,26 @@ class FilamentAuthzServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(FilamentAuthzPlugin::class);
-        $this->mergeConfigFrom(__DIR__ . '/../config/filament-authz.php', 'filament-authz');
+        $this->mergeConfigFrom(__DIR__.'/../config/filament-authz.php', 'filament-authz');
 
         $this->registerServices();
     }
 
     public function boot(): void
     {
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'filament-authz');
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'filament-authz');
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         $this->publishes([
-            __DIR__ . '/../config/filament-authz.php' => config_path('filament-authz.php'),
+            __DIR__.'/../config/filament-authz.php' => config_path('filament-authz.php'),
         ], 'filament-authz-config');
 
         $this->publishes([
-            __DIR__ . '/../resources/views' => resource_path('views/vendor/filament-authz'),
+            __DIR__.'/../resources/views' => resource_path('views/vendor/filament-authz'),
         ], 'filament-authz-views');
 
         $this->publishes([
-            __DIR__ . '/../database/migrations' => database_path('migrations'),
+            __DIR__.'/../database/migrations' => database_path('migrations'),
         ], 'filament-authz-migrations');
 
         $this->registerGateBefore();
@@ -120,6 +124,37 @@ class FilamentAuthzServiceProvider extends ServiceProvider
 
         $this->app->singleton(AuditLogger::class);
         $this->app->singleton(ComplianceReportService::class);
+
+        // Entity Discovery
+        $this->app->singleton(EntityDiscoveryService::class);
+
+        // Policy Generator
+        $this->app->singleton(PolicyGeneratorService::class);
+
+        // Permission Versioning
+        $this->app->singleton(PermissionVersioningService::class, function ($app) {
+            return new PermissionVersioningService(
+                $app->make(AuditLogger::class)
+            );
+        });
+
+        // Delegation Service
+        $this->app->singleton(DelegationService::class, function ($app) {
+            return new DelegationService(
+                $app->make(AuditLogger::class)
+            );
+        });
+
+        // Compliance Report Generator
+        $this->app->singleton(Services\ComplianceReportGenerator::class);
+
+        // Identity Provider Sync
+        $this->app->singleton(Services\IdentityProviderSync::class);
+
+        // Code Manipulator (not singleton, new instance per file)
+        $this->app->bind(Services\CodeManipulator::class, function ($app, $params) {
+            return new Services\CodeManipulator($params['path'] ?? '');
+        });
     }
 
     protected function registerGateBefore(): void
@@ -134,7 +169,7 @@ class FilamentAuthzServiceProvider extends ServiceProvider
         // Register wildcard permission resolution
         if (config('filament-authz.features.wildcard_permissions', true)) {
             Gate::before(function ($user, string $ability) {
-                if (!method_exists($user, 'getAllPermissions')) {
+                if (! method_exists($user, 'getAllPermissions')) {
                     return null;
                 }
 
@@ -165,6 +200,10 @@ class FilamentAuthzServiceProvider extends ServiceProvider
                 Console\RoleHierarchyCommand::class,
                 Console\RoleTemplateCommand::class,
                 Console\AuthzCacheCommand::class,
+                Console\SetupCommand::class,
+                Console\DiscoverCommand::class,
+                Console\SnapshotCommand::class,
+                Console\InstallTraitCommand::class,
             ]);
         }
     }

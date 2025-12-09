@@ -186,7 +186,7 @@ Payment Gateway APIs (Stripe, CHIP)
 | Package | Integration |
 |---------|-------------|
 | `aiarmada/filament-cashier-chip` | Enhanced CHIP-specific UI |
-| `aiarmada/filament-permissions` | Role-based access control |
+| `aiarmada/filament-authz` | Role-based access control |
 
 ### Constraints
 - Unified interface - delegates to gateway-specific packages

@@ -35,6 +35,7 @@ final class ResourcePermissionDiscovery
 
         foreach ($resources as $resourceClass) {
             if ($this->implementsRegistersPermissions($resourceClass)) {
+                /** @var class-string<resource&RegistersPermissions> $resourceClass */
                 $count = $this->registerPermissionsForResource($resourceClass);
                 $discoveredCount++;
                 $permissionCount += $count;
@@ -63,6 +64,7 @@ final class ResourcePermissionDiscovery
 
             foreach ($classes as $resourceClass) {
                 if ($this->implementsRegistersPermissions($resourceClass)) {
+                    /** @var class-string<resource&RegistersPermissions> $resourceClass */
                     $count = $this->registerPermissionsForResource($resourceClass);
                     $discoveredCount++;
                     $permissionCount += $count;
@@ -109,7 +111,8 @@ final class ResourcePermissionDiscovery
      */
     public function getPermissionsForResource(string $resourceClass): array
     {
-        return $resourceClass::getPermissionNames();
+        /** @var array<string> */
+        return $resourceClass::getPermissionAbilities();
     }
 
     /**
@@ -159,12 +162,13 @@ final class ResourcePermissionDiscovery
             $path = base_path($knownPackages[$namespace]);
 
             if (is_dir($path)) {
-                $files = glob($path.'/*Resource.php');
+                $files = glob($path.'/*Resource.php') ?: [];
 
                 foreach ($files as $file) {
-                    $className = $namespace.'\\'.basename($file, '.php');
+                    $className = $namespace.'\\'.basename((string) $file, '.php');
 
                     if (class_exists($className) && is_subclass_of($className, Resource::class)) {
+                        /** @var class-string<resource> $className */
                         $classes->push($className);
                     }
                 }

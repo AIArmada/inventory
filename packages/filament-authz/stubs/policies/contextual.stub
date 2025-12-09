@@ -1,0 +1,50 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ userModel }};
+use {{ model }};
+use AIArmada\FilamentAuthz\Services\PermissionAggregator;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class {{ class }}
+{
+    use HandlesAuthorization;
+
+    public function __construct(
+        protected PermissionAggregator $aggregator
+    ) {}
+
+    /**
+     * Check permission with team/tenant context.
+     */
+    protected function checkInContext({{ user }} $user, string $ability, ?{{ modelVariable }} ${{ modelVariable }} = null): bool
+    {
+        // Check team context
+        if (${{ modelVariable }}?->team_id) {
+            return $this->aggregator->checkPermission($user, $ability);
+        }
+
+        // Check tenant context
+        if ($tenant = filament()?->getTenant()) {
+            return $this->aggregator->checkPermission($user, $ability);
+        }
+
+        // Fallback to global check with hierarchy
+        return $this->aggregator->checkPermission($user, $ability);
+    }
+
+    /**
+     * Check if user owns the resource.
+     */
+    protected function isOwner({{ user }} $user, {{ modelVariable }} ${{ modelVariable }}): bool
+    {
+        $ownerColumn = ${{ modelVariable }}->getOwnerColumn() ?? 'user_id';
+
+        return ${{ modelVariable }}->{$ownerColumn} === $user->id;
+    }
+
+{{ methods }}
+}

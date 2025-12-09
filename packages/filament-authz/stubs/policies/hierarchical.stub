@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+use {{ userModel }};
+use {{ model }};
+use AIArmada\FilamentAuthz\Services\PermissionAggregator;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class {{ class }}
+{
+    use HandlesAuthorization;
+
+    public function __construct(
+        protected PermissionAggregator $aggregator
+    ) {}
+
+    /**
+     * Check permission with group hierarchy expansion.
+     */
+    protected function checkWithHierarchy({{ user }} $user, string $ability): bool
+    {
+        return $this->aggregator->checkPermission($user, $ability);
+    }
+
+{{ methods }}
+}
