@@ -19,6 +19,10 @@ class FilamentShippingPlugin implements Plugin
 
     protected bool $hasDashboardWidgets = true;
 
+    protected bool $hasShippingDashboard = true;
+
+    protected bool $hasManifestPage = true;
+
     public static function make(): static
     {
         return app(static::class);
@@ -52,9 +56,19 @@ class FilamentShippingPlugin implements Plugin
             $resources[] = Resources\ReturnAuthorizationResource::class;
         }
 
+        if ($this->hasShippingDashboard) {
+            $pages[] = Pages\ShippingDashboard::class;
+        }
+
+        if ($this->hasManifestPage) {
+            $pages[] = Pages\ManifestPage::class;
+        }
+
         if ($this->hasDashboardWidgets) {
             $widgets[] = Widgets\ShippingDashboardWidget::class;
             $widgets[] = Widgets\PendingShipmentsWidget::class;
+            $widgets[] = Widgets\CarrierPerformanceWidget::class;
+            $widgets[] = Widgets\PendingActionsWidget::class;
         }
 
         $panel
@@ -92,6 +106,20 @@ class FilamentShippingPlugin implements Plugin
     public function dashboardWidgets(bool $condition = true): static
     {
         $this->hasDashboardWidgets = $condition;
+
+        return $this;
+    }
+
+    public function shippingDashboard(bool $condition = true): static
+    {
+        $this->hasShippingDashboard = $condition;
+
+        return $this;
+    }
+
+    public function manifestPage(bool $condition = true): static
+    {
+        $this->hasManifestPage = $condition;
 
         return $this;
     }

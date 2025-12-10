@@ -13,11 +13,14 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class PendingShipmentsWidget extends BaseWidget
 {
-    protected static ?string $heading = 'Pending Shipments';
-
     protected int | string | array $columnSpan = 'full';
 
     protected static ?int $sort = 2;
+
+    public function getHeading(): string
+    {
+        return 'Pending Shipments';
+    }
 
     public function table(Table $table): Table
     {

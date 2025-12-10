@@ -20,8 +20,6 @@ use AIArmada\FilamentShipping\FilamentShippingServiceProvider;
 use AIArmada\FilamentVouchers\FilamentVouchersServiceProvider;
 use AIArmada\Jnt\JntServiceProvider;
 use AIArmada\Shipping\Facades\Shipping;
-use AIArmada\Shipping\ShippingServiceProvider;
-use AIArmada\Stock\StockServiceProvider;
 use AIArmada\Vouchers\Facades\Voucher;
 use AIArmada\Vouchers\VoucherServiceProvider;
 use BackedEnum;
@@ -94,12 +92,13 @@ abstract class TestCase extends Orchestra
             ValidationServiceProvider::class,
             LivewireServiceProvider::class,
             \Filament\Support\SupportServiceProvider::class,
+            \Filament\Forms\FormsServiceProvider::class,
+            \Filament\Tables\TablesServiceProvider::class,
             FilamentServiceProvider::class,
             CartServiceProvider::class,
             ChipServiceProvider::class,
             JntServiceProvider::class,
             DocsServiceProvider::class,
-            StockServiceProvider::class,
             VoucherServiceProvider::class,
             FilamentCartServiceProvider::class,
             FilamentChipServiceProvider::class,
@@ -108,7 +107,7 @@ abstract class TestCase extends Orchestra
             FilamentVouchersServiceProvider::class,
             AffiliatesServiceProvider::class,
             FilamentAffiliatesServiceProvider::class,
-            ShippingServiceProvider::class,
+            \AIArmada\Shipping\ShippingServiceProvider::class,
             FilamentShippingServiceProvider::class,
             FilamentCashierServiceProvider::class,
             TestPanelProvider::class,

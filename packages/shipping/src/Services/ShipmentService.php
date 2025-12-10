@@ -28,7 +28,8 @@ use RuntimeException;
 class ShipmentService
 {
     public function __construct(
-        protected readonly ShippingManager $shippingManager
+        protected readonly ShippingManager $shippingManager,
+        protected readonly ?RetryService $retryService = null
     ) {}
 
     /**
@@ -87,47 +88,57 @@ class ShipmentService
 
         $driver = $this->shippingManager->driver($shipment->carrier_code);
 
-        $result = $driver->createShipment(
-            ShipmentData::from([
-                'reference' => $shipment->reference,
-                'carrierCode' => $shipment->carrier_code,
-                'serviceCode' => $shipment->service_code ?? 'standard',
-                'origin' => $shipment->origin_address,
-                'destination' => $shipment->destination_address,
-                'items' => $shipment->items->map(fn ($item) => [
-                    'name' => $item->name,
-                    'quantity' => $item->quantity,
-                    'sku' => $item->sku,
-                    'weight' => $item->weight,
-                    'declaredValue' => $item->declared_value,
-                ])->toArray(),
-                'declaredValue' => $shipment->declared_value,
-                'currency' => $shipment->currency,
-                'codAmount' => $shipment->cod_amount,
-            ])
-        );
+        // Use retry service for carrier API call
+        $result = $this->retry()
+            ->attempts(3)
+            ->delay(200)
+            ->backoff(2.0)
+            ->execute(
+                fn () => $driver->createShipment(
+                    ShipmentData::from([
+                        'reference' => $shipment->reference,
+                        'carrierCode' => $shipment->carrier_code,
+                        'serviceCode' => $shipment->service_code ?? 'standard',
+                        'origin' => $shipment->origin_address,
+                        'destination' => $shipment->destination_address,
+                        'items' => $shipment->items->map(fn ($item) => [
+                            'name' => $item->name,
+                            'quantity' => $item->quantity,
+                            'sku' => $item->sku,
+                            'weight' => $item->weight,
+                            'declaredValue' => $item->declared_value,
+                        ])->toArray(),
+                        'declaredValue' => $shipment->declared_value,
+                        'currency' => $shipment->currency,
+                        'codAmount' => $shipment->cod_amount,
+                    ])
+                ),
+                context: "ship:{$shipment->id}"
+            );
 
         if (! $result->isSuccessful()) {
             throw new ShipmentCreationFailedException($result->error ?? 'Unknown error');
         }
 
-        $shipment->update([
-            'tracking_number' => $result->trackingNumber,
-            'carrier_reference' => $result->carrierReference,
-            'status' => ShipmentStatus::Shipped,
-            'shipped_at' => now(),
-            'label_url' => $result->labelUrl,
-        ]);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($shipment, $result, $driver) {
+            $shipment->update([
+                'tracking_number' => $result->trackingNumber,
+                'carrier_reference' => $result->carrierReference,
+                'status' => ShipmentStatus::Shipped,
+                'shipped_at' => now(),
+                'label_url' => $result->labelUrl,
+            ]);
 
-        // Generate label if supported and not already provided
-        if ($result->labelUrl === null && $driver->supports(DriverCapability::LabelGeneration)) {
-            $this->generateLabel($shipment);
-        }
+            // Generate label if supported and not already provided
+            if ($result->labelUrl === null && $driver->supports(DriverCapability::LabelGeneration)) {
+                $this->generateLabel($shipment);
+            }
 
-        $this->recordEvent($shipment, 'shipped', 'Shipment created with carrier');
-        event(new ShipmentShipped($shipment));
+            $this->recordEvent($shipment, 'shipped', 'Shipment created with carrier');
+            event(new ShipmentShipped($shipment));
 
-        return $shipment->refresh();
+            return $shipment->refresh();
+        });
     }
 
     /**
@@ -178,14 +189,16 @@ class ShipmentService
             $driver->cancelShipment($shipment->tracking_number);
         }
 
-        $oldStatus = $shipment->status;
-        $shipment->update(['status' => ShipmentStatus::Cancelled]);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($shipment, $reason) {
+            $oldStatus = $shipment->status;
+            $shipment->update(['status' => ShipmentStatus::Cancelled]);
 
-        $this->recordEvent($shipment, 'cancelled', $reason);
-        event(new ShipmentCancelled($shipment, $reason));
-        event(new ShipmentStatusChanged($shipment, $oldStatus, ShipmentStatus::Cancelled));
+            $this->recordEvent($shipment, 'cancelled', $reason);
+            event(new ShipmentCancelled($shipment, $reason));
+            event(new ShipmentStatusChanged($shipment, $oldStatus, ShipmentStatus::Cancelled));
 
-        return $shipment->refresh();
+            return $shipment->refresh();
+        });
     }
 
     /**
@@ -243,6 +256,14 @@ class ShipmentService
         $shipment->update(['total_weight' => $totalWeight]);
 
         return $shipment->refresh();
+    }
+
+    /**
+     * Get the retry service instance.
+     */
+    protected function retry(): RetryService
+    {
+        return $this->retryService ?? RetryService::make();
     }
 
     /**

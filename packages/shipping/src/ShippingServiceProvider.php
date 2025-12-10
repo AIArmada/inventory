@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace AIArmada\Shipping;
 
+use AIArmada\Shipping\Models\ReturnAuthorization;
+use AIArmada\Shipping\Models\Shipment;
+use AIArmada\Shipping\Models\ShippingZone;
+use AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
+use AIArmada\Shipping\Policies\ShipmentPolicy;
+use AIArmada\Shipping\Policies\ShippingZonePolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class ShippingServiceProvider extends ServiceProvider
@@ -36,8 +43,16 @@ class ShippingServiceProvider extends ServiceProvider
             $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         }
 
+        $this->registerPolicies();
         $this->registerEventListeners();
         $this->registerCommands();
+    }
+
+    protected function registerPolicies(): void
+    {
+        Gate::policy(Shipment::class, ShipmentPolicy::class);
+        Gate::policy(ShippingZone::class, ShippingZonePolicy::class);
+        Gate::policy(ReturnAuthorization::class, ReturnAuthorizationPolicy::class);
     }
 
     protected function registerEventListeners(): void

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentShipping\Resources;
 
 use AIArmada\FilamentShipping\Resources\ReturnAuthorizationResource\Pages;
+use AIArmada\FilamentShipping\Resources\ReturnAuthorizationResource\RelationManagers;
 use AIArmada\Shipping\Enums\ReturnReason;
 use AIArmada\Shipping\Models\ReturnAuthorization;
 use BackedEnum;
@@ -178,7 +179,7 @@ class ReturnAuthorizationResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\ItemsRelationManager::class,
         ];
     }
 

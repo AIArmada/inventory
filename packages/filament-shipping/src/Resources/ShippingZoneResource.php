@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentShipping\Resources;
 
 use AIArmada\FilamentShipping\Resources\ShippingZoneResource\Pages;
+use AIArmada\FilamentShipping\Resources\ShippingZoneResource\RelationManagers;
 use AIArmada\Shipping\Models\ShippingZone;
 use BackedEnum;
 use Filament\Forms;
@@ -166,7 +167,7 @@ class ShippingZoneResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\RatesRelationManager::class,
         ];
     }
 

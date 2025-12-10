@@ -48,12 +48,40 @@ it('can disable dashboard widgets', function (): void {
     expect($plugin)->toBeInstanceOf(FilamentShippingPlugin::class);
 });
 
+it('can disable shipping dashboard page', function (): void {
+    $plugin = FilamentShippingPlugin::make()
+        ->shippingDashboard(false);
+
+    expect($plugin)->toBeInstanceOf(FilamentShippingPlugin::class);
+});
+
+it('can disable manifest page', function (): void {
+    $plugin = FilamentShippingPlugin::make()
+        ->manifestPage(false);
+
+    expect($plugin)->toBeInstanceOf(FilamentShippingPlugin::class);
+});
+
 it('supports method chaining for configuration', function (): void {
     $plugin = FilamentShippingPlugin::make()
         ->shipmentResource(true)
         ->shippingZoneResource(true)
         ->returnAuthorizationResource(true)
-        ->dashboardWidgets(true);
+        ->dashboardWidgets(true)
+        ->shippingDashboard(true)
+        ->manifestPage(true);
+
+    expect($plugin)->toBeInstanceOf(FilamentShippingPlugin::class);
+});
+
+it('can disable all features', function (): void {
+    $plugin = FilamentShippingPlugin::make()
+        ->shipmentResource(false)
+        ->shippingZoneResource(false)
+        ->returnAuthorizationResource(false)
+        ->dashboardWidgets(false)
+        ->shippingDashboard(false)
+        ->manifestPage(false);
 
     expect($plugin)->toBeInstanceOf(FilamentShippingPlugin::class);
 });

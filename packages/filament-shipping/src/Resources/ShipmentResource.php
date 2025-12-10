@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentShipping\Resources;
 
+use AIArmada\FilamentShipping\Actions;
 use AIArmada\FilamentShipping\Resources\ShipmentResource\Pages;
 use AIArmada\FilamentShipping\Resources\ShipmentResource\RelationManagers;
 use AIArmada\Shipping\Enums\ShipmentStatus;
@@ -153,9 +154,17 @@ class ShipmentResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Actions\ShipAction::make(),
+                Actions\PrintLabelAction::make(),
+                Actions\CancelShipmentAction::make(),
+                Actions\SyncTrackingAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    Actions\BulkShipAction::make(),
+                    Actions\BulkPrintLabelsAction::make(),
+                    Actions\BulkCancelAction::make(),
+                    Actions\BulkSyncTrackingAction::make(),
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])
