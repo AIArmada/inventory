@@ -46,7 +46,7 @@ class SnapshotCommand extends Command
         $name = $this->option('name');
 
         if (! $name) {
-            $name = 'snapshot_'.now()->format('Y-m-d_H-i-s');
+            $name = 'snapshot_' . now()->format('Y-m-d_H-i-s');
         }
 
         $description = $this->option('description');
@@ -73,7 +73,7 @@ class SnapshotCommand extends Command
             $snapshot->name,
             $snapshot->description ?? '-',
             $snapshot->created_at?->format('Y-m-d H:i:s') ?? '-',
-            count($snapshot->getRoles()).' roles, '.count($snapshot->getPermissions()).' perms',
+            count($snapshot->getRoles()) . ' roles, ' . count($snapshot->getPermissions()) . ' perms',
         ])->toArray();
 
         $this->table(['ID', 'Name', 'Description', 'Created', 'State'], $rows);
@@ -170,16 +170,16 @@ class SnapshotCommand extends Command
             $this->newLine();
 
             if (! empty($preview['roles']['added'])) {
-                $this->line('Roles to add: '.implode(', ', $preview['roles']['added']));
+                $this->line('Roles to add: ' . implode(', ', $preview['roles']['added']));
             }
             if (! empty($preview['roles']['removed'])) {
-                $this->line('Roles to remove: '.implode(', ', $preview['roles']['removed']));
+                $this->line('Roles to remove: ' . implode(', ', $preview['roles']['removed']));
             }
             if (! empty($preview['permissions']['added'])) {
-                $this->line('Permissions to add: '.count($preview['permissions']['added']));
+                $this->line('Permissions to add: ' . count($preview['permissions']['added']));
             }
             if (! empty($preview['permissions']['removed'])) {
-                $this->line('Permissions to remove: '.count($preview['permissions']['removed']));
+                $this->line('Permissions to remove: ' . count($preview['permissions']['removed']));
             }
 
             return Command::SUCCESS;

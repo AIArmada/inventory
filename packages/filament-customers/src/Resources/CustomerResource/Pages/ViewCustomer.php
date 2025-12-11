@@ -33,7 +33,7 @@ class ViewCustomer extends ViewRecord
                         ->label('Reason')
                         ->rows(2),
                 ])
-                ->action(function (array $data) {
+                ->action(function (array $data): void {
                     $amountInCents = (int) ($data['amount'] * 100);
                     $this->record->addCredit($amountInCents, $data['reason'] ?? null);
 
@@ -60,7 +60,7 @@ class ViewCustomer extends ViewRecord
                         ->label('Reason')
                         ->rows(2),
                 ])
-                ->action(function (array $data) {
+                ->action(function (array $data): void {
                     $amountInCents = (int) ($data['amount'] * 100);
 
                     if (! $this->record->deductCredit($amountInCents, $data['reason'] ?? null)) {

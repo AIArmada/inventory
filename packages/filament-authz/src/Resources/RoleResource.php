@@ -12,15 +12,15 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Contracts\Auth\Access\Authorizable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleResource extends Resource
 {
@@ -132,17 +132,6 @@ class RoleResource extends Resource
         ]);
     }
 
-    protected static function currentAuthorizable(): ?Authorizable
-    {
-        $user = Auth::user();
-
-        if (! $user instanceof Authorizable) {
-            return null;
-        }
-
-        return $user;
-    }
-
     public static function getRelations(): array
     {
         return [
@@ -157,5 +146,16 @@ class RoleResource extends Resource
             'create' => Pages\CreateRole::route('/create'),
             'edit' => Pages\EditRole::route('/{record}/edit'),
         ];
+    }
+
+    protected static function currentAuthorizable(): ?Authorizable
+    {
+        $user = Auth::user();
+
+        if (! $user instanceof Authorizable) {
+            return null;
+        }
+
+        return $user;
     }
 }

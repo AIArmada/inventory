@@ -24,8 +24,7 @@ final class RankQualificationService
     public function __construct(
         private readonly NetworkService $networkService,
         private readonly Dispatcher $events
-    ) {
-    }
+    ) {}
 
     /**
      * Evaluate and determine the highest qualifying rank for an affiliate.
@@ -37,7 +36,7 @@ final class RankQualificationService
         return AffiliateRank::query()
             ->orderBy('level', 'asc')
             ->get()
-            ->first(fn(AffiliateRank $rank) => $rank->meetsQualification(
+            ->first(fn (AffiliateRank $rank) => $rank->meetsQualification(
                 $affiliate,
                 $metrics['personal_sales'],
                 $metrics['team_sales'],
@@ -135,19 +134,19 @@ final class RankQualificationService
     }
 
     /**
-     * Build cache key for metrics lookup.
-     */
-    private function buildMetricsCacheKey(Affiliate $affiliate, Carbon $from): string
-    {
-        return $affiliate->id . ':' . $from->toDateString();
-    }
-
-    /**
      * Clear the metrics cache.
      */
     public function clearCache(): void
     {
         $this->metricsCache = [];
+    }
+
+    /**
+     * Build cache key for metrics lookup.
+     */
+    private function buildMetricsCacheKey(Affiliate $affiliate, Carbon $from): string
+    {
+        return $affiliate->id . ':' . $from->toDateString();
     }
 
     private function shouldChangeRank(Affiliate $affiliate, ?AffiliateRank $newRank): bool

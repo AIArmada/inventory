@@ -48,7 +48,7 @@ class SubscriptionItem extends Model
         $tables = config('cashier-chip.database.tables', []);
         $prefix = config('cashier-chip.database.table_prefix', 'cashier_chip_');
 
-        return $tables['subscription_items'] ?? $prefix.'subscription_items';
+        return $tables['subscription_items'] ?? $prefix . 'subscription_items';
     }
 
     /**

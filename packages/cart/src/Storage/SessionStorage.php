@@ -16,7 +16,7 @@ final readonly class SessionStorage implements StorageInterface
         private Session $session,
         private string $keyPrefix = 'cart',
         private ?string $ownerType = null,
-        private string|int|null $ownerId = null
+        private string | int | null $ownerId = null
     ) {
         //
     }
@@ -45,7 +45,7 @@ final readonly class SessionStorage implements StorageInterface
     /**
      * Get the current owner ID
      */
-    public function getOwnerId(): string|int|null
+    public function getOwnerId(): string | int | null
     {
         return $this->ownerId;
     }
@@ -588,11 +588,11 @@ final readonly class SessionStorage implements StorageInterface
     private function findMetadataKeys(array $data, string $prefix, string $currentPath, array &$keysToRemove): void
     {
         foreach ($data as $key => $value) {
-            $fullPath = $currentPath === '' ? (string) $key : $currentPath.'.'.$key;
+            $fullPath = $currentPath === '' ? (string) $key : $currentPath . '.' . $key;
 
             if (str_starts_with($fullPath, $prefix)) {
                 $keysToRemove[] = $fullPath;
-            } elseif (is_array($value) && str_starts_with($prefix, $fullPath.'.')) {
+            } elseif (is_array($value) && str_starts_with($prefix, $fullPath . '.')) {
                 // Only recurse if the prefix could potentially match deeper keys
                 $this->findMetadataKeys($value, $prefix, $fullPath, $keysToRemove);
             }
@@ -784,10 +784,11 @@ final readonly class SessionStorage implements StorageInterface
             $jsonSize = mb_strlen(json_encode($data, JSON_THROW_ON_ERROR));
             if ($jsonSize > $maxDataSize) {
                 $maxSizeMB = round($maxDataSize / (1024 * 1024), 2);
+
                 throw new InvalidArgumentException("Cart {$type} data size ({$jsonSize} bytes) exceeds maximum allowed size of {$maxSizeMB}MB");
             }
         } catch (JsonException $e) {
-            throw new InvalidArgumentException("Cannot validate {$type} data size: ".$e->getMessage());
+            throw new InvalidArgumentException("Cannot validate {$type} data size: " . $e->getMessage());
         }
     }
 

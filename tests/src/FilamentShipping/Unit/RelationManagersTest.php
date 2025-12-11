@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use AIArmada\Commerce\Tests\TestCase;
-use AIArmada\FilamentShipping\Resources\ShippingZoneResource\RelationManagers\RatesRelationManager;
 use AIArmada\FilamentShipping\Resources\ReturnAuthorizationResource\RelationManagers\ItemsRelationManager;
+use AIArmada\FilamentShipping\Resources\ShippingZoneResource\RelationManagers\RatesRelationManager;
 
 uses(TestCase::class);
 

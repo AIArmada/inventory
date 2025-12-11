@@ -104,7 +104,7 @@ final class GenerateDocOnRefund implements ShouldQueue
             customerData: $customerData,
             items: [
                 [
-                    'description' => 'Refund'.(($originalInvoice !== null) ? ' for Invoice #'.$originalInvoice->doc_number : ''),
+                    'description' => 'Refund' . (($originalInvoice !== null) ? ' for Invoice #' . $originalInvoice->doc_number : ''),
                     'quantity' => 1,
                     'price' => $amount / 100,
                     'total' => $amount / 100,
@@ -123,11 +123,11 @@ final class GenerateDocOnRefund implements ShouldQueue
         $notes = ['Credit Note - Refund'];
 
         if ($originalInvoice !== null) {
-            $notes[] = 'Original Invoice: #'.$originalInvoice->doc_number;
+            $notes[] = 'Original Invoice: #' . $originalInvoice->doc_number;
         }
 
         if ($event->getReference()) {
-            $notes[] = 'Reference: '.$event->getReference();
+            $notes[] = 'Reference: ' . $event->getReference();
         }
 
         return implode("\n", $notes);

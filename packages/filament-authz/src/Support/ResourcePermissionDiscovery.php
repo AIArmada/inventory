@@ -162,10 +162,10 @@ final class ResourcePermissionDiscovery
             $path = base_path($knownPackages[$namespace]);
 
             if (is_dir($path)) {
-                $files = glob($path.'/*Resource.php') ?: [];
+                $files = glob($path . '/*Resource.php') ?: [];
 
                 foreach ($files as $file) {
-                    $className = $namespace.'\\'.basename((string) $file, '.php');
+                    $className = $namespace . '\\' . basename((string) $file, '.php');
 
                     if (class_exists($className) && is_subclass_of($className, Resource::class)) {
                         /** @var class-string<resource> $className */

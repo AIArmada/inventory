@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace AIArmada\CommerceSupport\Commands;
 
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Laravel\Boost\Contracts\Agent;
-use Laravel\Boost\Install\CodeEnvironment\CodeEnvironment;
 use Laravel\Boost\Install\CodeEnvironmentsDetector;
 use Laravel\Boost\Install\GuidelineComposer;
 use Laravel\Boost\Install\GuidelineConfig;
-use Laravel\Boost\Install\GuidelineWriter;
+use RuntimeException;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Process\Process;
 
@@ -114,7 +114,7 @@ final class BoostUpdateCommand extends Command
                 $guidelinePath = $projectRoot . '/' . $agent->guidelinesPath();
                 $this->writeGuidelineFile($guidelinePath, $composedGuidelines, $agent->frontmatter());
                 $this->line('<fg=green>✓</>');
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $failed[$agentName] = $e->getMessage();
                 $this->line('<fg=red>✗</>');
             }
@@ -144,19 +144,19 @@ final class BoostUpdateCommand extends Command
         $directory = dirname($filePath);
 
         if (! is_dir($directory) && ! @mkdir($directory, 0755, true)) {
-            throw new \RuntimeException("Failed to create directory: {$directory}");
+            throw new RuntimeException("Failed to create directory: {$directory}");
         }
 
         $handle = @fopen($filePath, 'c+');
 
         if (! $handle) {
-            throw new \RuntimeException("Failed to open file: {$filePath}");
+            throw new RuntimeException("Failed to open file: {$filePath}");
         }
 
         try {
             // Simple file locking
             if (! flock($handle, LOCK_EX)) {
-                throw new \RuntimeException("Failed to acquire lock on file: {$filePath}");
+                throw new RuntimeException("Failed to acquire lock on file: {$filePath}");
             }
 
             $content = stream_get_contents($handle);
@@ -172,7 +172,7 @@ final class BoostUpdateCommand extends Command
                     $frontMatterStr = "---\nalwaysApply: true\n---\n";
                 }
 
-                $existingContent = rtrim($content);
+                $existingContent = mb_rtrim($content);
                 $separatingNewlines = empty($existingContent) ? '' : "\n\n===\n\n";
                 $newContent = $frontMatterStr . $existingContent . $separatingNewlines . $replacement;
             }
@@ -182,11 +182,11 @@ final class BoostUpdateCommand extends Command
             }
 
             if (ftruncate($handle, 0) === false || fseek($handle, 0) === -1) {
-                throw new \RuntimeException("Failed to reset file pointer: {$filePath}");
+                throw new RuntimeException("Failed to reset file pointer: {$filePath}");
             }
 
             if (fwrite($handle, (string) $newContent) === false) {
-                throw new \RuntimeException("Failed to write to file: {$filePath}");
+                throw new RuntimeException("Failed to write to file: {$filePath}");
             }
 
             flock($handle, LOCK_UN);

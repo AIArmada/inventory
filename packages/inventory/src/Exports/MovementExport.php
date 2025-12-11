@@ -81,6 +81,6 @@ final class MovementExport implements ExportableInterface
     {
         $suffix = $this->movementType !== null ? "-{$this->movementType->value}" : '';
 
-        return 'movements'.$suffix.'-'.CarbonImmutable::now()->format('Y-m-d-His');
+        return 'movements' . $suffix . '-' . CarbonImmutable::now()->format('Y-m-d-His');
     }
 }

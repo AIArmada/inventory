@@ -35,9 +35,9 @@ class InMemoryStorage implements StorageInterface
 
     private ?string $ownerType = null;
 
-    private string|int|null $ownerId = null;
+    private string | int | null $ownerId = null;
 
-    public function __construct(?string $ownerType = null, string|int|null $ownerId = null)
+    public function __construct(?string $ownerType = null, string | int | null $ownerId = null)
     {
         $this->ownerType = $ownerType;
         $this->ownerId = $ownerId;
@@ -66,7 +66,7 @@ class InMemoryStorage implements StorageInterface
     /**
      * Get the current owner ID
      */
-    public function getOwnerId(): string|int|null
+    public function getOwnerId(): string | int | null
     {
         return $this->ownerId;
     }

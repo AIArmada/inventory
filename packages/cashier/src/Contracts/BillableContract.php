@@ -103,7 +103,7 @@ interface BillableContract
     /**
      * Begin a new subscription.
      */
-    public function newSubscription(string $type, string|array $prices = [], ?string $gateway = null): SubscriptionBuilderContract;
+    public function newSubscription(string $type, string | array $prices = [], ?string $gateway = null): SubscriptionBuilderContract;
 
     /**
      * Determine if the billable is on trial for a subscription type.
@@ -143,12 +143,12 @@ interface BillableContract
     /**
      * Determine if the billable is subscribed to a product.
      */
-    public function subscribedToProduct(string|array $products, string $type = 'default'): bool;
+    public function subscribedToProduct(string | array $products, string $type = 'default'): bool;
 
     /**
      * Determine if the billable is subscribed to a price.
      */
-    public function subscribedToPrice(string|array $prices, string $type = 'default'): bool;
+    public function subscribedToPrice(string | array $prices, string $type = 'default'): bool;
 
     /**
      * Get the payment methods for the billable.
@@ -204,7 +204,7 @@ interface BillableContract
      * @param  array<string, mixed>  $sessionOptions
      * @param  array<string, mixed>  $customerOptions
      */
-    public function checkout(string|array $items, array $sessionOptions = [], array $customerOptions = [], ?string $gateway = null): CheckoutContract;
+    public function checkout(string | array $items, array $sessionOptions = [], array $customerOptions = [], ?string $gateway = null): CheckoutContract;
 
     /**
      * Refund a payment.

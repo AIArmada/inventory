@@ -3,12 +3,10 @@
 declare(strict_types=1);
 
 use AIArmada\Products\Models\Category;
-use AIArmada\Products\Models\Product;
-use AIArmada\Products\Enums\ProductStatus;
 
-describe('Category Model', function () {
-    describe('Category Creation', function () {
-        it('can create a category', function () {
+describe('Category Model', function (): void {
+    describe('Category Creation', function (): void {
+        it('can create a category', function (): void {
             $category = Category::create([
                 'name' => 'Electronics',
             ]);
@@ -17,7 +15,7 @@ describe('Category Model', function () {
                 ->and($category->name)->toBe('Electronics');
         });
 
-        it('generates a slug automatically', function () {
+        it('generates a slug automatically', function (): void {
             $category = Category::create([
                 'name' => 'Home & Garden',
             ]);
@@ -26,8 +24,8 @@ describe('Category Model', function () {
         });
     });
 
-    describe('Nested Categories', function () {
-        it('can have a parent category', function () {
+    describe('Nested Categories', function (): void {
+        it('can have a parent category', function (): void {
             $parent = Category::create(['name' => 'Electronics']);
             $child = Category::create([
                 'name' => 'Smartphones',
@@ -37,7 +35,7 @@ describe('Category Model', function () {
             expect($child->parent->id)->toBe($parent->id);
         });
 
-        it('can have multiple children', function () {
+        it('can have multiple children', function (): void {
             $parent = Category::create(['name' => 'Fashion']);
             Category::create(['name' => 'Mens', 'parent_id' => $parent->id]);
             Category::create(['name' => 'Womens', 'parent_id' => $parent->id]);
@@ -49,8 +47,8 @@ describe('Category Model', function () {
         });
     });
 
-    describe('Category Visibility', function () {
-        it('can filter visible categories', function () {
+    describe('Category Visibility', function (): void {
+        it('can filter visible categories', function (): void {
             Category::create(['name' => 'Visible Cat 1', 'is_visible' => true]);
             Category::create(['name' => 'Visible Cat 2', 'is_visible' => true]);
             Category::create(['name' => 'Hidden Cat', 'is_visible' => false]);
@@ -58,7 +56,7 @@ describe('Category Model', function () {
             expect(Category::roots()->count())->toBeGreaterThanOrEqual(2);
         });
 
-        it('can filter root categories', function () {
+        it('can filter root categories', function (): void {
             $root1 = Category::create(['name' => 'Root 1']);
             $root2 = Category::create(['name' => 'Root 2']);
             Category::create(['name' => 'Child', 'parent_id' => $root1->id]);
@@ -67,8 +65,8 @@ describe('Category Model', function () {
         });
     });
 
-    describe('Category Ordering', function () {
-        it('can order categories by position', function () {
+    describe('Category Ordering', function (): void {
+        it('can order categories by position', function (): void {
             Category::create(['name' => 'Third', 'position' => 3]);
             Category::create(['name' => 'First', 'position' => 1]);
             Category::create(['name' => 'Second', 'position' => 2]);

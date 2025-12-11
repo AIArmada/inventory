@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use AIArmada\Commerce\Tests\TestCase;
-use AIArmada\FilamentShipping\Pages\ShippingDashboard;
 use AIArmada\FilamentShipping\Pages\ManifestPage;
+use AIArmada\FilamentShipping\Pages\ShippingDashboard;
 use Filament\Support\Icons\Heroicon;
 
 uses(TestCase::class);

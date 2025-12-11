@@ -689,7 +689,7 @@ final class AffiliateService
             return null;
         }
 
-        return hash('sha256', ($ua ?? '').'|'.($ip ?? ''));
+        return hash('sha256', ($ua ?? '') . '|' . ($ip ?? ''));
     }
 
     /**

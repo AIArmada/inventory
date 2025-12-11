@@ -64,7 +64,7 @@ final class WebhookData extends ChipData
             $uniqueBrands = $data['unique_brands'] ?? [];
 
             return new self(
-                id: $data['id'] ?? 'webhook_event_'.uniqid(),
+                id: $data['id'] ?? 'webhook_event_' . uniqid(),
                 type: 'webhook_event',
                 created_on: isset($data['timestamp']) ? strtotime((string) $data['timestamp']) : time(),
                 updated_on: isset($data['timestamp']) ? strtotime((string) $data['timestamp']) : time(),
@@ -102,7 +102,7 @@ final class WebhookData extends ChipData
             $uniqueBrands = isset($data['brand_id']) ? [$data['brand_id']] : [];
 
             return new self(
-                id: $data['id'] ?? 'webhook_event_'.uniqid(),
+                id: $data['id'] ?? 'webhook_event_' . uniqid(),
                 type: 'webhook_event',
                 created_on: $data['created_on'] ?? time(),
                 updated_on: $data['updated_on'] ?? time(),
@@ -138,7 +138,7 @@ final class WebhookData extends ChipData
         $uniqueBrands = $data['unique_brands'] ?? [];
 
         return new self(
-            id: $data['id'] ?? 'webhook_'.uniqid(),
+            id: $data['id'] ?? 'webhook_' . uniqid(),
             type: $data['type'] ?? 'webhook',
             created_on: $data['created_on'] ?? strtotime((string) ($data['created_at'] ?? 'now')),
             updated_on: $data['updated_on'] ?? strtotime((string) ($data['updated_at'] ?? 'now')),

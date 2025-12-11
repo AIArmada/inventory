@@ -31,9 +31,9 @@ final class ProductResource extends Resource
 {
     protected static ?string $model = Product::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::ShoppingBag;
+    protected static string | BackedEnum | null $navigationIcon = Heroicon::ShoppingBag;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Commerce';
+    protected static string | UnitEnum | null $navigationGroup = 'Commerce';
 
     protected static ?int $navigationSort = 2;
 
@@ -134,8 +134,8 @@ final class ProductResource extends Resource
                 TextColumn::make('available_stock')
                     ->label('Inventory')
                     ->sortable()
-                    ->state(fn(Product $record): int => $record->available_stock)
-                    ->color(fn(Product $record): string => $record->isLowInventory() ? 'warning' : ($record->isOutOfStock() ? 'danger' : 'success')),
+                    ->state(fn (Product $record): int => $record->available_stock)
+                    ->color(fn (Product $record): string => $record->isLowInventory() ? 'warning' : ($record->isOutOfStock() ? 'danger' : 'success')),
 
                 IconColumn::make('is_active')
                     ->boolean(),
@@ -162,7 +162,7 @@ final class ProductResource extends Resource
                 BulkAction::make('delete')
                     ->label('Delete Selected')
                     ->requiresConfirmation()
-                    ->action(fn(Collection $records) => $records->each->delete())
+                    ->action(fn (Collection $records) => $records->each->delete())
                     ->deselectRecordsAfterCompletion(),
             ]);
     }

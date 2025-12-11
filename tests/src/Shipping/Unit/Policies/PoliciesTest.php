@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\Commerce\Tests\TestCase;
-use AIArmada\Shipping\Models\Shipment;
 use AIArmada\Shipping\Policies\ShipmentPolicy;
 
 uses(TestCase::class);
@@ -68,19 +67,19 @@ describe('ShipmentPolicy', function (): void {
 
 describe('ShippingZonePolicy', function (): void {
     it('can be instantiated', function (): void {
-        $policy = new \AIArmada\Shipping\Policies\ShippingZonePolicy;
+        $policy = new AIArmada\Shipping\Policies\ShippingZonePolicy;
 
-        expect($policy)->toBeInstanceOf(\AIArmada\Shipping\Policies\ShippingZonePolicy::class);
+        expect($policy)->toBeInstanceOf(AIArmada\Shipping\Policies\ShippingZonePolicy::class);
     });
 
     it('has viewAny method', function (): void {
-        $policy = new \AIArmada\Shipping\Policies\ShippingZonePolicy;
+        $policy = new AIArmada\Shipping\Policies\ShippingZonePolicy;
 
         expect(method_exists($policy, 'viewAny'))->toBeTrue();
     });
 
     it('has manageRates method', function (): void {
-        $policy = new \AIArmada\Shipping\Policies\ShippingZonePolicy;
+        $policy = new AIArmada\Shipping\Policies\ShippingZonePolicy;
 
         expect(method_exists($policy, 'manageRates'))->toBeTrue();
     });
@@ -88,31 +87,31 @@ describe('ShippingZonePolicy', function (): void {
 
 describe('ReturnAuthorizationPolicy', function (): void {
     it('can be instantiated', function (): void {
-        $policy = new \AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
+        $policy = new AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
 
-        expect($policy)->toBeInstanceOf(\AIArmada\Shipping\Policies\ReturnAuthorizationPolicy::class);
+        expect($policy)->toBeInstanceOf(AIArmada\Shipping\Policies\ReturnAuthorizationPolicy::class);
     });
 
     it('has approve method', function (): void {
-        $policy = new \AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
+        $policy = new AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
 
         expect(method_exists($policy, 'approve'))->toBeTrue();
     });
 
     it('has reject method', function (): void {
-        $policy = new \AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
+        $policy = new AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
 
         expect(method_exists($policy, 'reject'))->toBeTrue();
     });
 
     it('has receive method', function (): void {
-        $policy = new \AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
+        $policy = new AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
 
         expect(method_exists($policy, 'receive'))->toBeTrue();
     });
 
     it('has complete method', function (): void {
-        $policy = new \AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
+        $policy = new AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
 
         expect(method_exists($policy, 'complete'))->toBeTrue();
     });

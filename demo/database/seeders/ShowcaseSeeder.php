@@ -16,7 +16,6 @@ use AIArmada\Vouchers\Enums\VoucherType;
 use AIArmada\Vouchers\Models\Voucher;
 use AIArmada\Vouchers\Models\VoucherUsage;
 use App\Models\Order;
-use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;

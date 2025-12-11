@@ -208,10 +208,10 @@ class TiersRelationManager extends RelationManager
                     ->mutateFormDataUsing(function (array $data): array {
                         // Convert cents to display format if needed
                         if (isset($data['price'])) {
-                            $data['price'] = $data['price'] * 100;
+                            $data['price'] *= 100;
                         }
                         if (isset($data['discount_amount'])) {
-                            $data['discount_amount'] = $data['discount_amount'] * 100;
+                            $data['discount_amount'] *= 100;
                         }
 
                         return $data;
@@ -222,10 +222,10 @@ class TiersRelationManager extends RelationManager
                     ->mutateFormDataUsing(function (array $data): array {
                         // Convert to cents
                         if (isset($data['price'])) {
-                            $data['price'] = $data['price'] * 100;
+                            $data['price'] *= 100;
                         }
                         if (isset($data['discount_amount'])) {
-                            $data['discount_amount'] = $data['discount_amount'] * 100;
+                            $data['discount_amount'] *= 100;
                         }
 
                         return $data;
@@ -233,10 +233,10 @@ class TiersRelationManager extends RelationManager
                     ->mutateRecordDataUsing(function (array $data): array {
                         // Convert from cents for display
                         if (isset($data['price'])) {
-                            $data['price'] = $data['price'] / 100;
+                            $data['price'] /= 100;
                         }
                         if (isset($data['discount_amount'])) {
-                            $data['discount_amount'] = $data['discount_amount'] / 100;
+                            $data['discount_amount'] /= 100;
                         }
 
                         return $data;

@@ -60,7 +60,7 @@ final class ValuationService
         foreach ($layers as $layer) {
             $totalQuantity += $layer->remaining_quantity;
             $totalValue += $layer->remainingValue();
-            $skuSet[$layer->inventoryable_type.'-'.$layer->inventoryable_id] = true;
+            $skuSet[$layer->inventoryable_type . '-' . $layer->inventoryable_id] = true;
         }
 
         return [
@@ -90,7 +90,7 @@ final class ValuationService
         foreach ($layers as $layer) {
             $totalQuantity += $layer->remaining_quantity;
             $totalValue += $layer->remainingValue();
-            $skuSet[$layer->inventoryable_type.'-'.$layer->inventoryable_id] = true;
+            $skuSet[$layer->inventoryable_type . '-' . $layer->inventoryable_id] = true;
             if ($layer->location_id) {
                 $locationSet[$layer->location_id] = true;
             }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Vouchers\Campaigns\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Vouchers\Campaigns\Enums\CampaignObjective;
 use AIArmada\Vouchers\Campaigns\Enums\CampaignStatus;
 use AIArmada\Vouchers\Campaigns\Enums\CampaignType;
@@ -14,7 +15,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -52,6 +52,7 @@ use Illuminate\Support\Str;
  */
 class Campaign extends Model
 {
+    use HasOwner;
     use HasUuids;
     use SoftDeletes;
 
@@ -108,11 +109,6 @@ class Campaign extends Model
     public function vouchers(): HasMany
     {
         return $this->hasMany(Voucher::class, 'campaign_id');
-    }
-
-    public function owner(): MorphTo
-    {
-        return $this->morphTo();
     }
 
     /**

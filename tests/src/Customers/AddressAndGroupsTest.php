@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use AIArmada\Customers\Models\Customer;
+use AIArmada\Customers\Enums\CustomerStatus;
 use AIArmada\Customers\Models\Address;
+use AIArmada\Customers\Models\Customer;
 use AIArmada\Customers\Models\CustomerGroup;
 use AIArmada\Customers\Models\Segment;
-use AIArmada\Customers\Enums\CustomerStatus;
 
-describe('Address Model', function () {
-    describe('Address Creation', function () {
-        it('can create an address for a customer', function () {
+describe('Address Model', function (): void {
+    describe('Address Creation', function (): void {
+        it('can create an address for a customer', function (): void {
             $customer = Customer::create([
                 'first_name' => 'John',
                 'last_name' => 'Doe',
@@ -35,8 +35,8 @@ describe('Address Model', function () {
         });
     });
 
-    describe('Address Types', function () {
-        it('can create shipping and billing addresses', function () {
+    describe('Address Types', function (): void {
+        it('can create shipping and billing addresses', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Jane',
                 'last_name' => 'Doe',
@@ -69,8 +69,8 @@ describe('Address Model', function () {
         });
     });
 
-    describe('Default Address', function () {
-        it('can set default address', function () {
+    describe('Default Address', function (): void {
+        it('can set default address', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Bob',
                 'last_name' => 'Smith',
@@ -100,8 +100,8 @@ describe('Address Model', function () {
     });
 });
 
-describe('CustomerGroup Model', function () {
-    it('can create a customer group', function () {
+describe('CustomerGroup Model', function (): void {
+    it('can create a customer group', function (): void {
         $group = CustomerGroup::create([
             'name' => 'VIP Customers',
             'description' => 'Customers with high lifetime value',
@@ -112,7 +112,7 @@ describe('CustomerGroup Model', function () {
             ->and($group->name)->toBe('VIP Customers');
     });
 
-    it('can have multiple customers', function () {
+    it('can have multiple customers', function (): void {
         $group = CustomerGroup::create([
             'name' => 'Wholesale',
             'is_active' => true,
@@ -137,7 +137,7 @@ describe('CustomerGroup Model', function () {
         expect($group->members)->toHaveCount(2);
     });
 
-    it('can filter active groups', function () {
+    it('can filter active groups', function (): void {
         CustomerGroup::create(['name' => 'Active Group', 'is_active' => true]);
         CustomerGroup::create(['name' => 'Inactive Group', 'is_active' => false]);
 
@@ -145,8 +145,8 @@ describe('CustomerGroup Model', function () {
     });
 });
 
-describe('Segment Model', function () {
-    it('can create a segment', function () {
+describe('Segment Model', function (): void {
+    it('can create a segment', function (): void {
         $segment = Segment::create([
             'name' => 'High Spenders',
             'description' => 'Customers who spent over RM10,000',
@@ -157,7 +157,7 @@ describe('Segment Model', function () {
             ->and($segment->name)->toBe('High Spenders');
     });
 
-    it('can store JSON conditions', function () {
+    it('can store JSON conditions', function (): void {
         $conditions = [
             ['field' => 'lifetime_value_min', 'value' => 10000],
             ['field' => 'total_orders_min', 'value' => 5],
@@ -172,7 +172,7 @@ describe('Segment Model', function () {
         expect($segment->conditions)->toBe($conditions);
     });
 
-    it('can filter active segments', function () {
+    it('can filter active segments', function (): void {
         Segment::create(['name' => 'Active Segment', 'is_active' => true]);
         Segment::create(['name' => 'Inactive Segment', 'is_active' => false]);
 

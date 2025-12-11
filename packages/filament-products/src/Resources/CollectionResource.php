@@ -264,7 +264,7 @@ class CollectionResource extends Resource
                     ->color('warning')
                     ->visible(fn ($record) => $record->isAutomatic())
                     ->requiresConfirmation()
-                    ->action(function ($record) {
+                    ->action(function ($record): void {
                         $record->rebuildProductList();
 
                         \Filament\Notifications\Notification::make()

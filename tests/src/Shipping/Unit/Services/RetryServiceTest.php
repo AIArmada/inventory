@@ -11,7 +11,7 @@ use AIArmada\Shipping\Services\RetryService;
 describe('RetryService', function (): void {
     it('executes callback successfully on first try', function (): void {
         $result = RetryService::make()
-            ->execute(fn() => 'success');
+            ->execute(fn () => 'success');
 
         expect($result)->toBe('success');
     });
@@ -41,8 +41,9 @@ describe('RetryService', function (): void {
         RetryService::make()
             ->attempts(2)
             ->delay(10)
-            ->execute(function () use (&$attempts) {
+            ->execute(function () use (&$attempts): void {
                 $attempts++;
+
                 throw new RuntimeException('timeout error');
             });
     })->throws(RuntimeException::class, 'timeout error');
@@ -54,8 +55,9 @@ describe('RetryService', function (): void {
             RetryService::make()
                 ->attempts(3)
                 ->delay(10)
-                ->execute(function () use (&$attempts) {
+                ->execute(function () use (&$attempts): void {
                     $attempts++;
+
                     throw new InvalidArgumentException('Invalid input');
                 });
         } catch (InvalidArgumentException) {
@@ -73,8 +75,9 @@ describe('RetryService', function (): void {
                 ->attempts(3)
                 ->delay(10)
                 ->execute(
-                    function () use (&$attempts) {
+                    function () use (&$attempts): void {
                         $attempts++;
+
                         throw new InvalidArgumentException('test');
                     },
                     [InvalidArgumentException::class]
@@ -117,8 +120,9 @@ describe('RetryService', function (): void {
             RetryService::make()
                 ->attempts(2)
                 ->delay(10)
-                ->execute(function () use (&$attempts) {
+                ->execute(function () use (&$attempts): void {
                     $attempts++;
+
                     throw new RuntimeException('Connection timed out');
                 });
         } catch (RuntimeException) {
@@ -135,8 +139,9 @@ describe('RetryService', function (): void {
             RetryService::make()
                 ->attempts(2)
                 ->delay(10)
-                ->execute(function () use (&$attempts) {
+                ->execute(function () use (&$attempts): void {
                     $attempts++;
+
                     throw new RuntimeException('503 Service Unavailable');
                 });
         } catch (RuntimeException) {
@@ -153,8 +158,9 @@ describe('RetryService', function (): void {
             RetryService::make()
                 ->attempts(2)
                 ->delay(10)
-                ->execute(function () use (&$attempts) {
+                ->execute(function () use (&$attempts): void {
                     $attempts++;
+
                     throw new RuntimeException('Rate limit exceeded');
                 });
         } catch (RuntimeException) {

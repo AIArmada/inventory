@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use AIArmada\Products\Models\Variant;
+use AIArmada\Products\Enums\ProductStatus;
 use AIArmada\Products\Models\Option;
 use AIArmada\Products\Models\OptionValue;
 use AIArmada\Products\Models\Product;
-use AIArmada\Products\Enums\ProductStatus;
+use AIArmada\Products\Models\Variant;
 
-describe('Variant Model', function () {
-    describe('Variant Creation', function () {
-        it('can create a variant', function () {
+describe('Variant Model', function (): void {
+    describe('Variant Creation', function (): void {
+        it('can create a variant', function (): void {
             $product = Product::create([
                 'name' => 'T-Shirt',
                 'price' => 2000,
@@ -29,7 +29,7 @@ describe('Variant Model', function () {
                 ->and($variant->name)->toBe('Small Red');
         });
 
-        it('can have different price than parent product', function () {
+        it('can have different price than parent product', function (): void {
             $product = Product::create([
                 'name' => 'Sneakers',
                 'price' => 5000,
@@ -49,8 +49,8 @@ describe('Variant Model', function () {
         });
     });
 
-    describe('Variant Product Relationship', function () {
-        it('belongs to a product', function () {
+    describe('Variant Product Relationship', function (): void {
+        it('belongs to a product', function (): void {
             $product = Product::create([
                 'name' => 'Jacket',
                 'price' => 8000,
@@ -68,8 +68,8 @@ describe('Variant Model', function () {
         });
     });
 
-    describe('Variant Scopes', function () {
-        it('can filter enabled variants', function () {
+    describe('Variant Scopes', function (): void {
+        it('can filter enabled variants', function (): void {
             $product = Product::create([
                 'name' => 'Bag',
                 'price' => 3000,
@@ -82,7 +82,7 @@ describe('Variant Model', function () {
             expect(Variant::where('product_id', $product->id)->enabled()->count())->toBe(1);
         });
 
-        it('can filter default variant', function () {
+        it('can filter default variant', function (): void {
             $product = Product::create([
                 'name' => 'Hat',
                 'price' => 1500,
@@ -96,8 +96,8 @@ describe('Variant Model', function () {
         });
     });
 
-    describe('Variant Inventory', function () {
-        it('can track stock quantity', function () {
+    describe('Variant Inventory', function (): void {
+        it('can track stock quantity', function (): void {
             $product = Product::create([
                 'name' => 'Watch',
                 'price' => 20000,
@@ -117,8 +117,8 @@ describe('Variant Model', function () {
     });
 });
 
-describe('Option Model', function () {
-    it('can create an option', function () {
+describe('Option Model', function (): void {
+    it('can create an option', function (): void {
         $product = Product::create([
             'name' => 'Shirt',
             'price' => 2500,
@@ -134,7 +134,7 @@ describe('Option Model', function () {
             ->and($option->name)->toBe('Size');
     });
 
-    it('can have multiple values', function () {
+    it('can have multiple values', function (): void {
         $product = Product::create([
             'name' => 'Pants',
             'price' => 4000,
@@ -156,8 +156,8 @@ describe('Option Model', function () {
     });
 });
 
-describe('OptionValue Model', function () {
-    it('belongs to an option', function () {
+describe('OptionValue Model', function (): void {
+    it('belongs to an option', function (): void {
         $product = Product::create([
             'name' => 'Dress',
             'price' => 6000,

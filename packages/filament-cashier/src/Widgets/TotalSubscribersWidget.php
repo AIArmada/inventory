@@ -52,7 +52,7 @@ final class TotalSubscribersWidget extends StatsOverviewWidget
             // Build description showing breakdown
             $breakdown = collect($totals)
                 ->filter()
-                ->map(fn($count, $gateway) => $detector->getLabel($gateway) . ': ' . $count)
+                ->map(fn ($count, $gateway) => $detector->getLabel($gateway) . ': ' . $count)
                 ->join(' | ');
 
             return [

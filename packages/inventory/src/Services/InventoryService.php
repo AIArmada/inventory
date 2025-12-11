@@ -24,6 +24,20 @@ use InvalidArgumentException;
 final class InventoryService
 {
     /**
+     * Cached availability data keyed by model identity.
+     *
+     * @var array<string, array<string, int>>
+     */
+    private array $availabilityCache = [];
+
+    /**
+     * Cached total available quantities keyed by model identity.
+     *
+     * @var array<string, int>
+     */
+    private array $totalAvailableCache = [];
+
+    /**
      * Receive inventory at a location.
      */
     public function receive(
@@ -209,20 +223,6 @@ final class InventoryService
     }
 
     /**
-     * Cached availability data keyed by model identity.
-     *
-     * @var array<string, array<string, int>>
-     */
-    private array $availabilityCache = [];
-
-    /**
-     * Cached total available quantities keyed by model identity.
-     *
-     * @var array<string, int>
-     */
-    private array $totalAvailableCache = [];
-
-    /**
      * Get availability across all locations.
      *
      * Uses parameter-keyed caching to avoid redundant queries when the same
@@ -234,13 +234,13 @@ final class InventoryService
     {
         $cacheKey = $model->getMorphClass() . ':' . $model->getKey();
 
-        if (!isset($this->availabilityCache[$cacheKey])) {
+        if (! isset($this->availabilityCache[$cacheKey])) {
             $this->availabilityCache[$cacheKey] = InventoryLevel::query()
                 ->where('inventoryable_type', $model->getMorphClass())
                 ->where('inventoryable_id', $model->getKey())
-                ->whereHas('location', fn($q) => $q->where('is_active', true))
+                ->whereHas('location', fn ($q) => $q->where('is_active', true))
                 ->get()
-                ->mapWithKeys(fn(InventoryLevel $level): array => [$level->location_id => $level->available])
+                ->mapWithKeys(fn (InventoryLevel $level): array => [$level->location_id => $level->available])
                 ->toArray();
         }
 
@@ -257,13 +257,13 @@ final class InventoryService
     {
         $cacheKey = $model->getMorphClass() . ':' . $model->getKey();
 
-        if (!isset($this->totalAvailableCache[$cacheKey])) {
+        if (! isset($this->totalAvailableCache[$cacheKey])) {
             $this->totalAvailableCache[$cacheKey] = InventoryLevel::query()
                 ->where('inventoryable_type', $model->getMorphClass())
                 ->where('inventoryable_id', $model->getKey())
-                ->whereHas('location', fn($q) => $q->where('is_active', true))
+                ->whereHas('location', fn ($q) => $q->where('is_active', true))
                 ->get()
-                ->sum(fn(InventoryLevel $level): int => $level->available);
+                ->sum(fn (InventoryLevel $level): int => $level->available);
         }
 
         return $this->totalAvailableCache[$cacheKey];
@@ -388,7 +388,7 @@ final class InventoryService
      */
     private function checkLowInventory(Model $model, InventoryLevel $level): void
     {
-        if (!config('inventory.events.low_inventory', true)) {
+        if (! config('inventory.events.low_inventory', true)) {
             return;
         }
 

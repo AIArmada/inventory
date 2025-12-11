@@ -161,7 +161,7 @@ class RateShoppingEngine
         }
 
         // Extract carrier codes (primitives are safely serializable)
-        $carrierCodes = $drivers->map(fn($driver) => $driver->getCarrierCode())->all();
+        $carrierCodes = $drivers->map(fn ($driver) => $driver->getCarrierCode())->all();
 
         // Build concurrent tasks - one per carrier
         // We pass primitives and re-resolve the driver in each child process
@@ -171,11 +171,13 @@ class RateShoppingEngine
                 $carrierCode => function () use ($carrierCode, $origin, $destination, $packages, $options) {
                     try {
                         // Resolve driver fresh in child process
-                        $driver = app(\AIArmada\Shipping\ShippingManager::class)->driver($carrierCode);
+                        $driver = app(ShippingManager::class)->driver($carrierCode);
+
                         return $driver->getRates($origin, $destination, $packages, $options);
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         // Log error but return empty - other carriers may succeed
                         report($e);
+
                         return collect();
                     }
                 },
@@ -188,7 +190,7 @@ class RateShoppingEngine
         // Merge all successful results
         $rates = collect();
         foreach ($results as $carrierRates) {
-            if ($carrierRates instanceof \Illuminate\Support\Collection) {
+            if ($carrierRates instanceof Collection) {
                 $rates = $rates->merge($carrierRates);
             }
         }
@@ -205,7 +207,7 @@ class RateShoppingEngine
     {
         $fallbackEnabled = $this->config['fallback_to_manual'] ?? true;
 
-        if (!$fallbackEnabled) {
+        if (! $fallbackEnabled) {
             return null;
         }
 
@@ -225,7 +227,7 @@ class RateShoppingEngine
      */
     protected function buildCacheKey(AddressData $origin, AddressData $destination, array $packages): string
     {
-        $totalWeight = array_sum(array_map(fn(PackageData $p) => $p->weight, $packages));
+        $totalWeight = array_sum(array_map(fn (PackageData $p) => $p->weight, $packages));
 
         return 'shipping:rates:' . md5(serialize([
             'origin' => $origin->postCode,
@@ -243,7 +245,7 @@ class RateShoppingEngine
      */
     protected function resolveStrategy(): RateSelectionStrategyInterface
     {
-        return once(fn() => match ($this->config['strategy'] ?? 'cheapest') {
+        return once(fn () => match ($this->config['strategy'] ?? 'cheapest') {
             'fastest' => new FastestRateStrategy,
             'preferred' => new PreferredCarrierStrategy($this->config['carrier_priority'] ?? []),
             default => new CheapestRateStrategy,

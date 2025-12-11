@@ -84,6 +84,6 @@ final class BatchExport implements ExportableInterface
     {
         $suffix = $this->expiringOnly ? '-expiring' : '';
 
-        return 'batches'.$suffix.'-'.CarbonImmutable::now()->format('Y-m-d-His');
+        return 'batches' . $suffix . '-' . CarbonImmutable::now()->format('Y-m-d-His');
     }
 }

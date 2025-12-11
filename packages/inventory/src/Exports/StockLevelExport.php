@@ -80,6 +80,6 @@ final class StockLevelExport implements ExportableInterface
 
     public function getFilename(): string
     {
-        return 'stock-levels-'.CarbonImmutable::now()->format('Y-m-d-His');
+        return 'stock-levels-' . CarbonImmutable::now()->format('Y-m-d-His');
     }
 }

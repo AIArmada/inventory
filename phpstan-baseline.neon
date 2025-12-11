@@ -1,2 +1,7 @@
 parameters:
-	ignoreErrors: []
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>\:\:active\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: packages/pricing/src/Services/PriceCalculator.php

@@ -115,7 +115,7 @@ class OptionsRelationManager extends RelationManager
                             'position' => $v->position,
                         ])->toArray(),
                     ])
-                    ->action(function ($record, array $data) {
+                    ->action(function ($record, array $data): void {
                         // Get existing value IDs
                         $existingIds = $record->values->pluck('id')->toArray();
                         $newIds = [];

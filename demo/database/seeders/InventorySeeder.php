@@ -205,7 +205,7 @@ final class InventorySeeder extends Seeder
     }
 
     /**
-     * @param array<string, InventoryLocation> $locations
+     * @param  array<string, InventoryLocation>  $locations
      */
     private function createInventoryLevels(array $locations): void
     {
@@ -214,13 +214,14 @@ final class InventorySeeder extends Seeder
         $products = Product::all();
         if ($products->isEmpty()) {
             $this->command->warn('      ⚠ No products found - skipping inventory levels');
+
             return;
         }
 
         $levelCount = 0;
 
         // Get active warehouses only
-        $activeLocations = collect($locations)->filter(fn($loc) => $loc->is_active);
+        $activeLocations = collect($locations)->filter(fn ($loc) => $loc->is_active);
 
         foreach ($products as $product) {
             // Distribute stock to random subset of locations
@@ -265,7 +266,7 @@ final class InventorySeeder extends Seeder
                         'allocation_strategy' => rand(1, 5) === 1 ? 'fifo' : null, // Some use FIFO
                         'metadata' => [
                             'last_count_by' => fake()->name(),
-                            'bin_location' => strtoupper(Str::random(1)) . '-' . rand(1, 50) . '-' . rand(1, 10),
+                            'bin_location' => mb_strtoupper(Str::random(1)) . '-' . rand(1, 50) . '-' . rand(1, 10),
                         ],
                     ]
                 );
@@ -277,7 +278,7 @@ final class InventorySeeder extends Seeder
     }
 
     /**
-     * @param array<string, InventoryLocation> $locations
+     * @param  array<string, InventoryLocation>  $locations
      */
     private function createMovementHistory(array $locations): void
     {
@@ -289,7 +290,7 @@ final class InventorySeeder extends Seeder
         }
 
         $movementCount = 0;
-        $activeLocations = collect($locations)->filter(fn($loc) => $loc->is_active)->values();
+        $activeLocations = collect($locations)->filter(fn ($loc) => $loc->is_active)->values();
 
         // Receive shipments (supplier -> warehouse)
         foreach ($products->take(20) as $product) {
@@ -304,7 +305,7 @@ final class InventorySeeder extends Seeder
                     'quantity' => rand(50, 200),
                     'type' => 'receive',
                     'reason' => 'purchase',
-                    'reference' => 'PO-' . strtoupper(Str::random(8)),
+                    'reference' => 'PO-' . mb_strtoupper(Str::random(8)),
                     'note' => 'Supplier delivery - ' . fake()->company(),
                     'occurred_at' => now()->subDays(rand(1, 90)),
                 ]);
@@ -315,7 +316,7 @@ final class InventorySeeder extends Seeder
         // Inter-warehouse transfers
         foreach ($products->take(15) as $product) {
             $fromLocation = $activeLocations->random();
-            $toLocation = $activeLocations->filter(fn($l) => $l->id !== $fromLocation->id)->random();
+            $toLocation = $activeLocations->filter(fn ($l) => $l->id !== $fromLocation->id)->random();
 
             InventoryMovement::create([
                 'inventoryable_type' => Product::class,
@@ -325,7 +326,7 @@ final class InventorySeeder extends Seeder
                 'quantity' => rand(10, 50),
                 'type' => 'transfer',
                 'reason' => 'rebalance',
-                'reference' => 'TRF-' . strtoupper(Str::random(8)),
+                'reference' => 'TRF-' . mb_strtoupper(Str::random(8)),
                 'note' => 'Stock rebalancing between locations',
                 'occurred_at' => now()->subDays(rand(1, 30)),
             ]);
@@ -345,7 +346,7 @@ final class InventorySeeder extends Seeder
                     'quantity' => rand(1, 5),
                     'type' => 'ship',
                     'reason' => 'sale',
-                    'reference' => 'ORD-' . strtoupper(Str::random(8)),
+                    'reference' => 'ORD-' . mb_strtoupper(Str::random(8)),
                     'note' => 'Customer order fulfillment',
                     'occurred_at' => now()->subDays(rand(1, 60)),
                 ]);
@@ -365,7 +366,7 @@ final class InventorySeeder extends Seeder
                 'quantity' => rand(-5, 10),
                 'type' => 'adjust',
                 'reason' => fake()->randomElement(['count', 'damage', 'found', 'expired']),
-                'reference' => 'ADJ-' . strtoupper(Str::random(8)),
+                'reference' => 'ADJ-' . mb_strtoupper(Str::random(8)),
                 'note' => 'Inventory audit adjustment',
                 'occurred_at' => now()->subDays(rand(1, 30)),
             ]);

@@ -35,7 +35,7 @@ final class InventoryValuationWidget extends StatsOverviewWidget
             : 0;
 
         return [
-            Stat::make('Total Inventory Value', $currency.' '.number_format($totalValue, 2))
+            Stat::make('Total Inventory Value', $currency . ' ' . number_format($totalValue, 2))
                 ->description("Using {$method->shortLabel()} method")
                 ->icon('heroicon-o-banknotes')
                 ->color('success'),
@@ -50,7 +50,7 @@ final class InventoryValuationWidget extends StatsOverviewWidget
                 ->icon('heroicon-o-tag')
                 ->color('primary'),
 
-            Stat::make('Avg Unit Cost', $currency.' '.number_format($avgCost, 2))
+            Stat::make('Avg Unit Cost', $currency . ' ' . number_format($avgCost, 2))
                 ->description('Weighted average')
                 ->icon('heroicon-o-calculator')
                 ->color('warning'),

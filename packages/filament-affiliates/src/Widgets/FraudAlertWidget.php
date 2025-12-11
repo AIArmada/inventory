@@ -15,7 +15,7 @@ final class FraudAlertWidget extends BaseWidget
 {
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int | string | array $columnSpan = 'full';
 
     protected ?string $pollingInterval = '30s';
 
@@ -44,11 +44,11 @@ final class FraudAlertWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('signal_type')
                     ->label('Type')
                     ->badge()
-                    ->formatStateUsing(fn(string $state) => str_replace('_', ' ', ucfirst($state))),
+                    ->formatStateUsing(fn (string $state) => str_replace('_', ' ', ucfirst($state))),
 
                 Tables\Columns\TextColumn::make('severity')
                     ->badge()
-                    ->color(fn(FraudSeverity $state) => match ($state) {
+                    ->color(fn (FraudSeverity $state) => match ($state) {
                         FraudSeverity::Low => 'gray',
                         FraudSeverity::Medium => 'warning',
                         FraudSeverity::High => 'danger',
@@ -57,23 +57,23 @@ final class FraudAlertWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('score')
                     ->label('Score')
-                    ->formatStateUsing(fn($state) => $state . '%'),
+                    ->formatStateUsing(fn ($state) => $state . '%'),
 
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
-                    ->tooltip(fn($record) => $record->description),
+                    ->tooltip(fn ($record) => $record->description),
             ])
             ->actions([
                 Action::make('review')
                     ->icon('heroicon-o-eye')
-                    ->url(fn($record) => route('filament.admin.resources.affiliate-fraud-signals.view', $record))
+                    ->url(fn ($record) => route('filament.admin.resources.affiliate-fraud-signals.view', $record))
                     ->openUrlInNewTab(),
 
                 Action::make('dismiss')
                     ->icon('heroicon-o-x-mark')
                     ->color('gray')
                     ->requiresConfirmation()
-                    ->action(fn($record) => $record->update(['status' => 'dismissed'])),
+                    ->action(fn ($record) => $record->update(['status' => 'dismissed'])),
             ])
             ->paginated(false)
             ->emptyStateHeading('No fraud alerts')

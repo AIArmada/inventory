@@ -172,7 +172,7 @@ final class MovementAnalysisReport
             ->groupBy('inventoryable_type', 'inventoryable_id')
             ->having('last_occurred_at', '<', $cutoffDate)
             ->get()
-            ->keyBy(fn ($row) => $row->inventoryable_type.':'.$row->inventoryable_id);
+            ->keyBy(fn ($row) => $row->inventoryable_type . ':' . $row->inventoryable_id);
 
         return InventoryLevel::query()
             ->select([
@@ -184,7 +184,7 @@ final class MovementAnalysisReport
             ->groupBy('inventoryable_type', 'inventoryable_id')
             ->get()
             ->filter(function ($level) use ($lastMovements) {
-                $key = $level->inventoryable_type.':'.$level->inventoryable_id;
+                $key = $level->inventoryable_type . ':' . $level->inventoryable_id;
 
                 return $lastMovements->has($key) || ! InventoryMovement::query()
                     ->where('inventoryable_type', $level->inventoryable_type)
@@ -192,7 +192,7 @@ final class MovementAnalysisReport
                     ->exists();
             })
             ->map(function ($level) use ($lastMovements) {
-                $key = $level->inventoryable_type.':'.$level->inventoryable_id;
+                $key = $level->inventoryable_type . ':' . $level->inventoryable_id;
                 $lastMovement = $lastMovements->get($key);
 
                 $lastOccurredAt = $lastMovement?->last_occurred_at;

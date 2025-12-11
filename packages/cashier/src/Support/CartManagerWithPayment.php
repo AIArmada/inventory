@@ -89,7 +89,7 @@ final class CartManagerWithPayment implements CartManagerInterface
     }
 
     public function add(
-        string|int $id,
+        string | int $id,
         string $name,
         int $price,
         int $quantity = 1,
@@ -101,14 +101,14 @@ final class CartManagerWithPayment implements CartManagerInterface
     }
 
     public function update(
-        string|int $id,
-        int|array $quantityOrAttributes,
+        string | int $id,
+        int | array $quantityOrAttributes,
         ?string $identifier = null
     ): Cart {
         return $this->cart->update($id, $quantityOrAttributes, $identifier);
     }
 
-    public function remove(string|int $id, ?string $identifier = null): Cart
+    public function remove(string | int $id, ?string $identifier = null): Cart
     {
         return $this->cart->remove($id, $identifier);
     }
@@ -184,7 +184,7 @@ final class CartManagerWithPayment implements CartManagerInterface
     }
 
     public function addItemCondition(
-        string|int $id,
+        string | int $id,
         mixed $condition,
         ?string $identifier = null
     ): Cart {
@@ -192,7 +192,7 @@ final class CartManagerWithPayment implements CartManagerInterface
     }
 
     public function removeItemCondition(
-        string|int $id,
+        string | int $id,
         string $conditionName,
         ?string $identifier = null
     ): Cart {
@@ -259,7 +259,7 @@ final class CartManagerWithPayment implements CartManagerInterface
         return $this->cart->getOwnerType();
     }
 
-    public function getOwnerId(): string|int|null
+    public function getOwnerId(): string | int | null
     {
         return $this->cart->getOwnerId();
     }

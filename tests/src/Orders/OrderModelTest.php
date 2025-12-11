@@ -6,15 +6,13 @@ use AIArmada\Orders\Models\Order;
 use AIArmada\Orders\Models\OrderItem;
 use AIArmada\Orders\Models\OrderPayment;
 use AIArmada\Orders\Models\OrderRefund;
-use AIArmada\Orders\States\Created;
-use AIArmada\Orders\States\PendingPayment;
-use AIArmada\Orders\States\Processing;
-use AIArmada\Orders\States\Completed;
 use AIArmada\Orders\States\Canceled;
+use AIArmada\Orders\States\Completed;
+use AIArmada\Orders\States\Created;
 
-describe('Order Model', function () {
-    describe('Order Creation', function () {
-        it('can create an order', function () {
+describe('Order Model', function (): void {
+    describe('Order Creation', function (): void {
+        it('can create an order', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-' . uniqid(),
                 'status' => Created::class,
@@ -27,7 +25,7 @@ describe('Order Model', function () {
                 ->and($order->subtotal)->toBe(10000);
         });
 
-        it('generates unique order numbers', function () {
+        it('generates unique order numbers', function (): void {
             $order1 = Order::create([
                 'order_number' => 'ORD-' . uniqid(),
                 'status' => Created::class,
@@ -48,8 +46,8 @@ describe('Order Model', function () {
         });
     });
 
-    describe('Order Totals', function () {
-        it('can format subtotal', function () {
+    describe('Order Totals', function (): void {
+        it('can format subtotal', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-FMT1-' . uniqid(),
                 'status' => Created::class,
@@ -61,7 +59,7 @@ describe('Order Model', function () {
             expect($order->getFormattedSubtotal())->toContain('100.50');
         });
 
-        it('can format grand total', function () {
+        it('can format grand total', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-FMT2-' . uniqid(),
                 'status' => Created::class,
@@ -74,8 +72,8 @@ describe('Order Model', function () {
         });
     });
 
-    describe('Order Relationships', function () {
-        it('can have order items', function () {
+    describe('Order Relationships', function (): void {
+        it('can have order items', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-REL1-' . uniqid(),
                 'status' => Created::class,
@@ -106,8 +104,8 @@ describe('Order Model', function () {
         });
     });
 
-    describe('Payment Tracking', function () {
-        it('can track total paid', function () {
+    describe('Payment Tracking', function (): void {
+        it('can track total paid', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-PAY1-' . uniqid(),
                 'status' => Created::class,
@@ -135,7 +133,7 @@ describe('Order Model', function () {
             expect($order->getTotalPaid())->toBe(10000);
         });
 
-        it('can check if order is fully paid', function () {
+        it('can check if order is fully paid', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-PAY2-' . uniqid(),
                 'status' => Created::class,
@@ -155,7 +153,7 @@ describe('Order Model', function () {
             expect($order->isFullyPaid())->toBeTrue();
         });
 
-        it('can calculate balance due', function () {
+        it('can calculate balance due', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-PAY3-' . uniqid(),
                 'status' => Created::class,
@@ -176,8 +174,8 @@ describe('Order Model', function () {
         });
     });
 
-    describe('Refund Tracking', function () {
-        it('can track total refunded', function () {
+    describe('Refund Tracking', function (): void {
+        it('can track total refunded', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-REF1-' . uniqid(),
                 'status' => Completed::class,
@@ -208,8 +206,8 @@ describe('Order Model', function () {
         });
     });
 
-    describe('Order Soft Deletes', function () {
-        it('can soft delete an order', function () {
+    describe('Order Soft Deletes', function (): void {
+        it('can soft delete an order', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-DEL-' . uniqid(),
                 'status' => Canceled::class,

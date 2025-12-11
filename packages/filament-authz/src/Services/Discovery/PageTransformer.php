@@ -42,7 +42,7 @@ class PageTransformer
             title: $title,
             slug: $slug,
             cluster: $cluster,
-            permissions: ['view'.class_basename($pageClass)],
+            permissions: ['view' . class_basename($pageClass)],
             metadata: $this->extractMetadata($pageClass),
             panel: $panel,
         );

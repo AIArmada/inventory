@@ -3,13 +3,13 @@
 declare(strict_types=1);
 
 use AIArmada\Orders\Models\Order;
-use AIArmada\Orders\Models\OrderItem;
 use AIArmada\Orders\Models\OrderAddress;
+use AIArmada\Orders\Models\OrderItem;
 use AIArmada\Orders\States\Created;
 
-describe('OrderItem Model', function () {
-    describe('OrderItem Creation', function () {
-        it('can create an order item', function () {
+describe('OrderItem Model', function (): void {
+    describe('OrderItem Creation', function (): void {
+        it('can create an order item', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-ITEM1-' . uniqid(),
                 'status' => Created::class,
@@ -32,7 +32,7 @@ describe('OrderItem Model', function () {
                 ->and($item->quantity)->toBe(2);
         });
 
-        it('belongs to an order', function () {
+        it('belongs to an order', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-ITEM2-' . uniqid(),
                 'status' => Created::class,
@@ -53,8 +53,8 @@ describe('OrderItem Model', function () {
         });
     });
 
-    describe('OrderItem Calculations', function () {
-        it('can calculate total with discount', function () {
+    describe('OrderItem Calculations', function (): void {
+        it('can calculate total with discount', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-ITEM3-' . uniqid(),
                 'status' => Created::class,
@@ -77,7 +77,7 @@ describe('OrderItem Model', function () {
                 ->and($item->total)->toBe(4500);
         });
 
-        it('can store metadata', function () {
+        it('can store metadata', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-ITEM4-' . uniqid(),
                 'status' => Created::class,
@@ -102,9 +102,9 @@ describe('OrderItem Model', function () {
     });
 });
 
-describe('OrderAddress Model', function () {
-    describe('OrderAddress Creation', function () {
-        it('can create a shipping address', function () {
+describe('OrderAddress Model', function (): void {
+    describe('OrderAddress Creation', function (): void {
+        it('can create a shipping address', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-ADDR1-' . uniqid(),
                 'status' => Created::class,
@@ -130,7 +130,7 @@ describe('OrderAddress Model', function () {
                 ->and($address->city)->toBe('Kuala Lumpur');
         });
 
-        it('can create both shipping and billing addresses', function () {
+        it('can create both shipping and billing addresses', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-ADDR2-' . uniqid(),
                 'status' => Created::class,
@@ -166,8 +166,8 @@ describe('OrderAddress Model', function () {
         });
     });
 
-    describe('OrderAddress Relationship', function () {
-        it('belongs to an order', function () {
+    describe('OrderAddress Relationship', function (): void {
+        it('belongs to an order', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-ADDR3-' . uniqid(),
                 'status' => Created::class,
@@ -191,8 +191,8 @@ describe('OrderAddress Model', function () {
         });
     });
 
-    describe('OrderAddress Full Name', function () {
-        it('can compose full name', function () {
+    describe('OrderAddress Full Name', function (): void {
+        it('can compose full name', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-ADDR4-' . uniqid(),
                 'status' => Created::class,

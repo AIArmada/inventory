@@ -24,7 +24,7 @@ final class TotalMrrWidget extends StatsOverviewWidget
         // Calculate MRR by currency
         $mrrByCurrency = $subscriptions
             ->groupBy('currency')
-            ->map(fn(Collection $subs) => $subs->sum('amount'));
+            ->map(fn (Collection $subs) => $subs->sum('amount'));
 
         // Primary MRR (use base currency from config or largest)
         $baseCurrency = config('filament-cashier.currency.base', 'USD');
@@ -76,7 +76,7 @@ final class TotalMrrWidget extends StatsOverviewWidget
                             ->orWhere('ends_at', '>', now());
                     })
                     ->get()
-                    ->map(fn($sub) => UnifiedSubscription::fromStripe($sub));
+                    ->map(fn ($sub) => UnifiedSubscription::fromStripe($sub));
 
                 $subscriptions = $subscriptions->merge($stripeSubscriptions);
             }
@@ -88,12 +88,12 @@ final class TotalMrrWidget extends StatsOverviewWidget
                             ->orWhere('ends_at', '>', now());
                     })
                     ->get()
-                    ->map(fn($sub) => UnifiedSubscription::fromChip($sub));
+                    ->map(fn ($sub) => UnifiedSubscription::fromChip($sub));
 
                 $subscriptions = $subscriptions->merge($chipSubscriptions);
             }
 
-            return $subscriptions->filter(fn(UnifiedSubscription $sub) => $sub->status->isActive());
+            return $subscriptions->filter(fn (UnifiedSubscription $sub) => $sub->status->isActive());
         });
     }
 

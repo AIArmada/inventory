@@ -17,7 +17,7 @@ final class GatewayBreakdownWidget extends ChartWidget
 
     protected static ?int $sort = 3;
 
-    protected int|string|array $columnSpan = 1;
+    protected int | string | array $columnSpan = 1;
 
     public function getHeading(): ?string
     {
@@ -92,8 +92,8 @@ final class GatewayBreakdownWidget extends ChartWidget
                             ->orWhere('ends_at', '>', now());
                     })
                     ->get()
-                    ->map(fn($sub) => UnifiedSubscription::fromStripe($sub))
-                    ->filter(fn(UnifiedSubscription $sub) => $sub->status->isActive())
+                    ->map(fn ($sub) => UnifiedSubscription::fromStripe($sub))
+                    ->filter(fn (UnifiedSubscription $sub) => $sub->status->isActive())
                     ->sum('amount');
 
                 if ($stripeRevenue > 0) {
@@ -108,8 +108,8 @@ final class GatewayBreakdownWidget extends ChartWidget
                             ->orWhere('ends_at', '>', now());
                     })
                     ->get()
-                    ->map(fn($sub) => UnifiedSubscription::fromChip($sub))
-                    ->filter(fn(UnifiedSubscription $sub) => $sub->status->isActive())
+                    ->map(fn ($sub) => UnifiedSubscription::fromChip($sub))
+                    ->filter(fn (UnifiedSubscription $sub) => $sub->status->isActive())
                     ->sum('amount');
 
                 if ($chipRevenue > 0) {

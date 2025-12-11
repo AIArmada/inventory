@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use AIArmada\Tax\Models\TaxZone;
 use AIArmada\Tax\Models\TaxClass;
-use AIArmada\Tax\Models\TaxRate;
 use AIArmada\Tax\Models\TaxExemption;
+use AIArmada\Tax\Models\TaxRate;
+use AIArmada\Tax\Models\TaxZone;
 use Illuminate\Support\Carbon;
 
-describe('TaxZone Model', function () {
-    describe('TaxZone Creation', function () {
-        it('can create a country-based tax zone', function () {
+describe('TaxZone Model', function (): void {
+    describe('TaxZone Creation', function (): void {
+        it('can create a country-based tax zone', function (): void {
             $zone = TaxZone::create([
                 'name' => 'Malaysia',
                 'code' => 'MY-' . uniqid(),
@@ -25,7 +25,7 @@ describe('TaxZone Model', function () {
                 ->and($zone->countries)->toContain('MY');
         });
 
-        it('can create a state-based tax zone', function () {
+        it('can create a state-based tax zone', function (): void {
             $zone = TaxZone::create([
                 'name' => 'California',
                 'code' => 'US-CA-' . uniqid(),
@@ -39,7 +39,7 @@ describe('TaxZone Model', function () {
                 ->and($zone->states)->toContain('CA');
         });
 
-        it('can create a postcode-based tax zone', function () {
+        it('can create a postcode-based tax zone', function (): void {
             $zone = TaxZone::create([
                 'name' => 'Central KL',
                 'code' => 'MY-KL-CTR-' . uniqid(),
@@ -54,8 +54,8 @@ describe('TaxZone Model', function () {
         });
     });
 
-    describe('TaxZone Scopes', function () {
-        it('can filter active zones', function () {
+    describe('TaxZone Scopes', function (): void {
+        it('can filter active zones', function (): void {
             $prefix = uniqid();
             TaxZone::create([
                 'name' => 'Active Zone',
@@ -80,9 +80,9 @@ describe('TaxZone Model', function () {
     });
 });
 
-describe('TaxClass Model', function () {
-    describe('TaxClass Creation', function () {
-        it('can create a tax class', function () {
+describe('TaxClass Model', function (): void {
+    describe('TaxClass Creation', function (): void {
+        it('can create a tax class', function (): void {
             $class = TaxClass::create([
                 'name' => 'Standard Rate',
                 'slug' => 'standard-' . uniqid(),
@@ -94,7 +94,7 @@ describe('TaxClass Model', function () {
                 ->and($class->name)->toBe('Standard Rate');
         });
 
-        it('can create a default tax class', function () {
+        it('can create a default tax class', function (): void {
             $class = TaxClass::create([
                 'name' => 'Default',
                 'slug' => 'default-' . uniqid(),
@@ -106,8 +106,8 @@ describe('TaxClass Model', function () {
         });
     });
 
-    describe('TaxClass Positioning', function () {
-        it('can order tax classes by position', function () {
+    describe('TaxClass Positioning', function (): void {
+        it('can order tax classes by position', function (): void {
             $prefix = uniqid();
             TaxClass::create(['name' => 'Third', 'slug' => "third-{$prefix}", 'position' => 3, 'is_active' => true]);
             TaxClass::create(['name' => 'First', 'slug' => "first-{$prefix}", 'position' => 1, 'is_active' => true]);
@@ -121,9 +121,9 @@ describe('TaxClass Model', function () {
     });
 });
 
-describe('TaxRate Model', function () {
-    describe('TaxRate Creation', function () {
-        it('can create a tax rate', function () {
+describe('TaxRate Model', function (): void {
+    describe('TaxRate Creation', function (): void {
+        it('can create a tax rate', function (): void {
             $zone = TaxZone::create([
                 'name' => 'Malaysia',
                 'code' => 'MY-RATE-' . uniqid(),
@@ -145,7 +145,7 @@ describe('TaxRate Model', function () {
                 ->and($rate->rate)->toBe(600);
         });
 
-        it('can create compound tax rate', function () {
+        it('can create compound tax rate', function (): void {
             $zone = TaxZone::create([
                 'name' => 'Malaysia',
                 'code' => 'MY-COMPOUND-' . uniqid(),
@@ -167,8 +167,8 @@ describe('TaxRate Model', function () {
         });
     });
 
-    describe('TaxRate Priority', function () {
-        it('can order rates by priority', function () {
+    describe('TaxRate Priority', function (): void {
+        it('can order rates by priority', function (): void {
             $zone = TaxZone::create([
                 'name' => 'Zone',
                 'code' => 'ZN-' . uniqid(),
@@ -188,8 +188,8 @@ describe('TaxRate Model', function () {
         });
     });
 
-    describe('TaxRate Calculations', function () {
-        it('can calculate tax percentage', function () {
+    describe('TaxRate Calculations', function (): void {
+        it('can calculate tax percentage', function (): void {
             $zone = TaxZone::create([
                 'name' => 'Zone',
                 'code' => 'ZN-CALC-' . uniqid(),
@@ -209,7 +209,7 @@ describe('TaxRate Model', function () {
             expect($rate->getRatePercentage())->toBe(6.0);
         });
 
-        it('can calculate tax for amount', function () {
+        it('can calculate tax for amount', function (): void {
             $zone = TaxZone::create([
                 'name' => 'Zone',
                 'code' => 'ZN-CALC2-' . uniqid(),
@@ -231,9 +231,9 @@ describe('TaxRate Model', function () {
     });
 });
 
-describe('TaxExemption Model', function () {
-    describe('TaxExemption Creation', function () {
-        it('can create a tax exemption', function () {
+describe('TaxExemption Model', function (): void {
+    describe('TaxExemption Creation', function (): void {
+        it('can create a tax exemption', function (): void {
             $exemption = TaxExemption::create([
                 'exemptable_type' => 'AIArmada\Customers\Models\Customer',
                 'exemptable_id' => 'customer-uuid-' . uniqid(),
@@ -247,7 +247,7 @@ describe('TaxExemption Model', function () {
                 ->and($exemption->status)->toBe('approved');
         });
 
-        it('can set exemption expiration', function () {
+        it('can set exemption expiration', function (): void {
             $exemption = TaxExemption::create([
                 'exemptable_type' => 'Customer',
                 'exemptable_id' => 'cust-' . uniqid(),

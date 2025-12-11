@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use AIArmada\FilamentAffiliates\Widgets\AffiliateStatsWidget;
-use AIArmada\FilamentAffiliates\Widgets\PerformanceOverviewWidget;
 use AIArmada\FilamentCart\Widgets\AbandonedCartsWidget;
 use AIArmada\FilamentCart\Widgets\CartStatsOverviewWidget;
 use AIArmada\FilamentChip\Widgets\ChipStatsWidget;
@@ -39,6 +38,15 @@ final class Dashboard extends BaseDashboard
     protected static string | BackedEnum | null $navigationIcon = Heroicon::Home;
 
     protected static ?int $navigationSort = -2;
+
+    protected int | string | array $columns = [
+        'default' => 1,
+        'sm' => 2,
+        'md' => 3,
+        'lg' => 4,
+        'xl' => 6,
+        '2xl' => 8,
+    ];
 
     public function getTitle(): string
     {
@@ -104,13 +112,4 @@ final class Dashboard extends BaseDashboard
             AbandonedCartsWidget::class,
         ];
     }
-
-    protected int | string | array $columns = [
-        'default' => 1,
-        'sm' => 2,
-        'md' => 3,
-        'lg' => 4,
-        'xl' => 6,
-        '2xl' => 8,
-    ];
 }

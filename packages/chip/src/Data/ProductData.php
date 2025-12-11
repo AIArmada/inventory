@@ -44,7 +44,7 @@ final class ProductData extends ChipData
     public static function make(
         string $name,
         Money $price,
-        string|float|int $quantity = 1,
+        string | float | int $quantity = 1,
         ?Money $discount = null,
         float $taxPercent = 0.0,
         ?string $category = null,

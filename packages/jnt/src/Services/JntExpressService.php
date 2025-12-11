@@ -65,7 +65,7 @@ class JntExpressService
             'password' => $this->password,
             'sender' => $sender->toApiArray(),
             'receiver' => $receiver->toApiArray(),
-            'items' => array_map(fn(ItemData $item): array => $item->toApiArray(), $items),
+            'items' => array_map(fn (ItemData $item): array => $item->toApiArray(), $items),
             'packageInfo' => $packageInfo->toApiArray(),
             ...$additionalData,
         ];
@@ -130,7 +130,7 @@ class JntExpressService
     /**
      * @return array<string, mixed>
      */
-    public function cancelOrder(string $orderId, CancellationReason|string $reason, ?string $trackingNumber = null): array
+    public function cancelOrder(string $orderId, CancellationReason | string $reason, ?string $trackingNumber = null): array
     {
         $payload = [
             'customerCode' => $this->customerCode,
@@ -198,7 +198,7 @@ class JntExpressService
 
     public function verifyWebhookSignature(string $bizContent, string $digest): bool
     {
-        if (!($this->config['webhook']['verify_signature'] ?? true)) {
+        if (! ($this->config['webhook']['verify_signature'] ?? true)) {
             return true;
         }
 
@@ -211,7 +211,7 @@ class JntExpressService
      */
     public function parseWebhookPayload(array $webhookData): array
     {
-        if (!isset($webhookData['bizContent'])) {
+        if (! isset($webhookData['bizContent'])) {
             throw JntValidationException::requiredFieldMissing('bizContent');
         }
 
@@ -219,12 +219,12 @@ class JntExpressService
             ? json_decode($webhookData['bizContent'], true)
             : $webhookData['bizContent'];
 
-        if (!is_array($bizContent)) {
+        if (! is_array($bizContent)) {
             throw JntValidationException::invalidFormat('bizContent', 'valid JSON array', gettype($bizContent));
         }
 
         return array_map(
-            fn(array $item): TrackingData => TrackingData::fromApiArray($item),
+            fn (array $item): TrackingData => TrackingData::fromApiArray($item),
             $bizContent
         );
     }
@@ -327,7 +327,7 @@ class JntExpressService
 
         // Tasks for order IDs
         foreach ($orderIds as $orderId) {
-            $tasks["order:{$orderId}"] = static fn(): array => self::executeTrackingTask(
+            $tasks["order:{$orderId}"] = static fn (): array => self::executeTrackingTask(
                 orderId: $orderId,
                 trackingNumber: null,
             );
@@ -335,7 +335,7 @@ class JntExpressService
 
         // Tasks for tracking numbers
         foreach ($trackingNumbers as $trackingNumber) {
-            $tasks["tracking:{$trackingNumber}"] = static fn(): array => self::executeTrackingTask(
+            $tasks["tracking:{$trackingNumber}"] = static fn (): array => self::executeTrackingTask(
                 orderId: null,
                 trackingNumber: $trackingNumber,
             );
@@ -370,41 +370,6 @@ class JntExpressService
     }
 
     /**
-     * Execute a single tracking task in a child process.
-     *
-     * This static method is called in child processes during concurrent execution.
-     * It resolves a fresh JntExpressService instance to ensure proper initialization.
-     *
-     * @return array{success: bool, data?: TrackingData, error?: string, identifier: string, type: string}
-     */
-    private static function executeTrackingTask(?string $orderId, ?string $trackingNumber): array
-    {
-        $identifier = $orderId ?? $trackingNumber ?? '';
-        $type = $orderId !== null ? 'orderId' : 'trackingNumber';
-
-        try {
-            // Resolve a fresh service instance in the child process
-            /** @var JntExpressService $service */
-            $service = app(JntExpressService::class);
-            $tracking = $service->trackParcel(orderId: $orderId, trackingNumber: $trackingNumber);
-
-            return [
-                'success' => true,
-                'data' => $tracking,
-                'identifier' => $identifier,
-                'type' => $type,
-            ];
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'error' => $e->getMessage(),
-                'identifier' => $identifier,
-                'type' => $type,
-            ];
-        }
-    }
-
-    /**
      * Batch cancel multiple orders.
      *
      * Cancels multiple orders in a single operation. All orders will use the same
@@ -427,7 +392,7 @@ class JntExpressService
      * echo "Failed: " . count($result['failed']) . "\n";
      * ```
      */
-    public function batchCancelOrders(array $orderIds, CancellationReason|string $reason): array
+    public function batchCancelOrders(array $orderIds, CancellationReason | string $reason): array
     {
         $successful = [];
         $failed = [];
@@ -491,7 +456,7 @@ class JntExpressService
         // Build concurrent tasks - pass primitives only
         $tasks = [];
         foreach ($orderIds as $orderId) {
-            $tasks[$orderId] = static fn(): array => self::executePrintTask($orderId, $templateName);
+            $tasks[$orderId] = static fn (): array => self::executePrintTask($orderId, $templateName);
         }
 
         // Execute all print requests in parallel
@@ -522,36 +487,11 @@ class JntExpressService
     }
 
     /**
-     * Execute a single print task in a child process.
-     *
-     * @return array{success: bool, orderId: string, data?: array<string, mixed>, error?: string}
-     */
-    private static function executePrintTask(string $orderId, ?string $templateName): array
-    {
-        try {
-            /** @var JntExpressService $service */
-            $service = app(JntExpressService::class);
-            $data = $service->printOrder($orderId, null, $templateName);
-
-            return [
-                'success' => true,
-                'orderId' => $orderId,
-                'data' => $data,
-            ];
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'orderId' => $orderId,
-                'error' => $e->getMessage(),
-            ];
-        }
-    }
-    /**
      * Lazy load the HTTP client only when needed
      */
     protected function getClient(): JntClient
     {
-        if (!$this->client instanceof JntClient) {
+        if (! $this->client instanceof JntClient) {
             $baseUrl = $this->getBaseUrl();
             $apiAccount = $this->config['api_account'] ?? throw JntConfigurationException::missingApiAccount();
             $privateKey = $this->config['private_key'] ?? throw JntConfigurationException::missingPrivateKey();
@@ -568,5 +508,66 @@ class JntExpressService
         $baseUrls = $this->config['base_urls'] ?? [];
 
         return $baseUrls[$environment] ?? throw JntConfigurationException::invalidEnvironment($environment);
+    }
+
+    /**
+     * Execute a single tracking task in a child process.
+     *
+     * This static method is called in child processes during concurrent execution.
+     * It resolves a fresh JntExpressService instance to ensure proper initialization.
+     *
+     * @return array{success: bool, data?: TrackingData, error?: string, identifier: string, type: string}
+     */
+    private static function executeTrackingTask(?string $orderId, ?string $trackingNumber): array
+    {
+        $identifier = $orderId ?? $trackingNumber ?? '';
+        $type = $orderId !== null ? 'orderId' : 'trackingNumber';
+
+        try {
+            // Resolve a fresh service instance in the child process
+            /** @var JntExpressService $service */
+            $service = app(self::class);
+            $tracking = $service->trackParcel(orderId: $orderId, trackingNumber: $trackingNumber);
+
+            return [
+                'success' => true,
+                'data' => $tracking,
+                'identifier' => $identifier,
+                'type' => $type,
+            ];
+        } catch (Throwable $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'identifier' => $identifier,
+                'type' => $type,
+            ];
+        }
+    }
+
+    /**
+     * Execute a single print task in a child process.
+     *
+     * @return array{success: bool, orderId: string, data?: array<string, mixed>, error?: string}
+     */
+    private static function executePrintTask(string $orderId, ?string $templateName): array
+    {
+        try {
+            /** @var JntExpressService $service */
+            $service = app(self::class);
+            $data = $service->printOrder($orderId, null, $templateName);
+
+            return [
+                'success' => true,
+                'orderId' => $orderId,
+                'data' => $data,
+            ];
+        } catch (Throwable $e) {
+            return [
+                'success' => false,
+                'orderId' => $orderId,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 }

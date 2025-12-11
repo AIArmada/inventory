@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace AIArmada\Jnt\Models;
 
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
@@ -67,6 +67,7 @@ use Illuminate\Support\Carbon;
  */
 final class JntOrder extends Model
 {
+    use HasOwner;
     use HasUuids;
 
     /**
@@ -125,14 +126,8 @@ final class JntOrder extends Model
     }
 
     /**
-     * @return MorphTo<Model, $this>
-     */
-    public function owner(): MorphTo
-    {
-        return $this->morphTo();
-    }
-
-    /**
+     * Scope query to the specified owner (with config toggle).
+     *
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
@@ -159,32 +154,6 @@ final class JntOrder extends Model
 
         return $query->where('owner_type', $owner->getMorphClass())
             ->where('owner_id', $owner->getKey());
-    }
-
-    public function hasOwner(): bool
-    {
-        return $this->owner_type !== null && $this->owner_id !== null;
-    }
-
-    public function isGlobal(): bool
-    {
-        return ! $this->hasOwner();
-    }
-
-    public function assignOwner(Model $owner): static
-    {
-        $this->owner_type = $owner->getMorphClass();
-        $this->owner_id = (string) $owner->getKey();
-
-        return $this;
-    }
-
-    public function removeOwner(): static
-    {
-        $this->owner_type = null;
-        $this->owner_id = null;
-
-        return $this;
     }
 
     /**
@@ -256,7 +225,7 @@ final class JntOrder extends Model
      */
     protected static function booted(): void
     {
-        static::deleting(function (JntOrder $order): void {
+        self::deleting(function (JntOrder $order): void {
             // Application-level cascade delete
             $order->items()->delete();
             $order->parcels()->delete();

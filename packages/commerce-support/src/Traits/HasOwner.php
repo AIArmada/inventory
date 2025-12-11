@@ -137,12 +137,12 @@ trait HasOwner // @phpstan-ignore trait.unused
             /** @var int|string $key */
             $key = $owner->getKey();
 
-            return $name ?? $displayName ?? $email ?? class_basename($owner).':'.(string) $key;
+            return $name ?? $displayName ?? $email ?? class_basename($owner) . ':' . (string) $key;
         }
 
         /** @var int|string $key */
         $key = $owner->getKey();
 
-        return class_basename($owner).':'.(string) $key;
+        return class_basename($owner) . ':' . (string) $key;
     }
 }

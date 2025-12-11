@@ -216,7 +216,7 @@ final class PermissionSeeder extends Seeder
             'voucher.redeem_manual',
             'voucher.bulk_create',
             'voucher.analytics',
-            // Full affiliate access  
+            // Full affiliate access
             'affiliate.viewAny',
             'affiliate.view',
             'affiliate.create',

@@ -85,7 +85,15 @@ final class CommissionRuleEngine
             ->active()
             ->ordered()
             ->get()
-            ->filter(fn(AffiliateCommissionRule $rule) => $rule->matches($context));
+            ->filter(fn (AffiliateCommissionRule $rule) => $rule->matches($context));
+    }
+
+    /**
+     * Clear the rules cache.
+     */
+    public function clearCache(): void
+    {
+        $this->rulesCache = [];
     }
 
     /**
@@ -99,14 +107,6 @@ final class CommissionRuleEngine
     }
 
     /**
-     * Clear the rules cache.
-     */
-    public function clearCache(): void
-    {
-        $this->rulesCache = [];
-    }
-
-    /**
      * @param  Collection<int, AffiliateCommissionRule>  $rules
      */
     private function calculateBaseCommission(Collection $rules, int $orderAmountMinor, array $context): int
@@ -114,7 +114,7 @@ final class CommissionRuleEngine
         // Use the highest priority matching rule
         $rule = $rules->first();
 
-        if (!$rule) {
+        if (! $rule) {
             // Fall back to default config rate
             $defaultRate = config('affiliates.commissions.default_rate', 10);
 
@@ -143,7 +143,7 @@ final class CommissionRuleEngine
 
         // Find applicable volume tier
         $tier = AffiliateVolumeTier::query()
-            ->when($programId, fn($q) => $q->where('program_id', $programId))
+            ->when($programId, fn ($q) => $q->where('program_id', $programId))
             ->where('min_volume_minor', '<=', $periodVolume)
             ->where(function ($q) use ($periodVolume): void {
                 $q->whereNull('max_volume_minor')
@@ -152,7 +152,7 @@ final class CommissionRuleEngine
             ->orderBy('min_volume_minor', 'desc')
             ->first();
 
-        if (!$tier) {
+        if (! $tier) {
             return 0;
         }
 
@@ -171,9 +171,9 @@ final class CommissionRuleEngine
 
         $promotions = AffiliateCommissionPromotion::query()
             ->active()
-            ->when($programId, fn($q) => $q->where('program_id', $programId))
+            ->when($programId, fn ($q) => $q->where('program_id', $programId))
             ->get()
-            ->filter(fn(AffiliateCommissionPromotion $promo) => $promo->appliesToAffiliate($affiliate));
+            ->filter(fn (AffiliateCommissionPromotion $promo) => $promo->appliesToAffiliate($affiliate));
 
         $totalBonus = 0;
 

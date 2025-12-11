@@ -92,7 +92,7 @@ class WishlistsRelationManager extends RelationManager
                 Tables\Actions\Action::make('copy_link')
                     ->label('Copy Link')
                     ->icon('heroicon-o-link')
-                    ->action(function ($record) {
+                    ->action(function ($record): void {
                         \Filament\Notifications\Notification::make()
                             ->success()
                             ->title('Link Copied')

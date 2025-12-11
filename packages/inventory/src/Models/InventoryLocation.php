@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Inventory\Database\Factories\InventoryLocationFactory;
 use AIArmada\Inventory\Enums\TemperatureZone;
 use AIArmada\Inventory\Traits\HasLocationHierarchy;
@@ -14,7 +15,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 
 /**
@@ -56,6 +56,7 @@ final class InventoryLocation extends Model
     use HasFactory;
 
     use HasLocationHierarchy;
+    use HasOwner;
     use HasUuids;
 
     public const DEFAULT_LOCATION_CODE = 'DEFAULT';
@@ -108,14 +109,6 @@ final class InventoryLocation extends Model
     public function getTable(): string
     {
         return config('inventory.table_names.locations', 'inventory_locations');
-    }
-
-    /**
-     * Get the owner model (polymorphic relationship).
-     */
-    public function owner(): MorphTo
-    {
-        return $this->morphTo();
     }
 
     /**
@@ -191,17 +184,6 @@ final class InventoryLocation extends Model
     }
 
     /**
-     * Scope query to only global (ownerless) records.
-     *
-     * @param  Builder<static>  $query
-     * @return Builder<static>
-     */
-    public function scopeGlobalOnly(Builder $query): Builder
-    {
-        return $query->whereNull('owner_type')->whereNull('owner_id');
-    }
-
-    /**
      * Scope to only active locations.
      *
      * @param  Builder<self>  $query
@@ -221,52 +203,6 @@ final class InventoryLocation extends Model
     public function scopeByPriority(Builder $query): Builder
     {
         return $query->orderByDesc('priority');
-    }
-
-    /**
-     * Check if this model has an owner assigned.
-     */
-    public function hasOwner(): bool
-    {
-        return $this->owner_type !== null && $this->owner_id !== null;
-    }
-
-    /**
-     * Check if this model is global (no owner).
-     */
-    public function isGlobal(): bool
-    {
-        return ! $this->hasOwner();
-    }
-
-    /**
-     * Get the human-readable display name for the owner.
-     */
-    public function getOwnerDisplayNameAttribute(): ?string
-    {
-        $owner = $this->owner;
-
-        if (! $owner) {
-            return null;
-        }
-
-        if (method_exists($owner, 'getAttribute')) {
-            /** @var string|null $name */
-            $name = $owner->getAttribute('name');
-            /** @var string|null $displayName */
-            $displayName = $owner->getAttribute('display_name');
-            /** @var string|null $email */
-            $email = $owner->getAttribute('email');
-            /** @var int|string $key */
-            $key = $owner->getKey();
-
-            return $name ?? $displayName ?? $email ?? class_basename($owner) . ':' . (string) $key;
-        }
-
-        /** @var int|string $key */
-        $key = $owner->getKey();
-
-        return class_basename($owner) . ':' . (string) $key;
     }
 
     /**

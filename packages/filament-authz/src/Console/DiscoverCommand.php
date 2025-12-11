@@ -103,7 +103,7 @@ class DiscoverCommand extends Command
                     class_basename($item->fqcn),
                     $item->model,
                     $item->panel ?? '-',
-                    implode(', ', array_slice($item->permissions, 0, 3)).(count($item->permissions) > 3 ? '...' : ''),
+                    implode(', ', array_slice($item->permissions, 0, 3)) . (count($item->permissions) > 3 ? '...' : ''),
                 ];
             }
 

@@ -132,20 +132,154 @@ commerce-docs/           # Separate repo
 │       ├── Aside.astro
 │       ├── AutoScreenshot.astro
 │       └── Disclosure.astro
-# Documentation Guidelines (Filament-Style)
+└── scripts/
+    └── sync-docs.js     # Script to pull docs from main repo
+```
 
-- Markdown lives in `docs/` and `packages/*/docs/`; Astro site consumes it later.
-- File naming per package: 01-overview, 02-installation, 03-configuration, 04-usage, 05-<feature>..., 99-troubleshooting. Lowercase kebab, numbered, one topic per file, ≤500 lines.
-- Frontmatter required with `title`; `contents: false` optional. Example:
+### Option 2: Monorepo Subfolder
+
+Keep docs site in the main repo:
+
+```
+commerce/
+├── packages/
+├── docs-site/           # Astro project
+│   ├── astro.config.mjs
+│   ├── src/content/docs/
+│   └── scripts/sync-docs.js
+└── ...
+```
+
+### Setup Steps
+
+```bash
+# Create docs site (in separate repo or subfolder)
+npm create astro@latest docs-site -- --template starlight
+
+cd docs-site
+
+# Configure astro.config.mjs
+```
+
+```js
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+import starlight from '@astrojs/starlight';
+
+export default defineConfig({
+  site: 'https://docs.commerce.dev',
+  integrations: [
+    starlight({
+      title: 'Commerce Docs',
+      social: { github: 'https://github.com/AIArmada/commerce' },
+      sidebar: [
+        { label: 'Getting Started', autogenerate: { directory: 'getting-started' } },
+        { label: 'Cart', autogenerate: { directory: 'cart' } },
+        { label: 'Cashier', autogenerate: { directory: 'cashier' } },
+        { label: 'Chip', autogenerate: { directory: 'chip' } },
+        { label: 'Vouchers', autogenerate: { directory: 'vouchers' } },
+      ],
+    }),
+  ],
+});
+```
+
+### Sync Script
+
+```js
+// scripts/sync-docs.js
+const fs = require('fs');
+const path = require('path');
+
+const MAIN_REPO = process.env.COMMERCE_REPO || '../commerce';
+const DEST = path.join(__dirname, '../src/content/docs');
+
+const packages = [
+  'cart', 'cashier', 'cashier-chip', 'chip', 
+  'vouchers', 'inventory', 'stock', 'docs'
+];
+
+// Clean destination
+fs.rmSync(DEST, { recursive: true, force: true });
+fs.mkdirSync(DEST, { recursive: true });
+
+// Copy package docs
+packages.forEach(pkg => {
+  const src = path.join(MAIN_REPO, 'packages', pkg, 'docs');
+  const dest = path.join(DEST, pkg);
+  if (fs.existsSync(src)) {
+    fs.cpSync(src, dest, { recursive: true });
+    console.log(`✓ Copied ${pkg}/docs`);
+  }
+});
+
+console.log('Docs synced!');
+```
+
+### Deployment
+
+| Platform | Setup |
+|----------|-------|
+| **Vercel** | Connect repo → Auto-detects Astro → Deploy |
+| **Netlify** | Build: `npm run build`, Publish: `dist` |
+| **Cloudflare Pages** | Build: `npm run build`, Output: `dist` |
+| **GitHub Pages** | Use GitHub Actions with `withastro/action@v3` |
+
+### GitHub Actions (for separate repo)
+
 ```yaml
----
-title: Configuration
----
-import Aside from "@components/Aside.astro"
-import AutoScreenshot from "@components/AutoScreenshot.astro"
+# .github/workflows/deploy.yml
+name: Deploy Docs
+
+on:
+  push:
+    branches: [main]
+  repository_dispatch:
+    types: [docs-update]  # Triggered from main repo
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Clone main repo for docs
+        run: |
+          git clone --depth 1 https://github.com/AIArmada/commerce.git ../commerce
+          node scripts/sync-docs.js
+      
+      - uses: withastro/action@v3
 ```
-- Components allowed: `<Aside variant="info|warning|tip|danger">`, `<AutoScreenshot version="1.x">`, `<Disclosure>`.
-- Content style: working code samples, consistent heading levels (##, ###), cross-link related docs.
-- Hosting/deploy: can be separate Astro repo or `docs-site/` subfolder; sync markdown then build with Astro/Starlight; deploy via Vercel/Netlify/CF Pages/GitHub Pages.
-- Verification: ensure numbered files exist per package, frontmatter present, and filenames follow numbering.
+
+### Domain Configuration
+
+1. Add custom domain in hosting platform dashboard
+2. Configure DNS:
+   ```
+   CNAME docs.commerce.dev → your-site.vercel.app
+   ```
+3. HTTPS is automatic on all major platforms
+
+## Verification
+
+```bash
+# Check all packages have required docs
+for pkg in cart cashier chip vouchers; do
+  ls packages/$pkg/docs/01-*.md 2>/dev/null || echo "Missing: $pkg"
+done
+
+# Validate frontmatter exists
+grep -L "^---" packages/*/docs/*.md
+
+# Check for numbered prefixes
+ls packages/*/docs/*.md | grep -v "/[0-9][0-9]-"
 ```
+
+## Content Checklist
+
+- [ ] Every config key has documentation
+- [ ] Every public method has examples  
+- [ ] Every event is documented
+- [ ] Breaking changes have migration guides
+- [ ] Files use numbered prefixes for ordering
+- [ ] All files have frontmatter with `title:`

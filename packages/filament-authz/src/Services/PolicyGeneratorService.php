@@ -14,7 +14,7 @@ class PolicyGeneratorService
     public function __construct()
     {
         $this->stubsPath = config('filament-authz.policies.stubs_path')
-            ?? __DIR__.'/../../stubs/policies';
+            ?? __DIR__ . '/../../stubs/policies';
     }
 
     /**
@@ -168,7 +168,7 @@ PHP;
 
             PolicyType::Contextual => $isOwnerAware && ! $isSingleParam
             ? "{$indent}// Owner can always {$ability} their own records\n{$indent}if (\$this->isOwner(\$user, \${$modelVariable})) {\n{$indent}    return true;\n{$indent}}\n\n{$indent}return \$this->checkInContext(\$user, '{$permission}', \${$modelVariable});"
-            : "{$indent}return \$this->checkInContext(\$user, '{$permission}'".($isSingleParam ? '' : ", \${$modelVariable}").');',
+            : "{$indent}return \$this->checkInContext(\$user, '{$permission}'" . ($isSingleParam ? '' : ", \${$modelVariable}") . ');',
 
             PolicyType::Temporal => "{$indent}// Check for active temporal permission\n{$indent}if (\$this->hasTemporalGrant(\$user, '{$permission}')) {\n{$indent}    return true;\n{$indent}}\n\n{$indent}return \$user->can('{$permission}');",
 

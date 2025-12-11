@@ -29,7 +29,7 @@ final class StackingConfigurationPage extends Page implements HasForms
      */
     public array $data = [];
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSquare3Stack3d;
+    protected static string | BackedEnum | null $navigationIcon = Heroicon::OutlinedSquare3Stack3d;
 
     protected string $view = 'filament-vouchers::pages.stacking-configuration';
 
@@ -37,7 +37,7 @@ final class StackingConfigurationPage extends Page implements HasForms
 
     protected static ?string $title = 'Voucher Stacking Configuration';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Vouchers & Discounts';
+    protected static string | UnitEnum | null $navigationGroup = 'Vouchers & Discounts';
 
     protected static ?int $navigationSort = 100;
 

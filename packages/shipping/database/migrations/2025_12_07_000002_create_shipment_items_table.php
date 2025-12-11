@@ -33,7 +33,7 @@ return new class extends Migration
             $table->{$jsonType}('metadata')->nullable();
             $table->timestamps();
 
-            $table->index(['shipment_id', 'sku'], $tableName.'_shipment_sku');
+            $table->index(['shipment_id', 'sku'], $tableName . '_shipment_sku');
         });
     }
 

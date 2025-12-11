@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Vouchers\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Vouchers\Campaigns\Models\Campaign;
 use AIArmada\Vouchers\Campaigns\Models\CampaignVariant;
 use AIArmada\Vouchers\Enums\VoucherStatus;
@@ -16,7 +17,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 // Conditional import for affiliate integration
 use function class_exists;
@@ -68,7 +68,9 @@ use function class_exists;
  */
 class Voucher extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
+    use HasOwner;
+    use HasUuids;
 
     protected $fillable = [
         'code',
@@ -131,11 +133,6 @@ class Voucher extends Model
         $relation = $this->hasMany(VoucherTransaction::class);
 
         return $relation;
-    }
-
-    public function owner(): MorphTo
-    {
-        return $this->morphTo();
     }
 
     /**
@@ -402,33 +399,6 @@ class Voucher extends Model
         return min(100, ($timesUsed / $usageLimit) * 100);
     }
 
-    public function getOwnerDisplayNameAttribute(): ?string
-    {
-        $owner = $this->owner;
-
-        if (! $owner) {
-            return null;
-        }
-
-        if (method_exists($owner, 'getAttribute')) {
-            /** @var string|null $name */
-            $name = $owner->getAttribute('name');
-            /** @var string|null $displayName */
-            $displayName = $owner->getAttribute('display_name');
-            /** @var string|null $email */
-            $email = $owner->getAttribute('email');
-            /** @var int|string $key */
-            $key = $owner->getKey();
-
-            return $name ?? $displayName ?? $email ?? class_basename($owner).':'.(string) $key;
-        }
-
-        /** @var int|string $key */
-        $key = $owner->getKey();
-
-        return class_basename($owner).':'.(string) $key;
-    }
-
     public function getRemainingUsesAttribute(): ?int
     {
         return $this->getRemainingUses();
@@ -448,7 +418,7 @@ class Voucher extends Model
             // Value is stored in basis points (e.g., 1000 = 10.00%, 1259 = 12.59%)
             $percentage = $value / 100;
 
-            return mb_rtrim(mb_rtrim(number_format($percentage, 2), '0'), '.').' %';
+            return mb_rtrim(mb_rtrim(number_format($percentage, 2), '0'), '.') . ' %';
         }
 
         // Value is stored as cents

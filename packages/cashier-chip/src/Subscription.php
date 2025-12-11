@@ -96,7 +96,7 @@ class Subscription extends Model
         $tables = config('cashier-chip.database.tables', []);
         $prefix = config('cashier-chip.database.table_prefix', 'cashier_chip_');
 
-        return $tables['subscriptions'] ?? $prefix.'subscriptions';
+        return $tables['subscriptions'] ?? $prefix . 'subscriptions';
     }
 
     /**
@@ -519,7 +519,7 @@ class Subscription extends Model
      *
      * @return $this
      */
-    public function swap(string|array $prices, array $options = [])
+    public function swap(string | array $prices, array $options = [])
     {
         if (empty($prices = (array) $prices)) {
             throw new InvalidArgumentException('Please provide at least one price when swapping.');
@@ -541,7 +541,7 @@ class Subscription extends Model
                 $quantity = is_array($priceValue) ? ($priceValue['quantity'] ?? 1) : 1;
 
                 $this->items()->create([
-                    'chip_id' => 'si_'.uniqid().'_'.time(),
+                    'chip_id' => 'si_' . uniqid() . '_' . time(),
                     'chip_product' => $options['product'] ?? null,
                     'chip_price' => $price,
                     'quantity' => $quantity,
@@ -586,7 +586,7 @@ class Subscription extends Model
      *
      * @return $this
      */
-    public function cancelAt(DateTimeInterface|int $endsAt)
+    public function cancelAt(DateTimeInterface | int $endsAt)
     {
         if ($endsAt instanceof DateTimeInterface) {
             $endsAt = Carbon::instance($endsAt);
@@ -653,7 +653,7 @@ class Subscription extends Model
     /**
      * Get the current period start date for the subscription.
      */
-    public function currentPeriodStart(DateTimeZone|string|int|null $timezone = null): ?CarbonInterface
+    public function currentPeriodStart(DateTimeZone | string | int | null $timezone = null): ?CarbonInterface
     {
         if (! $this->next_billing_at) {
             return null;
@@ -669,7 +669,7 @@ class Subscription extends Model
     /**
      * Get the current period end date for the subscription.
      */
-    public function currentPeriodEnd(DateTimeZone|string|int|null $timezone = null): ?CarbonInterface
+    public function currentPeriodEnd(DateTimeZone | string | int | null $timezone = null): ?CarbonInterface
     {
         if (! $this->next_billing_at) {
             return null;
@@ -858,7 +858,7 @@ class Subscription extends Model
         }
 
         $this->items()->create([
-            'chip_id' => 'si_'.uniqid().'_'.time(),
+            'chip_id' => 'si_' . uniqid() . '_' . time(),
             'chip_product' => $options['product'] ?? null,
             'chip_price' => $price,
             'quantity' => $quantity,

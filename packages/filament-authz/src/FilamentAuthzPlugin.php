@@ -164,7 +164,7 @@ class FilamentAuthzPlugin implements Plugin
             $this->discoveryNamespaces
         );
 
-        if (!empty($namespaces)) {
+        if (! empty($namespaces)) {
             $discovery->discoverFromNamespaces($namespaces);
         }
 

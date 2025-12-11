@@ -25,9 +25,9 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
     use InteractsWithForms;
     use InteractsWithTable;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shield-exclamation';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-shield-exclamation';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Affiliates';
+    protected static string | UnitEnum | null $navigationGroup = 'Affiliates';
 
     protected static ?string $navigationLabel = 'Fraud Review';
 
@@ -52,7 +52,7 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
 
                 Tables\Columns\TextColumn::make('signal_type')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'velocity_abuse' => 'danger',
                         'ip_duplicate' => 'warning',
                         'self_referral' => 'danger',
@@ -62,7 +62,7 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
 
                 Tables\Columns\TextColumn::make('severity')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'critical' => 'danger',
                         'high' => 'warning',
                         'medium' => 'info',
@@ -71,7 +71,7 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
 
                 Tables\Columns\TextColumn::make('score')
                     ->label('Risk Score')
-                    ->formatStateUsing(fn($state): string => $state . '%'),
+                    ->formatStateUsing(fn ($state): string => $state . '%'),
 
                 Tables\Columns\TextColumn::make('detected_at')
                     ->dateTime()

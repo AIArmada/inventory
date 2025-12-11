@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use AIArmada\Customers\Models\Customer;
 use AIArmada\Customers\Enums\CustomerStatus;
+use AIArmada\Customers\Models\Customer;
 
-describe('Customer Model', function () {
-    describe('Customer Creation', function () {
-        it('can create a customer', function () {
+describe('Customer Model', function (): void {
+    describe('Customer Creation', function (): void {
+        it('can create a customer', function (): void {
             $customer = Customer::create([
                 'first_name' => 'John',
                 'last_name' => 'Doe',
@@ -20,7 +20,7 @@ describe('Customer Model', function () {
                 ->and($customer->last_name)->toBe('Doe');
         });
 
-        it('generates full name', function () {
+        it('generates full name', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Jane',
                 'last_name' => 'Smith',
@@ -32,8 +32,8 @@ describe('Customer Model', function () {
         });
     });
 
-    describe('Customer Status', function () {
-        it('can check if customer is active', function () {
+    describe('Customer Status', function (): void {
+        it('can check if customer is active', function (): void {
             $active = Customer::create([
                 'first_name' => 'Active',
                 'last_name' => 'User',
@@ -44,7 +44,7 @@ describe('Customer Model', function () {
             expect($active->isActive())->toBeTrue();
         });
 
-        it('can check if customer is suspended', function () {
+        it('can check if customer is suspended', function (): void {
             $suspended = Customer::create([
                 'first_name' => 'Suspended',
                 'last_name' => 'User',
@@ -56,8 +56,8 @@ describe('Customer Model', function () {
         });
     });
 
-    describe('Customer Marketing', function () {
-        it('can opt in to marketing', function () {
+    describe('Customer Marketing', function (): void {
+        it('can opt in to marketing', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Marketer',
                 'last_name' => 'Test',
@@ -71,7 +71,7 @@ describe('Customer Model', function () {
             expect($customer->accepts_marketing)->toBeTrue();
         });
 
-        it('can opt out of marketing', function () {
+        it('can opt out of marketing', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Marketer',
                 'last_name' => 'Test',
@@ -86,8 +86,8 @@ describe('Customer Model', function () {
         });
     });
 
-    describe('Customer Wallet', function () {
-        it('can add credit to wallet', function () {
+    describe('Customer Wallet', function (): void {
+        it('can add credit to wallet', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Wallet',
                 'last_name' => 'Test',
@@ -101,7 +101,7 @@ describe('Customer Model', function () {
             expect($customer->wallet_balance)->toBe(1000);
         });
 
-        it('can deduct credit from wallet', function () {
+        it('can deduct credit from wallet', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Wallet',
                 'last_name' => 'Test',
@@ -115,7 +115,7 @@ describe('Customer Model', function () {
             expect($customer->wallet_balance)->toBe(3000);
         });
 
-        it('can check wallet balance', function () {
+        it('can check wallet balance', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Wallet',
                 'last_name' => 'Test',
@@ -129,8 +129,8 @@ describe('Customer Model', function () {
         });
     });
 
-    describe('Customer Order Statistics', function () {
-        it('can record an order', function () {
+    describe('Customer Order Statistics', function (): void {
+        it('can record an order', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Order',
                 'last_name' => 'Test',
@@ -146,7 +146,7 @@ describe('Customer Model', function () {
                 ->and($customer->lifetime_value)->toBe(5000);
         });
 
-        it('can accumulate multiple orders', function () {
+        it('can accumulate multiple orders', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Order',
                 'last_name' => 'Test',
@@ -164,7 +164,7 @@ describe('Customer Model', function () {
                 ->and($customer->lifetime_value)->toBe(10000);
         });
 
-        it('can calculate average order value', function () {
+        it('can calculate average order value', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Order',
                 'last_name' => 'Test',
@@ -178,15 +178,15 @@ describe('Customer Model', function () {
         });
     });
 
-    describe('Customer Scopes', function () {
-        it('can filter active customers', function () {
+    describe('Customer Scopes', function (): void {
+        it('can filter active customers', function (): void {
             Customer::create(['first_name' => 'Active', 'last_name' => 'One', 'email' => 'a1-' . uniqid() . '@test.com', 'status' => CustomerStatus::Active]);
             Customer::create(['first_name' => 'Inactive', 'last_name' => 'Two', 'email' => 'i2-' . uniqid() . '@test.com', 'status' => CustomerStatus::Suspended]);
 
             expect(Customer::active()->count())->toBeGreaterThanOrEqual(1);
         });
 
-        it('can filter marketing opted-in customers', function () {
+        it('can filter marketing opted-in customers', function (): void {
             Customer::create(['first_name' => 'OptedIn', 'last_name' => 'User', 'email' => 'optin-' . uniqid() . '@test.com', 'status' => CustomerStatus::Active, 'accepts_marketing' => true]);
             Customer::create(['first_name' => 'OptedOut', 'last_name' => 'User', 'email' => 'optout-' . uniqid() . '@test.com', 'status' => CustomerStatus::Active, 'accepts_marketing' => false]);
 
@@ -194,8 +194,8 @@ describe('Customer Model', function () {
         });
     });
 
-    describe('Customer Soft Deletes', function () {
-        it('can soft delete a customer', function () {
+    describe('Customer Soft Deletes', function (): void {
+        it('can soft delete a customer', function (): void {
             $customer = Customer::create([
                 'first_name' => 'ToDelete',
                 'last_name' => 'User',

@@ -232,7 +232,7 @@ class CustomerResource extends Resource
                             ->label('Reason')
                             ->rows(2),
                     ])
-                    ->action(function (Customer $record, array $data) {
+                    ->action(function (Customer $record, array $data): void {
                         $amountInCents = (int) ($data['amount'] * 100);
                         $record->addCredit($amountInCents, $data['reason'] ?? null);
 

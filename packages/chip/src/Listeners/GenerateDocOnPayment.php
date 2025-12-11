@@ -139,11 +139,11 @@ final class GenerateDocOnPayment implements ShouldQueue
         $notes = [];
 
         if ($event->getReference()) {
-            $notes[] = 'Reference: '.$event->getReference();
+            $notes[] = 'Reference: ' . $event->getReference();
         }
 
         if ($event->getPaymentMethod()) {
-            $notes[] = 'Payment Method: '.ucfirst((string) $event->getPaymentMethod());
+            $notes[] = 'Payment Method: ' . ucfirst((string) $event->getPaymentMethod());
         }
 
         return implode("\n", $notes);

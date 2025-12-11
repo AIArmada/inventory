@@ -8,11 +8,13 @@ use AIArmada\Cart\Conditions\CartCondition;
 use AIArmada\Cart\Conditions\ConditionTarget;
 use AIArmada\Cart\Contracts\RulesFactoryInterface;
 use AIArmada\Cart\Database\Factories\ConditionFactory;
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use Akaunting\Money\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -22,6 +24,8 @@ use InvalidArgumentException;
  * This model stores conditions that can be used to quickly create cart
  * conditions with predefined settings.
  *
+ * @property string|null $owner_type
+ * @property string|null $owner_id
  * @property string $id
  * @property string $name
  * @property string|null $display_name
@@ -49,6 +53,7 @@ class Condition extends Model
     /** @use HasFactory<ConditionFactory> */
     use HasFactory;
 
+    use HasOwner;
     use HasUuids;
 
     /**
@@ -62,6 +67,8 @@ class Condition extends Model
      * @var list<string>
      */
     protected $fillable = [
+        'owner_type',
+        'owner_id',
         'name',
         'display_name',
         'description',
@@ -303,7 +310,7 @@ class Condition extends Model
         $money = Money::{$this->resolveCurrency()}($normalized);
 
         return str_starts_with($rawValue, '+')
-            ? '+'.$money
+            ? '+' . $money
             : (string) $money;
     }
 
@@ -368,6 +375,38 @@ class Condition extends Model
     {
         // Store as JSON string - will be normalized during save
         $this->attributes['rules'] = json_encode($rules);
+    }
+
+    /**
+     * Scope query to the specified owner.
+     *
+     * @param  Builder<static>  $query
+     * @param  EloquentModel|null  $owner  The owner to scope to
+     * @param  bool  $includeGlobal  Whether to include global (ownerless) records
+     * @return Builder<static>
+     */
+    public function scopeForOwner(Builder $query, ?EloquentModel $owner, bool $includeGlobal = true): Builder
+    {
+        if (! config('cart.owner.enabled', false)) {
+            return $query;
+        }
+
+        if (! $owner) {
+            return $includeGlobal
+                ? $query->whereNull('owner_id')
+                : $query->whereNull('owner_type')->whereNull('owner_id');
+        }
+
+        return $query->where(function (Builder $builder) use ($owner, $includeGlobal): void {
+            $builder->where('owner_type', $owner->getMorphClass())
+                ->where('owner_id', $owner->getKey());
+
+            if ($includeGlobal) {
+                $builder->orWhere(function (Builder $inner): void {
+                    $inner->whereNull('owner_type')->whereNull('owner_id');
+                });
+            }
+        });
     }
 
     /**

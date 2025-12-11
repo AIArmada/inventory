@@ -9,6 +9,7 @@ use AIArmada\Affiliates\Enums\CommissionType;
 use AIArmada\Affiliates\Events\AffiliateActivated;
 use AIArmada\Affiliates\Events\AffiliateCreated;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,7 +18,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 use function class_exists;
 
@@ -66,6 +66,7 @@ use function class_exists;
  */
 final class Affiliate extends Model
 {
+    use HasOwner;
     use HasUuids;
 
     protected $fillable = [
@@ -219,16 +220,6 @@ final class Affiliate extends Model
 
         // Fallback to prevent errors when vouchers package not installed
         return $this->hasMany(Model::class, 'affiliate_id');
-    }
-
-    /**
-     * Get the owner model (polymorphic relationship).
-     *
-     * @return MorphTo<Model, $this>
-     */
-    public function owner(): MorphTo
-    {
-        return $this->morphTo();
     }
 
     public function hasActivePayoutHold(): bool

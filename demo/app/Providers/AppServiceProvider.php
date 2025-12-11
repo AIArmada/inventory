@@ -9,12 +9,12 @@ use App\Listeners\HandleChipPaymentSuccess;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 final class AppServiceProvider extends ServiceProvider
 {

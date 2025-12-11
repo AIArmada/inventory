@@ -27,9 +27,9 @@ final class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-users';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-users';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Shop';
+    protected static string | UnitEnum | null $navigationGroup = 'Shop';
 
     protected static ?int $navigationSort = 1;
 
@@ -53,9 +53,9 @@ final class UserResource extends Resource
 
                         TextInput::make('password')
                             ->password()
-                            ->dehydrateStateUsing(fn(string $state): string => Hash::make($state))
-                            ->dehydrated(fn(?string $state): bool => filled($state))
-                            ->required(fn(string $context): bool => $context === 'create')
+                            ->dehydrateStateUsing(fn (string $state): string => Hash::make($state))
+                            ->dehydrated(fn (?string $state): bool => filled($state))
+                            ->required(fn (string $context): bool => $context === 'create')
                             ->maxLength(255),
 
                         DateTimePicker::make('email_verified_at')
@@ -81,7 +81,7 @@ final class UserResource extends Resource
                 IconColumn::make('email_verified_at')
                     ->label('Verified')
                     ->boolean()
-                    ->getStateUsing(fn(User $record): bool => $record->email_verified_at !== null),
+                    ->getStateUsing(fn (User $record): bool => $record->email_verified_at !== null),
 
                 TextColumn::make('orders_count')
                     ->label('Orders')
@@ -111,7 +111,7 @@ final class UserResource extends Resource
                 BulkAction::make('delete')
                     ->label('Delete Selected')
                     ->requiresConfirmation()
-                    ->action(fn(Collection $records) => $records->each->delete())
+                    ->action(fn (Collection $records) => $records->each->delete())
                     ->deselectRecordsAfterCompletion(),
             ]);
     }

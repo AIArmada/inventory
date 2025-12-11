@@ -36,7 +36,7 @@ trait CachesComputedValues
         // Use once() with a unique key based on class + instance + method
         $cacheKey = $this->getCacheKey($key);
 
-        return once(fn() => $callback());
+        return once(fn () => $callback());
     }
 
     /**
@@ -53,7 +53,7 @@ trait CachesComputedValues
      */
     protected function cachedForInstance(string $method, callable $callback): mixed
     {
-        return once(fn() => $callback());
+        return once(fn () => $callback());
     }
 
     /**

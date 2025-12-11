@@ -39,47 +39,6 @@ class ShippingZoneResolver
     }
 
     /**
-     * Perform the actual zone resolution (uncached).
-     */
-    private function performZoneResolution(AddressData $address, ?int $ownerId, ?string $ownerType): ?ShippingZone
-    {
-        $query = ShippingZone::query()
-            ->active()
-            ->ordered();
-
-        if ($ownerId !== null && $ownerType !== null) {
-            $query->where('owner_id', $ownerId)
-                ->where('owner_type', $ownerType);
-        }
-
-        $zones = $query->get();
-
-        foreach ($zones as $zone) {
-            if ($zone->matchesAddress($address)) {
-                return $zone;
-            }
-        }
-
-        // Fall back to default zone
-        return $zones->firstWhere('is_default', true);
-    }
-
-    /**
-     * Build a cache key from address and owner parameters.
-     */
-    private function buildCacheKey(AddressData $address, ?int $ownerId, ?string $ownerType): string
-    {
-        return md5(serialize([
-            'country' => $address->countryCode,
-            'state' => $address->state,
-            'city' => $address->city,
-            'postal' => $address->postCode,
-            'owner_id' => $ownerId,
-            'owner_type' => $ownerType,
-        ]));
-    }
-
-    /**
      * Clear the zone resolution cache.
      *
      * Useful for testing or when zone configuration changes mid-request.
@@ -106,7 +65,7 @@ class ShippingZoneResolver
         }
 
         return $query->get()
-            ->filter(fn(ShippingZone $zone) => $zone->matchesAddress($address) || $zone->is_default);
+            ->filter(fn (ShippingZone $zone) => $zone->matchesAddress($address) || $zone->is_default);
     }
 
     /**
@@ -166,5 +125,46 @@ class ShippingZoneResolver
             'zone' => $zone,
             'reason' => $reason,
         ];
+    }
+
+    /**
+     * Perform the actual zone resolution (uncached).
+     */
+    private function performZoneResolution(AddressData $address, ?int $ownerId, ?string $ownerType): ?ShippingZone
+    {
+        $query = ShippingZone::query()
+            ->active()
+            ->ordered();
+
+        if ($ownerId !== null && $ownerType !== null) {
+            $query->where('owner_id', $ownerId)
+                ->where('owner_type', $ownerType);
+        }
+
+        $zones = $query->get();
+
+        foreach ($zones as $zone) {
+            if ($zone->matchesAddress($address)) {
+                return $zone;
+            }
+        }
+
+        // Fall back to default zone
+        return $zones->firstWhere('is_default', true);
+    }
+
+    /**
+     * Build a cache key from address and owner parameters.
+     */
+    private function buildCacheKey(AddressData $address, ?int $ownerId, ?string $ownerType): string
+    {
+        return md5(serialize([
+            'country' => $address->countryCode,
+            'state' => $address->state,
+            'city' => $address->city,
+            'postal' => $address->postCode,
+            'owner_id' => $ownerId,
+            'owner_type' => $ownerType,
+        ]));
     }
 }

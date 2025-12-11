@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use AIArmada\Products\Models\Product;
 use AIArmada\Products\Enums\ProductStatus;
+use AIArmada\Products\Models\Product;
 
-describe('Product Model', function () {
-    describe('Product Creation', function () {
-        it('can create a product', function () {
+describe('Product Model', function (): void {
+    describe('Product Creation', function (): void {
+        it('can create a product', function (): void {
             $product = Product::create([
                 'name' => 'Test Product',
                 'price' => 1000,
@@ -19,7 +19,7 @@ describe('Product Model', function () {
                 ->and($product->price)->toBe(1000);
         });
 
-        it('generates a slug automatically', function () {
+        it('generates a slug automatically', function (): void {
             $product = Product::create([
                 'name' => 'My Amazing Product',
                 'price' => 2000,
@@ -30,8 +30,8 @@ describe('Product Model', function () {
         });
     });
 
-    describe('Product Status', function () {
-        it('can check if product is active', function () {
+    describe('Product Status', function (): void {
+        it('can check if product is active', function (): void {
             $active = Product::create([
                 'name' => 'Active Product',
                 'price' => 1000,
@@ -48,7 +48,7 @@ describe('Product Model', function () {
                 ->and($draft->isActive())->toBeFalse();
         });
 
-        it('can check if product is draft', function () {
+        it('can check if product is draft', function (): void {
             $draft = Product::create([
                 'name' => 'Draft Product',
                 'price' => 1000,
@@ -59,8 +59,8 @@ describe('Product Model', function () {
         });
     });
 
-    describe('Product Types', function () {
-        it('can be physical product', function () {
+    describe('Product Types', function (): void {
+        it('can be physical product', function (): void {
             $product = Product::create([
                 'name' => 'Physical Product',
                 'price' => 1000,
@@ -71,7 +71,7 @@ describe('Product Model', function () {
             expect($product->isPhysical())->toBeTrue();
         });
 
-        it('can be digital product', function () {
+        it('can be digital product', function (): void {
             $product = Product::create([
                 'name' => 'Digital Product',
                 'price' => 1000,
@@ -83,8 +83,8 @@ describe('Product Model', function () {
         });
     });
 
-    describe('Product Pricing', function () {
-        it('can format price', function () {
+    describe('Product Pricing', function (): void {
+        it('can format price', function (): void {
             $product = Product::create([
                 'name' => 'Priced Product',
                 'price' => 1050,
@@ -95,7 +95,7 @@ describe('Product Model', function () {
             expect($product->getFormattedPrice())->toContain('1,050');
         });
 
-        it('can check if product has discount', function () {
+        it('can check if product has discount', function (): void {
             $discounted = Product::create([
                 'name' => 'Discounted Product',
                 'price' => 800,
@@ -113,7 +113,7 @@ describe('Product Model', function () {
                 ->and($noDiscount->hasDiscount())->toBeFalse();
         });
 
-        it('can calculate discount percentage', function () {
+        it('can calculate discount percentage', function (): void {
             $product = Product::create([
                 'name' => 'Sale Product',
                 'price' => 800,
@@ -125,8 +125,8 @@ describe('Product Model', function () {
         });
     });
 
-    describe('Product Scopes', function () {
-        it('can filter active products', function () {
+    describe('Product Scopes', function (): void {
+        it('can filter active products', function (): void {
             Product::create(['name' => 'Active', 'price' => 1000, 'status' => ProductStatus::Active]);
             Product::create(['name' => 'Draft', 'price' => 1000, 'status' => ProductStatus::Draft]);
             Product::create(['name' => 'Archived', 'price' => 1000, 'status' => ProductStatus::Archived]);
@@ -134,7 +134,7 @@ describe('Product Model', function () {
             expect(Product::active()->count())->toBeGreaterThanOrEqual(1);
         });
 
-        it('can filter featured products', function () {
+        it('can filter featured products', function (): void {
             Product::create(['name' => 'Featured', 'price' => 1000, 'status' => ProductStatus::Active, 'is_featured' => true]);
             Product::create(['name' => 'Not Featured', 'price' => 1000, 'status' => ProductStatus::Active, 'is_featured' => false]);
 
@@ -142,8 +142,8 @@ describe('Product Model', function () {
         });
     });
 
-    describe('Product Profit Margin', function () {
-        it('calculates profit margin when cost is set', function () {
+    describe('Product Profit Margin', function (): void {
+        it('calculates profit margin when cost is set', function (): void {
             $product = Product::create([
                 'name' => 'Margin Product',
                 'price' => 1000,
@@ -154,7 +154,7 @@ describe('Product Model', function () {
             expect($product->getProfitMargin())->toBe(40.0);
         });
 
-        it('returns null when cost is not set', function () {
+        it('returns null when cost is not set', function (): void {
             $product = Product::create([
                 'name' => 'No Cost Product',
                 'price' => 1000,
@@ -165,8 +165,8 @@ describe('Product Model', function () {
         });
     });
 
-    describe('Product Soft Deletes', function () {
-        it('can soft delete a product', function () {
+    describe('Product Soft Deletes', function (): void {
+        it('can soft delete a product', function (): void {
             $product = Product::create([
                 'name' => 'To Delete',
                 'price' => 1000,

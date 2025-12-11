@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-use AIArmada\Pricing\Models\PriceList;
+use AIArmada\Pricing\Enums\PromotionType;
 use AIArmada\Pricing\Models\Price;
+use AIArmada\Pricing\Models\PriceList;
 use AIArmada\Pricing\Models\PriceTier;
 use AIArmada\Pricing\Models\Promotion;
-use AIArmada\Pricing\Enums\PromotionType;
 use Illuminate\Support\Carbon;
 
-describe('PriceList Model', function () {
-    describe('PriceList Creation', function () {
-        it('can create a price list', function () {
+describe('PriceList Model', function (): void {
+    describe('PriceList Creation', function (): void {
+        it('can create a price list', function (): void {
             $priceList = PriceList::create([
                 'name' => 'Retail Prices',
                 'slug' => 'retail-' . uniqid(),
@@ -24,7 +24,7 @@ describe('PriceList Model', function () {
                 ->and($priceList->currency)->toBe('MYR');
         });
 
-        it('can create a default price list', function () {
+        it('can create a default price list', function (): void {
             $priceList = PriceList::create([
                 'name' => 'Default Prices',
                 'slug' => 'default-' . uniqid(),
@@ -37,8 +37,8 @@ describe('PriceList Model', function () {
         });
     });
 
-    describe('PriceList Scheduling', function () {
-        it('is active when within date range', function () {
+    describe('PriceList Scheduling', function (): void {
+        it('is active when within date range', function (): void {
             $priceList = PriceList::create([
                 'name' => 'Scheduled Price List',
                 'slug' => 'scheduled-' . uniqid(),
@@ -51,7 +51,7 @@ describe('PriceList Model', function () {
             expect($priceList->isActive())->toBeTrue();
         });
 
-        it('is not active when before start date', function () {
+        it('is not active when before start date', function (): void {
             $priceList = PriceList::create([
                 'name' => 'Future Price List',
                 'slug' => 'future-' . uniqid(),
@@ -64,7 +64,7 @@ describe('PriceList Model', function () {
             expect($priceList->isActive())->toBeFalse();
         });
 
-        it('is not active when after end date', function () {
+        it('is not active when after end date', function (): void {
             $priceList = PriceList::create([
                 'name' => 'Expired Price List',
                 'slug' => 'expired-' . uniqid(),
@@ -77,7 +77,7 @@ describe('PriceList Model', function () {
             expect($priceList->isActive())->toBeFalse();
         });
 
-        it('is not active when is_active is false', function () {
+        it('is not active when is_active is false', function (): void {
             $priceList = PriceList::create([
                 'name' => 'Disabled Price List',
                 'slug' => 'disabled-' . uniqid(),
@@ -89,8 +89,8 @@ describe('PriceList Model', function () {
         });
     });
 
-    describe('PriceList Priority', function () {
-        it('can set and use priority for ordering', function () {
+    describe('PriceList Priority', function (): void {
+        it('can set and use priority for ordering', function (): void {
             $prefix = uniqid();
             PriceList::create(['name' => 'Low', 'slug' => "low-{$prefix}", 'currency' => 'MYR', 'priority' => 1, 'is_active' => true]);
             PriceList::create(['name' => 'High', 'slug' => "high-{$prefix}", 'currency' => 'MYR', 'priority' => 10, 'is_active' => true]);
@@ -104,9 +104,9 @@ describe('PriceList Model', function () {
     });
 });
 
-describe('Promotion Model', function () {
-    describe('Promotion Creation', function () {
-        it('can create a percentage discount promotion', function () {
+describe('Promotion Model', function (): void {
+    describe('Promotion Creation', function (): void {
+        it('can create a percentage discount promotion', function (): void {
             $promotion = Promotion::create([
                 'name' => '20% Off Sale',
                 'code' => 'SALE20-' . uniqid(),
@@ -120,7 +120,7 @@ describe('Promotion Model', function () {
                 ->and($promotion->type)->toBe(PromotionType::Percentage);
         });
 
-        it('can create a fixed amount discount promotion', function () {
+        it('can create a fixed amount discount promotion', function (): void {
             $promotion = Promotion::create([
                 'name' => 'RM10 Off',
                 'code' => 'SAVE10-' . uniqid(),
@@ -134,8 +134,8 @@ describe('Promotion Model', function () {
         });
     });
 
-    describe('Promotion Usage Limits', function () {
-        it('can set usage limit', function () {
+    describe('Promotion Usage Limits', function (): void {
+        it('can set usage limit', function (): void {
             $promotion = Promotion::create([
                 'name' => 'Limited Promo',
                 'code' => 'LIMITED-' . uniqid(),
@@ -151,8 +151,8 @@ describe('Promotion Model', function () {
         });
     });
 
-    describe('Promotion Minimum Requirements', function () {
-        it('can set minimum purchase amount', function () {
+    describe('Promotion Minimum Requirements', function (): void {
+        it('can set minimum purchase amount', function (): void {
             $promotion = Promotion::create([
                 'name' => 'Min Purchase',
                 'code' => 'MINPURCH-' . uniqid(),
@@ -165,7 +165,7 @@ describe('Promotion Model', function () {
             expect($promotion->min_purchase_amount)->toBe(10000);
         });
 
-        it('can set minimum quantity', function () {
+        it('can set minimum quantity', function (): void {
             $promotion = Promotion::create([
                 'name' => 'Min Quantity',
                 'code' => 'MINQTY-' . uniqid(),
@@ -179,8 +179,8 @@ describe('Promotion Model', function () {
         });
     });
 
-    describe('Promotion Stacking', function () {
-        it('can mark promotion as stackable', function () {
+    describe('Promotion Stacking', function (): void {
+        it('can mark promotion as stackable', function (): void {
             $stackable = Promotion::create([
                 'name' => 'Stackable',
                 'code' => 'STACK-' . uniqid(),
@@ -205,8 +205,8 @@ describe('Promotion Model', function () {
     });
 });
 
-describe('Price Model', function () {
-    it('can create a price for a product', function () {
+describe('Price Model', function (): void {
+    it('can create a price for a product', function (): void {
         $priceList = PriceList::create([
             'name' => 'Retail',
             'slug' => 'retail-' . uniqid(),
@@ -227,7 +227,7 @@ describe('Price Model', function () {
             ->and($price->priceList->id)->toBe($priceList->id);
     });
 
-    it('can have compare amount for sale display', function () {
+    it('can have compare amount for sale display', function (): void {
         $priceList = PriceList::create([
             'name' => 'Retail',
             'slug' => 'retail-compare-' . uniqid(),
@@ -249,8 +249,8 @@ describe('Price Model', function () {
     });
 });
 
-describe('PriceTier Model', function () {
-    it('can create quantity-based price tiers', function () {
+describe('PriceTier Model', function (): void {
+    it('can create quantity-based price tiers', function (): void {
         $priceList = PriceList::create([
             'name' => 'Wholesale',
             'slug' => 'wholesale-' . uniqid(),

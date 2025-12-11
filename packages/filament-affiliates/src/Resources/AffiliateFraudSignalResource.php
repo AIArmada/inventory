@@ -23,9 +23,9 @@ final class AffiliateFraudSignalResource extends Resource
 {
     protected static ?string $model = AffiliateFraudSignal::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shield-exclamation';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-shield-exclamation';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Affiliates';
+    protected static string | UnitEnum | null $navigationGroup = 'Affiliates';
 
     protected static ?string $navigationLabel = 'Fraud Signals';
 
@@ -96,18 +96,18 @@ final class AffiliateFraudSignalResource extends Resource
 
                 Tables\Columns\TextColumn::make('signal_type')
                     ->badge()
-                    ->formatStateUsing(fn(string $state) => str_replace('_', ' ', ucfirst($state))),
+                    ->formatStateUsing(fn (string $state) => str_replace('_', ' ', ucfirst($state))),
 
                 Tables\Columns\BadgeColumn::make('severity')
                     ->colors([
                         'gray' => FraudSeverity::Low->value,
                         'warning' => FraudSeverity::Medium->value,
-                        'danger' => fn($state) => in_array($state, [FraudSeverity::High->value, FraudSeverity::Critical->value]),
+                        'danger' => fn ($state) => in_array($state, [FraudSeverity::High->value, FraudSeverity::Critical->value]),
                     ]),
 
                 Tables\Columns\TextColumn::make('score')
                     ->label('Score')
-                    ->formatStateUsing(fn($state) => $state . '%')
+                    ->formatStateUsing(fn ($state) => $state . '%')
                     ->sortable(),
 
                 Tables\Columns\BadgeColumn::make('status')
@@ -120,7 +120,7 @@ final class AffiliateFraudSignalResource extends Resource
 
                 Tables\Columns\TextColumn::make('description')
                     ->limit(40)
-                    ->tooltip(fn($record) => $record->description),
+                    ->tooltip(fn ($record) => $record->description),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
@@ -144,8 +144,8 @@ final class AffiliateFraudSignalResource extends Resource
                     ->icon('heroicon-o-x-mark')
                     ->color('gray')
                     ->requiresConfirmation()
-                    ->visible(fn($record) => $record->status === FraudSignalStatus::Detected)
-                    ->action(fn($record) => $record->update([
+                    ->visible(fn ($record) => $record->status === FraudSignalStatus::Detected)
+                    ->action(fn ($record) => $record->update([
                         'status' => FraudSignalStatus::Dismissed,
                         'reviewed_at' => now(),
                     ])),
@@ -153,8 +153,8 @@ final class AffiliateFraudSignalResource extends Resource
                     ->icon('heroicon-o-check')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->visible(fn($record) => $record->status === FraudSignalStatus::Detected)
-                    ->action(fn($record) => $record->update([
+                    ->visible(fn ($record) => $record->status === FraudSignalStatus::Detected)
+                    ->action(fn ($record) => $record->update([
                         'status' => FraudSignalStatus::Confirmed,
                         'reviewed_at' => now(),
                     ])),
@@ -164,7 +164,7 @@ final class AffiliateFraudSignalResource extends Resource
                     ->label('Dismiss Selected')
                     ->icon('heroicon-o-x-mark')
                     ->requiresConfirmation()
-                    ->action(fn($records) => $records->each->update([
+                    ->action(fn ($records) => $records->each->update([
                         'status' => FraudSignalStatus::Dismissed,
                         'reviewed_at' => now(),
                     ])),

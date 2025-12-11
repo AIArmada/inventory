@@ -632,7 +632,7 @@ it('shouldApply returns true for static and evaluates rules for dynamic', functi
                 return null;
             }
 
-            public function getOwnerId(): string|int|null
+            public function getOwnerId(): string | int | null
             {
                 return null;
             }

@@ -138,7 +138,7 @@ class StripeGateway extends AbstractGateway
     /**
      * Create a new subscription builder.
      */
-    public function subscription(BillableContract $billable, string $type, string|array $prices = []): SubscriptionBuilderContract
+    public function subscription(BillableContract $billable, string $type, string | array $prices = []): SubscriptionBuilderContract
     {
         return new StripeSubscriptionBuilder($billable, $type, $prices);
     }
@@ -225,7 +225,7 @@ class StripeGateway extends AbstractGateway
      * @param  bool|array<string, mixed>  $parameters  Either includePending bool or parameters array
      * @return Collection<int, InvoiceContract>
      */
-    public function invoices(BillableContract $billable, bool|array $parameters = false): Collection
+    public function invoices(BillableContract $billable, bool | array $parameters = false): Collection
     {
         $includePending = is_bool($parameters) ? $parameters : ($parameters['include_pending'] ?? false);
 

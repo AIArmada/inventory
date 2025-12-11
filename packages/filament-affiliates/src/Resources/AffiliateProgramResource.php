@@ -24,9 +24,9 @@ final class AffiliateProgramResource extends Resource
 {
     protected static ?string $model = AffiliateProgram::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-rectangle-stack';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Affiliates';
+    protected static string | UnitEnum | null $navigationGroup = 'Affiliates';
 
     protected static ?int $navigationSort = 2;
 
@@ -142,7 +142,7 @@ final class AffiliateProgramResource extends Resource
 
                 Tables\Columns\TextColumn::make('default_commission_rate_basis_points')
                     ->label('Commission')
-                    ->formatStateUsing(fn($state) => ($state / 100) . '%'),
+                    ->formatStateUsing(fn ($state) => ($state / 100) . '%'),
 
                 Tables\Columns\TextColumn::make('affiliates_count')
                     ->counts('affiliates')

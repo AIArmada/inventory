@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAuthz\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\FilamentAuthz\Enums\ConditionOperator;
 use AIArmada\FilamentAuthz\Enums\PolicyDecision;
 use AIArmada\FilamentAuthz\Enums\PolicyEffect;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Support\Carbon;
 
 /**
@@ -26,11 +28,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $valid_from
  * @property Carbon|null $valid_until
  * @property array<string, mixed>|null $metadata
+ * @property string|null $owner_type
+ * @property string|null $owner_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 class AccessPolicy extends Model
 {
+    use HasOwner;
     use HasUuids;
 
     protected $fillable = [
@@ -46,6 +51,8 @@ class AccessPolicy extends Model
         'valid_from',
         'valid_until',
         'metadata',
+        'owner_type',
+        'owner_id',
     ];
 
     public function getTable(): string
@@ -248,6 +255,38 @@ class AccessPolicy extends Model
     public function scopeOrderByPriority(Builder $query, string $direction = 'desc'): Builder
     {
         return $query->orderBy('priority', $direction);
+    }
+
+    /**
+     * Scope query to the specified owner.
+     *
+     * @param  Builder<static>  $query
+     * @param  EloquentModel|null  $owner  The owner to scope to
+     * @param  bool  $includeGlobal  Whether to include global (ownerless) records
+     * @return Builder<static>
+     */
+    public function scopeForOwner(Builder $query, ?EloquentModel $owner, bool $includeGlobal = true): Builder
+    {
+        if (! config('filament-authz.owner.enabled', false)) {
+            return $query;
+        }
+
+        if (! $owner) {
+            return $includeGlobal
+                ? $query->whereNull('owner_id')
+                : $query->whereNull('owner_type')->whereNull('owner_id');
+        }
+
+        return $query->where(function (Builder $builder) use ($owner, $includeGlobal): void {
+            $builder->where('owner_type', $owner->getMorphClass())
+                ->where('owner_id', $owner->getKey());
+
+            if ($includeGlobal) {
+                $builder->orWhere(function (Builder $inner): void {
+                    $inner->whereNull('owner_type')->whereNull('owner_id');
+                });
+            }
+        });
     }
 
     /**

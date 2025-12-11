@@ -22,7 +22,7 @@ final class CollaborativeCartsWidget extends BaseWidget
 {
     protected static ?int $sort = 5;
 
-    protected int|string|array $columnSpan = 'full';
+    protected int | string | array $columnSpan = 'full';
 
     protected static ?string $heading = 'Collaborative Carts';
 

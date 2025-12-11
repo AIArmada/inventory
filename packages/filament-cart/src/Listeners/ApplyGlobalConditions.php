@@ -46,7 +46,7 @@ final class ApplyGlobalConditions
     /**
      * Handle item changed events (added, updated, removed).
      */
-    public function handleItemChanged(ItemAdded|ItemUpdated|ItemRemoved $event): void
+    public function handleItemChanged(ItemAdded | ItemUpdated | ItemRemoved $event): void
     {
         if (! config('filament-cart.features.global_conditions', true)) {
             return;

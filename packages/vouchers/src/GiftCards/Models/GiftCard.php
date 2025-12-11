@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Vouchers\GiftCards\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Vouchers\GiftCards\Enums\GiftCardStatus;
 use AIArmada\Vouchers\GiftCards\Enums\GiftCardTransactionType;
 use AIArmada\Vouchers\GiftCards\Enums\GiftCardType;
@@ -47,6 +48,7 @@ use RuntimeException;
  */
 class GiftCard extends Model
 {
+    use HasOwner;
     use HasUuids;
     use SoftDeletes;
 
@@ -143,14 +145,6 @@ class GiftCard extends Model
      * @return MorphTo<Model, GiftCard>
      */
     public function recipient(): MorphTo
-    {
-        return $this->morphTo();
-    }
-
-    /**
-     * @return MorphTo<Model, GiftCard>
-     */
-    public function owner(): MorphTo
     {
         return $this->morphTo();
     }

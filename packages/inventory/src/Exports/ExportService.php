@@ -41,7 +41,7 @@ final class ExportService
      */
     public function toCsvFile(ExportableInterface $export, string $path): string
     {
-        $fullPath = $path.'/'.$export->getFilename().'.csv';
+        $fullPath = $path . '/' . $export->getFilename() . '.csv';
         $output = fopen($fullPath, 'w');
 
         if ($output === false) {

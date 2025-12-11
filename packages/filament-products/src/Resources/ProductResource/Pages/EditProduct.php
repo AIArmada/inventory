@@ -24,13 +24,13 @@ class EditProduct extends EditRecord
     {
         // Convert prices from cents to display values
         if (isset($data['price'])) {
-            $data['price'] = $data['price'] / 100;
+            $data['price'] /= 100;
         }
         if (isset($data['compare_price'])) {
-            $data['compare_price'] = $data['compare_price'] / 100;
+            $data['compare_price'] /= 100;
         }
         if (isset($data['cost'])) {
-            $data['cost'] = $data['cost'] / 100;
+            $data['cost'] /= 100;
         }
 
         return $data;

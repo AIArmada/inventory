@@ -141,6 +141,7 @@ final class CartIntegrationRegistrar
         switch ($failureMode) {
             case 'immediate_release':
                 $this->releaseInventoryAllocations($cartId);
+
                 break;
 
             case 'retry_window':
@@ -152,6 +153,7 @@ final class CartIntegrationRegistrar
                 if ($this->isHardFailure($event)) {
                     $this->releaseInventoryAllocations($cartId);
                 }
+
                 break;
         }
     }

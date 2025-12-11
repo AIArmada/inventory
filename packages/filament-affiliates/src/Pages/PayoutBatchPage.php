@@ -28,9 +28,9 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
     use InteractsWithForms;
     use InteractsWithTable;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-banknotes';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Affiliates';
+    protected static string | UnitEnum | null $navigationGroup = 'Affiliates';
 
     protected static ?string $navigationLabel = 'Payout Batch';
 
@@ -59,7 +59,7 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
 
                 Tables\Columns\TextColumn::make('amount_minor')
                     ->label('Amount')
-                    ->formatStateUsing(fn($state, $record): string => Number::currency($state / 100, $record->currency ?? 'USD'))
+                    ->formatStateUsing(fn ($state, $record): string => Number::currency($state / 100, $record->currency ?? 'USD'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('payoutMethod.type')
@@ -73,7 +73,7 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('currency')
-                    ->options(fn() => AffiliatePayout::distinct()->pluck('currency', 'currency')->toArray()),
+                    ->options(fn () => AffiliatePayout::distinct()->pluck('currency', 'currency')->toArray()),
             ])
             ->actions([
                 Action::make('process')

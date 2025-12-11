@@ -52,7 +52,7 @@ class IdentityProviderSync
     public function loadMappings(): self
     {
         $tablePrefix = config('filament-authz.database.table_prefix', 'authz_');
-        $table = $tablePrefix.'identity_provider_mappings';
+        $table = $tablePrefix . 'identity_provider_mappings';
 
         if (! DB::getSchemaBuilder()->hasTable($table)) {
             return $this;
@@ -178,7 +178,7 @@ class IdentityProviderSync
     public function saveMapping(string $externalGroup, string $localRole): bool
     {
         $tablePrefix = config('filament-authz.database.table_prefix', 'authz_');
-        $table = $tablePrefix.'identity_provider_mappings';
+        $table = $tablePrefix . 'identity_provider_mappings';
 
         if (! DB::getSchemaBuilder()->hasTable($table)) {
             return false;
@@ -207,7 +207,7 @@ class IdentityProviderSync
     public function deleteMapping(string $externalGroup): bool
     {
         $tablePrefix = config('filament-authz.database.table_prefix', 'authz_');
-        $table = $tablePrefix.'identity_provider_mappings';
+        $table = $tablePrefix . 'identity_provider_mappings';
 
         if (! DB::getSchemaBuilder()->hasTable($table)) {
             return false;
@@ -228,7 +228,7 @@ class IdentityProviderSync
     public function getAllMappings(): Collection
     {
         $tablePrefix = config('filament-authz.database.table_prefix', 'authz_');
-        $table = $tablePrefix.'identity_provider_mappings';
+        $table = $tablePrefix . 'identity_provider_mappings';
 
         if (! DB::getSchemaBuilder()->hasTable($table)) {
             return collect();

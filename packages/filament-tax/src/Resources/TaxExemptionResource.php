@@ -287,7 +287,7 @@ class TaxExemptionResource extends Resource
                                 ->native(false)
                                 ->after('today'),
                         ])
-                        ->action(function ($record, array $data) {
+                        ->action(function ($record, array $data): void {
                             $record->update(['expires_at' => $data['new_expires_at']]);
                         })
                         ->successNotificationTitle('Exemption renewed'),

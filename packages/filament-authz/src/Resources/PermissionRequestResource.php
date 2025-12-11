@@ -19,11 +19,11 @@ class PermissionRequestResource extends Resource
 {
     protected static ?string $model = PermissionRequest::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static ?string $navigationLabel = 'Approval Requests';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Authorization';
+    protected static string | UnitEnum | null $navigationGroup = 'Authorization';
 
     protected static ?int $navigationSort = 40;
 

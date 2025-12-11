@@ -209,7 +209,7 @@ class SegmentResource extends Resource
                     ->color('warning')
                     ->visible(fn ($record) => $record->is_automatic)
                     ->requiresConfirmation()
-                    ->action(function ($record) {
+                    ->action(function ($record): void {
                         $count = $record->rebuildCustomerList();
 
                         \Filament\Notifications\Notification::make()

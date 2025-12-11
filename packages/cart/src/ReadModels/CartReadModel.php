@@ -44,7 +44,7 @@ final class CartReadModel
      */
     public function getCartSummary(string $cartId): ?array
     {
-        $cacheKey = self::CACHE_PREFIX.$cartId.':summary';
+        $cacheKey = self::CACHE_PREFIX . $cartId . ':summary';
 
         /** @var array{id: string, identifier: string, instance: string, item_count: int, total_quantity: int, subtotal_cents: int, total_cents: int, savings_cents: int, condition_count: int, created_at: string, updated_at: string}|null $cached */
         $cached = $this->cache->get($cacheKey);
@@ -280,7 +280,7 @@ final class CartReadModel
      */
     public function invalidateCache(string $cartId): void
     {
-        $this->cache->forget(self::CACHE_PREFIX.$cartId.':summary');
+        $this->cache->forget(self::CACHE_PREFIX . $cartId . ':summary');
     }
 
     /**

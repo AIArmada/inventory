@@ -33,7 +33,7 @@ class ChipSubscriptionBuilder implements SubscriptionBuilderContract
     public function __construct(
         protected BillableContract $billable,
         protected string $type,
-        string|array $prices = []
+        string | array $prices = []
     ) {
         // Directly instantiate the native SubscriptionBuilder to avoid
         // conflicts with the unified cashier package's method overrides
@@ -51,7 +51,7 @@ class ChipSubscriptionBuilder implements SubscriptionBuilderContract
     /**
      * Set the price for the subscription.
      */
-    public function price(string|array $price, ?int $quantity = 1): self
+    public function price(string | array $price, ?int $quantity = 1): self
     {
         $this->builder->price($price, $quantity);
 
@@ -151,7 +151,7 @@ class ChipSubscriptionBuilder implements SubscriptionBuilderContract
     /**
      * Anchor the billing cycle to a date.
      */
-    public function anchorBillingCycleOn(DateTimeInterface|CarbonInterface $date): self
+    public function anchorBillingCycleOn(DateTimeInterface | CarbonInterface $date): self
     {
         $this->builder->anchorBillingCycleOn($date);
 

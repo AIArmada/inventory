@@ -142,7 +142,7 @@ class VariantsRelationManager extends RelationManager
                     ->requiresConfirmation()
                     ->modalHeading('Generate Product Variants')
                     ->modalDescription('This will generate all possible variant combinations from the product options. Existing variants will be removed.')
-                    ->action(function () {
+                    ->action(function (): void {
                         $product = $this->getOwnerRecord();
                         $service = app(\AIArmada\Products\Services\VariantGeneratorService::class);
                         $variants = $service->generate($product);
@@ -159,13 +159,13 @@ class VariantsRelationManager extends RelationManager
                     ->mutateRecordDataUsing(function (array $data): array {
                         // Convert cents to display values
                         if (isset($data['price'])) {
-                            $data['price'] = $data['price'] / 100;
+                            $data['price'] /= 100;
                         }
                         if (isset($data['compare_price'])) {
-                            $data['compare_price'] = $data['compare_price'] / 100;
+                            $data['compare_price'] /= 100;
                         }
                         if (isset($data['cost'])) {
-                            $data['cost'] = $data['cost'] / 100;
+                            $data['cost'] /= 100;
                         }
 
                         return $data;

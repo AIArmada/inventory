@@ -38,7 +38,7 @@ final class InventoryKpiWidget extends StatsOverviewWidget
             : 0;
 
         return [
-            Stat::make('Inventory Turnover', number_format($kpis['average_turnover_ratio'], 2).'x')
+            Stat::make('Inventory Turnover', number_format($kpis['average_turnover_ratio'], 2) . 'x')
                 ->description($this->getTrendDescription($turnoverTrend, 'vs last month'))
                 ->descriptionIcon($this->getTrendIcon($turnoverTrend))
                 ->color($this->getTurnoverColor($kpis['average_turnover_ratio']))
@@ -49,13 +49,13 @@ final class InventoryKpiWidget extends StatsOverviewWidget
                 ->descriptionIcon('heroicon-o-calendar')
                 ->color($this->getDaysOnHandColor($kpis['average_days_on_hand'])),
 
-            Stat::make('Fill Rate', number_format($kpis['overall_fill_rate'], 1).'%')
+            Stat::make('Fill Rate', number_format($kpis['overall_fill_rate'], 1) . '%')
                 ->description($this->getTrendDescription($fillRateTrend, 'vs last month'))
                 ->descriptionIcon($this->getTrendIcon($fillRateTrend))
                 ->color($this->getFillRateColor($kpis['overall_fill_rate']))
                 ->chart($trends->pluck('fill_rate')->toArray()),
 
-            Stat::make('Inventory Accuracy', number_format($kpis['inventory_accuracy'], 1).'%')
+            Stat::make('Inventory Accuracy', number_format($kpis['inventory_accuracy'], 1) . '%')
                 ->description('From cycle counts')
                 ->descriptionIcon('heroicon-o-clipboard-document-check')
                 ->color($this->getAccuracyColor($kpis['inventory_accuracy']))

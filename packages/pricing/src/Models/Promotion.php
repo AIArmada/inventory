@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace AIArmada\Pricing\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Pricing\Enums\PromotionType;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
@@ -16,6 +19,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * Represents a promotional pricing campaign.
  *
  * @property string $id
+ * @property string|null $owner_type
+ * @property string|null $owner_id
  * @property string $name
  * @property string|null $description
  * @property PromotionType $type
@@ -31,6 +36,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
  */
 class Promotion extends Model
 {
+    use HasOwner;
     use HasUuids;
     use LogsActivity;
     use SoftDeletes;
@@ -118,6 +124,38 @@ class Promotion extends Model
                 $q->whereNull('usage_limit')
                     ->orWhereColumn('usage_count', '<', 'usage_limit');
             });
+    }
+
+    /**
+     * Scope query to the specified owner.
+     *
+     * @param  Builder<static>  $query
+     * @param  EloquentModel|null  $owner  The owner to scope to
+     * @param  bool  $includeGlobal  Whether to include global (ownerless) records
+     * @return Builder<static>
+     */
+    public function scopeForOwner(Builder $query, ?EloquentModel $owner, bool $includeGlobal = true): Builder
+    {
+        if (! config('pricing.owner.enabled', false)) {
+            return $query;
+        }
+
+        if (! $owner) {
+            return $includeGlobal
+                ? $query->whereNull('owner_id')
+                : $query->whereNull('owner_type')->whereNull('owner_id');
+        }
+
+        return $query->where(function (Builder $builder) use ($owner, $includeGlobal): void {
+            $builder->where('owner_type', $owner->getMorphClass())
+                ->where('owner_id', $owner->getKey());
+
+            if ($includeGlobal) {
+                $builder->orWhere(function (Builder $inner): void {
+                    $inner->whereNull('owner_type')->whereNull('owner_id');
+                });
+            }
+        });
     }
 
     // =========================================================================

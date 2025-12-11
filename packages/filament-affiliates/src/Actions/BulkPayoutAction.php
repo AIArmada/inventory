@@ -42,7 +42,7 @@ final class BulkPayoutAction extends BulkAction
                             ->where('is_default', true)
                             ->first();
 
-                        if (!$payoutMethod) {
+                        if (! $payoutMethod) {
                             $payout->update(['status' => PayoutStatus::Failed->value]);
                             $payout->events()->create([
                                 'status' => PayoutStatus::Failed->value,

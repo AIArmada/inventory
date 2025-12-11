@@ -23,6 +23,10 @@ parameters:
         - identifier: 'return.unusedType'
         - message: '#Call to static method view\(\) on an unknown class Spatie\\LaravelPdf\\Facades\\Pdf\.#'
           identifier: 'class.notFound'
+        # Spatie packages are installed via require-dev; do not ignore missing class/trait errors
+        # Missing type specifications in scope methods (legacy code)
+        - identifier: 'missingType.return'
+        - identifier: 'missingType.parameter'
         - identifier: 'typeCoverage.paramTypeCoverage'
         - identifier: 'typeCoverage.constantTypeCoverage'
         # Ignore example files that reference external dependencies
@@ -32,15 +36,6 @@ parameters:
         - message: '#Call to an undefined method.*Filament.*carded\(\)\.#'
         - message: '#Call to an undefined method.*Filament.*softShadow\(\)\.#'
         - message: '#Call to an undefined method.*Filament.*inlineLabelled\(\)\.#'
-        # Ignore external class dependencies
-        - message: '#Call to static method.*on an unknown class.*Log\.#'
-        - message: '#Call to static method.*on an unknown class.*Grid\.#'
-        - message: '#Call to static method.*on an unknown class.*Form\.#'
-        - message: '#Call to static method.*on an unknown class.*Action\.#'
-        - message: '#Method.*has invalid return type.*Form\.#'
-        - message: '#Parameter.*has invalid type.*Form\.#'
-        - message: '#Call to method.*on an unknown class.*Form\.#'
-        - message: '#Access to an undefined property.*\$form\.#'
         # Ignore property override issues in widgets
         - message: '#Static property.*overrides non-static property.*\$view\.#'
         # Ignore template type issues in collect() calls
@@ -49,16 +44,6 @@ parameters:
         - message: '#PHPDoc tag @var for variable.*contains unknown class.*Cart\.#'
         - message: '#PHPDoc tag @var with type.*Cart.*is not subtype of native type.*Model.*#'
         - message: '#Access to property.*on an unknown class.*Cart\.#'
-        # Ignore Spatie Permission package classes (external dependency)
-        - message: '#Class Spatie\\Permission\\Models\\Permission not found\.#'
-        - message: '#Class Spatie\\Permission\\Models\\Role not found\.#'
-        - message: '#Class Spatie\\Permission\\PermissionRegistrar not found\.#'
-        - message: '#Class Spatie\\Permission\\PermissionServiceProvider not found\.#'
-        - message: '#Call to static method.*on an unknown class Spatie\\Permission\\Models\\Permission\.#'
-        - message: '#Call to static method.*on an unknown class Spatie\\Permission\\Models\\Role\.#'
-        - message: '#Call to method.*on an unknown class Spatie\\Permission\\PermissionRegistrar\.#'
-        - message: '#Parameter.*has invalid type Spatie\\Permission\\Models\\Permission\.#'
-        - message: '#Parameter.*has invalid type Spatie\\Permission\\Models\\Role\.#'
         # Ignore Voucher model method calls (methods exist but PHPStan can't resolve them)
         - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::isExpired\(\)\.#'
         - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::isActive\(\)\.#'
@@ -76,76 +61,17 @@ parameters:
         - message: '#Access to an undefined property Illuminate\\Foundation\\Auth\\User::\$roles\.#'
         - message: '#Access to an undefined property Illuminate\\Database\\Eloquent\\Model::\$guard_name\.#'
         - message: '#Property .*\$view \(view-string\) does not accept default value of type string\.#'
-        # Ignore Spatie Permission Role model issues (static methods and properties exist but PHPStan can't resolve them)
-        - message: '#Call to an undefined static method Spatie\\Permission\\Models\\Role::.*#'
-        - message: '#Call to an undefined method Spatie\\Permission\\Models\\Role::.*#'
-        - message: '#Access to an undefined property Spatie\\Permission\\Models\\Role::.*#'
-        - message: '#Type Spatie\\Permission\\Models\\Role in generic type.*is not subtype of template type.*#'
         # Ignore unused traits in filament-permissions (they're part of the public API)
         - message: '#Trait AIArmada\\FilamentPermissions\\Concerns\\.*is used zero times and is not analysed\.#'
         # Ignore unused traits in filament-authz (they're part of the public API)
         - message: '#Trait AIArmada\\FilamentAuthz\\Concerns\\.*is used zero times and is not analysed\.#'
+        # Filament-authz Spatie Permission integration (methods come from HasRoles trait at runtime)
+        - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::syncPermissions\(\)\.#'
+        - message: '#Cannot call method syncPermissions\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.#'
+        - identifier: 'method.unused'
         # Ignore unused traits in inventory (they're part of the public API for other packages)
         - message: '#Trait AIArmada\\Inventory\\Traits\\HasInventory is used zero times and is not analysed\.#'
         - message: '#Trait AIArmada\\Inventory\\Traits\\HasSerialNumbers is used zero times and is not analysed\.#'
-        # Ignore Spatie Activitylog package classes (external/optional dependency)
-        - message: '#.*uses unknown trait Spatie\\Activitylog\\Traits\\LogsActivity\.#'
-        - message: '#.*has invalid return type Spatie\\Activitylog\\LogOptions\.#'
-        - message: '#Call to static method.*on an unknown class Spatie\\Activitylog\\LogOptions\.#'
-        - message: '#Class Spatie\\Activitylog\\Traits\\LogsActivity not found\.#'
-        - message: '#Class Spatie\\Activitylog\\LogOptions not found\.#'
-        # Ignore scope method type hints in core commerce packages (Laravel convention)
-        - identifier: 'missingType.parameter'
-        - identifier: 'missingType.return'
-        # Ignore unused $postcode in TaxZone scope (defensive programming)
-        - identifier: 'closure.unusedUse'
-        # Ignore property access on Models (dynamic properties in Laravel)
-        - message: '#Access to an undefined property AIArmada\\Products\\Models\\.*::\$.*#'
-        - message: '#Access to an undefined property AIArmada\\Customers\\Models\\.*::\$.*#'
-        - message: '#Access to an undefined property AIArmada\\Orders\\Models\\.*::\$.*#'
-        - message: '#Access to an undefined property AIArmada\\Pricing\\Models\\.*::\$.*#'
-        - message: '#Access to an undefined property AIArmada\\Tax\\Models\\.*::\$.*#'
-        # Ignore method calls on Model (dynamic methods in Laravel)
-        - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::.*#'
-        # Ignore HasMany/BelongsTo relation method calls (PHPStan template issues)
-        - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany::.*#'
-        - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\BelongsTo::.*#'
-        - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\MorphMany::.*#'
-        # Ignore Spatie Media Library classes (optional dependency)
-        - message: '#.*unknown class Spatie\\MediaLibrary\\.*#'
-        - message: '#.*uses unknown trait Spatie\\MediaLibrary\\.*#'
-        - message: '#.*has invalid return type Spatie\\MediaLibrary\\.*#'
-        - message: '#.*has invalid type Spatie\\MediaLibrary\\.*#'
-        # Ignore Spatie Sluggable classes (optional dependency)
-        - message: '#.*unknown class Spatie\\Sluggable\\.*#'
-        - message: '#.*uses unknown trait Spatie\\Sluggable\\.*#'
-        - message: '#.*has invalid return type Spatie\\Sluggable\\.*#'
-        # Ignore Spatie Tags classes (optional dependency)
-        - message: '#.*unknown class Spatie\\Tags\\.*#'
-        - message: '#.*uses unknown trait Spatie\\Tags\\.*#'
-        # Ignore Spatie Model States classes (optional dependency)
-        - message: '#.*unknown class Spatie\\ModelStates\\.*#'
-        - message: '#.*uses unknown trait Spatie\\ModelStates\\.*#'
-        - message: '#.*has invalid return type Spatie\\ModelStates\\.*#'
-        - message: '#.*has invalid type Spatie\\ModelStates\\.*#'
-        # Ignore Spatie PDF classes (optional dependency)
-        - message: '#.*unknown class Spatie\\LaravelPdf\\.*#'
-        - message: '#.*uses unknown trait Spatie\\LaravelPdf\\.*#'
-        - message: '#Call to an undefined method Spatie\\LaravelPdf\\PdfBuilder::.*#'
-        # Ignore Spatie Image driver method calls (method chaining)
-        - message: '#Call to an undefined method Spatie\\Image\\Drivers\\ImageDriver::.*#'
-        # Ignore CommerceSupport trait (internal package)
-        - message: '#.*uses unknown trait AIArmada\\CommerceSupport\\.*#'
-        # Ignore property.phpDocType covariance issues with $attributes
-        - identifier: 'property.phpDocType'
-        # Ignore unused traits (public API for package consumers)
-        - identifier: 'trait.unused'
-        # Ignore scope calls on Builder (dynamically resolved at runtime)
-        - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder.*::active\(\)\.#'
-        - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder.*::withAnyTags\(\)\.#'
-        # Ignore Filament class not found errors (classes exist at runtime but not in PHPStan context)
-        - message: '#Call to static method make\(\) on an unknown class Filament\\Forms\\Components\\Section\.#'
-        - message: '#Call to static method make\(\) on an unknown class Filament\\Tables\\Actions\\BulkActionGroup\.#'
         # Ignore nullsafe warnings on eager loaded relations (PHPStan can't detect the with() call context)
         - identifier: 'nullsafe.neverNull'
         # Ignore scope return type issues (scopes return Builder<static> but PHPStan sees Builder<Model>)
@@ -214,13 +140,6 @@ parameters:
         - message: '#Template type TGet on class Illuminate\\Database\\Eloquent\\Casts\\Attribute is not covariant\.#'
         # Ignore missingType.iterableValue (array type specifications)
         - identifier: 'missingType.iterableValue'
-        # Ignore Filament class not found (external dependency)
-        - message: '#Class Filament\\.*not found\.#'
-        - message: '#.*extends unknown class Filament\\.*#'
-        - message: '#.*calls parent::.*but.*does not extend any class\.#'
-        - message: '#Call to an undefined method AIArmada\\Filament.*#'
-        - message: '#Invoking callable on an unknown class Filament\\.*#'
-        - message: '#Parameter.*has invalid type Filament\\.*#'
         # Ignore unused traits (public API)
         - message: '#Trait AIArmada\\Vouchers\\Traits\\.*is used zero times and is not analysed\.#'
         - message: '#Trait AIArmada\\Vouchers\\GiftCards\\Traits\\.*is used zero times and is not analysed\.#'

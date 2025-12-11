@@ -165,7 +165,7 @@ class FulfillmentQueue extends Page implements HasTable
                             ->label('Shipping Notes')
                             ->rows(2),
                     ])
-                    ->action(function (Order $record, array $data) {
+                    ->action(function (Order $record, array $data): void {
                         // Update order with shipping info
                         $record->update([
                             'shipping_carrier' => $data['carrier'],
@@ -232,7 +232,7 @@ class FulfillmentQueue extends Page implements HasTable
                                     ])->toArray();
                                 }),
                         ])
-                        ->action(function ($records, array $data) {
+                        ->action(function ($records, array $data): void {
                             foreach ($records as $index => $record) {
                                 if (isset($data['tracking_numbers'][$index]['tracking'])) {
                                     $record->update([

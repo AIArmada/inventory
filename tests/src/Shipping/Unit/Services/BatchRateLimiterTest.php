@@ -37,7 +37,7 @@ describe('BatchRateLimiter', function (): void {
             ->keyPrefix('shipping:test')
             ->maxAttempts(100)
             ->batchSize(10)
-            ->execute($items, fn($item) => $item * 2, 'process');
+            ->execute($items, fn ($item) => $item * 2, 'process');
 
         expect($results)->toHaveCount(5);
         expect($results[0]['success'])->toBeTrue();
@@ -101,7 +101,7 @@ describe('BatchRateLimiter', function (): void {
         $results = BatchRateLimiter::make()
             ->keyPrefix('shipping:test')
             ->maxAttempts(100)
-            ->execute($items, fn($item) => $item, 'process');
+            ->execute($items, fn ($item) => $item, 'process');
 
         expect($results)->toHaveKeys(['a', 'b', 'c']);
     });
@@ -109,7 +109,7 @@ describe('BatchRateLimiter', function (): void {
     it('handles empty items gracefully', function (): void {
         $results = BatchRateLimiter::make()
             ->keyPrefix('shipping:test')
-            ->execute([], fn($item) => $item, 'process');
+            ->execute([], fn ($item) => $item, 'process');
 
         expect($results)->toBeEmpty();
     });

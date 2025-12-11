@@ -61,6 +61,6 @@ final class ValuationExport implements ExportableInterface
 
     public function getFilename(): string
     {
-        return 'valuation-'.CarbonImmutable::now()->format('Y-m-d-His');
+        return 'valuation-' . CarbonImmutable::now()->format('Y-m-d-His');
     }
 }

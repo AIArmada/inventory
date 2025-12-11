@@ -44,34 +44,34 @@ class JntStatusMapper implements StatusMapperInterface
     public function fromScanType(ScanTypeCode $scanType): TrackingStatus
     {
         return match ($scanType) {
-                // Pickup
+            // Pickup
             ScanTypeCode::PARCEL_PICKUP => TrackingStatus::PickedUp,
             ScanTypeCode::PICKED_UP_FROM_CARGO => TrackingStatus::PickedUp,
 
-                // Hub/Facility
+            // Hub/Facility
             ScanTypeCode::PACKAGE_INBOUND => TrackingStatus::AtHub,
             ScanTypeCode::CENTER_INBOUND => TrackingStatus::AtHub,
             ScanTypeCode::DELIVERED_TO_HUB => TrackingStatus::AtHub,
             ScanTypeCode::ARRIVAL => TrackingStatus::AtHub,
 
-                // In Transit
+            // In Transit
             ScanTypeCode::OUTBOUND_SCAN => TrackingStatus::InTransit,
             ScanTypeCode::CUSTOMS_CLEARANCE_IN_PROCESS => TrackingStatus::InTransit,
             ScanTypeCode::CUSTOMS_CLEARANCE => TrackingStatus::InTransit,
 
-                // Out for Delivery
+            // Out for Delivery
             ScanTypeCode::DELIVERY_SCAN => TrackingStatus::OutForDelivery,
 
-                // Delivered
+            // Delivered
             ScanTypeCode::PARCEL_SIGNED => TrackingStatus::Delivered,
             ScanTypeCode::COLLECTED => TrackingStatus::Delivered,
             ScanTypeCode::COLLECTED_ALT => TrackingStatus::Delivered,
 
-                // Returns
+            // Returns
             ScanTypeCode::RETURN_SCAN => TrackingStatus::ReturnInitiated,
             ScanTypeCode::RETURN_SIGN => TrackingStatus::Returned,
 
-                // Exceptions/Problems
+            // Exceptions/Problems
             ScanTypeCode::PROBLEMATIC_SCANNING => TrackingStatus::Exception,
             ScanTypeCode::DAMAGE_PARCEL => TrackingStatus::Exception,
             ScanTypeCode::LOST_PARCEL => TrackingStatus::Exception,
@@ -180,34 +180,34 @@ class JntStatusMapper implements StatusMapperInterface
     protected function mapScanTypeToNormalized(ScanTypeCode $scanType): NormalizedTrackingStatus
     {
         return match ($scanType) {
-                // Pickup
+            // Pickup
             ScanTypeCode::PARCEL_PICKUP,
             ScanTypeCode::PICKED_UP_FROM_CARGO => NormalizedTrackingStatus::PickedUp,
 
-                // Hub/Facility
+            // Hub/Facility
             ScanTypeCode::PACKAGE_INBOUND,
             ScanTypeCode::CENTER_INBOUND,
             ScanTypeCode::DELIVERED_TO_HUB,
             ScanTypeCode::ARRIVAL => NormalizedTrackingStatus::ArrivedAtFacility,
 
-                // In Transit
+            // In Transit
             ScanTypeCode::OUTBOUND_SCAN => NormalizedTrackingStatus::DepartedFacility,
             ScanTypeCode::CUSTOMS_CLEARANCE_IN_PROCESS => NormalizedTrackingStatus::InCustoms,
             ScanTypeCode::CUSTOMS_CLEARANCE => NormalizedTrackingStatus::CustomsCleared,
 
-                // Out for Delivery
+            // Out for Delivery
             ScanTypeCode::DELIVERY_SCAN => NormalizedTrackingStatus::OutForDelivery,
 
-                // Delivered
+            // Delivered
             ScanTypeCode::PARCEL_SIGNED => NormalizedTrackingStatus::SignedFor,
             ScanTypeCode::COLLECTED,
             ScanTypeCode::COLLECTED_ALT => NormalizedTrackingStatus::Delivered,
 
-                // Returns
+            // Returns
             ScanTypeCode::RETURN_SCAN => NormalizedTrackingStatus::ReturnToSender,
             ScanTypeCode::RETURN_SIGN => NormalizedTrackingStatus::ReturnDelivered,
 
-                // Exceptions/Problems
+            // Exceptions/Problems
             ScanTypeCode::PROBLEMATIC_SCANNING,
             ScanTypeCode::REJECT_PARCEL => NormalizedTrackingStatus::OnHold,
             ScanTypeCode::DAMAGE_PARCEL => NormalizedTrackingStatus::Damaged,

@@ -111,7 +111,7 @@ final class CartServiceProvider extends PackageServiceProvider
 
         if (empty($resolverClass)) {
             throw new RuntimeException(
-                'Cart owner is enabled but no resolver is configured. '.
+                'Cart owner is enabled but no resolver is configured. ' .
                 'Set CART_OWNER_RESOLVER or cart.owner.resolver to a class implementing OwnerResolverInterface.'
             );
         }
@@ -124,7 +124,7 @@ final class CartServiceProvider extends PackageServiceProvider
 
         if (! is_subclass_of($resolverClass, OwnerResolverInterface::class) && $resolverClass !== NullOwnerResolver::class) {
             throw new RuntimeException(
-                "Cart owner resolver '{$resolverClass}' must implement ".OwnerResolverInterface::class
+                "Cart owner resolver '{$resolverClass}' must implement " . OwnerResolverInterface::class
             );
         }
 

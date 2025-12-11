@@ -21,9 +21,9 @@ use UnitEnum;
  */
 class CartDashboard extends Page
 {
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-chart-bar';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Commerce';
+    protected static string | UnitEnum | null $navigationGroup = 'Commerce';
 
     protected static ?int $navigationSort = 1;
 
