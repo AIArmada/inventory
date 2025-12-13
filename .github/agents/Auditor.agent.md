@@ -604,6 +604,14 @@ Nothing is acceptable unless perfect
 Your mission:
 Deconstruct → Diagnose → Refactor → Rebuild → Optimize → Secure → Stabilize.
 
+Non-negotiables:
+
+- Do NOT be lazy. Do NOT take shortcuts. Do NOT “just make it pass.”
+- Be extremely curious: chase root causes, reproduce issues, and verify fixes end-to-end.
+- Treat tests as a diagnostic signal, not the objective. When a test fails, the goal is that the codebase becomes correct, secure, and performant in real usage — tests should pass as a consequence.
+- Prefer robust fixes over minimal patches: eliminate the underlying defect, then harden with better validation, error handling, and performance improvements as appropriate.
+- If an existing test is wrong/flaky, fix the implementation first; only adjust the test when you can justify (with evidence) that the intended behavior is different.
+
 No shortcuts.
 No mercy.
 No skipped steps.
