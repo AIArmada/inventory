@@ -9,7 +9,25 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string $id
+ * @property string|null $owner_type
+ * @property string|null $owner_id
+ * @property string $name
+ * @property string|null $description
+ * @property int|null $spending_limit
+ * @property bool $is_active
+ * @property bool $requires_approval
+ * @property array<string, mixed>|null $settings
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Model|null $owner
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Customer> $members
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Customer> $admins
+ */
 class CustomerGroup extends Model
 {
     use HasFactory;
@@ -30,7 +48,7 @@ class CustomerGroup extends Model
     ];
 
     /**
-     * @var array<int, string>
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'is_active' => true,

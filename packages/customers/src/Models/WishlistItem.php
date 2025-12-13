@@ -9,7 +9,22 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string $id
+ * @property string $wishlist_id
+ * @property string $product_type
+ * @property string $product_id
+ * @property Carbon|null $added_at
+ * @property bool $notified_on_sale
+ * @property bool $notified_in_stock
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Wishlist $wishlist
+ * @property-read Model|null $product
+ */
 class WishlistItem extends Model
 {
     use HasFactory;
@@ -28,7 +43,7 @@ class WishlistItem extends Model
     ];
 
     /**
-     * @var array<int, string>
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'notified_on_sale' => false,

@@ -9,7 +9,32 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string $id
+ * @property string $customer_id
+ * @property AddressType $type
+ * @property string|null $label
+ * @property string|null $recipient_name
+ * @property string|null $company
+ * @property string|null $phone
+ * @property string $address_line_1
+ * @property string|null $address_line_2
+ * @property string $city
+ * @property string|null $state
+ * @property string $postcode
+ * @property string $country
+ * @property bool $is_default_billing
+ * @property bool $is_default_shipping
+ * @property bool $is_verified
+ * @property array{lat?: float, lng?: float}|null $coordinates
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read string $full_address
+ * @property-read Customer $customer
+ */
 class Address extends Model
 {
     use HasFactory;
@@ -30,7 +55,7 @@ class Address extends Model
     ];
 
     /**
-     * @var array<int, string>
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'is_default_billing' => false,

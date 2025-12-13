@@ -6,6 +6,10 @@ namespace AIArmada\Customers\Models;
 
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Customers\Enums\CustomerStatus;
+use AIArmada\Customers\Events\CustomerCreated;
+use AIArmada\Customers\Events\CustomerUpdated;
+use AIArmada\Customers\Events\WalletCreditAdded;
+use AIArmada\Customers\Events\WalletCreditDeducted;
 use Akaunting\Money\Money;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,7 +18,41 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string $id
+ * @property string|null $owner_type
+ * @property string|null $owner_id
+ * @property int|null $user_id
+ * @property string $first_name
+ * @property string $last_name
+ * @property string $email
+ * @property string|null $phone
+ * @property string|null $company
+ * @property CustomerStatus $status
+ * @property int $wallet_balance
+ * @property int $lifetime_value
+ * @property int $total_orders
+ * @property bool $accepts_marketing
+ * @property bool $is_tax_exempt
+ * @property string|null $tax_exempt_reason
+ * @property Carbon|null $email_verified_at
+ * @property Carbon|null $last_order_at
+ * @property Carbon|null $last_login_at
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property-read string $full_name
+ * @property-read Model|null $user
+ * @property-read Model|null $owner
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Address> $addresses
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Segment> $segments
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Wishlist> $wishlists
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, CustomerNote> $notes
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, CustomerGroup> $groups
+ */
 class Customer extends Model
 {
     use HasFactory;
@@ -41,7 +79,7 @@ class Customer extends Model
     ];
 
     /**
-     * @var array<int, string>
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'status' => 'active',
@@ -50,6 +88,14 @@ class Customer extends Model
         'total_orders' => 0,
         'accepts_marketing' => true,
         'is_tax_exempt' => false,
+    ];
+
+    /**
+     * @var array<string, class-string>
+     */
+    protected $dispatchesEvents = [
+        'created' => CustomerCreated::class,
+        'updated' => CustomerUpdated::class,
     ];
 
     public function getTable(): string
@@ -182,7 +228,8 @@ class Customer extends Model
 
         $this->increment('wallet_balance', $amountInCents);
 
-        // Log the transaction (could fire an event here)
+        event(new WalletCreditAdded($this, $amountInCents, $reason));
+
         return true;
     }
 
@@ -196,6 +243,8 @@ class Customer extends Model
         }
 
         $this->decrement('wallet_balance', $amountInCents);
+
+        event(new WalletCreditDeducted($this, $amountInCents, $reason));
 
         return true;
     }

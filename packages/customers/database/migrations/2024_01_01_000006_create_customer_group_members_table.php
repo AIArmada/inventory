@@ -11,13 +11,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create(config('customers.tables.group_members', 'customer_group_members'), function (Blueprint $table): void {
-            $table->foreignUuid('group_id')
-                ->constrained(config('customers.tables.groups', 'customer_groups'))
-                ->cascadeOnDelete();
-
-            $table->foreignUuid('customer_id')
-                ->constrained(config('customers.tables.customers', 'customers'))
-                ->cascadeOnDelete();
+            $table->foreignUuid('group_id');
+            $table->foreignUuid('customer_id');
 
             // Role in the group
             $table->string('role')->default('member'); // admin, member

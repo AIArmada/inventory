@@ -11,7 +11,26 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string $id
+ * @property string|null $owner_type
+ * @property string|null $owner_id
+ * @property string $name
+ * @property string $slug
+ * @property string|null $description
+ * @property SegmentType $type
+ * @property array<int, array{field: string, operator?: string, value: mixed}>|null $conditions
+ * @property bool $is_automatic
+ * @property int $priority
+ * @property bool $is_active
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Model|null $owner
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Customer> $customers
+ */
 class Segment extends Model
 {
     use HasFactory;
@@ -33,7 +52,7 @@ class Segment extends Model
     ];
 
     /**
-     * @var array<int, string>
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'is_active' => true,
@@ -172,7 +191,7 @@ class Segment extends Model
     /**
      * Apply segment conditions to a query.
      *
-     * @param  array<string, mixed>  $conditions
+     * @param  array<int, array{field?: string|null, operator?: string, value?: mixed}>  $conditions
      */
     protected function applyConditions(Builder $query, array $conditions): void
     {

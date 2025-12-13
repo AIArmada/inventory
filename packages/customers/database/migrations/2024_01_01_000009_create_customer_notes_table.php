@@ -13,15 +13,10 @@ return new class extends Migration
         Schema::create(config('customers.tables.notes', 'customer_notes'), function (Blueprint $table): void {
             $table->uuid('id')->primary();
 
-            $table->foreignUuid('customer_id')
-                ->constrained(config('customers.tables.customers', 'customers'))
-                ->cascadeOnDelete();
+            $table->foreignUuid('customer_id');
 
             // Who created the note
-            $table->foreignId('created_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
+            $table->foreignId('created_by')->nullable();
 
             // Note content
             $table->text('content');

@@ -7,6 +7,7 @@ namespace AIArmada\FilamentCustomers\Resources\CustomerResource\RelationManagers
 use AIArmada\Customers\Enums\AddressType;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -57,7 +58,7 @@ class AddressesRelationManager extends RelationManager
                     ->label('Address Line 2')
                     ->maxLength(255),
 
-                Forms\Components\Grid::make(3)
+                Grid::make(3)
                     ->schema([
                         Forms\Components\TextInput::make('city')
                             ->label('City')
@@ -86,7 +87,7 @@ class AddressesRelationManager extends RelationManager
                     ->default('MY')
                     ->required(),
 
-                Forms\Components\Grid::make(2)
+                Grid::make(2)
                     ->schema([
                         Forms\Components\Toggle::make('is_default_billing')
                             ->label('Default Billing'),

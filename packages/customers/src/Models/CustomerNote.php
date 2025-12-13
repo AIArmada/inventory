@@ -8,7 +8,21 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property string $id
+ * @property string $customer_id
+ * @property int|null $created_by
+ * @property string $content
+ * @property bool $is_internal
+ * @property bool $is_pinned
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Customer $customer
+ * @property-read Model|null $createdBy
+ */
 class CustomerNote extends Model
 {
     use HasFactory;
@@ -26,7 +40,7 @@ class CustomerNote extends Model
     ];
 
     /**
-     * @var array<int, string>
+     * @var array<string, mixed>
      */
     protected $attributes = [
         'is_internal' => true,
