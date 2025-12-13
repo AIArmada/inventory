@@ -31,11 +31,14 @@ use AIArmada\Chip\Events\PurchaseReleased;
 use AIArmada\Chip\Events\PurchaseSubscriptionChargeFailure;
 use AIArmada\CommerceSupport\Webhooks\CommerceWebhookProcessor;
 use Illuminate\Support\Facades\Log;
+use Spatie\WebhookClient\Models\WebhookCall;
 
 /**
  * Process CHIP webhook events using spatie/laravel-webhook-client.
  *
  * This job handles incoming CHIP webhooks and dispatches the appropriate events.
+ *
+ * @property WebhookCall $webhookCall
  */
 class ProcessChipWebhook extends CommerceWebhookProcessor
 {

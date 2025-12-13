@@ -6,8 +6,11 @@ namespace AIArmada\Chip;
 
 use AIArmada\Chip\Clients\ChipCollectClient;
 use AIArmada\Chip\Clients\ChipSendClient;
+use AIArmada\Chip\Commands\AggregateMetricsCommand;
 use AIArmada\Chip\Commands\ChipHealthCheckCommand;
+use AIArmada\Chip\Commands\CleanWebhooksCommand;
 use AIArmada\Chip\Commands\ProcessRecurringCommand;
+use AIArmada\Chip\Commands\RetryWebhooksCommand;
 use AIArmada\Chip\Events\WebhookReceived;
 use AIArmada\Chip\Gateways\ChipGateway;
 use AIArmada\Chip\Http\Middleware\VerifyWebhookSignature;
@@ -41,6 +44,9 @@ final class ChipServiceProvider extends PackageServiceProvider
             ->hasCommands([
                 ChipHealthCheckCommand::class,
                 ProcessRecurringCommand::class,
+                RetryWebhooksCommand::class,
+                CleanWebhooksCommand::class,
+                AggregateMetricsCommand::class,
             ]);
     }
 

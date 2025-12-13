@@ -5,3 +5,26 @@ parameters:
 			identifier: method.notFound
 			count: 1
 			path: packages/pricing/src/Services/PriceCalculator.php
+
+		# Spatie Health optional dependency - not installed in monorepo
+		-
+			message: '#^Method AIArmada\\Chip\\Health\\ChipGatewayCheck::performCheck\(\) has invalid return type Spatie\\Health\\Checks\\Result\.$#'
+			identifier: class.notFound
+			count: 1
+			path: packages/chip/src/Health/ChipGatewayCheck.php
+
+		# Spatie Webhook Client optional dependency - not installed in monorepo
+		-
+			message: '#class Spatie\\WebhookClient\\Models\\WebhookCall#'
+			identifier: class.notFound
+			path: packages/chip/src/Webhooks/ProcessChipWebhook.php
+
+		-
+			message: '#property.*\$webhookCall#'
+			identifier: property.notFound
+			path: packages/chip/src/Webhooks/ProcessChipWebhook.php
+
+		-
+			message: '#class Spatie\\WebhookClient\\Models\\WebhookCall#'
+			identifier: class.notFound
+			path: packages/commerce-support/src/Webhooks/CommerceWebhookProcessor.php

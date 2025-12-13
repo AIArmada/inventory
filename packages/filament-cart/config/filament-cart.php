@@ -48,6 +48,10 @@ return [
     |--------------------------------------------------------------------------
     */
     'features' => [
+        'dashboard' => true,
+        'analytics' => true,
+        'recovery' => true,
+        'monitoring' => true,
         'global_conditions' => true,
         'abandonment_tracking' => true,
         'fraud_detection' => true,
@@ -100,5 +104,33 @@ return [
         'queue_sync' => false,
         'queue_connection' => 'default',
         'queue_name' => 'cart-sync',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Monitoring
+    |--------------------------------------------------------------------------
+    */
+    'monitoring' => [
+        'enabled' => true,
+        'polling_interval_seconds' => 10,
+        'abandonment_detection_minutes' => 30,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Alerts
+    |--------------------------------------------------------------------------
+    */
+    'alerts' => [
+        'enabled' => true,
+        'default_cooldown_minutes' => 60,
+        'channels' => [
+            'email' => true,
+            'slack' => false,
+            'webhook' => false,
+            'database' => true,
+        ],
+        'slack_webhook_url' => env('CART_SLACK_WEBHOOK'),
     ],
 ];

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentChip;
 
+use AIArmada\FilamentChip\Pages\AnalyticsDashboardPage;
+use AIArmada\FilamentChip\Pages\WebhookMonitorPage;
 use AIArmada\FilamentChip\Resources\ClientResource;
 use AIArmada\FilamentChip\Resources\PaymentResource;
 use AIArmada\FilamentChip\Resources\PurchaseResource;
@@ -39,6 +41,10 @@ final class FilamentChipPlugin implements Plugin
     public function register(Panel $panel): void
     {
         $panel
+            ->pages([
+                AnalyticsDashboardPage::class,
+                WebhookMonitorPage::class,
+            ])
             ->resources([
                 PurchaseResource::class,
                 PaymentResource::class,

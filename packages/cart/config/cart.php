@@ -154,4 +154,108 @@ return [
         'ttl' => env('CART_CACHE_TTL', 3600), // 1 hour
         'queue' => env('CART_CACHE_QUEUE', 'default'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI Intelligence (Phase 3)
+    |--------------------------------------------------------------------------
+    |
+    | AI-powered features for abandonment prediction, recovery optimization,
+    | and product recommendations.
+    |
+    */
+    'ai' => [
+        'abandonment' => [
+            'enabled' => env('CART_AI_ABANDONMENT_ENABLED', true),
+            'inactivity_threshold_minutes' => env('CART_AI_INACTIVITY_THRESHOLD', 15),
+            'high_value_threshold_cents' => env('CART_AI_HIGH_VALUE_THRESHOLD', 50000),
+            'cache_predictions_seconds' => env('CART_AI_CACHE_PREDICTIONS', 300),
+        ],
+        'recovery' => [
+            'enabled' => env('CART_AI_RECOVERY_ENABLED', true),
+            'max_attempts' => env('CART_AI_RECOVERY_MAX_ATTEMPTS', 3),
+            'exploration_rate' => env('CART_AI_RECOVERY_EXPLORATION_RATE', 0.1),
+            'discount_ceiling_percent' => env('CART_AI_RECOVERY_DISCOUNT_CEILING', 20),
+            'strategies' => ['email', 'discount', 'free_shipping', 'urgency'],
+        ],
+        'recommendations' => [
+            'enabled' => env('CART_AI_RECOMMENDATIONS_ENABLED', true),
+            'max_recommendations' => env('CART_AI_MAX_RECOMMENDATIONS', 5),
+            'types' => ['frequently_bought', 'complementary', 'upsell', 'trending'],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fraud Detection (Phase 2)
+    |--------------------------------------------------------------------------
+    |
+    | Fraud detection engine configuration with pluggable detectors and
+    | risk scoring thresholds.
+    |
+    */
+    'fraud' => [
+        'enabled' => env('CART_FRAUD_ENABLED', true),
+        'block_threshold' => env('CART_FRAUD_BLOCK_THRESHOLD', 80),
+        'review_threshold' => env('CART_FRAUD_REVIEW_THRESHOLD', 60),
+        'collector' => [
+            'enabled' => env('CART_FRAUD_COLLECTOR_ENABLED', true),
+            'store' => env('CART_FRAUD_COLLECTOR_STORE', 'database'),
+        ],
+        'detectors' => [
+            'price_manipulation' => [
+                'enabled' => env('CART_FRAUD_PRICE_ENABLED', true),
+                'weight' => 1.0,
+                'max_discount_percentage' => 50,
+                'min_price_cents' => 0,
+            ],
+            'velocity' => [
+                'enabled' => env('CART_FRAUD_VELOCITY_ENABLED', true),
+                'weight' => 1.0,
+                'max_operations_per_minute' => 100,
+                'suspicious_ip_multiplier' => 2.0,
+            ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Collaborative Carts (Phase 3)
+    |--------------------------------------------------------------------------
+    |
+    | Enable real-time collaborative shopping with CRDT conflict resolution
+    | and WebSocket broadcasting.
+    |
+    */
+    'collaboration' => [
+        'enabled' => env('CART_COLLABORATION_ENABLED', false),
+        'max_collaborators' => env('CART_COLLABORATION_MAX_COLLABORATORS', 5),
+        'share_link_expiry_days' => env('CART_COLLABORATION_LINK_EXPIRY', 7),
+        'invitation_expiry_hours' => env('CART_COLLABORATION_INVITE_EXPIRY', 48),
+        'broadcast_channel' => env('CART_COLLABORATION_CHANNEL', 'presence'),
+        'invitation_mailable' => null, // Custom mailable class for invitations
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Blockchain Proofs (Phase 3)
+    |--------------------------------------------------------------------------
+    |
+    | Merkle tree proof generation for cart state verification and optional
+    | multi-chain anchoring.
+    |
+    */
+    'blockchain' => [
+        'enabled' => env('CART_BLOCKCHAIN_ENABLED', false),
+        'signing_key' => env('CART_BLOCKCHAIN_SIGNING_KEY'),
+        'anchoring' => [
+            'enabled' => env('CART_BLOCKCHAIN_ANCHORING_ENABLED', false),
+            'chains' => ['internal'], // Options: internal, ethereum, bitcoin, opentimestamps
+            'ethereum' => [
+                'rpc_url' => env('CART_BLOCKCHAIN_ETH_RPC'),
+                'contract_address' => env('CART_BLOCKCHAIN_ETH_CONTRACT'),
+                'private_key' => env('CART_BLOCKCHAIN_ETH_KEY'),
+            ],
+        ],
+    ],
 ];

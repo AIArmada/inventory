@@ -48,6 +48,9 @@ parameters:
         - message: '#Parameter .* has invalid type Filament\\Forms\\Form\.#'
         - message: '#Call to method .* on an unknown class Filament\\Forms\\Form\.#'
         - message: '#Access to an undefined property .*::\$form\.#'
+        # Filament v5 Forms\Components not found (larastan resolution issue)
+        - message: '#Call to static method make\(\) on an unknown class Filament\\Forms\\Components\\.*#'
+        - message: '#Class Filament\\Forms\\Components\\.*not found\.#'
         # Ignore property override issues in widgets
         - message: '#Static property.*overrides non-static property.*\$view\.#'
         # Ignore template type issues in collect() calls
@@ -113,14 +116,24 @@ parameters:
         - message: '#Access to an undefined property AIArmada\\Inventory\\Models\\.*::\$quantity\.#'
         - message: '#Access to an undefined property AIArmada\\Inventory\\Models\\.*::\$units\.#'
         - message: '#Access to an undefined property AIArmada\\Inventory\\Models\\.*::\$value\.#'
+        # Ignore aggregate query property access for FilamentCart models (DB::raw() creates dynamic properties)
+        - message: '#Access to an undefined property AIArmada\\FilamentCart\\Models\\.*::\$.*#'
         # Ignore unresolvable return types from collection operations
         - message: '#Return type of call to method Illuminate\\.*Collection.*::map\(\) contains unresolvable type\.#'
         - message: '#Return type of call to method Illuminate\\Support\\Collection.*::values\(\) contains unresolvable type\.#'
         - message: '#Parameter .* of method Illuminate\\.*Collection.*::map\(\) contains unresolvable type\.#'
         - message: '#Parameter .* of method Illuminate\\Support\\Collection.*::sortByDesc\(\) contains unresolvable type\.#'
+        # Ignore mapWithKeys collection operation type issues
+        - message: '#Return type of call to method Illuminate\\.*Collection.*::mapWithKeys\(\) contains unresolvable type\.#'
+        - message: '#Parameter .* of method Illuminate\\.*Collection.*::mapWithKeys\(\) contains unresolvable type\.#'
         # Ignore undefined scope method calls (scopes are dynamically resolved)
         - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder.*::open\(\)\.#'
         - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder.*::notExpiringSoon\(\)\.#'
+        # Ignore Livewire v3 getLivewire() method (exists at runtime)
+        - message: '#Call to an undefined method AIArmada\\FilamentCart\\Widgets\\.*::getLivewire\(\)\.#'
+        # Ignore Filament v5 resource form/schema type covariance (Schema is parent of Form)
+        - message: '#Parameter.*of method AIArmada\\FilamentCart\\Resources\\.*::form\(\) is not contravariant.*#'
+        - message: '#Return type.*of method AIArmada\\FilamentCart\\Resources\\.*::form\(\) is not covariant.*#'
         # Ignore return type covariance in strategy classes
         - message: '#Return type.*of method AIArmada\\Inventory\\Strategies\\.*::getRecommendedOrder\(\) should be compatible with return type.*#'
         # Ignore LengthAwarePaginator generic type issues

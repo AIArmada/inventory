@@ -12,6 +12,8 @@ use Spatie\WebhookClient\Models\WebhookCall;
  *
  * Extend this class to implement package-specific webhook processing.
  *
+ * @property WebhookCall $webhookCall
+ *
  * @example
  * ```php
  * class ProcessChipWebhook extends CommerceWebhookProcessor
