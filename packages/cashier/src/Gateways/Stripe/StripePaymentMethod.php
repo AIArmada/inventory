@@ -7,6 +7,7 @@ namespace AIArmada\Cashier\Gateways\Stripe;
 use AIArmada\Cashier\Contracts\BillableContract;
 use AIArmada\Cashier\Contracts\PaymentMethodContract;
 use Exception;
+use InvalidArgumentException;
 use Laravel\Cashier\PaymentMethod;
 
 /**
@@ -14,13 +15,19 @@ use Laravel\Cashier\PaymentMethod;
  */
 class StripePaymentMethod implements PaymentMethodContract
 {
+    protected PaymentMethod $paymentMethod;
+
     /**
      * Create a new Stripe payment method wrapper.
      */
-    public function __construct(
-        protected PaymentMethod $paymentMethod,
-        protected ?BillableContract $billable = null
-    ) {}
+    public function __construct(mixed $paymentMethod, protected ?BillableContract $billable = null)
+    {
+        if (! $paymentMethod instanceof PaymentMethod) {
+            throw new InvalidArgumentException('StripePaymentMethod expects an instance of ' . PaymentMethod::class);
+        }
+
+        $this->paymentMethod = $paymentMethod;
+    }
 
     /**
      * Get the payment method ID.
@@ -89,7 +96,15 @@ class StripePaymentMethod implements PaymentMethodContract
 
         $default = $this->billable->defaultPaymentMethod();
 
-        return $default && $default->id() === $this->id();
+        if ($default instanceof PaymentMethod) {
+            return $default->id === $this->id();
+        }
+
+        if ($default instanceof PaymentMethodContract) {
+            return $default->id() === $this->id();
+        }
+
+        return false;
     }
 
     /**

@@ -6,22 +6,34 @@ namespace AIArmada\Cashier\Gateways\Chip;
 
 use AIArmada\Cashier\Contracts\BillableContract;
 use AIArmada\Cashier\Contracts\PaymentMethodContract;
+use AIArmada\CashierChip\PaymentMethod as ChipNativePaymentMethod;
 use Exception;
+use InvalidArgumentException;
 
 /**
  * Wrapper for CHIP payment method (recurring token).
  */
 class ChipPaymentMethod implements PaymentMethodContract
 {
+    /** @var array<string, mixed> */
+    protected array $token;
+
     /**
      * Create a new CHIP payment method wrapper.
-     *
-     * @param  array<string, mixed>  $token
      */
-    public function __construct(
-        protected array $token,
-        protected ?BillableContract $billable = null
-    ) {}
+    public function __construct(mixed $token, protected ?BillableContract $billable = null)
+    {
+        if ($token instanceof ChipNativePaymentMethod) {
+            $token = $token->toArray();
+        }
+
+        if (! is_array($token)) {
+            throw new InvalidArgumentException('ChipPaymentMethod expects an array token or ' . ChipNativePaymentMethod::class);
+        }
+
+        /** @var array<string, mixed> $token */
+        $this->token = $token;
+    }
 
     /**
      * Get the payment method ID (recurring token).
@@ -100,7 +112,21 @@ class ChipPaymentMethod implements PaymentMethodContract
             return false;
         }
 
-        return $this->billable->defaultPaymentMethod() === $this->id();
+        $default = $this->billable->defaultPaymentMethod();
+
+        if (is_string($default)) {
+            return $default === $this->id();
+        }
+
+        if (is_array($default)) {
+            return ($default['recurring_token'] ?? $default['id'] ?? null) === $this->id();
+        }
+
+        if ($default instanceof PaymentMethodContract) {
+            return $default->id() === $this->id();
+        }
+
+        return false;
     }
 
     /**

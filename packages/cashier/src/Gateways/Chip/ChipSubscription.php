@@ -10,6 +10,7 @@ use AIArmada\Cashier\Contracts\SubscriptionItemContract;
 use AIArmada\CashierChip\Subscription;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 /**
  * Wrapper for CHIP subscription.
@@ -19,12 +20,19 @@ use Illuminate\Support\Collection;
  */
 class ChipSubscription implements SubscriptionContract
 {
+    protected Subscription $subscription;
+
     /**
      * Create a new CHIP subscription wrapper.
      */
-    public function __construct(
-        protected Subscription $subscription
-    ) {}
+    public function __construct(mixed $subscription)
+    {
+        if (! $subscription instanceof Subscription) {
+            throw new InvalidArgumentException('ChipSubscription expects an instance of ' . Subscription::class);
+        }
+
+        $this->subscription = $subscription;
+    }
 
     /**
      * Get the subscription ID.

@@ -158,7 +158,7 @@ interface BillableContract
     /**
      * Find a specific payment method.
      */
-    public function findPaymentMethod(string $paymentMethodId, ?string $gateway = null): ?PaymentMethodContract;
+    public function findPaymentMethod(string $paymentMethodId, ?string $gateway = null): mixed;
 
     /**
      * Determine if the billable has a default payment method.
@@ -173,7 +173,7 @@ interface BillableContract
     /**
      * Get the default payment method.
      */
-    public function defaultPaymentMethod(?string $gateway = null): ?PaymentMethodContract;
+    public function defaultPaymentMethod(?string $gateway = null): mixed;
 
     /**
      * Update the default payment method.
@@ -196,7 +196,7 @@ interface BillableContract
      * @param  int  $amount  Amount in cents
      * @param  array<string, mixed>  $options
      */
-    public function charge(int $amount, ?string $paymentMethod = null, array $options = [], ?string $gateway = null): PaymentContract;
+    public function charge(int $amount, ?string $paymentMethod = null, array $options = [], ?string $gateway = null): mixed;
 
     /**
      * Create a checkout session.
@@ -227,4 +227,75 @@ interface BillableContract
      * Get the upcoming invoice.
      */
     public function upcomingInvoice(?string $gateway = null): ?InvoiceContract;
+
+    /**
+     * Stripe: Get the Stripe customer ID.
+     */
+    public function stripeId(): ?string;
+
+    /**
+     * Stripe: Get the Stripe customer.
+     */
+    public function asStripeCustomer(): mixed;
+
+    /**
+     * Stripe: Create or get the Stripe customer.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function createOrGetStripeCustomer(array $options = []): mixed;
+
+    /**
+     * Stripe: Update the Stripe customer.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function updateStripeCustomer(array $options = []): mixed;
+
+    /**
+     * Stripe: Sync the Stripe customer details.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function syncStripeCustomerDetails(array $options = []): mixed;
+
+    /**
+     * Stripe: Create a setup intent.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function createSetupIntent(array $options = []): mixed;
+
+    /**
+     * Stripe: Get the Stripe billing portal URL.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function billingPortalUrl(string $returnUrl, array $options = []): string;
+
+    /**
+     * CHIP: Create or get the CHIP customer.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function createOrGetChipCustomer(array $options = []): mixed;
+
+    /**
+     * CHIP: Update the CHIP customer.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function updateChipCustomer(array $options = []): mixed;
+
+    /**
+     * CHIP: Sync the CHIP customer details.
+     */
+    public function syncChipCustomerDetails(): mixed;
+
+    /**
+     * CHIP: Create a setup purchase.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function createSetupPurchase(array $options = []): mixed;
 }

@@ -18,10 +18,8 @@ class CheckoutBuilder
 
     /**
      * The model that is checking out.
-     *
-     * @var Billable|Model|null
      */
-    protected $owner;
+    protected ?Model $owner;
 
     /**
      * Whether to request a recurring token.

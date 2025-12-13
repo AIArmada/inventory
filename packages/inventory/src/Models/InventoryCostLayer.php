@@ -27,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property \Illuminate\Support\Carbon $layer_date
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read int $units
+ * @property-read int $value
  * @property-read Model $inventoryable
  * @property-read InventoryLocation|null $location
  * @property-read InventoryBatch|null $batch

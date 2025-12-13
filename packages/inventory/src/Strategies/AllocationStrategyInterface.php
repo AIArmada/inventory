@@ -7,6 +7,9 @@ namespace AIArmada\Inventory\Strategies;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @template TOrderModel of Model
+ */
 interface AllocationStrategyInterface
 {
     /**
@@ -39,7 +42,7 @@ interface AllocationStrategyInterface
     /**
      * Get recommended allocation order for display.
      *
-     * @return Collection<int, Model>
+     * @return Collection<int, TOrderModel>
      */
     public function getRecommendedOrder(Model $model, ?AllocationContext $context = null): Collection;
 }

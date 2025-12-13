@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\CashierChip;
 
+use AIArmada\CashierChip\Contracts\BillableContract;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Database\Eloquent\Model;
@@ -21,7 +22,7 @@ class PaymentMethod implements Arrayable, Jsonable, JsonSerializable
     /**
      * The owner of the payment method.
      *
-     * @var Billable|Model
+     * @phpstan-var Model&BillableContract
      */
     protected $owner;
 
@@ -33,11 +34,13 @@ class PaymentMethod implements Arrayable, Jsonable, JsonSerializable
     /**
      * Create a new PaymentMethod instance.
      *
-     * @param  Model  $owner
      * @param  array  $recurringToken  The CHIP recurring token data
      * @return void
      */
-    public function __construct($owner, array $recurringToken)
+    /**
+     * @phpstan-param Model&BillableContract $owner
+     */
+    public function __construct(Model $owner, array $recurringToken)
     {
         $this->owner = $owner;
         $this->recurringToken = $recurringToken;

@@ -10,9 +10,9 @@
 
 | Phase | Status | Progress |
 |-------|--------|----------|
-| Phase 1: Enhanced Orders | 🟡 In Progress | 80% |
+| Phase 1: Enhanced Orders | 🟡 In Progress | 85% |
 | Phase 2: Tracking & Status | 🟢 Completed | 100% |
-| Phase 3: Notifications | 🔴 Not Started | 0% |
+| Phase 3: Notifications | 🟢 Completed | 90% |
 | Phase 4: Filament Integration | 🟢 Completed | 100% |
 
 ---
@@ -88,19 +88,18 @@
 
 ---
 
-## Phase 3: Notifications (App-Layer)
+## Phase 3: Notifications ✅
 
 ### Notifications
-- [ ] `JntShipmentNotification::shipped`
-- [ ] `JntShipmentNotification::outForDelivery`
-- [ ] `JntShipmentNotification::delivered`
-- [ ] `JntShipmentNotification::failed`
+- [x] `OrderShippedNotification` - Sent when order is picked up/in transit
+- [x] `OrderDeliveredNotification` - Sent when order is delivered
+- [x] `OrderProblemNotification` - Sent when delivery has issues
 
 ### Listeners
-- [ ] `SendShipmentNotifications` listener
+- [x] `SendShipmentNotifications` listener
 
 ### Config
-- [ ] Notification settings in config
+- [x] Notification settings in config (`jnt.notifications.*`)
 
 ### Tests
 - [ ] `NotificationTest`

@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * FEFO (First Expired, First Out) allocation strategy.
  * Prioritizes batches that expire soonest to minimize waste.
  */
+/** @implements AllocationStrategyInterface<InventoryBatch> */
 final class FefoStrategy implements AllocationStrategyInterface
 {
     public function name(): string

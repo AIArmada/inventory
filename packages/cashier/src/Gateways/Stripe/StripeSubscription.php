@@ -9,6 +9,7 @@ use AIArmada\Cashier\Contracts\SubscriptionContract;
 use AIArmada\Cashier\Contracts\SubscriptionItemContract;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 use Laravel\Cashier\Subscription;
 
 /**
@@ -19,12 +20,19 @@ use Laravel\Cashier\Subscription;
  */
 class StripeSubscription implements SubscriptionContract
 {
+    protected Subscription $subscription;
+
     /**
      * Create a new Stripe subscription wrapper.
      */
-    public function __construct(
-        protected Subscription $subscription
-    ) {}
+    public function __construct(mixed $subscription)
+    {
+        if (! $subscription instanceof Subscription) {
+            throw new InvalidArgumentException('StripeSubscription expects an instance of ' . Subscription::class);
+        }
+
+        $this->subscription = $subscription;
+    }
 
     /**
      * Get the subscription ID.

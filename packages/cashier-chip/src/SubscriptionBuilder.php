@@ -8,6 +8,7 @@ use AIArmada\CashierChip\Concerns\AllowsCoupons;
 use AIArmada\CashierChip\Concerns\HandlesPaymentFailures;
 use AIArmada\CashierChip\Concerns\InteractsWithPaymentBehavior;
 use AIArmada\CashierChip\Concerns\Prorates;
+use AIArmada\CashierChip\Contracts\BillableContract;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use DateTimeInterface;
@@ -29,10 +30,11 @@ class SubscriptionBuilder
 
     /**
      * The model that is subscribing.
-     *
-     * @var Billable|Model
      */
-    protected $owner;
+    /**
+     * @phpstan-var Model&BillableContract
+     */
+    protected Model $owner;
 
     /**
      * The type of the subscription.
@@ -77,11 +79,12 @@ class SubscriptionBuilder
     /**
      * Create a new subscription builder instance.
      *
-     * @param  mixed  $owner
      * @param  string|string[]|array[]  $prices
-     * @return void
      */
-    public function __construct($owner, string $type, string | array $prices = [])
+    /**
+     * @phpstan-param Model&BillableContract $owner
+     */
+    public function __construct(Model $owner, string $type, string | array $prices = [])
     {
         $this->type = $type;
         $this->owner = $owner;
@@ -329,7 +332,7 @@ class SubscriptionBuilder
                 'next_billing_at' => $nextBillingAt,
                 'billing_interval' => $this->billingInterval,
                 'billing_interval_count' => $this->billingIntervalCount,
-                'recurring_token' => $recurringToken ?? $this->owner->defaultPaymentMethod(),
+                'recurring_token' => $recurringToken ?? $this->owner->defaultPaymentMethod()?->id(),
                 'ends_at' => null,
                 'coupon_id' => $couponId,
                 'coupon_discount' => $couponDiscount,

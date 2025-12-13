@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
  * Nearest Location allocation strategy.
  * Allocates from locations closest to a specified origin point.
  */
+/** @implements AllocationStrategyInterface<InventoryLocation> */
 final class NearestLocationStrategy implements AllocationStrategyInterface
 {
     public function name(): string

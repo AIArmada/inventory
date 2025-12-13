@@ -1,11 +1,29 @@
 <laravel-boost-guidelines>
-=== .ai/test rules ===
+=== .ai/filament rules ===
 
-# Testing Guidelines
+# Filament Guidelines
 
-- **Never run the whole Pest suite**; always run by package only (e.g., `./vendor/bin/pest tests/src/Inventory --parallel`). Identify the package you touched and target that package's tests.
-- When many failures: capture once, group by cause, batch-fix, rerun targeted files (`--filter` when needed) before full package run.
-- Coverage: use package-specific XML in `.xml/`; create if missing. Target ≥85% for non-Filament packages. Commands: `./vendor/bin/pest tests/src/PackageName --parallel`, `./vendor/bin/phpunit .xml/package.xml --coverage`, `./vendor/bin/pest --coverage --min=85` when applicable.
+## Spatie Integrations (Mandatory)
+
+When implementing Filament functionality around Spatie packages, you MUST use the official FilamentPHP plugins (do not roll your own integrations or use third-party alternatives):
+
+- Tags (Spatie Laravel Tags): https://github.com/filamentphp/spatie-laravel-tags-plugin
+- Settings (Spatie Laravel Settings): https://github.com/filamentphp/spatie-laravel-settings-plugin
+- Google Fonts (Spatie Laravel Google Fonts): https://github.com/filamentphp/spatie-laravel-google-fonts-plugin
+- Media Library (Spatie Laravel Media Library): https://github.com/filamentphp/spatie-laravel-media-library-plugin
+
+## Import / Export (Mandatory)
+
+For any import or export workflows in Filament, you MUST use Filament's built-in Actions:
+
+- Import: https://filamentphp.com/docs/4.x/actions/import
+- Export: https://filamentphp.com/docs/4.x/actions/export
+
+## Rules
+
+- Do not introduce alternative import/export libraries (e.g., custom CSV/XLSX handlers) unless explicitly requested and approved.
+- Prefer official Filament plugins and documented APIs over custom panels, fields, or bespoke integrations.
+- If a feature is covered by an official plugin/action, use it as the default implementation path.
 
 
 === .ai/multitenancy rules ===
@@ -108,58 +126,47 @@ Model::globalOnly()->get();
 - Test both owner-scoped and global record scenarios
 
 
-=== .ai/phpstan rules ===
-
-# PHPStan Guidelines
-
-- All code must pass PHPStan level 6.
-- **Never run PHPStan on the whole `packages` directory.** Run it per package you changed (e.g., `./vendor/bin/phpstan analyse --level=6 packages/inventory`).
-- Verify with the per-package command (`phpstan.neon` baseline applies).
-
-
 === .ai/development rules ===
 
 # Development Guidelines
 
+- **NEVER** do any repo "cleanup" without explicit user instruction/permission.
+	- This includes (but is not limited to): `git restore`, `git checkout -- <path>`, `git reset`, `git clean`, removing untracked files, mass-reverting changes, or otherwise trying to "get back to a clean state".
+	- If the working tree is messy or another agent is changing files: stop and ask what to do.
 - Before destructive changes, copy the file (e.g., `cp file.php file.php.bak`), then delete the backup when done.
 - Be smart about scope: identify the package for any file you touch and run tooling only for that package.
 - Pint: never run repo-wide; format only the affected package (e.g., `./vendor/bin/pint packages/inventory`).
 
 
-=== .ai/config rules ===
+=== .ai/model rules ===
 
-# Config Guidelines
+<?php /** @var \Illuminate\View\ComponentAttributeBag $attributes */ ?>
+## Model Guidelines
 
-- Only keep config keys that are used in code.
-- Order core package configs: Database → Credentials/API → Defaults → Features/Behavior → Integrations → HTTP → Webhooks → Cache → Logging.
-- Order Filament configs: Navigation → Tables → Features → Resources.
-- Keep configs minimal; publish only what is needed; nest related settings.
-- Migrations with JSON columns require a `json_column_type` config key.
-- Prefer defaults over excess env() wrappers; remove unused keys.
-- Comments: Laravel-style section headers only; inline comments only for non-obvious values.
-- Verify with `grep -r "config('package.key')" src/ packages/*/src/`; remove keys with no matches.
+- No DB-level FK constraints or cascades; handle all cascades in application code.
+- Required structure: use `HasUuids`; no `$table` property; `getTable()` pulls from config with prefix fallback; fillables match migration.
+- Relations typed with generics and PHPDoc properties.
+- `booted()` must implement application-level cascades (delete children or null FK as appropriate).
+- `casts()` set for arrays/booleans/datetimes as needed.
+- Migration reminder: use `foreignUuid()` without `constrained()`/cascades.
 
 
-=== .ai/packages rules ===
+=== .ai/database rules ===
 
-# Packages Guidelines
+# Database Guidelines
 
-- Independence: each package must run standalone; prefer `suggest`/optional deps over `require`.
-- Integration: when co-installed, auto-enable hooks via service providers using `class_exists()`/config toggles.
-- DTOs: all DTOs must use Laravel Data for consistency.
-- Example integration pattern:
+- Primary keys: `uuid('id')->primary()` only.
+- Foreign keys: `foreignUuid('relation_id')`; never use `constrained()` or DB-level cascades—handle in application logic.
+- Sample:
 ```php
-public function boot(): void
-{
-    if (class_exists(Cashier::class)) {
-        // Cart-Cashier integration
-    }
-    if (class_exists(Chip::class)) {
-        // Cart-Chip integration
-    }
-}
+Schema::create('orders', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->foreignUuid('user_id');
+    $table->foreignUuid('cart_id');
+    $table->timestamps();
+});
 ```
-- Verification: test package alone via `composer require package/<pkg>` and together to confirm auto-features.
+- Verify migrations contain no DB constraints; ensure cascades are implemented in models/services instead.
 
 
 === .ai/docs rules ===
@@ -451,35 +458,58 @@ ls packages/*/docs/*.md | grep -v "/[0-9][0-9]-"
 - [ ] All files have frontmatter with `title:`
 
 
-=== .ai/model rules ===
+=== .ai/phpstan rules ===
 
-<?php /** @var \Illuminate\View\ComponentAttributeBag $attributes */ ?>
-## Model Guidelines
+# PHPStan Guidelines
 
-- No DB-level FK constraints or cascades; handle all cascades in application code.
-- Required structure: use `HasUuids`; no `$table` property; `getTable()` pulls from config with prefix fallback; fillables match migration.
-- Relations typed with generics and PHPDoc properties.
-- `booted()` must implement application-level cascades (delete children or null FK as appropriate).
-- `casts()` set for arrays/booleans/datetimes as needed.
-- Migration reminder: use `foreignUuid()` without `constrained()`/cascades.
+- All code must pass PHPStan level 6.
+- **Never run PHPStan on the whole `packages` directory.** Run it per package you changed (e.g., `./vendor/bin/phpstan analyse --level=6 packages/inventory`).
+- Verify with the per-package command (`phpstan.neon` baseline applies).
 
 
-=== .ai/database rules ===
+=== .ai/packages rules ===
 
-# Database Guidelines
+# Packages Guidelines
 
-- Primary keys: `uuid('id')->primary()` only.
-- Foreign keys: `foreignUuid('relation_id')`; never use `constrained()` or DB-level cascades—handle in application logic.
-- Sample:
+- Independence: each package must run standalone; prefer `suggest`/optional deps over `require`.
+- Integration: when co-installed, auto-enable hooks via service providers using `class_exists()`/config toggles.
+- DTOs: all DTOs must use Laravel Data for consistency.
+- Example integration pattern:
 ```php
-Schema::create('orders', function (Blueprint $table) {
-    $table->uuid('id')->primary();
-    $table->foreignUuid('user_id');
-    $table->foreignUuid('cart_id');
-    $table->timestamps();
-});
+public function boot(): void
+{
+    if (class_exists(Cashier::class)) {
+        // Cart-Cashier integration
+    }
+    if (class_exists(Chip::class)) {
+        // Cart-Chip integration
+    }
+}
 ```
-- Verify migrations contain no DB constraints; ensure cascades are implemented in models/services instead.
+- Verification: test package alone via `composer require package/<pkg>` and together to confirm auto-features.
+
+
+=== .ai/config rules ===
+
+# Config Guidelines
+
+- Only keep config keys that are used in code.
+- Order core package configs: Database → Credentials/API → Defaults → Features/Behavior → Integrations → HTTP → Webhooks → Cache → Logging.
+- Order Filament configs: Navigation → Tables → Features → Resources.
+- Keep configs minimal; publish only what is needed; nest related settings.
+- Migrations with JSON columns require a `json_column_type` config key.
+- Prefer defaults over excess env() wrappers; remove unused keys.
+- Comments: Laravel-style section headers only; inline comments only for non-obvious values.
+- Verify with `grep -r "config('package.key')" src/ packages/*/src/`; remove keys with no matches.
+
+
+=== .ai/test rules ===
+
+# Testing Guidelines
+
+- **Never run the whole Pest suite**; always run by package only (e.g., `./vendor/bin/pest tests/src/Inventory --parallel`). Identify the package you touched and target that package's tests.
+- When many failures: capture once, group by cause, batch-fix, rerun targeted files (`--filter` when needed) before full package run.
+- Coverage: use package-specific XML in `.xml/`; create if missing. Target ≥85% for non-Filament packages. Commands: `./vendor/bin/pest tests/src/PackageName --parallel`, `./vendor/bin/phpunit .xml/package.xml --coverage`, `./vendor/bin/pest --coverage --min=85` when applicable.
 
 
 === foundation rules ===

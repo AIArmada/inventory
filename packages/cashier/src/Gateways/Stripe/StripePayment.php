@@ -6,6 +6,7 @@ namespace AIArmada\Cashier\Gateways\Stripe;
 
 use AIArmada\Cashier\Contracts\PaymentContract;
 use Illuminate\Http\RedirectResponse;
+use InvalidArgumentException;
 use Laravel\Cashier\Payment;
 
 /**
@@ -13,12 +14,19 @@ use Laravel\Cashier\Payment;
  */
 class StripePayment implements PaymentContract
 {
+    protected Payment $payment;
+
     /**
      * Create a new Stripe payment wrapper.
      */
-    public function __construct(
-        protected Payment $payment
-    ) {}
+    public function __construct(mixed $payment)
+    {
+        if (! $payment instanceof Payment) {
+            throw new InvalidArgumentException('StripePayment expects an instance of ' . Payment::class);
+        }
+
+        $this->payment = $payment;
+    }
 
     /**
      * Get the payment ID.
@@ -181,6 +189,14 @@ class StripePayment implements PaymentContract
     public function status(): string
     {
         return $this->payment->asStripePaymentIntent()->status;
+    }
+
+    /**
+     * Get an optional gateway error code.
+     */
+    public function errorCode(): ?string
+    {
+        return null;
     }
 
     /**

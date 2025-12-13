@@ -7,17 +7,18 @@ namespace AIArmada\CashierChip;
 use AIArmada\CashierChip\Concerns\HandlesPaymentFailures;
 use AIArmada\CashierChip\Concerns\InteractsWithPaymentBehavior;
 use AIArmada\CashierChip\Concerns\Prorates;
+use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\CashierChip\Database\Factories\SubscriptionFactory;
-use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use DateTimeInterface;
 use DateTimeZone;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use LogicException;
@@ -38,17 +39,21 @@ use LogicException;
  * @property string|null $recurring_token
  * @property string $billing_interval
  * @property int $billing_interval_count
- * @property \Illuminate\Support\Carbon|null $trial_ends_at
- * @property \Illuminate\Support\Carbon|null $next_billing_at
- * @property \Illuminate\Support\Carbon|null $ends_at
+ * @property Carbon|null $trial_ends_at
+ * @property Carbon|null $next_billing_at
+ * @property Carbon|null $ends_at
  * @property string|null $coupon_id
  * @property int|null $coupon_discount
  * @property string|null $coupon_duration
- * @property \Illuminate\Support\Carbon|null $coupon_applied_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read Model $owner
+ * @property Carbon|null $coupon_applied_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Model&BillableContract $owner
  * @property-read \Illuminate\Database\Eloquent\Collection<int, SubscriptionItem> $items
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static> canceled()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> notOnTrial()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> onGracePeriod()
  */
 class Subscription extends Model
 {
@@ -86,8 +91,6 @@ class Subscription extends Model
 
     /**
      * The relations to eager load on every query.
-     *
-     * @var array<int, string>
      */
     protected $with = ['items'];
 
@@ -194,8 +197,6 @@ class Subscription extends Model
 
     /**
      * Filter query by incomplete.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeIncomplete(Builder $query): void
     {
@@ -212,8 +213,6 @@ class Subscription extends Model
 
     /**
      * Filter query by past due.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopePastDue(Builder $query): void
     {
@@ -234,15 +233,14 @@ class Subscription extends Model
 
     /**
      * Filter query by active.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeActive(Builder $query): void
     {
         $query->where(function ($query): void {
             $query->whereNull('ends_at')
                 ->orWhere(function ($query): void {
-                    $query->onGracePeriod();
+                    $query->whereNotNull('ends_at')
+                        ->where('ends_at', '>', Carbon::now());
                 });
         })->where('chip_status', '!=', self::STATUS_INCOMPLETE_EXPIRED)
             ->where('chip_status', '!=', self::STATUS_UNPAID);
@@ -266,12 +264,15 @@ class Subscription extends Model
 
     /**
      * Filter query by recurring.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeRecurring(Builder $query): void
     {
-        $query->notOnTrial()->notCanceled();
+        $query
+            ->where(function (Builder $query): void {
+                $query->whereNull('trial_ends_at')
+                    ->orWhere('trial_ends_at', '<=', Carbon::now());
+            })
+            ->whereNull('ends_at');
     }
 
     /**
@@ -284,8 +285,6 @@ class Subscription extends Model
 
     /**
      * Filter query by canceled.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeCanceled(Builder $query): void
     {
@@ -294,8 +293,6 @@ class Subscription extends Model
 
     /**
      * Filter query by not canceled.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeNotCanceled(Builder $query): void
     {
@@ -312,12 +309,11 @@ class Subscription extends Model
 
     /**
      * Filter query by ended.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeEnded(Builder $query): void
     {
-        $query->canceled()->notOnGracePeriod();
+        $query->whereNotNull('ends_at')
+            ->where('ends_at', '<=', Carbon::now());
     }
 
     /**
@@ -330,8 +326,6 @@ class Subscription extends Model
 
     /**
      * Filter query by on trial.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeOnTrial(Builder $query): void
     {
@@ -348,8 +342,6 @@ class Subscription extends Model
 
     /**
      * Filter query by expired trial.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeExpiredTrial(Builder $query): void
     {
@@ -358,8 +350,6 @@ class Subscription extends Model
 
     /**
      * Filter query by not on trial.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeNotOnTrial(Builder $query): void
     {
@@ -376,8 +366,6 @@ class Subscription extends Model
 
     /**
      * Filter query by on grace period.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeOnGracePeriod(Builder $query): void
     {
@@ -386,8 +374,6 @@ class Subscription extends Model
 
     /**
      * Filter query by not on grace period.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopeNotOnGracePeriod(Builder $query): void
     {
@@ -508,7 +494,7 @@ class Subscription extends Model
             throw new InvalidArgumentException("Extending a subscription's trial requires a date in the future.");
         }
 
-        $this->trial_ends_at = $date;
+        $this->trial_ends_at = Carbon::instance($date);
         $this->save();
 
         return $this;
@@ -687,9 +673,11 @@ class Subscription extends Model
     {
         $amount = $amount ?? $this->calculateSubscriptionAmount();
 
+        $recurringTokenId = $this->owner->defaultPaymentMethod()?->id();
+
         return $this->owner->chargeWithRecurringToken(
             $amount,
-            $this->owner->defaultPaymentMethod(),
+            $recurringTokenId,
             [
                 'reference' => "Subscription {$this->type} - Period {$this->next_billing_at?->format('Y-m-d')}",
             ]
@@ -701,7 +689,7 @@ class Subscription extends Model
      */
     public function recurringToken(): ?string
     {
-        return $this->recurring_token ?? $this->owner->defaultPaymentMethod();
+        return $this->recurring_token ?? $this->owner->defaultPaymentMethod()?->id();
     }
 
     /**
@@ -951,8 +939,6 @@ class Subscription extends Model
 
     /**
      * Filter query by paused.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
      */
     public function scopePaused(Builder $query): void
     {

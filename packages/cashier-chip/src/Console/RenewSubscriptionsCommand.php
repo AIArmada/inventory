@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace AIArmada\CashierChip\Console;
 
 use AIArmada\CashierChip\Cashier;
+use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\CashierChip\Events\SubscriptionRenewalFailed;
 use AIArmada\CashierChip\Events\SubscriptionRenewed;
 use AIArmada\CashierChip\Subscription;
 use Exception;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
@@ -86,6 +88,7 @@ class RenewSubscriptionsCommand extends Command
                 continue;
             }
 
+            /** @var Model&BillableContract $owner */
             $this->line("Processing: {$subscription->type} for {$owner->chipEmail()}");
 
             if ($dryRun) {
@@ -134,9 +137,15 @@ class RenewSubscriptionsCommand extends Command
     protected function chargeSubscription(Subscription $subscription): mixed
     {
         $owner = $subscription->owner;
-        $recurringToken = $owner->defaultPaymentMethod();
 
-        if (! $recurringToken) {
+        if (! $owner) {
+            throw new RuntimeException('Subscription has no owner');
+        }
+
+        /** @var Model&BillableContract $owner */
+        $recurringTokenId = $owner->defaultPaymentMethod()?->id();
+
+        if (! $recurringTokenId) {
             throw new RuntimeException('No payment method available for renewal');
         }
 
@@ -148,7 +157,7 @@ class RenewSubscriptionsCommand extends Command
         }
 
         // Charge using the recurring token
-        return $owner->charge($amount, $recurringToken, [
+        return $owner->charge($amount, $recurringTokenId, [
             'product_name' => "Subscription: {$subscription->type}",
             'reference' => "Subscription {$subscription->type} - Renewal {$subscription->next_billing_at?->format('Y-m-d')}",
             'metadata' => [

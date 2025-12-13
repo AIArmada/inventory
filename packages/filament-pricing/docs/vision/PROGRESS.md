@@ -18,51 +18,51 @@
 
 ---
 
-## Phase 1: PriceListResource
+## Phase 1: PriceListResource ✅
 
-- [ ] Price list CRUD
-- [ ] Segment association
-- [ ] Currency selection
-- [ ] Priority ordering
-- [ ] Scheduling
-
----
-
-## Phase 2: PriceRuleResource
-
-- [ ] Rule CRUD
-- [ ] Condition builder
-- [ ] Action configuration
-- [ ] Stackable flag
-- [ ] Priority setting
+- [x] Price list CRUD
+- [x] Segment association
+- [x] Currency selection
+- [x] Priority ordering
+- [x] Scheduling
 
 ---
 
-## Phase 3: TieredPriceEditor
+## Phase 2: PromotionResource ✅
 
-- [ ] Tier repeater component
-- [ ] Quantity range validation
-- [ ] Price/discount toggle
-- [ ] Visual tier display
-
----
-
-## Phase 4: Price Simulator
-
-- [ ] Product selector
-- [ ] Customer selector
-- [ ] Quantity input
-- [ ] Calculation breakdown
-- [ ] Rule explanation
+- [x] Promotion CRUD
+- [x] Condition builder
+- [x] Action configuration
+- [x] Stackable flag
+- [x] Priority setting
 
 ---
 
-## Phase 5: Dashboard & Widgets
+## Phase 3: TieredPriceEditor ✅
 
-- [ ] Active promotions
-- [ ] Upcoming promotions
-- [ ] Rule usage stats
-- [ ] Price override alerts
+- [x] Tier repeater component
+- [x] Quantity range validation
+- [x] Price/discount toggle
+- [x] Visual tier display
+
+---
+
+## Phase 4: Price Simulator ✅
+
+- [x] Product selector
+- [x] Customer selector
+- [x] Quantity input
+- [x] Calculation breakdown
+- [x] Rule explanation
+
+---
+
+## Phase 5: Dashboard & Widgets ✅
+
+- [x] Active promotions
+- [x] Upcoming promotions
+- [x] Rule usage stats
+- [x] PricingStatsWidget
 
 ---
 

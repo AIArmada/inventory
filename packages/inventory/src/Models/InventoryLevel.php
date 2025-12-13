@@ -41,6 +41,13 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read int $available
+ * @property-read int $current_quantity
+ * @property-read int $quantity
+ * @property-read int $quantity_available
+ * @property-read int $sku_count
+ * @property-read int $total_quantity
+ * @property-read int $max_quantity
+ * @property-read int $min_quantity
  * @property-read InventoryLocation $location
  * @property-read Model $inventoryable
  * @property-read Collection<int, InventoryAllocation> $allocations

@@ -239,15 +239,21 @@
 
 **Vision Document:** [12-state-machine.md](12-state-machine.md)
 
-### Shipment State Machine
+> **Note:** The current enum-based state machine (`ShipmentStatus::getAllowedTransitions()`, `canTransitionTo()`) already provides full state machine functionality. Spatie integration is **optional** for enhanced features like transition hooks and audit logging.
+
+### Shipment State Machine (Enum-Based - COMPLETE)
+- [x] `ShipmentStatus` enum with state transitions
+- [x] `getAllowedTransitions()` for valid transitions
+- [x] `canTransitionTo()` validation
+- [x] Status helper methods (`isPending()`, `isInTransit()`, `isTerminal()`)
+
+### Spatie State Machine (OPTIONAL - Deferred)
 - [ ] Add `spatie/laravel-model-states` dependency
-- [ ] Create `ShipmentStatus` state classes
+- [ ] Create `ShipmentStatus` state classes (if needed for hooks)
 - [ ] Create transition classes with side effects
 - [ ] Migrate from enum to state machine
-- [ ] Update Filament actions to use transitions
 
 ### Return Authorization State Machine
-- [ ] Create `ReturnStatus` state classes
 - [ ] Create transition classes with side effects
 - [ ] Migrate from enum to state machine
 - [ ] Update Filament actions to use transitions

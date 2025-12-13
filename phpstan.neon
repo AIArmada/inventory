@@ -36,6 +36,18 @@ parameters:
         - message: '#Call to an undefined method.*Filament.*carded\(\)\.#'
         - message: '#Call to an undefined method.*Filament.*softShadow\(\)\.#'
         - message: '#Call to an undefined method.*Filament.*inlineLabelled\(\)\.#'
+        # Filament v5 beta namespace reorganization - Tables\Actions moved to Actions namespace
+        - message: '#Call to static method make\(\) on an unknown class Filament\\Tables\\Actions\\.*#'
+        - message: '#Class Filament\\Tables\\Actions\\.*not found\.#'
+        - message: '#Call to static method make\(\) on an unknown class Filament\\Notifications\\Actions\\.*#'
+        - message: '#Parameter .* has invalid type Filament\\Forms\\Get\.#'
+        - message: '#Parameter .* has invalid type Filament\\Forms\\Set\.#'
+        - message: '#Invoking callable on an unknown class Filament\\Forms\\(Get|Set)\.#'
+        - message: '#Call to static method make\(\) on an unknown class Filament\\Forms\\Form\.#'
+        - message: '#Method .* has invalid return type Filament\\Forms\\Form\.#'
+        - message: '#Parameter .* has invalid type Filament\\Forms\\Form\.#'
+        - message: '#Call to method .* on an unknown class Filament\\Forms\\Form\.#'
+        - message: '#Access to an undefined property .*::\$form\.#'
         # Ignore property override issues in widgets
         - message: '#Static property.*overrides non-static property.*\$view\.#'
         # Ignore template type issues in collect() calls
@@ -68,6 +80,16 @@ parameters:
         # Filament-authz Spatie Permission integration (methods come from HasRoles trait at runtime)
         - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::syncPermissions\(\)\.#'
         - message: '#Cannot call method syncPermissions\(\) on Illuminate\\Database\\Eloquent\\Model\|int\|string\.#'
+        - message: '#Access to an undefined property Spatie\\Permission\\Models\\Role::\$id\.#'
+        - message: '#Access to an undefined property Spatie\\Permission\\Models\\Role::\$name\.#'
+        - message: '#Call to an undefined method Spatie\\Permission\\Models\\Role::permissions\(\)\.#'
+        - message: '#Call to an undefined static method Spatie\\Permission\\Models\\Role::count\(\)\.#'
+        - message: '#Call to an undefined static method Spatie\\Permission\\Models\\Role::query\(\)\.#'
+        - message: '#Call to an undefined static method Spatie\\Permission\\Models\\Role::pluck\(\)\.#'
+        - message: '#Call to an undefined static method Spatie\\Permission\\Models\\Role::all\(\)\.#'
+        - message: '#Call to an undefined static method Spatie\\Permission\\Models\\Role::findOrCreate\(\)\.#'
+        - message: '#Call to an undefined static method Spatie\\Permission\\Models\\Role::findByName\(\)\.#'
+        - message: '#Type Spatie\\Permission\\Models\\Role in generic type.*is not subtype of template type.*#'
         - identifier: 'method.unused'
         # Ignore unused traits in inventory (they're part of the public API for other packages)
         - message: '#Trait AIArmada\\Inventory\\Traits\\HasInventory is used zero times and is not analysed\.#'

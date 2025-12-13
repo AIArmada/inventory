@@ -9,6 +9,7 @@ use AIArmada\Cashier\Contracts\BillableContract;
 use AIArmada\Cashier\Contracts\CheckoutBuilderContract;
 use AIArmada\Cashier\Contracts\CheckoutContract;
 use AIArmada\Cashier\Contracts\GatewayContract;
+use AIArmada\CommerceSupport\Contracts\Payment\LineItemInterface;
 use Illuminate\Http\RedirectResponse;
 use InvalidArgumentException;
 
@@ -274,10 +275,8 @@ final class CartCheckoutBuilder
 
     /**
      * Add a cart item to the checkout builder.
-     *
-     * @param  \AIArmada\Cart\CartItem  $item
      */
-    private function addItemToCheckout(CheckoutBuilderContract $builder, object $item): void
+    private function addItemToCheckout(CheckoutBuilderContract $builder, LineItemInterface $item): void
     {
         // Gateway-specific implementation
         // For gateways that support dynamic pricing (like CHIP)
@@ -286,14 +285,16 @@ final class CartCheckoutBuilder
         // For gateways requiring pre-configured prices (like Stripe)
         // we look for a price_id in the item attributes
 
-        $priceId = $item->attributes['price_id'] ?? null;
+        $metadata = $item->getLineItemMetadata();
+        $priceId = $metadata['price_id'] ?? null;
+        $quantity = (int) $item->getLineItemQuantity();
 
-        if ($priceId) {
-            $builder->price($priceId, $item->quantity);
+        if (is_string($priceId) && $priceId !== '') {
+            $builder->price($priceId, $quantity);
         } else {
             // For dynamic pricing, we'd need gateway-specific handling
             // This could be extended via gateway adapters
-            $builder->price($item->id, $item->quantity);
+            $builder->price($item->getLineItemId(), $quantity);
         }
     }
 }

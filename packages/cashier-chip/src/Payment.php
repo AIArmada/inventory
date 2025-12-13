@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace AIArmada\CashierChip;
 
+use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\CashierChip\Exceptions\IncompletePayment;
 use AIArmada\Chip\Data\PurchaseData;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Traits\ForwardsCalls;
 use JsonSerializable;
 use ReturnTypeWillChange;
@@ -54,7 +56,7 @@ class Payment implements Arrayable, Jsonable, JsonSerializable
     /**
      * The related customer instance.
      *
-     * @var Billable|null
+     * @var (Model&BillableContract)|null
      */
     protected $customer;
 
@@ -281,9 +283,9 @@ class Payment implements Arrayable, Jsonable, JsonSerializable
     /**
      * Retrieve the related customer for the payment if one exists.
      *
-     * @return Billable|null
+     * @phpstan-return (Model&BillableContract)|null
      */
-    public function customer()
+    public function customer(): ?Model
     {
         if ($this->customer) {
             return $this->customer;
@@ -301,7 +303,8 @@ class Payment implements Arrayable, Jsonable, JsonSerializable
     /**
      * Set the customer instance.
      *
-     * @param  Billable  $customer
+     * @phpstan-param Model&BillableContract $customer
+     *
      * @return $this
      */
     public function setCustomer($customer): self

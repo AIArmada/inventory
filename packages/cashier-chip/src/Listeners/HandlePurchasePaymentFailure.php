@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AIArmada\CashierChip\Listeners;
 
-use AIArmada\CashierChip\Billable;
 use AIArmada\CashierChip\Cashier;
 use AIArmada\CashierChip\Events\PaymentFailed;
 use AIArmada\Chip\Events\PurchasePaymentFailure;
@@ -26,7 +25,7 @@ class HandlePurchasePaymentFailure
             return;
         }
 
-        /** @var (Model&Billable)|null $billable */
+        /** @var Model|null $billable */
         $billable = Cashier::findBillable($clientId);
 
         if ($billable === null) {

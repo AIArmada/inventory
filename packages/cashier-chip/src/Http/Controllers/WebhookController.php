@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\CashierChip\Http\Controllers;
 
-use AIArmada\CashierChip\Billable;
 use AIArmada\CashierChip\Cashier;
+use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\CashierChip\Events\PaymentFailed;
 use AIArmada\CashierChip\Events\PaymentSucceeded;
 use AIArmada\CashierChip\Events\WebhookHandled;
@@ -138,6 +138,8 @@ class WebhookController extends Controller
      * Update subscription status on payment success.
      *
      * @param  array<string, mixed>  $purchase
+     *
+     * @phpstan-param Model&BillableContract $billable
      */
     protected function updateSubscriptionOnPaymentSuccess(Model $billable, array $purchase): void
     {
@@ -164,6 +166,8 @@ class WebhookController extends Controller
      * Update subscription status on payment failure.
      *
      * @param  array<string, mixed>  $purchase
+     *
+     * @phpstan-param Model&BillableContract $billable
      */
     protected function updateSubscriptionOnPaymentFailure(Model $billable, array $purchase): void
     {
@@ -205,7 +209,7 @@ class WebhookController extends Controller
     /**
      * Get the billable instance by CHIP ID.
      *
-     * @return (Model&Billable)|null
+     * @phpstan-return (Model&BillableContract)|null
      */
     protected function getBillableByChipId(?string $chipId): ?Model
     {

@@ -114,6 +114,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for shipping status notifications sent to customers.
+    |
+    */
+    'notifications' => [
+        // Enable/disable notifications on status changes
+        'enabled' => env('JNT_NOTIFICATIONS_ENABLED', true),
+
+        // Queue notifications (recommended for production)
+        'queue' => env('JNT_NOTIFICATIONS_QUEUE', true),
+
+        // Support contact for problem notifications
+        'support_contact' => env('JNT_SUPPORT_CONTACT'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Shipping Configuration
     |--------------------------------------------------------------------------
     |

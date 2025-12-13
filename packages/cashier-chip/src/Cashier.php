@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\CashierChip;
 
+use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\CashierChip\Testing\FakeChipClient;
 use AIArmada\CashierChip\Testing\FakeChipCollectService;
 use AIArmada\Chip\Services\ChipCollectService;
@@ -57,7 +58,10 @@ class Cashier
     /**
      * The custom currency formatter.
      */
-    protected static $formatCurrencyUsing;
+    /**
+     * @var callable(int, ?string, ?string, array<string, mixed>): string|null
+     */
+    protected static $formatCurrencyUsing = null;
 
     /**
      * The fake CHIP service for testing.
@@ -72,9 +76,9 @@ class Cashier
     /**
      * Get the customer instance by its CHIP ID.
      *
-     * @return (Model&Billable)|null
+     * @phpstan-return (Model&BillableContract)|null
      */
-    public static function findBillable(?string $chipId): ?object
+    public static function findBillable(?string $chipId): ?Model
     {
         if (! $chipId) {
             return null;

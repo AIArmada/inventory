@@ -1,7 +1,7 @@
 # Affiliates Vision Progress
 
 > **Package:** `aiarmada/affiliates` + `aiarmada/filament-affiliates`  
-> **Last Updated:** December 5, 2025
+> **Last Verified:** December 13, 2025
 
 ---
 
@@ -10,13 +10,15 @@
 | Phase | Status | Progress |
 |-------|--------|----------|
 | Phase 1: Foundation & Core | 🟢 Completed | 100% |
-| Phase 2: MLM Network & Programs | 🟢 Completed | 100% |
-| Phase 3: Analytics & Reporting | 🟢 Completed | 100% |
-| Phase 4: Fraud Detection | 🟢 Completed | 100% |
+| Phase 2: MLM Network & Programs | � Nearly Complete | 95% |
+| Phase 3: Analytics & Reporting | � Nearly Complete | 95% |
+| Phase 4: Fraud Detection | � Nearly Complete | 95% |
 | Phase 5: Affiliate Portal | 🟢 Completed | 100% |
 | Phase 6: Payout Automation | 🟢 Completed | 100% |
-| Phase 7: Dynamic Commissions | 🟢 Completed | 100% |
+| Phase 7: Dynamic Commissions | � Nearly Complete | 85% |
 | Phase 8: Filament Enhancements | 🟢 Completed | 100% |
+
+**Overall Progress: ~96%**
 
 ---
 
@@ -54,7 +56,16 @@
   - Voucher integration, commission settings
   - Payout configuration, multi-level settings
   - Tracking defaults, events, webhooks, links, API
-- [x] Unit test coverage (24 test files covering all core functionality)
+- [x] Unit test coverage (25 test files covering core functionality)
+
+**Verified Models (27):**
+- Affiliate, AffiliateAttribution, AffiliateBalance, AffiliateCommissionPromotion
+- AffiliateCommissionRule, AffiliateConversion, AffiliateDailyStat, AffiliateFraudSignal
+- AffiliateLink, AffiliateNetwork, AffiliatePayout, AffiliatePayoutEvent
+- AffiliatePayoutHold, AffiliatePayoutMethod, AffiliateProgram, AffiliateProgramCreative
+- AffiliateProgramMembership, AffiliateProgramTier, AffiliateRank, AffiliateRankHistory
+- AffiliateSupportMessage, AffiliateSupportTicket, AffiliateTaxDocument, AffiliateTouchpoint
+- AffiliateTrainingModule, AffiliateTrainingProgress, AffiliateVolumeTier
 
 ---
 
@@ -65,14 +76,20 @@
 - [x] AffiliateNetwork closure table implementation
 - [x] AffiliateRank model (achievement levels)
 - [x] Network traversal service (NetworkService)
+  - `getUpline()`, `getDownline()`, `getDirectRecruits()`
+  - `getTeamSales()`, `getActiveDownlineCount()`
+  - `buildTree()` for network visualization
 - [x] Override commission service (basic multi-level implemented)
   - Configurable levels via `affiliates.payouts.multi_level.levels`
   - Parent traversal with weighted commission sharing
   - Upline conversion creation with metadata tracking
 - [x] Rank qualification engine (RankQualificationService)
+  - `evaluate()`, `processAllRankUpgrades()`, `calculateMetrics()`
 - [x] Network visualization data provider (NetworkService.buildTree)
 - [x] Program management service (ProgramService)
-- [ ] Integration tests for MLM flows
+  - `joinProgram()`, `leaveProgram()`, `approveMembership()`
+  - `upgradeTier()`, `processTierUpgrades()`
+- [ ] **Integration tests for MLM flows** *(Not implemented)*
 - [x] Parent-child affiliate relationships (in Affiliate model)
 - [x] Two-level depth support (configurable via config)
 - [x] AffiliateRankHistory model for audit trail
@@ -87,6 +104,8 @@
 
 - [x] AffiliateDailyStat model
 - [x] Aggregation service (DailyAggregationService)
+  - `aggregate()`, `aggregateForAffiliate()`, `backfill()`
+  - `getAggregatedStats()`, `buildBreakdown()`
 - [x] Dashboard data provider (`AffiliateStatsAggregator`)
   - Total/active/pending affiliates count
   - Pending/paid/total commission aggregation
@@ -96,11 +115,11 @@
   - Affiliate summary with totals
   - Funnel metrics (attributions → conversions)
   - UTM aggregation (sources, campaigns)
-- [ ] Export functionality (CSV, Excel, PDF)
+- [x] Export functionality (CSV, Excel, PDF)
   - [x] Basic CSV export via `ExportAffiliatePayoutCommand`
-  - [ ] Excel export
-  - [ ] PDF export
-- [ ] Cohort analyzer
+  - [x] Excel export (PayoutExportService::downloadExcel)
+  - [x] PDF export (PayoutExportService::downloadPdf)
+- [ ] **Cohort analyzer** *(Not implemented - only documented)*
 - [x] Attribution model comparison (last_touch, first_touch, linear)
 - [x] Scheduled aggregation commands (AggregateDailyStatsCommand)
 - [x] DailyStatsAggregated event
@@ -117,15 +136,15 @@
   - Cache-based counting with decay
   - Click velocity detection
   - Conversion velocity detection
-- [x] GeoAnomalyDetector implementation (basic IP change detection)
+- [x] GeoAnomalyDetector implementation (checkGeoAnomaly in FraudDetectionService)
 - [x] PatternDetector implementation (fingerprint blocking)
   - SHA256 fingerprint from user agent + IP
   - Duplicate fingerprint detection per affiliate
 - [x] FraudScoreAggregator (getRiskProfile in FraudDetectionService)
 - [x] Real-time protection middleware (`TrackAffiliateCookie`)
-- [ ] Review workflow (Filament UI pending)
+- [x] Review workflow (FraudReviewPage in filament-affiliates)
 - [x] Threshold configuration (IP rate limit, fingerprint settings)
-- [ ] Fraud scenario tests
+- [ ] **Fraud scenario tests** *(Not implemented)*
 - [x] Self-referral blocking
 - [x] Click-to-conversion time analysis
 - [x] FraudSignalDetected event
@@ -154,6 +173,13 @@
 - [x] API endpoints (summary, links, creatives) in `AffiliateApiController`
 - [x] Portal routes (routes/portal.php)
 - [x] LinkController for link management
+
+**Portal Controllers (7):**
+- DashboardController, LinkController, NetworkController, PayoutController
+- ProfileController, SupportController, TrainingController
+
+**Portal Routes:**
+- Dashboard, Profile, Payouts, Network, Links, Creatives, Support, Training
 
 ---
 
@@ -189,14 +215,17 @@
 ### Tasks
 
 - [x] Commission rule engine (CommissionRuleEngine)
+  - `calculate()` with base commission, volume bonus, promotion bonus
+  - `getApplicableRules()` with caching
+  - `applyCaps()` for min/max enforcement
 - [x] AffiliateCommissionRule model (replaces ProductCommissionRule)
 - [x] AffiliateVolumeTier model
 - [x] AffiliateCommissionPromotion model
-- [x] Volume tier evaluator (in CommissionRuleEngine)
-- [x] Time promotion evaluator (in CommissionRuleEngine)
+- [x] Volume tier evaluator (calculateVolumeBonus in CommissionRuleEngine)
+- [x] Time promotion evaluator (calculatePromotionBonus in CommissionRuleEngine)
 - [x] Custom rule evaluator (condition-based matching)
-- [ ] Commission templates
-- [ ] Performance bonus service
+- [ ] **Commission templates** *(Not implemented)*
+- [ ] **Performance bonus service** *(Not implemented)*
 - [x] `CommissionCalculator` with percentage/fixed types
 - [x] Basis point scale configuration
 - [x] Per-affiliate commission rates and currency
@@ -214,6 +243,7 @@
 - [x] NetworkVisualizationWidget
 - [x] FraudAlertWidget
 - [x] PayoutQueueWidget
+- [x] AffiliateStatsWidget
 - [x] Enhanced AffiliateResource
   - Full CRUD with form/table/infolist
   - Status, commission type, rates, currency
@@ -229,13 +259,26 @@
 - [x] Relation managers
   - `ConversionsRelationManager` on AffiliateResource
   - `ConversionsRelationManager` on AffiliatePayoutResource
-- [x] `AffiliateStatsWidget` (5-stat overview)
 - [x] `AffiliateConversionResource` (list, view)
 - [x] `AffiliatePayoutResource` (list, view with events)
 - [x] `CartBridge` integration (deep links to FilamentCart)
 - [x] `VoucherBridge` integration (deep links to FilamentVouchers)
 - [x] `PayoutExportService` for exports
 - [x] `AffiliatePayoutPolicy` for authorization
+
+---
+
+## Remaining Items (Not Implemented)
+
+| Item | Phase | Priority | Effort |
+|------|-------|----------|--------|
+| Integration tests for MLM flows | 2 | Medium | 2-3 days |
+| Cohort analyzer | 3 | Low | 2-3 days |
+| Fraud scenario tests | 4 | Medium | 1-2 days |
+| Commission templates | 7 | Low | 1-2 days |
+| Performance bonus service | 7 | Low | 1-2 days |
+
+**Total Remaining Effort:** ~1-2 weeks
 
 ---
 
@@ -255,51 +298,135 @@
 
 ### Core Package (`aiarmada/affiliates`)
 
-**Models:**
+**Models (27):**
 - `Affiliate` - Partner/program with status, commission, owner scoping
 - `AffiliateAttribution` - Cart-level tracking with UTM, cookies, expiration
+- `AffiliateBalance` - Balance tracking for holdings and available funds
+- `AffiliateCommissionPromotion` - Time-limited promotional commissions
+- `AffiliateCommissionRule` - Rule-based commission configuration
 - `AffiliateConversion` - Monetized event with commission, status workflow
+- `AffiliateDailyStat` - Pre-aggregated daily statistics
+- `AffiliateFraudSignal` - Fraud detection signals with severity
+- `AffiliateLink` - Custom tracking links for affiliates
+- `AffiliateNetwork` - Closure table for MLM hierarchy
 - `AffiliatePayout` - Batch payout with status, scheduling
 - `AffiliatePayoutEvent` - Audit trail for payout status changes
+- `AffiliatePayoutHold` - Payout holds with reason and expiration
+- `AffiliatePayoutMethod` - Payment method configuration
+- `AffiliateProgram` - Program definitions with commission rates
+- `AffiliateProgramCreative` - Marketing assets for programs
+- `AffiliateProgramMembership` - Affiliate-program relationship
+- `AffiliateProgramTier` - Tier levels within programs
+- `AffiliateRank` - Achievement/rank levels
+- `AffiliateRankHistory` - Rank change audit trail
+- `AffiliateSupportMessage` - Support ticket messages
+- `AffiliateSupportTicket` - Support ticket tracking
+- `AffiliateTaxDocument` - Tax document records (1099)
 - `AffiliateTouchpoint` - Multi-touch attribution tracking
+- `AffiliateTrainingModule` - Training content modules
+- `AffiliateTrainingProgress` - Affiliate training progress
+- `AffiliateVolumeTier` - Volume-based tier definitions
 
-**Enums:**
+**Enums (11):**
 - `AffiliateStatus` (Draft, Pending, Active, Paused, Disabled)
 - `CommissionType` (Percentage, Fixed)
+- `CommissionRuleType` (Product, Category, Affiliate, etc.)
 - `ConversionStatus` (Pending, Qualified, Approved, Rejected, Paid)
+- `FraudSeverity` (Low, Medium, High, Critical)
+- `FraudSignalStatus` (Detected, Reviewed, Dismissed, Confirmed)
+- `MembershipStatus` (Pending, Approved, Rejected, Suspended)
+- `PayoutMethodType` (BankTransfer, PayPal, StripeConnect, etc.)
+- `ProgramStatus` (Draft, Active, Paused, Archived)
+- `RankQualificationReason` (Initial, Qualified, Demoted, Manual)
+- `RegistrationApprovalMode` (Auto, Manual, Invite)
 
-**Services:**
+**Services (16+):**
 - `AffiliateService` - Core operations, attribution, conversion recording
-- `CommissionCalculator` - Commission calculation logic
 - `AffiliatePayoutService` - Payout batch management
+- `AffiliateRegistrationService` - Affiliate registration
 - `AffiliateReportService` - Summary/reporting
 - `AttributionModel` - Multi-touch attribution models
+- `CommissionCalculator` - Basic commission calculation
+- `CommissionMaturityService` - Commission maturity processing
+- `CommissionRuleEngine` - Advanced rule-based commission calculation
+- `DailyAggregationService` - Daily stats aggregation
+- `FraudDetectionService` - Fraud detection and analysis
+- `NetworkService` - MLM network operations
+- `PayoutReconciliationService` - Payout reconciliation
+- `ProgramService` - Program management
+- `RankQualificationService` - Rank qualification evaluation
+- `TaxDocumentService` - Tax document generation
+- `Tax1099Generator` - 1099 document generation
+- Payout processors: `StripeConnectProcessor`, `PayPalProcessor`, `ManualPayoutProcessor`
 
-**Events:**
+**Events (10):**
+- `AffiliateActivated` - Fired when affiliate is activated
 - `AffiliateAttributed` - Fired on successful attribution
 - `AffiliateConversionRecorded` - Fired on conversion creation
+- `AffiliateCreated` - Fired when affiliate is created
+- `AffiliateProgramJoined` - Fired when affiliate joins a program
+- `AffiliateProgramLeft` - Fired when affiliate leaves a program
+- `AffiliateRankChanged` - Fired on rank changes
+- `AffiliateTierUpgraded` - Fired on tier upgrade
+- `DailyStatsAggregated` - Fired after daily aggregation
+- `FraudSignalDetected` - Fired when fraud is detected
+
+**Commands (5):**
+- `AggregateDailyStatsCommand` - Daily statistics aggregation
+- `ExportAffiliatePayoutCommand` - Payout export
+- `ProcessCommissionMaturityCommand` - Commission maturity processing
+- `ProcessRankUpgradesCommand` - Rank upgrade processing
+- `ProcessScheduledPayoutsCommand` - Scheduled payout processing
 
 ### Filament Package (`aiarmada/filament-affiliates`)
 
-**Resources:**
+**Resources (5):**
 - `AffiliateResource` - Full CRUD with conversions relation
 - `AffiliateConversionResource` - List/view conversions
+- `AffiliateFraudSignalResource` - Fraud signal management
 - `AffiliatePayoutResource` - List/view payouts with events
+- `AffiliateProgramResource` - Program management
 
-**Widgets:**
+**Widgets (6):**
 - `AffiliateStatsWidget` - Dashboard overview
+- `FraudAlertWidget` - Fraud alert notifications
+- `NetworkVisualizationWidget` - Network tree visualization
+- `PayoutQueueWidget` - Pending payout queue
+- `PerformanceOverviewWidget` - Performance metrics
+- `RealTimeActivityWidget` - Real-time activity feed
 
-**Services:**
+**Pages (3):**
+- `FraudReviewPage` - Dedicated fraud review queue
+- `PayoutBatchPage` - Batch payout processing
+- `ReportsPage` - Reporting interface
+
+**Actions (2):**
+- `BulkFraudReviewAction` - Bulk fraud review
+- `BulkPayoutAction` - Bulk payout processing
+
+**Services (2):**
 - `AffiliateStatsAggregator` - Dashboard metrics
-- `PayoutExportService` - Export functionality
+- `PayoutExportService` - Multi-format export (CSV, Excel, PDF)
 
-**Integrations:**
+**Integrations (2):**
 - `CartBridge` - Deep links to FilamentCart
 - `VoucherBridge` - Deep links to FilamentVouchers
 
 ---
 
 ## Notes
+
+### December 13, 2025 - Full Verification
+- Comprehensive verification of all vision document implementations
+- Found 5 items not implemented: MLM integration tests, Cohort analyzer, Fraud scenario tests, Commission templates, Performance bonus service
+- Overall implementation is ~96% complete
+- All core functionality is production-ready
+- Portal with 7 controllers fully implemented
+- All 27 models verified
+- All 11 enums verified
+- All 10 events verified
+- All 26 migrations verified
+- 25 unit test files exist for core functionality
 
 ### December 5, 2025
 - Initial progress assessment completed
@@ -311,8 +438,8 @@
 - Cart and Voucher bridge integrations active
 
 ### Next Priority Items
-1. **AffiliateProgram model** - Enable tiered commission structures
-2. **AffiliateTier model** - Progression system for affiliates
-3. **Enhanced fraud detection** - GeoAnomalyDetector, FraudScoreAggregator
-4. **Aggregation service** - Daily/hourly stat rollups
-5. **Affiliate self-service portal** - Authentication and dashboard
+1. **Integration tests for MLM flows** - Test network operations end-to-end
+2. **Fraud scenario tests** - Comprehensive fraud detection test coverage
+3. **Cohort analyzer** - Implement cohort analysis for affiliate performance
+4. **Commission templates** - Pre-defined commission structures
+5. **Performance bonus service** - Bonus calculations for top performers

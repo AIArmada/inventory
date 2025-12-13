@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\CashierChip\Listeners;
 
-use AIArmada\CashierChip\Billable;
 use AIArmada\CashierChip\Cashier;
+use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\CashierChip\Events\SubscriptionCanceled;
 use AIArmada\CashierChip\Subscription;
 use AIArmada\Chip\Events\BillingCancelled;
@@ -26,7 +26,7 @@ class HandleBillingCancelled
             return;
         }
 
-        /** @var (Model&Billable)|null $billable */
+        /** @var (Model&BillableContract)|null $billable */
         $billable = Cashier::findBillable($clientId);
 
         if ($billable === null) {

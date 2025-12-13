@@ -44,6 +44,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read int $available
+ * @property-read int $quantity
+ * @property-read int $available_quantity
  * @property-read bool $is_expired
  * @property-read int|null $days_until_expiry
  * @property-read InventoryLocation $location

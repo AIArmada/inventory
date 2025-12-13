@@ -25,10 +25,8 @@ class Checkout implements Arrayable, Jsonable, JsonSerializable, Responsable
 {
     /**
      * The owner of the checkout session.
-     *
-     * @var Billable|Model|null
      */
-    protected $owner;
+    protected ?Model $owner;
 
     /**
      * The CHIP purchase instance.
@@ -37,10 +35,8 @@ class Checkout implements Arrayable, Jsonable, JsonSerializable, Responsable
 
     /**
      * Create a new checkout instance.
-     *
-     * @param  Model|null  $owner
      */
-    public function __construct($owner, PurchaseData $purchase)
+    public function __construct(?Model $owner, PurchaseData $purchase)
     {
         $this->owner = $owner;
         $this->purchase = $purchase;

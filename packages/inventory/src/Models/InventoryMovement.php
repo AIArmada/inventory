@@ -30,6 +30,12 @@ use Illuminate\Support\Carbon;
  * @property Carbon $occurred_at
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ * @property-read int $count
+ * @property-read int $movement_count
+ * @property-read int $total_quantity
+ * @property-read int $total_quantity_moved
+ * @property-read float $avg_quantity
+ * @property-read Carbon|null $last_occurred_at
  * @property-read InventoryLocation|null $fromLocation
  * @property-read InventoryLocation|null $toLocation
  * @property-read Model $inventoryable

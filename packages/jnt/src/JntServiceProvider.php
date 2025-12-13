@@ -16,7 +16,9 @@ use AIArmada\Jnt\Console\Commands\OrderCreateCommand;
 use AIArmada\Jnt\Console\Commands\OrderPrintCommand;
 use AIArmada\Jnt\Console\Commands\OrderTrackCommand;
 use AIArmada\Jnt\Console\Commands\WebhookTestCommand;
+use AIArmada\Jnt\Events\JntOrderStatusChanged;
 use AIArmada\Jnt\Http\Middleware\VerifyWebhookSignature;
+use AIArmada\Jnt\Listeners\SendShipmentNotifications;
 use AIArmada\Jnt\Services\JntExpressService;
 use AIArmada\Jnt\Services\JntStatusMapper;
 use AIArmada\Jnt\Services\JntTrackingService;
@@ -26,6 +28,7 @@ use AIArmada\Jnt\Support\Integrations\CartIntegrationRegistrar;
 use AIArmada\Shipping\ShippingManager;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -86,6 +89,7 @@ class JntServiceProvider extends PackageServiceProvider
         $this->registerMiddleware();
         $this->registerCartIntegration();
         $this->registerShippingDriver();
+        $this->registerEventListeners();
     }
 
     /**
@@ -205,5 +209,20 @@ class JntServiceProvider extends PackageServiceProvider
         $shippingManager = $this->app->make(ShippingManager::class);
 
         $shippingManager->extend('jnt', fn (Application $app): JntShippingDriver => $app->make(JntShippingDriver::class));
+    }
+
+    /**
+     * Register event listeners for status change notifications.
+     */
+    protected function registerEventListeners(): void
+    {
+        if (! config('jnt.notifications.enabled', true)) {
+            return;
+        }
+
+        Event::listen(
+            JntOrderStatusChanged::class,
+            SendShipmentNotifications::class
+        );
     }
 }

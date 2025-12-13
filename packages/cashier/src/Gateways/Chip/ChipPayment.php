@@ -8,6 +8,7 @@ use AIArmada\Cashier\Contracts\PaymentContract;
 use AIArmada\CashierChip\Payment;
 use AIArmada\Chip\Data\PurchaseData;
 use Illuminate\Http\RedirectResponse;
+use InvalidArgumentException;
 
 /**
  * Wrapper for CHIP payment (purchase).
@@ -22,8 +23,12 @@ class ChipPayment implements PaymentContract
     /**
      * Create a new CHIP payment wrapper.
      */
-    public function __construct(Payment | PurchaseData $payment)
+    public function __construct(mixed $payment)
     {
+        if (! $payment instanceof Payment && ! $payment instanceof PurchaseData) {
+            throw new InvalidArgumentException('ChipPayment expects an instance of ' . Payment::class . ' or ' . PurchaseData::class);
+        }
+
         $this->payment = $payment;
     }
 
@@ -267,6 +272,14 @@ class ChipPayment implements PaymentContract
         }
 
         return $this->payment->status ?? 'unknown';
+    }
+
+    /**
+     * Get an optional gateway error code.
+     */
+    public function errorCode(): ?string
+    {
+        return null;
     }
 
     /**

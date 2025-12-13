@@ -44,6 +44,11 @@ interface PaymentContract extends Arrayable, Jsonable
     public function status(): string;
 
     /**
+     * Get an optional gateway error code.
+     */
+    public function errorCode(): ?string;
+
+    /**
      * Determine if the payment is pending.
      */
     public function isPending(): bool;

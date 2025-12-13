@@ -1,0 +1,93 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AIArmada\Inventory\Health;
+
+use AIArmada\CommerceSupport\Health\CommerceHealthCheck;
+use AIArmada\Inventory\Models\InventoryLevel;
+use Spatie\Health\Checks\Result;
+
+/**
+ * Health check for low stock inventory levels.
+ */
+class LowStockCheck extends CommerceHealthCheck
+{
+    public ?string $name = 'Low Stock Alert';
+
+    /**
+     * The threshold for low stock warning.
+     */
+    protected int $threshold = 10;
+
+    /**
+     * Whether to fail on low stock.
+     */
+    protected bool $failOnLowStock = false;
+
+    /**
+     * Set the low stock threshold.
+     */
+    public function threshold(int $threshold): self
+    {
+        $this->threshold = $threshold;
+
+        return $this;
+    }
+
+    /**
+     * Configure the check to fail instead of warn on low stock.
+     */
+    public function failOnLowStock(bool $fail = true): self
+    {
+        $this->failOnLowStock = $fail;
+
+        return $this;
+    }
+
+    /**
+     * Perform the health check.
+     */
+    protected function performCheck(): Result
+    {
+        $lowStockCount = InventoryLevel::query()
+            ->where('quantity', '<=', $this->threshold)
+            ->where('quantity', '>', 0)
+            ->count();
+
+        $outOfStockCount = InventoryLevel::query()
+            ->where('quantity', '<=', 0)
+            ->count();
+
+        if ($outOfStockCount > 0) {
+            $message = "{$outOfStockCount} items are out of stock";
+
+            if ($lowStockCount > 0) {
+                $message .= ", {$lowStockCount} items have low stock";
+            }
+
+            return $this->failOnLowStock
+                ? $this->failure($message, [
+                    'out_of_stock' => $outOfStockCount,
+                    'low_stock' => $lowStockCount,
+                    'threshold' => $this->threshold,
+                ])
+                : $this->warning($message, [
+                    'out_of_stock' => $outOfStockCount,
+                    'low_stock' => $lowStockCount,
+                    'threshold' => $this->threshold,
+                ]);
+        }
+
+        if ($lowStockCount > 0) {
+            return $this->warning("{$lowStockCount} items have low stock (≤{$this->threshold})", [
+                'low_stock' => $lowStockCount,
+                'threshold' => $this->threshold,
+            ]);
+        }
+
+        return $this->success('All inventory levels are healthy', [
+            'threshold' => $this->threshold,
+        ]);
+    }
+}
