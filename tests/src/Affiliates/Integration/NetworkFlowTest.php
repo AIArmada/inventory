@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\Affiliates\Enums\AffiliateStatus;
-use AIArmada\Affiliates\Enums\RankQualificationReason;
 use AIArmada\Affiliates\Events\AffiliateRankChanged;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateConversion;
@@ -60,11 +59,12 @@ test('affiliate can be added to network without a sponsor', function (): void {
     $networkService->addToNetwork($affiliate);
 
     // Should have self-referencing entry
-    expect(AffiliateNetwork::query()
-        ->where('ancestor_id', $affiliate->id)
-        ->where('descendant_id', $affiliate->id)
-        ->where('depth', 0)
-        ->exists()
+    expect(
+        AffiliateNetwork::query()
+            ->where('ancestor_id', $affiliate->id)
+            ->where('descendant_id', $affiliate->id)
+            ->where('depth', 0)
+            ->exists()
     )->toBeTrue();
 });
 
@@ -93,11 +93,12 @@ test('affiliate can be added to network with a sponsor', function (): void {
     $networkService->addToNetwork($recruit, $sponsor);
 
     // Recruit should have sponsor as ancestor at depth 1
-    expect(AffiliateNetwork::query()
-        ->where('ancestor_id', $sponsor->id)
-        ->where('descendant_id', $recruit->id)
-        ->where('depth', 1)
-        ->exists()
+    expect(
+        AffiliateNetwork::query()
+            ->where('ancestor_id', $sponsor->id)
+            ->where('descendant_id', $recruit->id)
+            ->where('depth', 1)
+            ->exists()
     )->toBeTrue();
 
     // Sponsor's direct count should be updated
