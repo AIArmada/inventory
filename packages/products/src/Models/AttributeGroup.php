@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property bool $is_visible
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Attribute> $attributes
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Attribute> $groupAttributes
  * @property-read \Illuminate\Database\Eloquent\Collection<int, AttributeSet> $attributeSets
  */
 class AttributeGroup extends Model
@@ -58,7 +58,7 @@ class AttributeGroup extends Model
      *
      * @return BelongsToMany<Attribute, $this>
      */
-    public function attributes(): BelongsToMany
+    public function groupAttributes(): BelongsToMany
     {
         return $this->belongsToMany(
             Attribute::class,
@@ -109,7 +109,7 @@ class AttributeGroup extends Model
     {
         static::deleting(function (AttributeGroup $group): void {
             // Detach from attributes and attribute sets
-            $group->attributes()->detach();
+            $group->groupAttributes()->detach();
             $group->attributeSets()->detach();
         });
     }

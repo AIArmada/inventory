@@ -121,7 +121,7 @@ trait HasSerialNumbers
         ?int $unitCostMinor = null,
         ?Carbon $warrantyExpiresAt = null
     ): Collection {
-        $serials = collect();
+        $serials = new Collection();
 
         foreach ($serialNumbers as $serialNumber) {
             $serials->push($this->registerSerial(

@@ -45,16 +45,15 @@ final class AdjustInventory
             $level->save();
 
             $movement = InventoryMovement::create([
-                'inventoriable_type' => $model->getMorphClass(),
-                'inventoriable_id' => $model->getKey(),
-                'location_id' => $locationId,
-                'movement_type' => MovementType::Adjustment,
+                'inventoryable_type' => $model->getMorphClass(),
+                'inventoryable_id' => $model->getKey(),
+                'to_location_id' => $locationId,
+                'type' => MovementType::Adjustment->value,
                 'quantity' => $difference,
-                'previous_quantity' => $previousQuantity,
-                'new_quantity' => $newQuantity,
                 'reason' => $reason,
                 'note' => $note,
                 'user_id' => $userId,
+                'occurred_at' => now(),
             ]);
 
             Event::dispatch(new InventoryAdjusted($model, $level, $movement, $previousQuantity, $newQuantity));
@@ -69,8 +68,8 @@ final class AdjustInventory
     {
         return InventoryLevel::firstOrCreate(
             [
-                'inventoriable_type' => $model->getMorphClass(),
-                'inventoriable_id' => $model->getKey(),
+                'inventoryable_type' => $model->getMorphClass(),
+                'inventoryable_id' => $model->getKey(),
                 'location_id' => $locationId,
             ],
             [

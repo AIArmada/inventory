@@ -51,12 +51,12 @@ class LowStockCheck extends CommerceHealthCheck
     protected function performCheck(): Result
     {
         $lowStockCount = InventoryLevel::query()
-            ->where('quantity', '<=', $this->threshold)
-            ->where('quantity', '>', 0)
+            ->where('quantity_on_hand', '<=', $this->threshold)
+            ->where('quantity_on_hand', '>', 0)
             ->count();
 
         $outOfStockCount = InventoryLevel::query()
-            ->where('quantity', '<=', 0)
+            ->where('quantity_on_hand', '<=', 0)
             ->count();
 
         if ($outOfStockCount > 0) {

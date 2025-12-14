@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Actions\Conversions;
 
+use AIArmada\Affiliates\Enums\ConversionStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateBalance;
 use AIArmada\Affiliates\Models\AffiliateConversion;
@@ -28,7 +29,7 @@ final class MatureConversion
      */
     public function handle(AffiliateConversion $conversion): bool
     {
-        if ($conversion->status !== 'qualified') {
+        if ($conversion->status !== ConversionStatus::Qualified) {
             return false;
         }
 
@@ -48,7 +49,7 @@ final class MatureConversion
 
         // Update conversion status
         $conversion->update([
-            'status' => 'approved',
+            'status' => ConversionStatus::Approved,
             'metadata' => array_merge($conversion->metadata ?? [], [
                 'matured_at' => now()->toIso8601String(),
             ]),
@@ -63,6 +64,8 @@ final class MatureConversion
             'affiliate_id' => $affiliate->id,
             'available_minor' => 0,
             'holding_minor' => 0,
+            'lifetime_earnings_minor' => 0,
+            'minimum_payout_minor' => config('affiliates.payouts.minimum_amount', 5000),
             'currency' => $affiliate->currency,
         ]);
     }

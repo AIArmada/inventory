@@ -124,25 +124,27 @@ final class ProcessScheduledPayoutsCommand extends Command
         // Create payout
         DB::transaction(function () use ($affiliate, $balance): void {
             $payout = AffiliatePayout::create([
-                'affiliate_id' => $affiliate->id,
-                'amount_minor' => $balance->available_minor,
+                'reference' => 'PAY-'.mb_strtoupper(bin2hex(random_bytes(8))),
+                'owner_type' => Affiliate::class,
+                'owner_id' => $affiliate->id,
+                'total_minor' => $balance->available_minor,
                 'currency' => $balance->currency,
                 'status' => PayoutStatus::Pending->value,
                 'scheduled_at' => now(),
             ]);
 
             // Deduct from balance
-            $balance->decrement('available_minor', $payout->amount_minor);
+            $balance->decrement('available_minor', $payout->total_minor);
 
             // Link approved conversions
             $affiliate->conversions()
                 ->where('status', 'approved')
-                ->whereNull('payout_id')
-                ->update(['payout_id' => $payout->id]);
+                ->whereNull('affiliate_payout_id')
+                ->update(['affiliate_payout_id' => $payout->id]);
 
             // Create audit event
             $payout->events()->create([
-                'status' => PayoutStatus::Pending->value,
+                'to_status' => PayoutStatus::Pending->value,
                 'notes' => 'Payout created via scheduled processing',
             ]);
         });

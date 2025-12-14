@@ -56,7 +56,7 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
             $query->whereNotIn('location_id', $context->excludeLocationIds);
         }
 
-        $available = $query->sum('quantity_available');
+        $available = (int) $query->selectRaw('SUM(quantity_on_hand - quantity_reserved) as total')->value('total');
 
         return $available >= $quantity;
     }
@@ -99,9 +99,9 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
                 $originX,
                 $originY,
                 $originZ,
-                $location->coordinate_x,
-                $location->coordinate_y,
-                $location->coordinate_z
+                (float) $location->coordinate_x,
+                (float) $location->coordinate_y,
+                $location->coordinate_z !== null ? (float) $location->coordinate_z : null
             );
         })->values();
     }
@@ -114,7 +114,7 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
         $query = InventoryLevel::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
-            ->where('quantity_available', '>', 0)
+            ->whereRaw('(quantity_on_hand - quantity_reserved) > 0')
             ->with('location');
 
         if ($context->excludeLocationIds !== null) {
@@ -123,7 +123,13 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
 
         if ($context->preferLocationIds !== null) {
             $preferred = $context->preferLocationIds;
-            $query->orderByRaw('FIELD(location_id, ?) DESC', [implode(',', $preferred)]);
+            // Use CASE WHEN for cross-database compatibility (MySQL FIELD() doesn't work in SQLite)
+            $cases = [];
+            foreach ($preferred as $index => $locationId) {
+                $cases[] = "WHEN location_id = '{$locationId}' THEN {$index}";
+            }
+            $orderSql = 'CASE ' . implode(' ', $cases) . ' ELSE ' . count($preferred) . ' END';
+            $query->orderByRaw($orderSql);
         }
 
         return $query->get();
@@ -151,9 +157,9 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
                 $context->originX,
                 $context->originY,
                 $context->originZ,
-                $location->coordinate_x,
-                $location->coordinate_y,
-                $location->coordinate_z
+                (float) $location->coordinate_x,
+                (float) $location->coordinate_y,
+                $location->coordinate_z !== null ? (float) $location->coordinate_z : null
             );
         });
     }
@@ -208,9 +214,9 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
                         $context->originX,
                         $context->originY,
                         $context->originZ,
-                        $location->coordinate_x,
-                        $location->coordinate_y,
-                        $location->coordinate_z
+                        $location->coordinate_x !== null ? (float) $location->coordinate_x : null,
+                        $location->coordinate_y !== null ? (float) $location->coordinate_y : null,
+                        $location->coordinate_z !== null ? (float) $location->coordinate_z : null
                     );
                 }
 

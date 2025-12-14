@@ -100,9 +100,11 @@ class InventoryValuationSnapshot extends Model
     }
 
     /**
+     * Order by snapshot_date descending (most recent first).
+     *
      * @return \Illuminate\Database\Eloquent\Builder<static>
      */
-    public function scopeLatest(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeLatestBySnapshotDate(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->orderBy('snapshot_date', 'desc');
     }

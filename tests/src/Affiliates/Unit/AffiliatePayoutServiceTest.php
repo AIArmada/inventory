@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliatePayout;
@@ -36,10 +37,10 @@ test('payout service batches conversions into a payout', function (): void {
     $conversions = AffiliateConversion::all();
 
     $payout = app(AffiliatePayoutService::class)->createPayout($conversions->pluck('id')->all(), [
-        'status' => 'queued',
+        'status' => PayoutStatus::Pending,
     ]);
 
-    expect($payout->status)->toBe('queued')
+    expect($payout->status)->toBe(PayoutStatus::Pending)
         ->and($payout->conversion_count)->toBe(2)
         ->and($payout->total_minor)->toBe(30);
 
@@ -81,18 +82,18 @@ test('multi level payouts create upline conversions', function (): void {
         ->and($upline->commission_minor)->toBe(5);
 });
 
-test('AffiliatePayoutService updates payout status to paid sets paid_at', function (): void {
+test('AffiliatePayoutService updates payout status to completed sets paid_at', function (): void {
     $payout = AffiliatePayout::create([
         'reference' => 'PAY123',
-        'status' => 'pending',
+        'status' => PayoutStatus::Pending,
         'total_minor' => 1000,
         'conversion_count' => 1,
         'currency' => 'USD',
     ]);
 
     $service = app(AffiliatePayoutService::class);
-    $updated = $service->updateStatus($payout, 'paid');
+    $updated = $service->updateStatus($payout, PayoutStatus::Completed->value);
 
-    expect($updated->status)->toBe('paid');
+    expect($updated->status)->toBe(PayoutStatus::Completed);
     expect($updated->paid_at)->not->toBeNull();
 });

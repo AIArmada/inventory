@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Actions\Payouts;
 
+use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use Illuminate\Support\Collection;
@@ -37,9 +38,15 @@ final class CreatePayout
             $currency = $attributes['currency'] ?? config('affiliates.payouts.currency', 'USD');
             $reference = $attributes['reference'] ?? $this->generateReference();
 
+            // Handle status - accept either enum or string
+            $status = $attributes['status'] ?? PayoutStatus::Pending;
+            if (is_string($status)) {
+                $status = PayoutStatus::tryFrom($status) ?? PayoutStatus::Pending;
+            }
+
             $payout = AffiliatePayout::create([
                 'reference' => $reference,
-                'status' => $attributes['status'] ?? 'pending',
+                'status' => $status,
                 'total_minor' => $total,
                 'conversion_count' => $conversions->count(),
                 'currency' => $currency,

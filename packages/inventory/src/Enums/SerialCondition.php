@@ -20,9 +20,12 @@ enum SerialCondition: string
      */
     public static function options(): array
     {
-        return collect(self::cases())
-            ->mapWithKeys(fn (self $condition): array => [$condition->value => $condition->label()])
-            ->toArray();
+        $options = [];
+        foreach (self::cases() as $condition) {
+            $options[$condition->value] = $condition->label();
+        }
+
+        return $options;
     }
 
     /**

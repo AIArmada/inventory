@@ -9,6 +9,7 @@ use AIArmada\Products\Enums\ProductType;
 use AIArmada\Products\Enums\ProductVisibility;
 use AIArmada\Products\Models\Product;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -25,7 +26,7 @@ class ProductFactory extends Factory
     {
         $name = $this->faker->unique()->words(3, true);
 
-        return [
+        $data = [
             'name' => ucwords($name),
             'slug' => Str::slug($name),
             'short_description' => $this->faker->sentence(),
@@ -39,14 +40,24 @@ class ProductFactory extends Factory
             'sku' => mb_strtoupper(Str::random(8)),
             'barcode' => $this->faker->optional()->ean13(),
             'is_featured' => $this->faker->boolean(20),
-            'is_digital' => false,
             'weight' => $this->faker->optional()->randomFloat(2, 0.1, 50),
-            'length' => $this->faker->optional()->randomFloat(2, 1, 100),
-            'width' => $this->faker->optional()->randomFloat(2, 1, 100),
-            'height' => $this->faker->optional()->randomFloat(2, 1, 100),
             'meta_title' => null,
             'meta_description' => null,
         ];
+
+        // Only include dimension columns if they exist in the table
+        $tableColumns = Schema::getColumnListing('products');
+        if (in_array('length', $tableColumns)) {
+            $data['length'] = $this->faker->optional()->randomFloat(2, 1, 100);
+        }
+        if (in_array('width', $tableColumns)) {
+            $data['width'] = $this->faker->optional()->randomFloat(2, 1, 100);
+        }
+        if (in_array('height', $tableColumns)) {
+            $data['height'] = $this->faker->optional()->randomFloat(2, 1, 100);
+        }
+
+        return $data;
     }
 
     /**
@@ -86,7 +97,7 @@ class ProductFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => ProductType::Digital,
-            'is_digital' => true,
+            'requires_shipping' => false,
             'weight' => null,
             'length' => null,
             'width' => null,

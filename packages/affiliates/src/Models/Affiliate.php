@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 use function class_exists;
 
@@ -115,11 +116,11 @@ final class Affiliate extends Model
     }
 
     /**
-     * @return HasMany<AffiliatePayout, self>
+     * @return MorphMany<AffiliatePayout, self>
      */
-    public function payouts(): HasMany
+    public function payouts(): MorphMany
     {
-        return $this->hasMany(AffiliatePayout::class);
+        return $this->morphMany(AffiliatePayout::class, 'owner');
     }
 
     /**
@@ -139,7 +140,7 @@ final class Affiliate extends Model
             AffiliateProgram::class,
             config('affiliates.table_names.program_memberships', 'affiliate_program_memberships'),
             'affiliate_id',
-            'affiliate_program_id'
+            'program_id'
         );
     }
 

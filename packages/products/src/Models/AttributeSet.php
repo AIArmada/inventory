@@ -82,11 +82,11 @@ class AttributeSet extends Model
      */
     public function getGroupedAttributes(): \Illuminate\Support\Collection
     {
-        $this->loadMissing(['groups.attributes', 'setAttributes']);
+        $this->loadMissing(['groups.groupAttributes', 'setAttributes']);
 
         return $this->groups->map(fn (AttributeGroup $group) => [
             'group' => $group,
-            'attributes' => $group->attributes->filter(
+            'attributes' => $group->groupAttributes->filter(
                 fn (Attribute $attr) => $this->setAttributes->contains('id', $attr->id)
             ),
         ]);

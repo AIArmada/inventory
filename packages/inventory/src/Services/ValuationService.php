@@ -148,7 +148,7 @@ final class ValuationService
     {
         $query = InventoryValuationSnapshot::query()
             ->usingMethod($method)
-            ->latest();
+            ->latestBySnapshotDate();
 
         if ($locationId !== null) {
             $query->forLocation($locationId);
@@ -248,7 +248,7 @@ final class ValuationService
     public function createDailySnapshots(CostingMethod $method): Collection
     {
         return DB::transaction(function () use ($method): Collection {
-            $snapshots = collect();
+            $snapshots = new Collection;
 
             $snapshots->push($this->createSnapshot($method));
 

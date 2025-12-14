@@ -42,8 +42,8 @@ final class TransferInventory
     ): array {
         return DB::transaction(function () use ($model, $fromLocationId, $toLocationId, $quantity, $note, $userId): array {
             // Lock source location
-            $fromLevel = InventoryLevel::where('inventoriable_type', $model->getMorphClass())
-                ->where('inventoriable_id', $model->getKey())
+            $fromLevel = InventoryLevel::where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
                 ->where('location_id', $fromLocationId)
                 ->lockForUpdate()
                 ->first();
@@ -74,30 +74,27 @@ final class TransferInventory
 
             // Create movements
             $fromMovement = InventoryMovement::create([
-                'inventoriable_type' => $model->getMorphClass(),
-                'inventoriable_id' => $model->getKey(),
-                'location_id' => $fromLocationId,
-                'movement_type' => MovementType::Transfer,
+                'inventoryable_type' => $model->getMorphClass(),
+                'inventoryable_id' => $model->getKey(),
+                'from_location_id' => $fromLocationId,
+                'to_location_id' => $toLocationId,
+                'type' => MovementType::Transfer->value,
                 'quantity' => -$quantity,
-                'previous_quantity' => $fromPrevious,
-                'new_quantity' => $fromLevel->quantity_on_hand,
                 'note' => $note,
                 'user_id' => $userId,
-                'related_location_id' => $toLocationId,
+                'occurred_at' => now(),
             ]);
 
             $toMovement = InventoryMovement::create([
-                'inventoriable_type' => $model->getMorphClass(),
-                'inventoriable_id' => $model->getKey(),
-                'location_id' => $toLocationId,
-                'movement_type' => MovementType::Transfer,
+                'inventoryable_type' => $model->getMorphClass(),
+                'inventoryable_id' => $model->getKey(),
+                'from_location_id' => $fromLocationId,
+                'to_location_id' => $toLocationId,
+                'type' => MovementType::Transfer->value,
                 'quantity' => $quantity,
-                'previous_quantity' => $toPrevious,
-                'new_quantity' => $toLevel->quantity_on_hand,
                 'note' => $note,
                 'user_id' => $userId,
-                'related_location_id' => $fromLocationId,
-                'related_movement_id' => $fromMovement->id,
+                'occurred_at' => now(),
             ]);
 
             Event::dispatch(new InventoryTransferred($model, $fromLevel, $toLevel, $fromMovement));
@@ -113,8 +110,8 @@ final class TransferInventory
     {
         return InventoryLevel::firstOrCreate(
             [
-                'inventoriable_type' => $model->getMorphClass(),
-                'inventoriable_id' => $model->getKey(),
+                'inventoryable_type' => $model->getMorphClass(),
+                'inventoryable_id' => $model->getKey(),
                 'location_id' => $locationId,
             ],
             [

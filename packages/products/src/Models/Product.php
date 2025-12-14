@@ -90,6 +90,10 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
         'price' => 'integer',
         'compare_price' => 'integer',
         'cost' => 'integer',
+        'weight' => 'decimal:2',
+        'length' => 'decimal:2',
+        'width' => 'decimal:2',
+        'height' => 'decimal:2',
         'is_featured' => 'boolean',
         'is_taxable' => 'boolean',
         'requires_shipping' => 'boolean',
@@ -459,7 +463,7 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
 
     public function getBuyableWeight(): ?float
     {
-        return $this->weight;
+        return $this->weight !== null ? (float) $this->weight : null;
     }
 
     public function isBuyable(): bool

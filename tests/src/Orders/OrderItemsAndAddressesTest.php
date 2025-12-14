@@ -99,6 +99,127 @@ describe('OrderItem Model', function (): void {
 
             expect($item->metadata)->toBe($metadata);
         });
+
+        it('can format unit price', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ITEM5-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 10000,
+                'grand_total' => 10000,
+            ]);
+
+            $item = OrderItem::create([
+                'order_id' => $order->id,
+                'name' => 'Formatted Product',
+                'quantity' => 1,
+                'unit_price' => 10000,
+                'currency' => 'MYR',
+            ]);
+
+            expect($item->getFormattedUnitPrice())->toBe('RM100.00');
+        });
+
+        it('can format total', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ITEM6-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 5000,
+                'grand_total' => 5000,
+            ]);
+
+            $item = OrderItem::create([
+                'order_id' => $order->id,
+                'name' => 'Total Product',
+                'quantity' => 1,
+                'unit_price' => 5000,
+                'currency' => 'USD',
+            ]);
+
+            expect($item->getFormattedTotal())->toBe('$50.00');
+        });
+
+        it('can format with unknown currency', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ITEM7-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 5000,
+                'grand_total' => 5000,
+            ]);
+
+            $item = OrderItem::create([
+                'order_id' => $order->id,
+                'name' => 'Unknown Currency Product',
+                'quantity' => 1,
+                'unit_price' => 5000,
+                'currency' => 'XYZ',
+            ]);
+
+            expect($item->getFormattedTotal())->toBe('XYZ 50.00');
+        });
+
+        it('can format with EUR currency', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ITEM8-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 5000,
+                'grand_total' => 5000,
+            ]);
+
+            $item = OrderItem::create([
+                'order_id' => $order->id,
+                'name' => 'EUR Product',
+                'quantity' => 1,
+                'unit_price' => 5000,
+                'currency' => 'EUR',
+            ]);
+
+            expect($item->getFormattedTotal())->toBe('€50.00');
+        });
+
+        it('can format with GBP currency', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ITEM9-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 5000,
+                'grand_total' => 5000,
+            ]);
+
+            $item = OrderItem::create([
+                'order_id' => $order->id,
+                'name' => 'GBP Product',
+                'quantity' => 1,
+                'unit_price' => 5000,
+                'currency' => 'GBP',
+            ]);
+
+            expect($item->getFormattedTotal())->toBe('£50.00');
+        });
+
+        it('can calculate total correctly', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ITEM7-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 9000,
+                'grand_total' => 9000,
+            ]);
+
+            $item = new OrderItem([
+                'order_id' => $order->id,
+                'name' => 'Calc Product',
+                'quantity' => 2,
+                'unit_price' => 5000, // 10000 subtotal
+                'discount_amount' => 1000, // 9000 after discount
+                'tax_amount' => 1000, // 10000 final total
+            ]);
+
+            expect($item->calculateTotal())->toBe(10000); // (2*5000) - 1000 + 1000
+        });
     });
 });
 
@@ -213,6 +334,152 @@ describe('OrderAddress Model', function (): void {
             ]);
 
             expect($address->getFullName())->toBe('John Doe');
+        });
+    });
+
+    describe('OrderAddress Type Helpers', function (): void {
+        it('can check if address is billing', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ADDR5-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 5000,
+                'grand_total' => 5000,
+            ]);
+
+            $billing = OrderAddress::create([
+                'order_id' => $order->id,
+                'type' => 'billing',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'line1' => 'Bill Street',
+                'city' => 'KL',
+                'postcode' => '50000',
+                'country_code' => 'MY',
+            ]);
+
+            $shipping = OrderAddress::create([
+                'order_id' => $order->id,
+                'type' => 'shipping',
+                'first_name' => 'Jane',
+                'last_name' => 'Doe',
+                'line1' => 'Ship Street',
+                'city' => 'KL',
+                'postcode' => '50000',
+                'country_code' => 'MY',
+            ]);
+
+            expect($billing->isBilling())->toBeTrue()
+                ->and($billing->isShipping())->toBeFalse()
+                ->and($shipping->isBilling())->toBeFalse()
+                ->and($shipping->isShipping())->toBeTrue();
+        });
+    });
+
+    describe('OrderAddress Formatting', function (): void {
+        it('can format address as one line', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ADDR6-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 5000,
+                'grand_total' => 5000,
+            ]);
+
+            $address = OrderAddress::create([
+                'order_id' => $order->id,
+                'type' => 'shipping',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'line1' => '123 Main Street',
+                'line2' => 'Floor 5',
+                'city' => 'Kuala Lumpur',
+                'state' => 'KL',
+                'postcode' => '50000',
+                'country_code' => 'MY',
+            ]);
+
+            $oneLine = $address->getOneLine();
+            expect($oneLine)->toContain('123 Main Street')
+                ->and($oneLine)->toContain('Floor 5')
+                ->and($oneLine)->toContain('Kuala Lumpur')
+                ->and($oneLine)->toContain('KL')
+                ->and($oneLine)->toContain('50000')
+                ->and($oneLine)->toContain('MY');
+        });
+
+        it('can format address as multi-line', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ADDR7-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 5000,
+                'grand_total' => 5000,
+            ]);
+
+            $address = OrderAddress::create([
+                'order_id' => $order->id,
+                'type' => 'shipping',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'company' => 'ACME Corp',
+                'line1' => '123 Main Street',
+                'line2' => 'Floor 5',
+                'city' => 'Kuala Lumpur',
+                'state' => 'KL',
+                'postcode' => '50000',
+                'country_code' => 'MY',
+            ]);
+
+            $formatted = $address->getFormatted();
+            $lines = explode("\n", $formatted);
+
+            expect($lines)->toHaveCount(6)
+                ->and($lines[0])->toBe('John Doe')
+                ->and($lines[1])->toBe('ACME Corp')
+                ->and($lines[2])->toBe('123 Main Street')
+                ->and($lines[3])->toBe('Floor 5')
+                ->and($lines[4])->toContain('Kuala Lumpur')
+                ->and($lines[5])->toBe('MY');
+        });
+
+        it('can convert to address array', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-ADDR8-' . uniqid(),
+                'status' => Created::class,
+                'currency' => 'MYR',
+                'subtotal' => 5000,
+                'grand_total' => 5000,
+            ]);
+
+            $address = OrderAddress::create([
+                'order_id' => $order->id,
+                'type' => 'shipping',
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'company' => 'ACME Corp',
+                'line1' => '123 Main Street',
+                'line2' => 'Floor 5',
+                'city' => 'Kuala Lumpur',
+                'state' => 'KL',
+                'postcode' => '50000',
+                'country_code' => 'MY',
+                'phone' => '0123456789',
+                'email' => 'john@example.com',
+            ]);
+
+            $array = $address->toAddressArray();
+
+            expect($array)->toHaveKey('name', 'John Doe')
+                ->and($array)->toHaveKey('company', 'ACME Corp')
+                ->and($array)->toHaveKey('line1', '123 Main Street')
+                ->and($array)->toHaveKey('line2', 'Floor 5')
+                ->and($array)->toHaveKey('city', 'Kuala Lumpur')
+                ->and($array)->toHaveKey('state', 'KL')
+                ->and($array)->toHaveKey('postcode', '50000')
+                ->and($array)->toHaveKey('country_code', 'MY')
+                ->and($array)->toHaveKey('phone', '0123456789')
+                ->and($array)->toHaveKey('email', 'john@example.com');
         });
     });
 });

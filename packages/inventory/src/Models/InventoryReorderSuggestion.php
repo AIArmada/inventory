@@ -130,7 +130,7 @@ class InventoryReorderSuggestion extends Model
      */
     public function scopeByUrgency(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->orderByRaw("FIELD(urgency, 'critical', 'high', 'normal', 'low')");
+        return $query->orderByRaw("CASE urgency WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 WHEN 'low' THEN 4 ELSE 5 END");
     }
 
     /**

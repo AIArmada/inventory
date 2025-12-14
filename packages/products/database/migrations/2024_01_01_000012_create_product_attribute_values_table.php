@@ -31,7 +31,6 @@ return new class extends Migration
             $table->unique(['attribute_id', 'attributable_type', 'attributable_id', 'locale'], 'attr_val_unique');
 
             $table->index('attribute_id');
-            $table->index(['attributable_type', 'attributable_id']);
         });
     }
 

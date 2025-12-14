@@ -252,7 +252,8 @@ final class BackorderService
                 $query->where('location_id', $backorder->location_id);
             }
 
-            $available = $query->sum('quantity_available');
+            // quantity_available is computed as (quantity_on_hand - quantity_reserved)
+            $available = (int) $query->sum(DB::raw('quantity_on_hand - quantity_reserved'));
 
             return $available >= $backorder->quantityRemaining();
         });

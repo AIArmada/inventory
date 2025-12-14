@@ -41,9 +41,12 @@ enum AlertStatus: string
      */
     public static function options(): array
     {
-        return collect(self::cases())
-            ->mapWithKeys(fn (self $status): array => [$status->value => $status->label()])
-            ->toArray();
+        $options = [];
+        foreach (self::cases() as $status) {
+            $options[$status->value] = $status->label();
+        }
+
+        return $options;
     }
 
     /**

@@ -20,9 +20,12 @@ enum TemperatureZone: string
      */
     public static function options(): array
     {
-        return collect(self::cases())
-            ->mapWithKeys(fn (self $zone): array => [$zone->value => $zone->label()])
-            ->toArray();
+        $options = [];
+        foreach (self::cases() as $zone) {
+            $options[$zone->value] = $zone->label();
+        }
+
+        return $options;
     }
 
     /**

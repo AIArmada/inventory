@@ -9,6 +9,7 @@ providers:
   - AIArmada\Docs\DocsServiceProvider
   - AIArmada\Jnt\JntServiceProvider
   - AIArmada\Inventory\InventoryServiceProvider
+  - AIArmada\Products\ProductsServiceProvider
   - AIArmada\Vouchers\VoucherServiceProvider
   - AIArmada\FilamentCart\FilamentCartServiceProvider
   - AIArmada\FilamentChip\FilamentChipServiceProvider
@@ -29,6 +30,7 @@ migrations:
   - packages/docs/database/migrations
   - packages/jnt/database/migrations
   - packages/inventory/database/migrations
+  - packages/products/database/migrations
   - packages/vouchers/database/migrations
 
 workbench:

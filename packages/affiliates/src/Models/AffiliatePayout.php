@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Models;
 
+use AIArmada\Affiliates\Enums\PayoutStatus;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 /**
  * @property string $id
  * @property string $reference
- * @property string $status
+ * @property PayoutStatus $status
  * @property int $total_minor
  * @property int $conversion_count
  * @property string $currency
@@ -50,6 +51,7 @@ class AffiliatePayout extends Model
     ];
 
     protected $casts = [
+        'status' => PayoutStatus::class,
         'metadata' => 'array',
         'scheduled_at' => 'datetime',
         'paid_at' => 'datetime',

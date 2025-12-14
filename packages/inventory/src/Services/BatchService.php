@@ -131,8 +131,7 @@ final class BatchService
             $query->atLocation($locationId);
         }
 
-        return (int) $query->selectRaw('SUM(quantity_on_hand - quantity_reserved) as available')
-            ->value('available');
+        return (int) $query->sum(DB::raw('quantity_on_hand - quantity_reserved'));
     }
 
     /**

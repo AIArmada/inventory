@@ -28,7 +28,7 @@ final class ManualPayoutProcessor implements PayoutProcessorInterface
 
     public function getStatus(AffiliatePayout $payout): string
     {
-        return $payout->status;
+        return $payout->status->value;
     }
 
     public function cancel(AffiliatePayout $payout): bool

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Actions\Payouts;
 
+use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\Affiliates\Models\AffiliatePayoutEvent;
 use AIArmada\Affiliates\Support\Webhooks\WebhookDispatcher;
@@ -34,10 +35,11 @@ final class UpdatePayoutStatus
     ): AffiliatePayout {
         return DB::transaction(function () use ($payout, $status, $notes, $metadata): AffiliatePayout {
             $from = $payout->status;
+            $newStatus = PayoutStatus::tryFrom($status) ?? PayoutStatus::Pending;
 
-            $payout->status = $status;
+            $payout->status = $newStatus;
 
-            if ($status === 'paid' && $payout->paid_at === null) {
+            if ($newStatus === PayoutStatus::Completed && $payout->paid_at === null) {
                 $payout->paid_at = now();
             }
 
@@ -45,8 +47,8 @@ final class UpdatePayoutStatus
 
             AffiliatePayoutEvent::create([
                 'affiliate_payout_id' => $payout->getKey(),
-                'from_status' => $from,
-                'to_status' => $status,
+                'from_status' => $from?->value,
+                'to_status' => $newStatus->value,
                 'metadata' => $metadata ?: null,
                 'notes' => $notes,
             ]);
@@ -56,7 +58,7 @@ final class UpdatePayoutStatus
             $this->webhooks->dispatch('payout', [
                 'id' => $fresh->getKey(),
                 'reference' => $fresh->reference,
-                'status' => $fresh->status,
+                'status' => $fresh->status->value,
                 'total_minor' => $fresh->total_minor,
                 'currency' => $fresh->currency,
             ]);

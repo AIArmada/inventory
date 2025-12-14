@@ -40,8 +40,8 @@ final class ShipInventory
         ?string $userId = null
     ): InventoryMovement {
         return DB::transaction(function () use ($model, $locationId, $quantity, $reason, $reference, $note, $userId): InventoryMovement {
-            $level = InventoryLevel::where('inventoriable_type', $model->getMorphClass())
-                ->where('inventoriable_id', $model->getKey())
+            $level = InventoryLevel::where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
                 ->where('location_id', $locationId)
                 ->lockForUpdate()
                 ->first();
@@ -62,17 +62,16 @@ final class ShipInventory
             $level->save();
 
             $movement = InventoryMovement::create([
-                'inventoriable_type' => $model->getMorphClass(),
-                'inventoriable_id' => $model->getKey(),
-                'location_id' => $locationId,
-                'movement_type' => MovementType::Shipment,
+                'inventoryable_type' => $model->getMorphClass(),
+                'inventoryable_id' => $model->getKey(),
+                'from_location_id' => $locationId,
+                'type' => MovementType::Shipment->value,
                 'quantity' => -$quantity,
-                'previous_quantity' => $previousQuantity,
-                'new_quantity' => $level->quantity_on_hand,
                 'reason' => $reason,
                 'reference' => $reference,
                 'note' => $note,
                 'user_id' => $userId,
+                'occurred_at' => now(),
             ]);
 
             Event::dispatch(new InventoryShipped($model, $level, $movement));

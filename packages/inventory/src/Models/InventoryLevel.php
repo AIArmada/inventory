@@ -131,6 +131,14 @@ final class InventoryLevel extends Model
     }
 
     /**
+     * Alias for available (for compatibility).
+     */
+    public function getQuantityAvailableAttribute(): int
+    {
+        return $this->available;
+    }
+
+    /**
      * Get the available quantity (explicit method for Filament compatibility).
      */
     public function getAvailableQuantity(): int

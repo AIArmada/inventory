@@ -108,6 +108,7 @@ abstract class TestCase extends Orchestra
             AffiliatesServiceProvider::class,
             FilamentAffiliatesServiceProvider::class,
             \AIArmada\Shipping\ShippingServiceProvider::class,
+            \AIArmada\Products\ProductsServiceProvider::class,
             FilamentShippingServiceProvider::class,
             FilamentCashierServiceProvider::class,
             TestPanelProvider::class,
@@ -277,6 +278,10 @@ abstract class TestCase extends Orchestra
         $app['config']->set('filament-authz.guards', ['web', 'admin']);
         $app['config']->set('filament-authz.super_admin_role', 'Super Admin');
 
+        // Configure Spatie Media Library for testing
+        $app['config']->set('media-library.media_model', \Spatie\MediaLibrary\MediaCollections\Models\Media::class);
+        $app['config']->set('media-library.disk_name', 'public');
+
         // Configure auth to use our test User model
         $app['config']->set('auth.providers.users.model', Fixtures\Models\User::class);
     }
@@ -292,6 +297,27 @@ abstract class TestCase extends Orchestra
 
     protected function setUpDatabase(): void
     {
+        // Media table for Spatie Media Library
+        Schema::dropIfExists('media');
+        Schema::create('media', function (Blueprint $table): void {
+            $table->id();
+            $table->morphs('model');
+            $table->uuid()->nullable()->unique();
+            $table->string('collection_name');
+            $table->string('name');
+            $table->string('file_name');
+            $table->string('mime_type')->nullable();
+            $table->string('disk');
+            $table->string('conversions_disk')->nullable();
+            $table->unsignedBigInteger('size');
+            $table->json('manipulations');
+            $table->json('custom_properties');
+            $table->json('generated_conversions');
+            $table->json('responsive_images');
+            $table->unsignedInteger('order_column')->nullable()->index();
+            $table->nullableTimestamps();
+        });
+
         // Users table for permission tests
         Schema::dropIfExists('users');
         Schema::create('users', function (Blueprint $table): void {
@@ -439,6 +465,13 @@ abstract class TestCase extends Orchestra
         // =========================================================================
         // PRODUCTS PACKAGE TABLES
         // =========================================================================
+        Schema::dropIfExists('product_attribute_group_attribute_set');
+        Schema::dropIfExists('product_attribute_attribute_set');
+        Schema::dropIfExists('product_attribute_attribute_group');
+        Schema::dropIfExists('product_attribute_values');
+        Schema::dropIfExists('product_attributes');
+        Schema::dropIfExists('product_attribute_sets');
+        Schema::dropIfExists('product_attribute_groups');
         Schema::dropIfExists('collection_product');
         Schema::dropIfExists('category_product');
         Schema::dropIfExists('product_variant_options');
@@ -451,33 +484,34 @@ abstract class TestCase extends Orchestra
 
         Schema::create('products', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->text('short_description')->nullable();
-            $table->string('sku')->nullable()->index();
+            $table->string('sku')->nullable()->unique();
             $table->string('barcode')->nullable();
-            $table->string('type')->default('physical');
+            $table->string('type')->default('simple');
             $table->string('status')->default('draft');
-            $table->integer('price')->default(0);
-            $table->integer('cost')->nullable();
-            $table->integer('compare_price')->nullable();
-            $table->string('currency')->default('MYR');
-
-            $table->string('visibility')->default('visible');
-            $table->boolean('is_visible')->default(true);
+            $table->string('visibility')->default('catalog_search');
+            $table->unsignedBigInteger('price')->default(0);
+            $table->unsignedBigInteger('compare_price')->nullable();
+            $table->unsignedBigInteger('cost')->nullable();
+            $table->string('currency', 3)->default('MYR');
+            $table->decimal('weight', 10, 2)->nullable();
+            $table->decimal('length', 10, 2)->nullable();
+            $table->decimal('width', 10, 2)->nullable();
+            $table->decimal('height', 10, 2)->nullable();
+            $table->string('weight_unit', 10)->default('kg');
+            $table->string('dimension_unit', 10)->default('cm');
             $table->boolean('is_featured')->default(false);
             $table->boolean('is_taxable')->default(true);
-            $table->boolean('is_digital')->default(false);
             $table->boolean('requires_shipping')->default(true);
-            $table->integer('weight')->nullable();
-            $table->string('weight_unit')->nullable();
-            $table->integer('stock_quantity')->default(0);
-            $table->boolean('track_inventory')->default(false);
+            $table->string('meta_title')->nullable();
+            $table->text('meta_description')->nullable();
             $table->string('tax_class')->nullable();
-            $table->string('vendor')->nullable();
-            $table->nullableUuidMorphs('owner');
             $table->json('metadata')->nullable();
+            $table->timestamp('published_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -498,15 +532,20 @@ abstract class TestCase extends Orchestra
 
         Schema::create('product_collections', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->string('type')->default('manual');
-            $table->json('rules')->nullable();
+            $table->json('conditions')->nullable();
+            $table->unsignedInteger('position')->default(0);
             $table->boolean('is_visible')->default(true);
+            $table->boolean('is_featured')->default(false);
             $table->timestamp('published_at')->nullable();
             $table->timestamp('unpublished_at')->nullable();
-            $table->nullableUuidMorphs('owner');
+            $table->string('meta_title')->nullable();
+            $table->text('meta_description')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });
@@ -524,23 +563,29 @@ abstract class TestCase extends Orchestra
             $table->uuid('id')->primary();
             $table->uuid('option_id');
             $table->string('name');
-            $table->integer('position')->default(0);
+            $table->unsignedInteger('position')->default(0);
+            $table->string('swatch_color', 7)->nullable();
+            $table->string('swatch_image')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
 
         Schema::create('product_variants', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('product_id');
-            $table->string('name');
+            $table->string('name')->nullable();
             $table->string('sku')->nullable()->index();
             $table->string('barcode')->nullable();
-            $table->integer('price')->default(0);
-            $table->integer('cost')->nullable();
-            $table->integer('compare_price')->nullable();
+            $table->unsignedBigInteger('price')->nullable();
+            $table->unsignedBigInteger('cost')->nullable();
+            $table->unsignedBigInteger('compare_price')->nullable();
             $table->integer('stock_quantity')->default(0);
             $table->boolean('is_enabled')->default(true);
             $table->boolean('is_default')->default(false);
-            $table->integer('weight')->nullable();
+            $table->decimal('weight', 10, 2)->nullable();
+            $table->decimal('length', 10, 2)->nullable();
+            $table->decimal('width', 10, 2)->nullable();
+            $table->decimal('height', 10, 2)->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
             $table->softDeletes();
@@ -550,6 +595,7 @@ abstract class TestCase extends Orchestra
             $table->uuid('category_id');
             $table->uuid('product_id');
             $table->integer('position')->default(0);
+            $table->timestamps();
             $table->primary(['category_id', 'product_id']);
         });
 
@@ -557,7 +603,98 @@ abstract class TestCase extends Orchestra
             $table->uuid('collection_id');
             $table->uuid('product_id');
             $table->integer('position')->default(0);
+            $table->timestamps();
             $table->primary(['collection_id', 'product_id']);
+        });
+
+        Schema::create('product_variant_options', function (Blueprint $table): void {
+            $table->uuid('variant_id');
+            $table->uuid('option_value_id');
+            $table->primary(['variant_id', 'option_value_id']);
+        });
+
+        // Attribute tables
+        Schema::create('product_attribute_groups', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
+            $table->string('name');
+            $table->string('code')->unique();
+            $table->text('description')->nullable();
+            $table->unsignedInteger('position')->default(0);
+            $table->boolean('is_visible')->default(true);
+            $table->timestamps();
+        });
+
+        Schema::create('product_attributes', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
+            $table->string('code')->unique();
+            $table->string('name');
+            $table->text('description')->nullable();
+            $table->string('type')->default('text');
+            $table->json('validation')->nullable();
+            $table->json('options')->nullable();
+            $table->boolean('is_required')->default(false);
+            $table->boolean('is_filterable')->default(false);
+            $table->boolean('is_searchable')->default(false);
+            $table->boolean('is_comparable')->default(false);
+            $table->boolean('is_visible_on_front')->default(true);
+            $table->boolean('is_visible_on_admin')->default(true);
+            $table->unsignedInteger('position')->default(0);
+            $table->string('suffix')->nullable();
+            $table->string('placeholder')->nullable();
+            $table->string('help_text')->nullable();
+            $table->text('default_value')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('product_attribute_values', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('attribute_id');
+            $table->uuidMorphs('attributable');
+            $table->text('value')->nullable();
+            $table->string('locale', 10)->nullable();
+            $table->timestamps();
+            $table->unique(['attribute_id', 'attributable_type', 'attributable_id', 'locale'], 'attr_val_unique');
+        });
+
+        Schema::create('product_attribute_sets', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
+            $table->string('name');
+            $table->string('code')->unique();
+            $table->text('description')->nullable();
+            $table->boolean('is_default')->default(false);
+            $table->unsignedInteger('position')->default(0);
+            $table->timestamps();
+        });
+
+        // Attribute pivot tables
+        Schema::create('product_attribute_attribute_group', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->uuid('attribute_id');
+            $table->uuid('attribute_group_id');
+            $table->integer('position')->default(0);
+            $table->timestamps();
+            $table->unique(['attribute_id', 'attribute_group_id']);
+        });
+
+        Schema::create('product_attribute_attribute_set', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->uuid('attribute_id');
+            $table->uuid('attribute_set_id');
+            $table->integer('position')->default(0);
+            $table->timestamps();
+            $table->unique(['attribute_id', 'attribute_set_id']);
+        });
+
+        Schema::create('product_attribute_group_attribute_set', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->uuid('attribute_group_id');
+            $table->uuid('attribute_set_id');
+            $table->integer('position')->default(0);
+            $table->timestamps();
+            $table->unique(['attribute_group_id', 'attribute_set_id'], 'group_set_unique');
         });
 
         // =========================================================================
@@ -716,21 +853,27 @@ abstract class TestCase extends Orchestra
         Schema::create('orders', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('order_number')->unique();
-            $table->string('status')->default('pending');
-            $table->string('currency')->default('MYR');
+            $table->string('status', 50)->default('created')->index();
             $table->nullableUuidMorphs('customer');
-            $table->integer('subtotal')->default(0);
-            $table->integer('discount_total')->default(0);
-            $table->integer('shipping_total')->default(0);
-            $table->integer('tax_total')->default(0);
-            $table->integer('grand_total')->default(0);
-            $table->string('payment_status')->nullable();
-            $table->string('fulfillment_status')->nullable();
-            $table->text('notes')->nullable();
             $table->nullableUuidMorphs('owner');
+            $table->unsignedBigInteger('subtotal')->default(0);
+            $table->unsignedBigInteger('discount_total')->default(0);
+            $table->unsignedBigInteger('shipping_total')->default(0);
+            $table->unsignedBigInteger('tax_total')->default(0);
+            $table->unsignedBigInteger('grand_total')->default(0);
+            $table->string('currency', 3)->default('MYR');
+            $table->text('notes')->nullable();
+            $table->text('internal_notes')->nullable();
             $table->json('metadata')->nullable();
+            $table->timestamp('paid_at')->nullable()->index();
+            $table->timestamp('shipped_at')->nullable();
+            $table->timestamp('delivered_at')->nullable();
+            $table->timestamp('canceled_at')->nullable();
+            $table->string('cancellation_reason')->nullable();
             $table->timestamps();
             $table->softDeletes();
+            $table->index(['status', 'created_at']);
+            $table->index(['customer_type', 'customer_id', 'status']);
         });
 
         Schema::create('order_items', function (Blueprint $table): void {
@@ -802,9 +945,12 @@ abstract class TestCase extends Orchestra
         Schema::create('order_notes', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('order_id');
+            $table->foreignUuid('user_id')->nullable();
             $table->text('content');
-            $table->boolean('is_internal')->default(true);
+            $table->boolean('is_customer_visible')->default(false);
             $table->timestamps();
+            $table->index(['order_id', 'created_at']);
+            $table->index(['order_id', 'is_customer_visible']);
         });
 
         // =========================================================================

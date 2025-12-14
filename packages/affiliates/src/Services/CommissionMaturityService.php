@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Services;
 
+use AIArmada\Affiliates\Enums\ConversionStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateBalance;
 use AIArmada\Affiliates\Models\AffiliateConversion;
@@ -32,7 +33,7 @@ final class CommissionMaturityService
         $matured = 0;
 
         $conversions = AffiliateConversion::query()
-            ->where('status', 'qualified')
+            ->where('status', ConversionStatus::Qualified)
             ->where('occurred_at', '<=', now()->subDays($this->maturityDays))
             ->with('affiliate')
             ->get();
@@ -51,7 +52,7 @@ final class CommissionMaturityService
      */
     public function matureConversion(AffiliateConversion $conversion): bool
     {
-        if ($conversion->status !== 'qualified') {
+        if ($conversion->status !== ConversionStatus::Qualified) {
             return false;
         }
 
@@ -71,7 +72,7 @@ final class CommissionMaturityService
 
         // Update conversion status
         $conversion->update([
-            'status' => 'approved',
+            'status' => ConversionStatus::Approved,
             'metadata' => array_merge($conversion->metadata ?? [], [
                 'matured_at' => now()->toIso8601String(),
             ]),
@@ -102,7 +103,7 @@ final class CommissionMaturityService
     public function getPendingMaturity(Affiliate $affiliate): int
     {
         return (int) $affiliate->conversions()
-            ->where('status', 'qualified')
+            ->where('status', ConversionStatus::Qualified)
             ->sum('commission_minor');
     }
 
@@ -114,7 +115,7 @@ final class CommissionMaturityService
         $cutoffDate = now()->subDays($this->maturityDays - $days);
 
         return $affiliate->conversions()
-            ->where('status', 'qualified')
+            ->where('status', ConversionStatus::Qualified)
             ->where('occurred_at', '>=', $cutoffDate)
             ->get()
             ->map(fn (AffiliateConversion $c) => [
@@ -133,6 +134,8 @@ final class CommissionMaturityService
             'affiliate_id' => $affiliate->id,
             'available_minor' => 0,
             'holding_minor' => 0,
+            'lifetime_earnings_minor' => 0,
+            'minimum_payout_minor' => config('affiliates.payouts.minimum_amount', 5000),
             'currency' => $affiliate->currency,
         ]);
     }

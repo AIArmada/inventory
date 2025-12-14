@@ -34,7 +34,7 @@ final class ReplenishmentService
         }
 
         $levels = $query->get();
-        $suggestions = collect();
+        $suggestions = new Collection;
 
         foreach ($levels as $level) {
             $model = $level->inventoryable;

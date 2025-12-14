@@ -43,16 +43,15 @@ final class ReceiveInventory
             $level->save();
 
             $movement = InventoryMovement::create([
-                'inventoriable_type' => $model->getMorphClass(),
-                'inventoriable_id' => $model->getKey(),
-                'location_id' => $locationId,
-                'movement_type' => MovementType::Receipt,
+                'inventoryable_type' => $model->getMorphClass(),
+                'inventoryable_id' => $model->getKey(),
+                'to_location_id' => $locationId,
+                'type' => MovementType::Receipt->value,
                 'quantity' => $quantity,
-                'previous_quantity' => $previousQuantity,
-                'new_quantity' => $level->quantity_on_hand,
                 'reason' => $reason,
                 'note' => $note,
                 'user_id' => $userId,
+                'occurred_at' => now(),
             ]);
 
             Event::dispatch(new InventoryReceived($model, $level, $movement));
@@ -67,8 +66,8 @@ final class ReceiveInventory
     {
         return InventoryLevel::firstOrCreate(
             [
-                'inventoriable_type' => $model->getMorphClass(),
-                'inventoriable_id' => $model->getKey(),
+                'inventoryable_type' => $model->getMorphClass(),
+                'inventoryable_id' => $model->getKey(),
                 'location_id' => $locationId,
             ],
             [
