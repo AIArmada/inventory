@@ -323,7 +323,7 @@ describe('ProfileController', function (): void {
             $request->attributes->set('affiliate', $this->affiliate);
 
             $this->controller->removePayoutMethod($request, 'fake-id');
-        })->throws(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        })->throws(Illuminate\Database\Eloquent\ModelNotFoundException::class);
 
         test('cannot remove another affiliate method', function (): void {
             $otherAffiliate = Affiliate::create([
@@ -348,7 +348,7 @@ describe('ProfileController', function (): void {
             $request->attributes->set('affiliate', $this->affiliate);
 
             $this->controller->removePayoutMethod($request, $otherMethod->id);
-        })->throws(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        })->throws(Illuminate\Database\Eloquent\ModelNotFoundException::class);
     });
 
     describe('setDefaultPayoutMethod', function (): void {
@@ -394,7 +394,7 @@ describe('ProfileController', function (): void {
             $request->attributes->set('affiliate', $this->affiliate);
 
             $this->controller->setDefaultPayoutMethod($request, 'fake-id');
-        })->throws(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        })->throws(Illuminate\Database\Eloquent\ModelNotFoundException::class);
 
         test('unsets all other defaults when setting new default', function (): void {
             // Create 3 methods, 2 marked as default (edge case)

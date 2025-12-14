@@ -2,22 +2,19 @@
 
 declare(strict_types=1);
 
+use AIArmada\Affiliates\Actions\Conversions\MatureConversion;
+use AIArmada\Affiliates\Actions\Conversions\ProcessConversionMaturity;
 use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateCommissionRule;
 use AIArmada\Affiliates\Models\AffiliateProgram;
 use AIArmada\Affiliates\Models\AffiliateProgramMembership;
-use AIArmada\Affiliates\Enums\MembershipStatus;
+use AIArmada\Affiliates\Services\AffiliateReportService;
+use AIArmada\Affiliates\Services\CommissionMaturityService;
 use AIArmada\Affiliates\Services\ProgramService;
-use AIArmada\Affiliates\Support\CartWithAffiliates;
-use AIArmada\Affiliates\Support\CartManagerWithAffiliates;
 use AIArmada\Affiliates\Support\Integrations\CartIntegrationRegistrar;
 use AIArmada\Affiliates\Support\Integrations\VoucherIntegrationRegistrar;
 use AIArmada\Affiliates\Support\Webhooks\WebhookDispatcher;
-use AIArmada\Affiliates\Services\AffiliateReportService;
-use AIArmada\Affiliates\Services\CommissionMaturityService;
-use AIArmada\Affiliates\Actions\Conversions\MatureConversion;
-use AIArmada\Affiliates\Actions\Conversions\ProcessConversionMaturity;
 use Illuminate\Support\Carbon;
 
 // CartIntegrationRegistrar Tests
@@ -63,7 +60,7 @@ test('ProgramService can get available programs', function (): void {
     // getAvailablePrograms() takes no arguments
     $programs = $service->getAvailablePrograms();
 
-    expect($programs)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($programs)->toBeInstanceOf(Illuminate\Support\Collection::class);
 });
 
 test('ProgramService isMember returns false for non-member', function (): void {

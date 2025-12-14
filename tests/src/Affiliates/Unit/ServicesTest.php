@@ -2,28 +2,18 @@
 
 declare(strict_types=1);
 
-use AIArmada\Affiliates\Actions\Affiliates\ApproveAffiliate;
-use AIArmada\Affiliates\Actions\Affiliates\CreateAffiliate;
-use AIArmada\Affiliates\Actions\Affiliates\GenerateAffiliateCode;
-use AIArmada\Affiliates\Actions\Affiliates\RejectAffiliate;
 use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Enums\MembershipStatus;
 use AIArmada\Affiliates\Enums\ProgramStatus;
 use AIArmada\Affiliates\Enums\RegistrationApprovalMode;
 use AIArmada\Affiliates\Events\AffiliateProgramJoined;
-use AIArmada\Affiliates\Events\AffiliateProgramLeft;
-use AIArmada\Affiliates\Events\AffiliateTierUpgraded;
 use AIArmada\Affiliates\Models\Affiliate;
-use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliateDailyStat;
 use AIArmada\Affiliates\Models\AffiliateProgram;
 use AIArmada\Affiliates\Models\AffiliateProgramMembership;
-use AIArmada\Affiliates\Models\AffiliateProgramTier;
-use AIArmada\Affiliates\Models\AffiliateTouchpoint;
 use AIArmada\Affiliates\Services\AffiliateRegistrationService;
 use AIArmada\Affiliates\Services\DailyAggregationService;
 use AIArmada\Affiliates\Services\ProgramService;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
 
 // AffiliateRegistrationService Tests
@@ -119,7 +109,7 @@ test('AffiliateRegistrationService generateCode delegates to GenerateAffiliateCo
     $code = $service->generateCode('Test Name');
 
     expect($code)->toBeString();
-    expect(strlen($code))->toBeGreaterThan(0);
+    expect(mb_strlen($code))->toBeGreaterThan(0);
 });
 
 // DailyAggregationService Tests

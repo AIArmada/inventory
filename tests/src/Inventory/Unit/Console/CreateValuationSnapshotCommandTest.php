@@ -8,7 +8,6 @@ use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryValuationSnapshot;
-use AIArmada\Inventory\Services\ValuationService;
 use Illuminate\Support\Facades\Artisan;
 
 beforeEach(function (): void {

@@ -3,10 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\Orders\Health\OrderProcessingCheck;
-use AIArmada\Orders\Models\Order;
-use AIArmada\Orders\States\PendingPayment;
-use AIArmada\Orders\States\Processing;
-use Illuminate\Support\Carbon;
 
 describe('OrderProcessingCheck Health Check', function (): void {
     describe('Health Check Configuration', function (): void {
@@ -45,7 +41,7 @@ describe('OrderProcessingCheck Health Check', function (): void {
             $check = new OrderProcessingCheck();
             $result = $check->run();
 
-            expect($result)->toBeInstanceOf(\Spatie\Health\Checks\Result::class);
+            expect($result)->toBeInstanceOf(Spatie\Health\Checks\Result::class);
         });
     });
 });

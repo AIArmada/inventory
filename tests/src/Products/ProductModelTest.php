@@ -626,8 +626,8 @@ describe('Product Model', function (): void {
             $productId = $product->id;
             $product->delete();
 
-            expect(\AIArmada\Products\Models\Variant::where('product_id', $productId)->count())->toBe(0)
-                ->and(\AIArmada\Products\Models\Option::where('product_id', $productId)->count())->toBe(0);
+            expect(AIArmada\Products\Models\Variant::where('product_id', $productId)->count())->toBe(0)
+                ->and(AIArmada\Products\Models\Option::where('product_id', $productId)->count())->toBe(0);
         });
     });
 });

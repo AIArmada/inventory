@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Inventory\Enums\SerialCondition;
 
-test('SerialCondition enum has correct cases', function () {
+test('SerialCondition enum has correct cases', function (): void {
     expect(SerialCondition::cases())->toHaveCount(6);
     expect(SerialCondition::New->value)->toBe('new');
     expect(SerialCondition::LikeNew->value)->toBe('like_new');
@@ -14,14 +14,14 @@ test('SerialCondition enum has correct cases', function () {
     expect(SerialCondition::ForParts->value)->toBe('for_parts');
 });
 
-test('SerialCondition options returns correct array', function () {
+test('SerialCondition options returns correct array', function (): void {
     $options = SerialCondition::options();
     expect($options)->toBeArray();
     expect($options)->toHaveKey('new');
     expect($options['new'])->toBe('New');
 });
 
-test('SerialCondition label returns correct labels', function () {
+test('SerialCondition label returns correct labels', function (): void {
     expect(SerialCondition::New->label())->toBe('New');
     expect(SerialCondition::LikeNew->label())->toBe('Like New');
     expect(SerialCondition::Refurbished->label())->toBe('Refurbished');
@@ -30,7 +30,7 @@ test('SerialCondition label returns correct labels', function () {
     expect(SerialCondition::ForParts->label())->toBe('For Parts Only');
 });
 
-test('SerialCondition color returns correct colors', function () {
+test('SerialCondition color returns correct colors', function (): void {
     expect(SerialCondition::New->color())->toBe('success');
     expect(SerialCondition::LikeNew->color())->toBe('success');
     expect(SerialCondition::Refurbished->color())->toBe('info');
@@ -39,7 +39,7 @@ test('SerialCondition color returns correct colors', function () {
     expect(SerialCondition::ForParts->color())->toBe('gray');
 });
 
-test('SerialCondition isSellable works correctly', function () {
+test('SerialCondition isSellable works correctly', function (): void {
     expect(SerialCondition::New->isSellable())->toBeTrue();
     expect(SerialCondition::LikeNew->isSellable())->toBeTrue();
     expect(SerialCondition::Refurbished->isSellable())->toBeTrue();
@@ -48,7 +48,7 @@ test('SerialCondition isSellable works correctly', function () {
     expect(SerialCondition::ForParts->isSellable())->toBeFalse();
 });
 
-test('SerialCondition qualityScore returns correct scores', function () {
+test('SerialCondition qualityScore returns correct scores', function (): void {
     expect(SerialCondition::New->qualityScore())->toBe(10);
     expect(SerialCondition::LikeNew->qualityScore())->toBe(9);
     expect(SerialCondition::Refurbished->qualityScore())->toBe(7);

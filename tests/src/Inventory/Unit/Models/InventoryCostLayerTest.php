@@ -425,6 +425,6 @@ class InventoryCostLayerTest extends InventoryTestCase
         expect($layer->quantity)->toBeInt();
         expect($layer->remaining_quantity)->toBeInt();
         expect($layer->costing_method)->toBe(CostingMethod::Fifo);
-        expect($layer->layer_date)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($layer->layer_date)->toBeInstanceOf(Illuminate\Support\Carbon::class);
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Inventory\Enums\AlertStatus;
 
-test('AlertStatus enum has correct cases', function () {
+test('AlertStatus enum has correct cases', function (): void {
     expect(AlertStatus::cases())->toHaveCount(7);
     expect(AlertStatus::None->value)->toBe('none');
     expect(AlertStatus::LowStock->value)->toBe('low_stock');
@@ -15,7 +15,7 @@ test('AlertStatus enum has correct cases', function () {
     expect(AlertStatus::Expired->value)->toBe('expired');
 });
 
-test('AlertStatus criticalStatuses returns correct statuses', function () {
+test('AlertStatus criticalStatuses returns correct statuses', function (): void {
     $critical = AlertStatus::criticalStatuses();
     expect($critical)->toHaveCount(3);
     expect($critical)->toContain(AlertStatus::OutOfStock);
@@ -23,14 +23,14 @@ test('AlertStatus criticalStatuses returns correct statuses', function () {
     expect($critical)->toContain(AlertStatus::Expired);
 });
 
-test('AlertStatus warningStatuses returns correct statuses', function () {
+test('AlertStatus warningStatuses returns correct statuses', function (): void {
     $warning = AlertStatus::warningStatuses();
     expect($warning)->toHaveCount(2);
     expect($warning)->toContain(AlertStatus::LowStock);
     expect($warning)->toContain(AlertStatus::Expiring);
 });
 
-test('AlertStatus options returns correct array', function () {
+test('AlertStatus options returns correct array', function (): void {
     $options = AlertStatus::options();
     expect($options)->toBeArray();
     expect($options)->toHaveKey('none');
@@ -39,7 +39,7 @@ test('AlertStatus options returns correct array', function () {
     expect($options['low_stock'])->toBe('Low Stock');
 });
 
-test('AlertStatus label returns correct labels', function () {
+test('AlertStatus label returns correct labels', function (): void {
     expect(AlertStatus::None->label())->toBe('Normal');
     expect(AlertStatus::LowStock->label())->toBe('Low Stock');
     expect(AlertStatus::SafetyBreached->label())->toBe('Safety Stock Breached');
@@ -49,7 +49,7 @@ test('AlertStatus label returns correct labels', function () {
     expect(AlertStatus::Expired->label())->toBe('Expired');
 });
 
-test('AlertStatus color returns correct colors', function () {
+test('AlertStatus color returns correct colors', function (): void {
     expect(AlertStatus::None->color())->toBe('success');
     expect(AlertStatus::LowStock->color())->toBe('warning');
     expect(AlertStatus::SafetyBreached->color())->toBe('danger');
@@ -59,7 +59,7 @@ test('AlertStatus color returns correct colors', function () {
     expect(AlertStatus::Expired->color())->toBe('danger');
 });
 
-test('AlertStatus severity returns correct levels', function () {
+test('AlertStatus severity returns correct levels', function (): void {
     expect(AlertStatus::None->severity())->toBe(1);
     expect(AlertStatus::OverStock->severity())->toBe(2);
     expect(AlertStatus::LowStock->severity())->toBe(3);
@@ -69,7 +69,7 @@ test('AlertStatus severity returns correct levels', function () {
     expect(AlertStatus::OutOfStock->severity())->toBe(5);
 });
 
-test('AlertStatus requiresImmediateAttention works correctly', function () {
+test('AlertStatus requiresImmediateAttention works correctly', function (): void {
     expect(AlertStatus::None->requiresImmediateAttention())->toBeFalse();
     expect(AlertStatus::LowStock->requiresImmediateAttention())->toBeFalse();
     expect(AlertStatus::SafetyBreached->requiresImmediateAttention())->toBeTrue();

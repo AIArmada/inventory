@@ -9,7 +9,6 @@ use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateBalance;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Services\PerformanceBonusService;
-use Illuminate\Support\Carbon;
 
 beforeEach(function (): void {
     $this->service = app(PerformanceBonusService::class);

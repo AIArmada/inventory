@@ -208,7 +208,7 @@ describe('AffiliateConversion Model', function (): void {
             'occurred_at' => '2024-06-15 14:30:00',
         ]);
 
-        expect($conversion->occurred_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($conversion->occurred_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
         expect($conversion->occurred_at->format('Y-m-d'))->toBe('2024-06-15');
     });
 
@@ -225,7 +225,7 @@ describe('AffiliateConversion Model', function (): void {
             'approved_at' => '2024-06-11 12:00:00',
         ]);
 
-        expect($conversion->approved_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($conversion->approved_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
         expect($conversion->approved_at->format('Y-m-d'))->toBe('2024-06-11');
     });
 

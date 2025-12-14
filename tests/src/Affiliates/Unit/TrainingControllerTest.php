@@ -390,7 +390,7 @@ describe('TrainingController', function (): void {
     describe('certificate', function (): void {
         test('generates certificate when route exists', function (): void {
             // Define the missing route for testing
-            \Illuminate\Support\Facades\Route::get('/affiliate/training/{moduleId}/certificate/download', function () {
+            Illuminate\Support\Facades\Route::get('/affiliate/training/{moduleId}/certificate/download', function () {
                 return response()->json(['ok' => true]);
             })->name('affiliate.training.certificate.download');
 

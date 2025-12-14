@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use AIArmada\Inventory\Enums\DemandPeriodType;
 use AIArmada\Commerce\Tests\Inventory\Fixtures\InventoryItem;
+use AIArmada\Inventory\Enums\DemandPeriodType;
 use AIArmada\Inventory\Models\InventoryDemandHistory;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\DemandForecastService;

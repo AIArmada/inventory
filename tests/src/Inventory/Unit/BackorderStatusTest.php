@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Inventory\Enums\BackorderStatus;
 
-test('BackorderStatus enum has correct cases', function () {
+test('BackorderStatus enum has correct cases', function (): void {
     expect(BackorderStatus::cases())->toHaveCount(5);
     expect(BackorderStatus::Pending->value)->toBe('pending');
     expect(BackorderStatus::PartiallyFulfilled->value)->toBe('partially_fulfilled');
@@ -13,7 +13,7 @@ test('BackorderStatus enum has correct cases', function () {
     expect(BackorderStatus::Expired->value)->toBe('expired');
 });
 
-test('BackorderStatus label returns correct labels', function () {
+test('BackorderStatus label returns correct labels', function (): void {
     expect(BackorderStatus::Pending->label())->toBe('Pending');
     expect(BackorderStatus::PartiallyFulfilled->label())->toBe('Partially Fulfilled');
     expect(BackorderStatus::Fulfilled->label())->toBe('Fulfilled');
@@ -21,7 +21,7 @@ test('BackorderStatus label returns correct labels', function () {
     expect(BackorderStatus::Expired->label())->toBe('Expired');
 });
 
-test('BackorderStatus color returns correct colors', function () {
+test('BackorderStatus color returns correct colors', function (): void {
     expect(BackorderStatus::Pending->color())->toBe('warning');
     expect(BackorderStatus::PartiallyFulfilled->color())->toBe('info');
     expect(BackorderStatus::Fulfilled->color())->toBe('success');
@@ -29,7 +29,7 @@ test('BackorderStatus color returns correct colors', function () {
     expect(BackorderStatus::Expired->color())->toBe('gray');
 });
 
-test('BackorderStatus isOpen works correctly', function () {
+test('BackorderStatus isOpen works correctly', function (): void {
     expect(BackorderStatus::Pending->isOpen())->toBeTrue();
     expect(BackorderStatus::PartiallyFulfilled->isOpen())->toBeTrue();
     expect(BackorderStatus::Fulfilled->isOpen())->toBeFalse();
@@ -37,7 +37,7 @@ test('BackorderStatus isOpen works correctly', function () {
     expect(BackorderStatus::Expired->isOpen())->toBeFalse();
 });
 
-test('BackorderStatus isClosed works correctly', function () {
+test('BackorderStatus isClosed works correctly', function (): void {
     expect(BackorderStatus::Pending->isClosed())->toBeFalse();
     expect(BackorderStatus::PartiallyFulfilled->isClosed())->toBeFalse();
     expect(BackorderStatus::Fulfilled->isClosed())->toBeTrue();
@@ -45,7 +45,7 @@ test('BackorderStatus isClosed works correctly', function () {
     expect(BackorderStatus::Expired->isClosed())->toBeTrue();
 });
 
-test('BackorderStatus canFulfill works correctly', function () {
+test('BackorderStatus canFulfill works correctly', function (): void {
     expect(BackorderStatus::Pending->canFulfill())->toBeTrue();
     expect(BackorderStatus::PartiallyFulfilled->canFulfill())->toBeTrue();
     expect(BackorderStatus::Fulfilled->canFulfill())->toBeFalse();
@@ -53,7 +53,7 @@ test('BackorderStatus canFulfill works correctly', function () {
     expect(BackorderStatus::Expired->canFulfill())->toBeFalse();
 });
 
-test('BackorderStatus canCancel works correctly', function () {
+test('BackorderStatus canCancel works correctly', function (): void {
     expect(BackorderStatus::Pending->canCancel())->toBeTrue();
     expect(BackorderStatus::PartiallyFulfilled->canCancel())->toBeTrue();
     expect(BackorderStatus::Fulfilled->canCancel())->toBeFalse();

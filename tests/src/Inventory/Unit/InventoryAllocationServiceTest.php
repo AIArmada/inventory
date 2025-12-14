@@ -11,7 +11,6 @@ use AIArmada\Inventory\Events\InventoryReleased;
 use AIArmada\Inventory\Events\LowInventoryDetected;
 use AIArmada\Inventory\Events\OutOfInventory;
 use AIArmada\Inventory\Models\InventoryAllocation;
-use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\InventoryAllocationService;
 use AIArmada\Inventory\Services\InventoryService;

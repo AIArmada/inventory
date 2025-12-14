@@ -3,14 +3,8 @@
 declare(strict_types=1);
 
 use AIArmada\Affiliates\Enums\AffiliateStatus;
-use AIArmada\Affiliates\Enums\CommissionType;
-use AIArmada\Affiliates\Enums\ProgramStatus;
 use AIArmada\Affiliates\Models\Affiliate;
-use AIArmada\Affiliates\Models\AffiliateAttribution;
 use AIArmada\Affiliates\Models\AffiliateBalance;
-use AIArmada\Affiliates\Models\AffiliateConversion;
-use AIArmada\Affiliates\Models\AffiliatePayout;
-use AIArmada\Affiliates\Models\AffiliateProgram;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -184,7 +178,7 @@ test('Affiliate getTable returns config table name', function (): void {
     $table = $affiliate->getTable();
 
     expect($table)->toBeString();
-    expect(strlen($table))->toBeGreaterThan(0);
+    expect(mb_strlen($table))->toBeGreaterThan(0);
 });
 
 test('Affiliate email accessor returns contact_email', function (): void {

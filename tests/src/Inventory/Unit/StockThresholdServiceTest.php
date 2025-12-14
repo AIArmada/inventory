@@ -9,7 +9,6 @@ use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\StockThresholdService;
 
-
 class StockThresholdServiceTest extends InventoryTestCase
 {
     protected StockThresholdService $service;

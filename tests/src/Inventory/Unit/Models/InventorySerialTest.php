@@ -390,7 +390,7 @@ class InventorySerialTest extends InventoryTestCase
         ]);
 
         expect($serial->unit_cost_minor)->toBeInt();
-        expect($serial->warranty_expires_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($serial->warranty_expires_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
         expect($serial->metadata)->toBeArray();
     }
 

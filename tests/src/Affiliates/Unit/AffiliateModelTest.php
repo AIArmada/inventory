@@ -5,21 +5,13 @@ declare(strict_types=1);
 use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Enums\CommissionType;
 use AIArmada\Affiliates\Enums\ConversionStatus;
-use AIArmada\Affiliates\Enums\FraudSeverity;
-use AIArmada\Affiliates\Enums\FraudSignalStatus;
 use AIArmada\Affiliates\Events\AffiliateActivated;
 use AIArmada\Affiliates\Events\AffiliateCreated;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateAttribution;
 use AIArmada\Affiliates\Models\AffiliateBalance;
 use AIArmada\Affiliates\Models\AffiliateConversion;
-use AIArmada\Affiliates\Models\AffiliateDailyStat;
-use AIArmada\Affiliates\Models\AffiliateFraudSignal;
-use AIArmada\Affiliates\Models\AffiliateLink;
-use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\Affiliates\Models\AffiliatePayoutHold;
-use AIArmada\Affiliates\Models\AffiliatePayoutMethod;
-use AIArmada\Affiliates\Models\AffiliateRank;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -530,7 +522,7 @@ describe('Affiliate Model - Casts', function (): void {
             'activated_at' => now(),
         ]);
 
-        expect($affiliate->activated_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($affiliate->activated_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
     });
 });
 

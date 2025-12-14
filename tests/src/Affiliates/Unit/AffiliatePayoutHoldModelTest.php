@@ -167,7 +167,7 @@ describe('AffiliatePayoutHold Model', function (): void {
             'expires_at' => '2024-12-31 23:59:59',
         ]);
 
-        expect($hold->expires_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class)
+        expect($hold->expires_at)->toBeInstanceOf(Illuminate\Support\Carbon::class)
             ->and($hold->expires_at->format('Y-m-d'))->toBe('2024-12-31');
     });
 

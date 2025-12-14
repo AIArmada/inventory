@@ -279,9 +279,9 @@ describe('AffiliateProgramMembership Model', function (): void {
             'expires_at' => '2025-06-01 23:59:59',
         ]);
 
-        expect($membership->applied_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
-        expect($membership->approved_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
-        expect($membership->expires_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($membership->applied_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
+        expect($membership->approved_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
+        expect($membership->expires_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
     });
 
     test('uses correct table name from config', function (): void {

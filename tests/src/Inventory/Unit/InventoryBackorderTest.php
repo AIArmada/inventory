@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
+use AIArmada\Commerce\Tests\Inventory\InventoryTestCase;
 use AIArmada\Inventory\Enums\BackorderPriority;
 use AIArmada\Inventory\Enums\BackorderStatus;
 use AIArmada\Inventory\Models\InventoryBackorder;
-use AIArmada\Commerce\Tests\Inventory\InventoryTestCase;
 
 class InventoryBackorderTest extends InventoryTestCase
 {
-    public function test_getTable_returns_correct_table_name(): void
+    public function test_get_table_returns_correct_table_name(): void
     {
         $backorder = new InventoryBackorder();
         expect($backorder->getTable())->toBe('inventory_backorders');
@@ -19,17 +19,17 @@ class InventoryBackorderTest extends InventoryTestCase
     {
         $backorder = new InventoryBackorder();
         $relation = $backorder->inventoryable();
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphTo::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\MorphTo::class);
     }
 
     public function test_location_relationship(): void
     {
         $backorder = new InventoryBackorder();
         $relation = $backorder->location();
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
     }
 
-    public function test_scopeOpen_filters_correctly(): void
+    public function test_scope_open_filters_correctly(): void
     {
         InventoryBackorder::create([
             'inventoryable_type' => 'Test',
@@ -66,7 +66,7 @@ class InventoryBackorderTest extends InventoryTestCase
         expect($open)->toHaveCount(2);
     }
 
-    public function test_scopePending_filters_correctly(): void
+    public function test_scope_pending_filters_correctly(): void
     {
         InventoryBackorder::create([
             'inventoryable_type' => 'Test',

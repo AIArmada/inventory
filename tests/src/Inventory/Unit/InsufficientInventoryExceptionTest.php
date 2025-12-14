@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Inventory\Exceptions\InsufficientInventoryException;
 
-test('InsufficientInventoryException stores and returns properties correctly', function () {
+test('InsufficientInventoryException stores and returns properties correctly', function (): void {
     $exception = new InsufficientInventoryException(
         'Not enough inventory',
         'item-123',
@@ -19,7 +19,7 @@ test('InsufficientInventoryException stores and returns properties correctly', f
     expect($exception->getShortfall())->toBe(5);
 });
 
-test('InsufficientInventoryException works with integer item ID', function () {
+test('InsufficientInventoryException works with integer item ID', function (): void {
     $exception = new InsufficientInventoryException(
         'Insufficient stock',
         456,

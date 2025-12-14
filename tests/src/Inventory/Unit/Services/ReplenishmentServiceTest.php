@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use AIArmada\Commerce\Tests\Inventory\Fixtures\InventoryItem;
 use AIArmada\Inventory\Enums\ReorderSuggestionStatus;
 use AIArmada\Inventory\Enums\ReorderUrgency;
-use AIArmada\Commerce\Tests\Inventory\Fixtures\InventoryItem;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryReorderSuggestion;
@@ -29,7 +29,7 @@ describe('generateSuggestions', function (): void {
             'quantity_reserved' => 0,
             'reorder_point' => 20,
             'safety_stock' => 10,
-            'alert_status' => \AIArmada\Inventory\Enums\AlertStatus::LowStock->value,
+            'alert_status' => AIArmada\Inventory\Enums\AlertStatus::LowStock->value,
         ]);
 
         $suggestions = $this->service->generateSuggestions();

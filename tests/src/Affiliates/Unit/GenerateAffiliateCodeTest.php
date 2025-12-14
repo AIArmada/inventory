@@ -14,7 +14,7 @@ describe('GenerateAffiliateCode', function (): void {
 
             // Code should start with uppercase letters from the name
             expect($code)->toBeString();
-            expect(strlen($code))->toBeGreaterThanOrEqual(7); // at least base + 4 random
+            expect(mb_strlen($code))->toBeGreaterThanOrEqual(7); // at least base + 4 random
             // Str::random can include numbers, so check for alphanumeric uppercase
             expect($code)->toMatch('/^[A-Z0-9]+$/');
         });
@@ -25,7 +25,7 @@ describe('GenerateAffiliateCode', function (): void {
             $code = $action->handle('');
 
             expect($code)->toStartWith('AFF');
-            expect(strlen($code))->toBe(7); // AFF + 4 random
+            expect(mb_strlen($code))->toBe(7); // AFF + 4 random
         });
 
         test('generates code with no argument uses AFF prefix', function (): void {
@@ -60,7 +60,7 @@ describe('GenerateAffiliateCode', function (): void {
             $code = $action->handle('Alexander The Great');
 
             // Should use first 6 chars: ALEXAN
-            expect(strlen($code))->toBe(10); // 6 + 4 random
+            expect(mb_strlen($code))->toBe(10); // 6 + 4 random
         });
 
         test('generates unique code when collision occurs', function (): void {
@@ -97,7 +97,7 @@ describe('GenerateAffiliateCode', function (): void {
             $code = $action->handle('José García');
 
             expect($code)->toBeString();
-            expect(strlen($code))->toBeGreaterThanOrEqual(7);
+            expect(mb_strlen($code))->toBeGreaterThanOrEqual(7);
             // Str::random can include numbers, so check for alphanumeric uppercase
             expect($code)->toMatch('/^[A-Z0-9]+$/');
         });
@@ -108,7 +108,7 @@ describe('GenerateAffiliateCode', function (): void {
             $code = $action->handle('Affiliate123');
 
             expect($code)->toBeString();
-            expect(strlen($code))->toBeGreaterThanOrEqual(7);
+            expect(mb_strlen($code))->toBeGreaterThanOrEqual(7);
         });
 
         test('handles mixed case consistently', function (): void {
@@ -137,7 +137,7 @@ describe('GenerateAffiliateCode', function (): void {
         test('uses AsAction trait', function (): void {
             $traits = class_uses_recursive(GenerateAffiliateCode::class);
 
-            expect($traits)->toContain(\Lorisleiva\Actions\Concerns\AsAction::class);
+            expect($traits)->toContain(Lorisleiva\Actions\Concerns\AsAction::class);
         });
     });
 });

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Inventory\Enums\BatchStatus;
 
-test('BatchStatus enum has correct cases', function () {
+test('BatchStatus enum has correct cases', function (): void {
     expect(BatchStatus::cases())->toHaveCount(6);
     expect(BatchStatus::Active->value)->toBe('active');
     expect(BatchStatus::Quarantined->value)->toBe('quarantined');
@@ -14,21 +14,21 @@ test('BatchStatus enum has correct cases', function () {
     expect(BatchStatus::OnHold->value)->toBe('on_hold');
 });
 
-test('BatchStatus movableStatuses returns correct statuses', function () {
+test('BatchStatus movableStatuses returns correct statuses', function (): void {
     $movable = BatchStatus::movableStatuses();
     expect($movable)->toHaveCount(2);
     expect($movable)->toContain(BatchStatus::Active);
     expect($movable)->toContain(BatchStatus::OnHold);
 });
 
-test('BatchStatus options returns correct array', function () {
+test('BatchStatus options returns correct array', function (): void {
     $options = BatchStatus::options();
     expect($options)->toBeArray();
     expect($options)->toHaveKey('active');
     expect($options['active'])->toBe('Active');
 });
 
-test('BatchStatus label returns correct labels', function () {
+test('BatchStatus label returns correct labels', function (): void {
     expect(BatchStatus::Active->label())->toBe('Active');
     expect(BatchStatus::Quarantined->label())->toBe('Quarantined');
     expect(BatchStatus::Expired->label())->toBe('Expired');
@@ -37,7 +37,7 @@ test('BatchStatus label returns correct labels', function () {
     expect(BatchStatus::OnHold->label())->toBe('On Hold');
 });
 
-test('BatchStatus color returns correct colors', function () {
+test('BatchStatus color returns correct colors', function (): void {
     expect(BatchStatus::Active->color())->toBe('success');
     expect(BatchStatus::Quarantined->color())->toBe('warning');
     expect(BatchStatus::Expired->color())->toBe('danger');
@@ -46,7 +46,7 @@ test('BatchStatus color returns correct colors', function () {
     expect(BatchStatus::OnHold->color())->toBe('warning');
 });
 
-test('BatchStatus isAllocatable works correctly', function () {
+test('BatchStatus isAllocatable works correctly', function (): void {
     expect(BatchStatus::Active->isAllocatable())->toBeTrue();
     expect(BatchStatus::Quarantined->isAllocatable())->toBeFalse();
     expect(BatchStatus::Expired->isAllocatable())->toBeFalse();
@@ -55,7 +55,7 @@ test('BatchStatus isAllocatable works correctly', function () {
     expect(BatchStatus::OnHold->isAllocatable())->toBeFalse();
 });
 
-test('BatchStatus requiresAttention works correctly', function () {
+test('BatchStatus requiresAttention works correctly', function (): void {
     expect(BatchStatus::Active->requiresAttention())->toBeFalse();
     expect(BatchStatus::Quarantined->requiresAttention())->toBeTrue();
     expect(BatchStatus::Expired->requiresAttention())->toBeTrue();

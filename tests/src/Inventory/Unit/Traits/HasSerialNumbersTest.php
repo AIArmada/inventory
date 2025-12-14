@@ -16,7 +16,7 @@ beforeEach(function (): void {
 describe('HasSerialNumbers trait', function (): void {
     describe('serials relationship', function (): void {
         it('returns morph many relationship', function (): void {
-            expect($this->item->serials())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\MorphMany::class);
+            expect($this->item->serials())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\MorphMany::class);
         });
 
         it('returns serials for the model', function (): void {

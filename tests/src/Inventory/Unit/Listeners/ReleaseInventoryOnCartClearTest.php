@@ -30,7 +30,8 @@ describe('ReleaseInventoryOnCartClear', function (): void {
 
             expect(InventoryAllocation::where('cart_id', 'clear-cart-123')->count())->toBe(1);
 
-            $event = new class {
+            $event = new class
+            {
                 public string $cartId = 'clear-cart-123';
             };
 
@@ -42,7 +43,8 @@ describe('ReleaseInventoryOnCartClear', function (): void {
         it('releases allocations when cart_id property exists', function (): void {
             $this->allocationService->allocate($this->item, 10, 'clear-cart-456', 30);
 
-            $event = new class {
+            $event = new class
+            {
                 public string $cart_id = 'clear-cart-456';
             };
 
@@ -54,14 +56,16 @@ describe('ReleaseInventoryOnCartClear', function (): void {
         it('extracts cart id from cart object with getId method', function (): void {
             $this->allocationService->allocate($this->item, 5, 'clear-cart-789', 30);
 
-            $cart = new class {
+            $cart = new class
+            {
                 public function getId(): string
                 {
                     return 'clear-cart-789';
                 }
             };
 
-            $event = new class($cart) {
+            $event = new class($cart)
+            {
                 public function __construct(public object $cart) {}
             };
 
@@ -82,7 +86,8 @@ describe('ReleaseInventoryOnCartClear', function (): void {
         it('extracts cart id from cart with getIdentifier and instance methods', function (): void {
             $this->allocationService->allocate($this->item, 5, 'user_default', 30);
 
-            $cart = new class {
+            $cart = new class
+            {
                 public function getId(): ?string
                 {
                     return null;
@@ -99,7 +104,8 @@ describe('ReleaseInventoryOnCartClear', function (): void {
                 }
             };
 
-            $event = new class($cart) {
+            $event = new class($cart)
+            {
                 public function __construct(public object $cart) {}
             };
 
@@ -113,7 +119,8 @@ describe('ReleaseInventoryOnCartClear', function (): void {
         it('releases allocations when cart is destroyed', function (): void {
             $this->allocationService->allocate($this->item, 10, 'destroy-cart-123', 30);
 
-            $event = new class {
+            $event = new class
+            {
                 public string $cartId = 'destroy-cart-123';
             };
 

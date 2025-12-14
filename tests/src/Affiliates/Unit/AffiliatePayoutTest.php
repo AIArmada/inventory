@@ -248,7 +248,7 @@ describe('AffiliatePayout Model', function (): void {
             'scheduled_at' => '2024-12-25 10:00:00',
         ]);
 
-        expect($payout->scheduled_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($payout->scheduled_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
         expect($payout->scheduled_at->format('Y-m-d'))->toBe('2024-12-25');
     });
 
@@ -264,7 +264,7 @@ describe('AffiliatePayout Model', function (): void {
             'paid_at' => '2024-12-20 14:30:00',
         ]);
 
-        expect($payout->paid_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($payout->paid_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
         expect($payout->paid_at->format('Y-m-d'))->toBe('2024-12-20');
     });
 

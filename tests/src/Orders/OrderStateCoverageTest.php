@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\Orders\Models\Order;
-use AIArmada\Orders\States\Canceled;
 use AIArmada\Orders\States\Completed;
 use AIArmada\Orders\States\Created;
 use AIArmada\Orders\States\Delivered;
@@ -216,7 +215,6 @@ describe('Order State Classes - Comprehensive Coverage', function (): void {
             $order2->status->transitionTo(Refunded::class);
             expect($order2->status)->toBeInstanceOf(Refunded::class);
         });
-
 
     });
 });

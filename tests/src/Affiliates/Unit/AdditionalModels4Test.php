@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\Affiliates\Enums\AffiliateStatus;
-use AIArmada\Affiliates\Enums\CommissionType;
 use AIArmada\Affiliates\Enums\ConversionStatus;
 use AIArmada\Affiliates\Enums\ProgramStatus;
 use AIArmada\Affiliates\Models\Affiliate;
@@ -158,7 +157,7 @@ test('AffiliateTouchpoint has affiliate relationship', function (): void {
     expect($touchpoint->affiliate())->toBeInstanceOf(BelongsTo::class);
 });
 
-// AffiliateProgramMembership Tests  
+// AffiliateProgramMembership Tests
 test('AffiliateProgramMembership has required relationships', function (): void {
     $membership = new AffiliateProgramMembership;
 

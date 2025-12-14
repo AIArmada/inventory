@@ -280,7 +280,7 @@ describe('HasLocationHierarchy', function (): void {
         });
 
         it('returns ancestors when path exists', function (): void {
-            $service = app(\AIArmada\Inventory\Services\LocationTreeService::class);
+            $service = app(AIArmada\Inventory\Services\LocationTreeService::class);
 
             $parent = $service->createLocation('Parent', 'P-001');
             $child = $service->createLocation('Child', 'C-001', $parent);
@@ -343,7 +343,7 @@ describe('HasLocationHierarchy', function (): void {
             $child = InventoryLocation::factory()->create(['name' => 'Child', 'parent_id' => $root1->id]);
 
             $originalDepth = $child->depth;
-            
+
             $child->parent_id = $root2->id;
             $child->save();
 

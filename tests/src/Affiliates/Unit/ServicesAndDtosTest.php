@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use AIArmada\Affiliates\Data\AffiliateAttributionData;
 use AIArmada\Affiliates\Data\AffiliateConversionData;
 use AIArmada\Affiliates\Data\AffiliateData;
 use AIArmada\Affiliates\Enums\AffiliateStatus;
@@ -11,8 +10,8 @@ use AIArmada\Affiliates\Enums\ConversionStatus;
 use AIArmada\Affiliates\Enums\ProgramStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateProgram;
-use AIArmada\Affiliates\Services\CommissionCalculator;
 use AIArmada\Affiliates\Services\AttributionModel;
+use AIArmada\Affiliates\Services\CommissionCalculator;
 use AIArmada\Affiliates\Services\NetworkService;
 use AIArmada\Affiliates\Support\Links\AffiliateLinkGenerator;
 use AIArmada\Affiliates\Traits\HasAffiliates;

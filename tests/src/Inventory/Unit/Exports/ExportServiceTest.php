@@ -11,7 +11,8 @@ beforeEach(function (): void {
 
 describe('toCsv', function (): void {
     it('generates CSV from exportable', function (): void {
-        $export = new class implements ExportableInterface {
+        $export = new class implements ExportableInterface
+        {
             public function getHeaders(): array
             {
                 return ['ID', 'Name', 'Quantity'];
@@ -37,7 +38,8 @@ describe('toCsv', function (): void {
     });
 
     it('handles empty rows', function (): void {
-        $export = new class implements ExportableInterface {
+        $export = new class implements ExportableInterface
+        {
             public function getHeaders(): array
             {
                 return ['ID', 'Name'];
@@ -57,13 +59,14 @@ describe('toCsv', function (): void {
         $csv = $this->service->toCsv($export);
 
         expect($csv)->toContain('ID,Name');
-        expect(trim($csv))->toBe('ID,Name');
+        expect(mb_trim($csv))->toBe('ID,Name');
     });
 });
 
 describe('toCsvFile', function (): void {
     it('writes CSV to file', function (): void {
-        $export = new class implements ExportableInterface {
+        $export = new class implements ExportableInterface
+        {
             public function getHeaders(): array
             {
                 return ['ID', 'Name'];
@@ -96,7 +99,8 @@ describe('toCsvFile', function (): void {
 
 describe('toArray', function (): void {
     it('converts export to array', function (): void {
-        $export = new class implements ExportableInterface {
+        $export = new class implements ExportableInterface
+        {
             public function getHeaders(): array
             {
                 return ['A', 'B'];
@@ -127,7 +131,8 @@ describe('toArray', function (): void {
 
 describe('stream', function (): void {
     it('yields CSV content row by row', function (): void {
-        $export = new class implements ExportableInterface {
+        $export = new class implements ExportableInterface
+        {
             public function getHeaders(): array
             {
                 return ['Col1', 'Col2'];
@@ -147,7 +152,7 @@ describe('stream', function (): void {
 
         $chunks = [];
         foreach ($this->service->stream($export) as $chunk) {
-            $chunks[] = trim($chunk);
+            $chunks[] = mb_trim($chunk);
         }
 
         expect($chunks)->toHaveCount(3);
@@ -159,7 +164,8 @@ describe('stream', function (): void {
 
 describe('getRowCount', function (): void {
     it('counts rows', function (): void {
-        $export = new class implements ExportableInterface {
+        $export = new class implements ExportableInterface
+        {
             public function getHeaders(): array
             {
                 return ['ID'];
@@ -184,7 +190,8 @@ describe('getRowCount', function (): void {
     });
 
     it('returns zero for empty export', function (): void {
-        $export = new class implements ExportableInterface {
+        $export = new class implements ExportableInterface
+        {
             public function getHeaders(): array
             {
                 return ['ID'];

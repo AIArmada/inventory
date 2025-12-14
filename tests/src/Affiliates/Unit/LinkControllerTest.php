@@ -320,7 +320,7 @@ describe('LinkController', function (): void {
             $request->attributes->set('affiliate', $this->affiliate);
 
             $this->controller->show($request, 'non-existent-id');
-        })->throws(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        })->throws(Illuminate\Database\Eloquent\ModelNotFoundException::class);
 
         test('throws 404 when accessing another affiliate link', function (): void {
             $otherAffiliate = Affiliate::create([
@@ -345,7 +345,7 @@ describe('LinkController', function (): void {
             $request->attributes->set('affiliate', $this->affiliate);
 
             $this->controller->show($request, $otherLink->id);
-        })->throws(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        })->throws(Illuminate\Database\Eloquent\ModelNotFoundException::class);
     });
 
     describe('delete', function (): void {
@@ -381,7 +381,7 @@ describe('LinkController', function (): void {
             $request->attributes->set('affiliate', $this->affiliate);
 
             $this->controller->delete($request, 'fake-id');
-        })->throws(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        })->throws(Illuminate\Database\Eloquent\ModelNotFoundException::class);
 
         test('cannot delete another affiliate link', function (): void {
             $otherAffiliate = Affiliate::create([
@@ -406,7 +406,7 @@ describe('LinkController', function (): void {
             $request->attributes->set('affiliate', $this->affiliate);
 
             $this->controller->delete($request, $otherLink->id);
-        })->throws(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        })->throws(Illuminate\Database\Eloquent\ModelNotFoundException::class);
     });
 
     describe('creatives', function (): void {

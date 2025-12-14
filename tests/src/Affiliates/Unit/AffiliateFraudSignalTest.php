@@ -83,7 +83,7 @@ describe('AffiliateFraudSignal Model', function (): void {
     });
 
     test('belongs to touchpoint when set', function (): void {
-        $attribution = \AIArmada\Affiliates\Models\AffiliateAttribution::create([
+        $attribution = AIArmada\Affiliates\Models\AffiliateAttribution::create([
             'affiliate_id' => $this->affiliate->id,
             'affiliate_code' => $this->affiliate->code,
             'visitor_fingerprint' => 'touchpoint123',
@@ -330,7 +330,7 @@ describe('AffiliateFraudSignal Model', function (): void {
             'detected_at' => '2024-06-15 10:30:00',
         ]);
 
-        expect($signal->detected_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($signal->detected_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
         expect($signal->detected_at->format('Y-m-d'))->toBe('2024-06-15');
     });
 

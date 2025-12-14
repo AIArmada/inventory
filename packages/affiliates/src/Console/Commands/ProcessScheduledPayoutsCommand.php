@@ -124,7 +124,7 @@ final class ProcessScheduledPayoutsCommand extends Command
         // Create payout
         DB::transaction(function () use ($affiliate, $balance): void {
             $payout = AffiliatePayout::create([
-                'reference' => 'PAY-'.mb_strtoupper(bin2hex(random_bytes(8))),
+                'reference' => 'PAY-' . mb_strtoupper(bin2hex(random_bytes(8))),
                 'owner_type' => Affiliate::class,
                 'owner_id' => $affiliate->id,
                 'total_minor' => $balance->available_minor,

@@ -274,7 +274,7 @@ describe('Category Model', function (): void {
 
             $category->delete();
 
-            expect(\Illuminate\Support\Facades\DB::table(config('products.tables.category_product', 'category_product'))
+            expect(Illuminate\Support\Facades\DB::table(config('products.tables.category_product', 'category_product'))
                 ->where('category_id', $categoryId)->count())->toBe(0);
         });
     });

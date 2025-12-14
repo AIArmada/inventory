@@ -190,7 +190,7 @@ describe('InventorySerialHistory', function (): void {
                 'occurred_at' => '2024-01-15 10:30:00',
             ]);
 
-            expect($history->occurred_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+            expect($history->occurred_at)->toBeInstanceOf(Illuminate\Support\Carbon::class);
         });
 
         it('casts metadata to array', function (): void {

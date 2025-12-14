@@ -5,8 +5,6 @@ declare(strict_types=1);
 use AIArmada\Orders\Models\Order;
 use AIArmada\Orders\Models\OrderPayment;
 use AIArmada\Orders\States\Canceled;
-use AIArmada\Orders\States\Completed;
-use AIArmada\Orders\States\Created;
 use AIArmada\Orders\States\Delivered;
 use AIArmada\Orders\States\PendingPayment;
 use AIArmada\Orders\States\Processing;
@@ -133,7 +131,7 @@ describe('Order Transitions', function (): void {
         it('transitions from Returned to Refunded', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-TRANS5-' . uniqid(),
-                'status' => \AIArmada\Orders\States\Returned::class,
+                'status' => Returned::class,
                 'currency' => 'MYR',
                 'subtotal' => 10000,
                 'grand_total' => 10000,
@@ -143,7 +141,7 @@ describe('Order Transitions', function (): void {
             $result = $transition->handle();
 
             expect($result)->toBe($order);
-            expect($order->status)->toBeInstanceOf(\AIArmada\Orders\States\Refunded::class);
+            expect($order->status)->toBeInstanceOf(Refunded::class);
             expect($order->refunds)->toHaveCount(1);
             expect($order->refunds->first()->amount)->toBe(5000);
         });

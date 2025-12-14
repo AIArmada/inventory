@@ -5,20 +5,18 @@ declare(strict_types=1);
 use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Enums\RankQualificationReason;
 use AIArmada\Affiliates\Models\Affiliate;
-use AIArmada\Affiliates\Models\AffiliateRank;
-use AIArmada\Affiliates\Models\AffiliateRankHistory;
-use AIArmada\Affiliates\Models\AffiliatePayoutEvent;
 use AIArmada\Affiliates\Models\AffiliatePayout;
+use AIArmada\Affiliates\Models\AffiliatePayoutEvent;
+use AIArmada\Affiliates\Models\AffiliateRankHistory;
 use AIArmada\Affiliates\Models\AffiliateSupportMessage;
 use AIArmada\Affiliates\Models\AffiliateSupportTicket;
-use AIArmada\Affiliates\Services\RankQualificationService;
+use AIArmada\Affiliates\Services\FraudDetectionService;
 use AIArmada\Affiliates\Services\NetworkService;
 use AIArmada\Affiliates\Services\ProgramService;
-use AIArmada\Affiliates\Services\FraudDetectionService;
+use AIArmada\Affiliates\Services\RankQualificationService;
 use AIArmada\Affiliates\Support\Links\AffiliateLinkGenerator;
 use AIArmada\Affiliates\Support\Middleware\TrackAffiliateCookie;
 use AIArmada\Affiliates\Traits\HasAffiliates;
-use Illuminate\Http\Request;
 
 // AffiliateRankHistory Model Tests
 test('AffiliateRankHistory can be created with all fields', function (): void {
@@ -45,17 +43,17 @@ test('AffiliateRankHistory can be created with all fields', function (): void {
 
 test('AffiliateRankHistory has affiliate relationship', function (): void {
     $history = new AffiliateRankHistory;
-    expect($history->affiliate())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+    expect($history->affiliate())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
 });
 
 test('AffiliateRankHistory has fromRank relationship', function (): void {
     $history = new AffiliateRankHistory;
-    expect($history->fromRank())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+    expect($history->fromRank())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
 });
 
 test('AffiliateRankHistory has toRank relationship', function (): void {
     $history = new AffiliateRankHistory;
-    expect($history->toRank())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+    expect($history->toRank())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
 });
 
 test('AffiliateRankHistory isPromotion returns true when toRank exists and fromRank is null', function (): void {
@@ -107,7 +105,7 @@ test('AffiliateRankHistory getTable returns configured table name', function ():
     expect($history->getTable())->toBeString();
 });
 
-// AffiliatePayoutEvent Model Tests  
+// AffiliatePayoutEvent Model Tests
 test('AffiliatePayoutEvent can be created', function (): void {
     $affiliate = Affiliate::create([
         'code' => 'PAYEVENT001',
@@ -140,7 +138,7 @@ test('AffiliatePayoutEvent can be created', function (): void {
 
 test('AffiliatePayoutEvent has payout relationship', function (): void {
     $event = new AffiliatePayoutEvent;
-    expect($event->payout())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+    expect($event->payout())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
 });
 
 // AffiliateSupportMessage Model Tests
@@ -176,7 +174,7 @@ test('AffiliateSupportMessage can be created', function (): void {
 
 test('AffiliateSupportMessage has ticket relationship', function (): void {
     $message = new AffiliateSupportMessage;
-    expect($message->ticket())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+    expect($message->ticket())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
 });
 
 // RankQualificationService Tests
@@ -313,7 +311,7 @@ test('NetworkService getDirectRecruits returns collection', function (): void {
 
     $recruits = $service->getDirectRecruits($affiliate);
 
-    expect($recruits)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($recruits)->toBeInstanceOf(Illuminate\Support\Collection::class);
 });
 
 test('NetworkService getActiveDownlineCount returns int', function (): void {
@@ -352,7 +350,7 @@ test('NetworkService getTeamSales returns int', function (): void {
     expect($sales)->toBeGreaterThanOrEqual(0);
 });
 
-// ProgramService Tests  
+// ProgramService Tests
 test('ProgramService can be instantiated', function (): void {
     $service = app(ProgramService::class);
     expect($service)->toBeInstanceOf(ProgramService::class);

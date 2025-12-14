@@ -8,7 +8,6 @@ use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Http\Controllers\Portal\PayoutController;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateBalance;
-use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\Affiliates\Models\AffiliatePayoutEvent;
 use Illuminate\Http\Request;

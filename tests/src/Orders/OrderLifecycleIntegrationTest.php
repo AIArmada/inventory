@@ -3,12 +3,10 @@
 declare(strict_types=1);
 
 use AIArmada\Orders\Models\Order;
-use AIArmada\Orders\Models\OrderItem;
 use AIArmada\Orders\Models\OrderPayment;
 use AIArmada\Orders\Services\OrderService;
 use AIArmada\Orders\States\Canceled;
 use AIArmada\Orders\States\Completed;
-use AIArmada\Orders\States\Created;
 use AIArmada\Orders\States\Delivered;
 use AIArmada\Orders\States\PendingPayment;
 use AIArmada\Orders\States\Processing;

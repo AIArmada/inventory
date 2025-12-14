@@ -7,7 +7,6 @@ use AIArmada\Affiliates\Data\PayoutResult;
 use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Enums\PayoutMethodType;
 use AIArmada\Affiliates\Models\Affiliate;
-use AIArmada\Affiliates\Models\AffiliateBalance;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\Affiliates\Services\PayoutReconciliationService;
 use AIArmada\Affiliates\Services\Payouts\ManualPayoutProcessor;
@@ -64,7 +63,7 @@ test('PayoutProcessorFactory register adds new processor', function (): void {
 test('PayoutProcessorFactory register throws for invalid class', function (): void {
     $factory = new PayoutProcessorFactory;
 
-    $factory->register('invalid', \stdClass::class);
+    $factory->register('invalid', stdClass::class);
 })->throws(InvalidArgumentException::class, 'must implement');
 
 test('PayoutProcessorFactory getAvailableProcessors returns array', function (): void {
@@ -193,7 +192,7 @@ test('ManualPayoutProcessor getEstimatedArrival returns future date', function (
 
     $arrival = $processor->getEstimatedArrival($payout);
 
-    expect($arrival)->toBeInstanceOf(\DateTimeInterface::class);
+    expect($arrival)->toBeInstanceOf(DateTimeInterface::class);
     expect($arrival->getTimestamp())->toBeGreaterThan(now()->getTimestamp());
 });
 

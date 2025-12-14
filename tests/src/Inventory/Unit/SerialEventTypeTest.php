@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Inventory\Enums\SerialEventType;
 
-test('SerialEventType enum has correct cases', function () {
+test('SerialEventType enum has correct cases', function (): void {
     expect(SerialEventType::cases())->toHaveCount(17);
     expect(SerialEventType::Registered->value)->toBe('registered');
     expect(SerialEventType::Received->value)->toBe('received');
@@ -12,7 +12,7 @@ test('SerialEventType enum has correct cases', function () {
     expect(SerialEventType::Disposed->value)->toBe('disposed');
 });
 
-test('SerialEventType label returns correct labels', function () {
+test('SerialEventType label returns correct labels', function (): void {
     expect(SerialEventType::Registered->label())->toBe('Registered');
     expect(SerialEventType::Received->label())->toBe('Received');
     expect(SerialEventType::Sold->label())->toBe('Sold');
@@ -21,7 +21,7 @@ test('SerialEventType label returns correct labels', function () {
     expect(SerialEventType::RepairStarted->label())->toBe('Repair Started');
 });
 
-test('SerialEventType icon returns correct icons', function () {
+test('SerialEventType icon returns correct icons', function (): void {
     expect(SerialEventType::Registered->icon())->toBe('heroicon-o-plus-circle');
     expect(SerialEventType::Received->icon())->toBe('heroicon-o-inbox-arrow-down');
     expect(SerialEventType::Sold->icon())->toBe('heroicon-o-shopping-cart');
@@ -32,7 +32,7 @@ test('SerialEventType icon returns correct icons', function () {
     expect(SerialEventType::WarrantyUpdated->icon())->toBe('heroicon-o-shield-check');
 });
 
-test('SerialEventType color returns correct colors', function () {
+test('SerialEventType color returns correct colors', function (): void {
     expect(SerialEventType::Registered->color())->toBe('success');
     expect(SerialEventType::Transferred->color())->toBe('info');
     expect(SerialEventType::Sold->color())->toBe('primary');

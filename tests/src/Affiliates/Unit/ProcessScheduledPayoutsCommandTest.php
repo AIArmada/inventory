@@ -333,7 +333,7 @@ describe('ProcessScheduledPayoutsCommand', function (): void {
         ]);
 
         // Create an approved conversion without payout
-        $conversion = \AIArmada\Affiliates\Models\AffiliateConversion::create([
+        $conversion = AIArmada\Affiliates\Models\AffiliateConversion::create([
             'affiliate_id' => $this->affiliate->id,
             'affiliate_code' => $this->affiliate->code,
             'order_reference' => 'ORDER-' . uniqid(),
@@ -341,7 +341,7 @@ describe('ProcessScheduledPayoutsCommand', function (): void {
             'total_minor' => 50000,
             'commission_minor' => 5000,
             'commission_currency' => 'USD',
-            'status' => \AIArmada\Affiliates\Enums\ConversionStatus::Approved->value,
+            'status' => AIArmada\Affiliates\Enums\ConversionStatus::Approved->value,
             'occurred_at' => now()->subDays(30),
             'affiliate_payout_id' => null,
         ]);

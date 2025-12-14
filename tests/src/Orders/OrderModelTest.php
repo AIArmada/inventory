@@ -230,7 +230,7 @@ describe('Order Model', function (): void {
 
             expect($orderNumber)->toStartWith('ORD-')
                 ->and($orderNumber)->toContain(date('Ymd'))
-                ->and(strlen($orderNumber))->toBeGreaterThan(20);
+                ->and(mb_strlen($orderNumber))->toBeGreaterThan(20);
         });
 
         it('auto-generates order number when creating order', function (): void {
@@ -256,7 +256,7 @@ describe('Order Model', function (): void {
                 'grand_total' => 10000,
             ]);
 
-            $billingAddress = \AIArmada\Orders\Models\OrderAddress::create([
+            $billingAddress = AIArmada\Orders\Models\OrderAddress::create([
                 'order_id' => $order->id,
                 'type' => 'billing',
                 'first_name' => 'John',
@@ -270,7 +270,7 @@ describe('Order Model', function (): void {
                 'country_code' => 'MY',
             ]);
 
-            $shippingAddress = \AIArmada\Orders\Models\OrderAddress::create([
+            $shippingAddress = AIArmada\Orders\Models\OrderAddress::create([
                 'order_id' => $order->id,
                 'type' => 'shipping',
                 'first_name' => 'Jane',
@@ -349,7 +349,7 @@ describe('Order Model', function (): void {
                 'grand_total' => 10000,
             ]);
 
-            \AIArmada\Orders\Models\OrderNote::create([
+            AIArmada\Orders\Models\OrderNote::create([
                 'order_id' => $order->id,
                 'content' => 'Customer called about delivery',
                 'is_customer_visible' => true,
@@ -379,7 +379,7 @@ describe('Order Model', function (): void {
         it('can check if order is shipped', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-SHIP-' . uniqid(),
-                'status' => \AIArmada\Orders\States\Shipped::class,
+                'status' => AIArmada\Orders\States\Shipped::class,
                 'currency' => 'MYR',
                 'subtotal' => 10000,
                 'grand_total' => 10000,
@@ -392,7 +392,7 @@ describe('Order Model', function (): void {
         it('can check if order is delivered', function (): void {
             $order = Order::create([
                 'order_number' => 'ORD-DELIV-' . uniqid(),
-                'status' => \AIArmada\Orders\States\Delivered::class,
+                'status' => AIArmada\Orders\States\Delivered::class,
                 'currency' => 'MYR',
                 'subtotal' => 10000,
                 'grand_total' => 10000,

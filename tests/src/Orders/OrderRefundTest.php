@@ -6,7 +6,6 @@ use AIArmada\Orders\Models\Order;
 use AIArmada\Orders\Models\OrderPayment;
 use AIArmada\Orders\Models\OrderRefund;
 use AIArmada\Orders\States\Completed;
-use AIArmada\Orders\States\Created;
 
 describe('OrderRefund Model', function (): void {
     describe('OrderRefund Creation', function (): void {

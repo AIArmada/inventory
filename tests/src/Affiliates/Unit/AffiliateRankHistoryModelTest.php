@@ -290,7 +290,7 @@ describe('AffiliateRankHistory Model', function (): void {
             'qualified_at' => '2024-01-15 10:30:00',
         ]);
 
-        expect($history->qualified_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class)
+        expect($history->qualified_at)->toBeInstanceOf(Illuminate\Support\Carbon::class)
             ->and($history->qualified_at->format('Y-m-d'))->toBe('2024-01-15');
     });
 

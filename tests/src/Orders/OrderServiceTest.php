@@ -5,7 +5,6 @@ declare(strict_types=1);
 use AIArmada\Orders\Models\Order;
 use AIArmada\Orders\Services\OrderService;
 use AIArmada\Orders\States\Canceled;
-use AIArmada\Orders\States\Completed;
 use AIArmada\Orders\States\Created;
 use AIArmada\Orders\States\Delivered;
 use AIArmada\Orders\States\PendingPayment;
@@ -196,10 +195,19 @@ describe('OrderService', function (): void {
             ];
 
             // Create a simple test model
-            $customer = new class extends \Illuminate\Database\Eloquent\Model {
+            $customer = new class extends Illuminate\Database\Eloquent\Model
+            {
                 protected $table = 'users';
-                public function getKey() { return 1; }
-                public function getMorphClass() { return 'User'; }
+
+                public function getKey()
+                {
+                    return 1;
+                }
+
+                public function getMorphClass()
+                {
+                    return 'User';
+                }
             };
 
             $billingAddress = [
@@ -213,7 +221,7 @@ describe('OrderService', function (): void {
 
             $order = $service->createFromCart($cart, $customer, $billingAddress);
 
-            expect($order)->toBeInstanceOf(\AIArmada\Orders\Models\Order::class);
+            expect($order)->toBeInstanceOf(Order::class);
             expect($order->subtotal)->toBe(20000);
             expect($order->discount_total)->toBe(2000);
             expect($order->shipping_total)->toBe(1000);

@@ -11,8 +11,8 @@ use AIArmada\Affiliates\Http\Controllers\Portal\ProfileController;
 use AIArmada\Affiliates\Http\Controllers\Portal\SupportController;
 use AIArmada\Affiliates\Http\Controllers\Portal\TrainingController;
 use AIArmada\Affiliates\Models\Affiliate;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 // DashboardController Tests
 test('DashboardController can be instantiated', function (): void {

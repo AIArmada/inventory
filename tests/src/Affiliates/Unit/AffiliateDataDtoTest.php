@@ -408,11 +408,11 @@ describe('AffiliateData', function (): void {
 
 describe('Data classes structure', function (): void {
     test('AffiliateAttributionData extends Data', function (): void {
-        expect(is_subclass_of(AffiliateAttributionData::class, \Spatie\LaravelData\Data::class))->toBeTrue();
+        expect(is_subclass_of(AffiliateAttributionData::class, Spatie\LaravelData\Data::class))->toBeTrue();
     });
 
     test('AffiliateData extends Data', function (): void {
-        expect(is_subclass_of(AffiliateData::class, \Spatie\LaravelData\Data::class))->toBeTrue();
+        expect(is_subclass_of(AffiliateData::class, Spatie\LaravelData\Data::class))->toBeTrue();
     });
 
     test('AffiliateAttributionData uses SnakeCaseMapper', function (): void {

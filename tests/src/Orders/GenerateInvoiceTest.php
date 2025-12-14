@@ -26,13 +26,13 @@ describe('GenerateInvoice Action', function (): void {
             $path = storage_path('app/test-invoice.pdf');
 
             // Mock the PDF facade to avoid actual file generation
-            $mockBuilder = Mockery::mock(\Spatie\LaravelPdf\PdfBuilder::class);
+            $mockBuilder = Mockery::mock(Spatie\LaravelPdf\PdfBuilder::class);
             $mockBuilder->shouldReceive('format')->andReturnSelf();
             $mockBuilder->shouldReceive('margins')->andReturnSelf();
             $mockBuilder->shouldReceive('name')->andReturnSelf();
             $mockBuilder->shouldReceive('save')->with($path)->andReturnSelf();
 
-            \Spatie\LaravelPdf\Facades\Pdf::shouldReceive('view')->andReturn($mockBuilder);
+            Spatie\LaravelPdf\Facades\Pdf::shouldReceive('view')->andReturn($mockBuilder);
 
             $result = $action->save($order, $path);
 

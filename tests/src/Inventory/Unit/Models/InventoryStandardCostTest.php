@@ -208,7 +208,7 @@ class InventoryStandardCostTest extends InventoryTestCase
         $cost = $cost->fresh();
 
         expect($cost->standard_cost_minor)->toBeInt();
-        expect($cost->effective_from)->toBeInstanceOf(\Illuminate\Support\Carbon::class);
+        expect($cost->effective_from)->toBeInstanceOf(Illuminate\Support\Carbon::class);
         expect($cost->metadata)->toBeArray();
     }
 }

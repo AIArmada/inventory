@@ -139,7 +139,7 @@ describe('InventoryKpiService', function (): void {
         });
 
         it('returns zero when period is zero days', function (): void {
-            $today = \Carbon\CarbonImmutable::now();
+            $today = Carbon\CarbonImmutable::now();
             $tomorrow = $today->addDay();
 
             // Even with just 1 day period, should return a rate

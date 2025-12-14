@@ -32,11 +32,11 @@ describe('OrdersServiceProvider', function (): void {
 
     it('can call register method without errors', function (): void {
         $provider = new OrdersServiceProvider(app());
-        expect(fn() => $provider->register())->not->toThrow(Exception::class);
+        expect(fn () => $provider->register())->not->toThrow(Exception::class);
     });
 
     it('can call boot method without errors', function (): void {
         $provider = new OrdersServiceProvider(app());
-        expect(fn() => $provider->boot())->not->toThrow(Exception::class);
+        expect(fn () => $provider->boot())->not->toThrow(Exception::class);
     });
 });

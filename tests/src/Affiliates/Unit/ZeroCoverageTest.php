@@ -6,16 +6,13 @@ use AIArmada\Affiliates\Actions\Conversions\MatureConversion;
 use AIArmada\Affiliates\Actions\Conversions\ProcessConversionMaturity;
 use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Enums\ConversionStatus;
+use AIArmada\Affiliates\Http\Middleware\AuthenticateAffiliate;
 use AIArmada\Affiliates\Models\Affiliate;
-use AIArmada\Affiliates\Models\AffiliateBalance;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliateTrainingModule;
 use AIArmada\Affiliates\Services\Commissions\CommissionCalculationResult;
 use AIArmada\Affiliates\Services\Commissions\CommissionRuleEngine;
 use AIArmada\Affiliates\Services\PerformanceBonusService;
-use AIArmada\Affiliates\Http\Middleware\AuthenticateAffiliate;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 // MatureConversion Action Tests
 test('MatureConversion can be instantiated', function (): void {
@@ -124,7 +121,7 @@ test('AffiliateTrainingModule can be created with all fields', function (): void
 test('AffiliateTrainingModule has progress relationship', function (): void {
     $module = new AffiliateTrainingModule;
 
-    expect($module->progress())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+    expect($module->progress())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
 });
 
 test('AffiliateTrainingModule casts are correct', function (): void {
@@ -255,7 +252,7 @@ test('CommissionRuleEngine getApplicableRules returns collection', function (): 
 
     $rules = $engine->getApplicableRules($affiliate, []);
 
-    expect($rules)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($rules)->toBeInstanceOf(Illuminate\Support\Collection::class);
 });
 
 test('CommissionRuleEngine clearCache works', function (): void {
@@ -287,7 +284,7 @@ test('PerformanceBonusService getLeaderboard returns collection', function (): v
 
     $leaderboard = $service->getLeaderboard();
 
-    expect($leaderboard)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($leaderboard)->toBeInstanceOf(Illuminate\Support\Collection::class);
 });
 
 test('PerformanceBonusService getLeaderboard with custom limit', function (): void {
@@ -295,7 +292,7 @@ test('PerformanceBonusService getLeaderboard with custom limit', function (): vo
 
     $leaderboard = $service->getLeaderboard(limit: 5);
 
-    expect($leaderboard)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($leaderboard)->toBeInstanceOf(Illuminate\Support\Collection::class);
 });
 
 // AuthenticateAffiliate Middleware Tests

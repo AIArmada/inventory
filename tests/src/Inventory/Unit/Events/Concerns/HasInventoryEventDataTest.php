@@ -94,7 +94,7 @@ describe('HasInventoryEventData', function (): void {
             $event = new TestEventWithTrait($this->item);
 
             expect($event->getEventId())->not->toBeEmpty();
-            expect(strlen($event->getEventId()))->toBe(36); // UUID length
+            expect(mb_strlen($event->getEventId()))->toBe(36); // UUID length
         });
 
         it('sets occurred at to current time', function (): void {
