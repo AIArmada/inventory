@@ -204,7 +204,11 @@ Misplaced business logic
 
 Standardize EVERYTHING.
 
-🧪 1H. TESTING (FULL COVERAGE + EDGE CASES)
+🧪 1H. TESTING (SMART TARGETED APPROACH)
+
+**⚠️ CRITICAL: Full package test runs are EXPENSIVE. Use targeted execution.**
+
+### Audit Scope
 
 Inspect for:
 
@@ -224,15 +228,76 @@ No integration tests
 
 No concurrency tests (if relevant)
 
+### Smart Test Execution Strategy
+
+**When creating or fixing tests:**
+
+```bash
+# Run ONLY the specific file you created/modified (ALWAYS save output)
+./vendor/bin/pest tests/src/PackageName/Unit/MyTest.php 2>&1 | tee /tmp/test-output.txt
+
+# Run a specific directory of related tests
+./vendor/bin/pest tests/src/PackageName/Unit/Security/ 2>&1 | tee /tmp/test-security.txt
+
+# DO NOT run full package unless in final verification
+```
+
+### ⚠️ MANDATORY: Always Save Test Output
+
+**Every test execution MUST capture output using `2>&1 | tee /tmp/filename.txt`**
+
+This is NON-NEGOTIABLE because:
+- Prevents re-running tests just to see error details
+- Allows analyzing failures, grouping by cause, batch-fixing
+- Coverage output preserved for identifying low-coverage files
+- Saves significant time during debugging
+
+**Naming convention:**
+- Single file: `/tmp/test-<filename>.txt`
+- Directory: `/tmp/test-<dirname>.txt`  
+- Full package: `/tmp/test-<package>-full.txt`
+- Coverage: `/tmp/coverage-<package>.txt`
+
+**Full package tests (RESTRICTED):**
+
+Only run when ALL conditions are met:
+1. ✅ All individual test files pass separately
+2. ✅ Near completion (final verification)
+3. ✅ Pre-calculation confirms coverage goal achievable
+4. ✅ No known failing tests remain
+
+### Coverage Goal Pre-Calculation (MANDATORY)
+
+Before running coverage, estimate feasibility:
+
+```
+Zero coverage ratio = (0% files) / (total files)
+
+Decision:
+- Ratio > 20%: Goal impossible. Focus on 0% files.
+- Ratio 10-20%: Goal difficult. Target 0% files first.
+- Ratio 5-10%: Getting close. May run baseline coverage.
+- Ratio < 5%: Ready for final verification.
+```
+
+### Test Generation Guidelines
+
 You must generate:
 
-New tests
+New tests (run each individually after creation)
 
-Stronger test coverage
+Stronger test coverage (batch create, then verify)
 
 Edge-case suites
 
 Error-path tests
+
+**Workflow:**
+1. Create test file → Run that file only
+2. Create another test file → Run that file only
+3. Repeat until batch complete
+4. Run directory to verify batch
+5. Full package ONLY for final verification
 
 🗄️🔥 1I. DATABASE AUDIT (FULL, DEEP, AGGRESSIVE)
 
@@ -616,22 +681,56 @@ No shortcuts.
 No mercy.
 No skipped steps.
 
-🔥🔥🔥 SECTION 6 — VERIFICATION COMMANDS (MANDATORY)
+🔥🔥🔥 SECTION 6 — VERIFICATION COMMANDS (SMART APPROACH)
 
-After all fixes, run:
+### During Development (ALWAYS use targeted execution)
 
 ```bash
-# PHPStan analysis
+# Run specific test file you created/modified
+./vendor/bin/pest tests/src/PackageName/Unit/MyTest.php
+
+# Run specific directory of tests
+./vendor/bin/pest tests/src/PackageName/Unit/
+
+# PHPStan for specific package only
+./vendor/bin/phpstan analyse packages/package-name/src --level=6
+
+# Code style for specific package
+./vendor/bin/pint packages/package-name
+```
+
+### Final Verification ONLY (when all individual tests pass)
+
+```bash
+# PHPStan analysis (can run anytime)
 ./vendor/bin/phpstan analyse --level=6
 
-# Run tests with coverage
-./vendor/bin/pest tests/src/PackageName --parallel
+# Full package tests (ONLY for final verification)
+./vendor/bin/pest --parallel tests/src/PackageName
 
-# Verify test coverage
-./vendor/bin/phpunit .xml/package.xml --coverage
+# Coverage (ONLY when near completion, save output!)
+./vendor/bin/pest --parallel --coverage --configuration=.xml/package.xml 2>&1 | tee coverage.txt
 
 # Code style check
 ./vendor/bin/pint --test
+```
+
+### Smart Test Execution Decision Tree
+
+```
+Created/modified a test file?
+  → Run that single file only
+
+Fixed a batch of tests?
+  → Run the directory containing them
+
+All tests verified individually?
+  → May run full package for final verification
+
+Need coverage percentage?
+  → Pre-calculate feasibility first
+  → Count 0% files vs total files
+  → Only run if (0% files / total files) < 10%
 ```
 
 All commands must pass before declaring audit complete.

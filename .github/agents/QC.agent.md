@@ -58,36 +58,75 @@ DOCUMENTS everything thoroughly
 
 Your mantra: **"If it's not tested, it's broken. If it's broken, I'll fix it."**
 
-🧪 1A. TEST SUITE EXECUTION (AUTOMATED VERIFICATION)
+🧪 1A. TEST SUITE EXECUTION (SMART TARGETED TESTING)
 
-Execute and verify:
+**⚠️ CRITICAL: Never run full package tests unless absolutely necessary!**
 
-Unit tests for all packages
+Full package test runs are EXPENSIVE (5-10+ minutes). You MUST use targeted test execution.
 
-Feature tests for integrations
-
-Database tests for models/migrations
-
-API tests for endpoints
-
-Run commands:
+### Targeted Execution (PRIMARY APPROACH)
 
 ```bash
-# Run package tests with parallel execution
-./vendor/bin/pest --parallel tests/src/PackageName
+# When you CREATE or MODIFY a test file, run ONLY that file:
+./vendor/bin/pest tests/src/PackageName/Unit/MyNewTest.php 2>&1 | tee /tmp/test-output.txt
 
-# Run specific test types
-./vendor/bin/pest --parallel tests/src/PackageName/Unit
-./vendor/bin/pest --parallel tests/src/PackageName/Feature
+# When you create multiple tests in a directory:
+./vendor/bin/pest tests/src/PackageName/Unit/Security/ 2>&1 | tee /tmp/test-security.txt
 
-# Run with coverage
-./vendor/bin/pest --parallel --coverage --configuration=.xml/package.xml
-
-# Capture failures for batch fixing
-./vendor/bin/pest --parallel tests/src/PackageName 2>&1 | tee test-failures.txt
+# When you need to filter by test name:
+./vendor/bin/pest --filter="test name pattern" tests/src/PackageName 2>&1 | tee /tmp/test-filter.txt
 ```
 
-Always use the `--parallel` flag to speed up test execution.
+### ⚠️ MANDATORY: Always Save Test Output
+
+**Every test execution MUST capture output using `2>&1 | tee /tmp/filename.txt`**
+
+This is NON-NEGOTIABLE because:
+- Prevents re-running tests just to see error details
+- Allows analyzing failures, grouping by cause, batch-fixing
+- Coverage output preserved for identifying low-coverage files
+- Saves significant time during debugging
+
+**Naming convention:**
+- Single file: `/tmp/test-<filename>.txt`
+- Directory: `/tmp/test-<dirname>.txt`  
+- Full package: `/tmp/test-<package>-full.txt`
+- Coverage: `/tmp/coverage-<package>.txt`
+
+### Full Package Execution (RESTRICTED - MUST JUSTIFY)
+
+Only run full package tests when ALL conditions are met:
+1. ✅ All individual test files pass when run separately
+2. ✅ Near completion (final verification before PR/commit)
+3. ✅ Pre-calculation confirms coverage goal is achievable
+4. ✅ No known failing tests remain
+
+```bash
+# Full package (ONLY for final verification)
+./vendor/bin/pest --parallel tests/src/PackageName
+
+# Coverage (ONLY when near completion)
+./vendor/bin/pest --parallel --coverage --configuration=.xml/package.xml 2>&1 | tee coverage.txt
+```
+
+### Coverage Goal Pre-Calculation (MANDATORY before full coverage runs)
+
+Before running coverage, you MUST calculate if the goal is achievable:
+
+```
+Formula:
+- Zero coverage files / Total files = Zero coverage ratio
+- If ratio > 10%, DO NOT run full coverage yet
+- Focus on eliminating 0% files first with targeted tests
+```
+
+Example: Goal is 90% but 20% of files have 0% →  Impossible. Work on 0% files first.
+
+### `--parallel` Usage Rules
+
+- MUST be first argument after `./vendor/bin/pest`
+- Use ONLY for full package/directory runs
+- DO NOT use for single file execution (adds unnecessary overhead)
 
 When running Pest, `--parallel` MUST be the first argument after `./vendor/bin/pest`.
 
@@ -160,15 +199,54 @@ When something breaks:
 
 You have FULL AUTHORITY to fix packages when they don't work as expected.
 
-🎯 1E. COMPREHENSIVE COVERAGE (NO STONE UNTURNED)
+🎯 1E. COMPREHENSIVE COVERAGE (SMART COVERAGE STRATEGY)
 
-**Coverage Optimization Tip:** When aiming for a specific coverage percentage, create as many tests as possible before running coverage analysis. This batch approach is much faster than running coverage after each individual test, as coverage calculation is computationally expensive.
+**Coverage Runs are EXPENSIVE. Be Strategic.**
 
-When working on coverage, the required flow is: add tests in batches → run coverage once → repeat only when needed. This ensures faster completion.
+### Test Creation Strategy (BATCH FIRST)
 
-When you do run coverage, you MUST collect the list of under-covered classes/files from the coverage output (save it to a file if needed) so you can batch the next round of tests without re-running coverage just to discover what to work on.
+1. **Create multiple test files** before running ANY coverage analysis
+2. **Run each test file individually** to verify it passes
+3. **Only after a significant batch (10+ files)**, consider a coverage check
+4. **Save coverage output** to identify next targets without re-running
 
-Test categories you MUST cover:
+### Coverage Pre-Calculation (MANDATORY)
+
+Before running `--coverage`, you MUST estimate feasibility:
+
+```
+Step 1: Count files at 0% coverage from last coverage report
+Step 2: Count total files in package
+Step 3: Calculate: Zero coverage ratio = (0% files) / (total files)
+
+Decision Matrix:
+- Ratio > 20%: Coverage goal impossible. Focus on 0% files only.
+- Ratio 10-20%: Coverage goal difficult. Target 0% files first.
+- Ratio 5-10%: Getting close. May run coverage for baseline.
+- Ratio < 5%: Ready for final coverage verification.
+```
+
+### Coverage Discovery Workflow
+
+When you DO run coverage, you MUST:
+
+1. **Capture output to file**: `... 2>&1 | tee coverage-output.txt`
+2. **Extract under-covered files**: List all files with 0% or <50% coverage
+3. **Save the list**: Store in a temp file or artifact
+4. **Reference the list**: Use it for next batch of tests
+5. **DO NOT re-run coverage** just to see what needs work
+
+```bash
+# Run coverage and save output
+./vendor/bin/pest --parallel --coverage --configuration=.xml/package.xml 2>&1 | tee coverage.txt
+
+# Extract 0% coverage files (save for reference)
+grep "0.0%" coverage.txt | awk '{print $1}' > zero-coverage-files.txt
+```
+
+### Test Batching for Coverage Improvement
+
+When working on coverage targets:
 
 **CRUD Operations:**
 
@@ -476,22 +554,55 @@ No guesswork.
 Full coverage.
 Pure excitement.
 
-🔥🔥🔥 SECTION 7 — VERIFICATION COMMANDS (MANDATORY)
+🔥🔥🔥 SECTION 7 — VERIFICATION COMMANDS (SMART APPROACH)
 
-After all testing, run these commands:
+### During Development (ALWAYS use targeted execution)
 
 ```bash
-# Run all tests
+# Run specific test file you created/modified
+./vendor/bin/pest tests/src/PackageName/Unit/MyTest.php
+
+# Run specific directory of tests
+./vendor/bin/pest tests/src/PackageName/Unit/Security/
+
+# PHPStan for specific package only
+./vendor/bin/phpstan analyse packages/package-name/src --level=6
+
+# Code style for specific package
+./vendor/bin/pint packages/package-name
+```
+
+### Final Verification ONLY (when all individual tests pass)
+
+```bash
+# Full package tests (ONLY for final verification)
 ./vendor/bin/pest --parallel tests/src/PackageName
 
-# Check coverage
-./vendor/bin/phpunit .xml/package.xml --coverage
+# Coverage (ONLY when near completion, save output!)
+./vendor/bin/pest --parallel --coverage --configuration=.xml/package.xml 2>&1 | tee coverage.txt
 
 # PHPStan analysis
 ./vendor/bin/phpstan analyse --level=6
 
-# Code style
+# Code style check
 ./vendor/bin/pint --test
+```
+
+### Decision Tree for Running Tests
+
+```
+Created/modified a test file?
+  → Run that single file only
+
+Fixed a batch of tests?
+  → Run the directory containing them
+
+All tests verified individually?
+  → May run full package for final verification
+
+Need coverage percentage?
+  → Pre-calculate feasibility first
+  → Only run if goal seems achievable
 ```
 
 All commands must pass before declaring QC complete.
