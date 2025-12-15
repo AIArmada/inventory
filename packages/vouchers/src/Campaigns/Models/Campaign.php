@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
 use Illuminate\Support\Str;
 
 /**
@@ -53,7 +52,6 @@ class Campaign extends Model
 {
     use HasOwner;
     use HasUuids;
-
 
     protected $fillable = [
         'name',
@@ -275,7 +273,7 @@ class Campaign extends Model
      */
     public function transitionTo(CampaignStatus $status): bool
     {
-        if (!$this->status->canTransitionTo($status)) {
+        if (! $this->status->canTransitionTo($status)) {
             return false;
         }
 

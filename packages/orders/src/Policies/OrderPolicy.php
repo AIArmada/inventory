@@ -43,7 +43,7 @@ class OrderPolicy
 
     public function cancel(User $user, Order $order): bool
     {
-        if (!$order->canBeCanceled()) {
+        if (! $order->canBeCanceled()) {
             return false;
         }
 
@@ -52,7 +52,7 @@ class OrderPolicy
 
     public function refund(User $user, Order $order): bool
     {
-        if (!$order->canBeRefunded()) {
+        if (! $order->canBeRefunded()) {
             return false;
         }
 
