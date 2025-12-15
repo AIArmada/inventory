@@ -11,6 +11,11 @@ $tables = [
     'conversions' => $tablePrefix . 'conversions',
     'payouts' => $tablePrefix . 'payouts',
     'payout_events' => $tablePrefix . 'payout_events',
+    'support_tickets' => $tablePrefix . 'support_tickets',
+    'support_messages' => $tablePrefix . 'support_messages',
+    'training_modules' => $tablePrefix . 'training_modules',
+    'training_progress' => $tablePrefix . 'training_progress',
+    'tax_documents' => $tablePrefix . 'tax_documents',
     'touchpoints' => $tablePrefix . 'touchpoints',
     'ranks' => $tablePrefix . 'ranks',
     'network' => $tablePrefix . 'network',
@@ -28,6 +33,7 @@ $tables = [
     'commission_rules' => $tablePrefix . 'commission_rules',
     'volume_tiers' => $tablePrefix . 'volume_tiers',
     'commission_promotions' => $tablePrefix . 'commission_promotions',
+    'commission_templates' => $tablePrefix . 'commission_templates',
 ];
 
 return [
@@ -152,14 +158,28 @@ return [
     'commissions' => [
         'auto_approve' => env('AFFILIATES_AUTO_APPROVE', false),
         'default_status' => 'pending',
+        // 10% = 1000 basis points
+        'default_rate' => env('AFFILIATES_DEFAULT_COMMISSION_RATE', 1000),
+        'minimum_minor' => env('AFFILIATES_MINIMUM_COMMISSION_MINOR', 0),
+        'maximum_minor' => env('AFFILIATES_MAXIMUM_COMMISSION_MINOR'),
     ],
 
     'payouts' => [
         'currency' => env('AFFILIATES_PAYOUT_CURRENCY', env('AFFILIATES_DEFAULT_CURRENCY', 'USD')),
         'reference_prefix' => env('AFFILIATES_PAYOUT_REF_PREFIX', 'PO-'),
+        'minimum_amount' => env('AFFILIATES_PAYOUT_MINIMUM_AMOUNT', 5000),
+        'maturity_days' => env('AFFILIATES_PAYOUT_MATURITY_DAYS', 30),
         'multi_level' => [
             'enabled' => env('AFFILIATES_MULTI_LEVEL_ENABLED', false),
             'levels' => array_filter(array_map('floatval', explode(',', (string) env('AFFILIATES_MULTI_LEVEL_LEVELS', '0.1,0.05')))), // percentages of commission (0.1 = 10%)
+        ],
+        'paypal' => [
+            'client_id' => env('AFFILIATES_PAYPAL_CLIENT_ID', ''),
+            'client_secret' => env('AFFILIATES_PAYPAL_CLIENT_SECRET', ''),
+            'sandbox' => env('AFFILIATES_PAYPAL_SANDBOX', true),
+        ],
+        'stripe' => [
+            'secret_key' => env('AFFILIATES_STRIPE_SECRET_KEY', ''),
         ],
     ],
 
@@ -182,6 +202,7 @@ return [
         'fingerprint' => [
             'enabled' => env('AFFILIATES_FINGERPRINT_ENABLED', false),
             'block_duplicates' => env('AFFILIATES_FINGERPRINT_BLOCK_DUPLICATES', false),
+            'threshold' => env('AFFILIATES_FINGERPRINT_THRESHOLD', 5),
         ],
     ],
 
@@ -204,12 +225,14 @@ return [
 */
 
     'webhooks' => [
+        'signature_secret' => env('AFFILIATES_WEBHOOK_SIGNATURE_SECRET'),
         'endpoints' => [
             'attribution' => explode(',', (string) env('AFFILIATES_WEBHOOKS_ATTRIBUTION', '')),
             'conversion' => explode(',', (string) env('AFFILIATES_WEBHOOKS_CONVERSION', '')),
             'payout' => explode(',', (string) env('AFFILIATES_WEBHOOKS_PAYOUT', '')),
         ],
         'headers' => [
+            // Backward compatibility: WebhookDispatcher treats this as a signature secret and never sends it to endpoints.
             'X-Affiliates-Signature' => env('AFFILIATES_WEBHOOKS_SIGNATURE'),
         ],
     ],
@@ -243,6 +266,69 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Portal
+    |--------------------------------------------------------------------------
+    */
+
+    'portal' => [
+        'prefix' => env('AFFILIATES_PORTAL_PREFIX', 'affiliate-portal'),
+        'auth_resolver' => env('AFFILIATES_PORTAL_AUTH_RESOLVER'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Tax
+    |--------------------------------------------------------------------------
+    */
+
+    'tax' => [
+        'storage_disk' => env('AFFILIATES_TAX_STORAGE_DISK', 'local'),
+        // Stored/compared in minor units (e.g. 60000 = $600.00)
+        '1099_threshold' => env('AFFILIATES_TAX_1099_THRESHOLD', 60000),
+        'payer_info' => [
+            'name' => env('AFFILIATES_TAX_PAYER_NAME', env('APP_NAME', 'Laravel')),
+            'address' => env('AFFILIATES_TAX_PAYER_ADDRESS', ''),
+            'tin' => env('AFFILIATES_TAX_PAYER_TIN', ''),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Bonuses
+    |--------------------------------------------------------------------------
+    */
+
+    'bonuses' => [
+        'top_performer' => [
+            'enabled' => env('AFFILIATES_BONUS_TOP_PERFORMER_ENABLED', true),
+            'positions' => [
+                1 => env('AFFILIATES_BONUS_TOP_PERFORMER_1_MINOR', 50000),
+                2 => env('AFFILIATES_BONUS_TOP_PERFORMER_2_MINOR', 25000),
+                3 => env('AFFILIATES_BONUS_TOP_PERFORMER_3_MINOR', 10000),
+            ],
+            'min_revenue' => env('AFFILIATES_BONUS_TOP_PERFORMER_MIN_REVENUE_MINOR', 100000),
+        ],
+        'recruitment' => [
+            'enabled' => env('AFFILIATES_BONUS_RECRUITMENT_ENABLED', true),
+            'bonus_per_recruit' => env('AFFILIATES_BONUS_RECRUITMENT_PER_RECRUIT_MINOR', 2500),
+            'min_recruits' => env('AFFILIATES_BONUS_RECRUITMENT_MIN_RECRUITS', 3),
+            'max_bonus' => env('AFFILIATES_BONUS_RECRUITMENT_MAX_MINOR', 25000),
+        ],
+        'consistency' => [
+            'enabled' => env('AFFILIATES_BONUS_CONSISTENCY_ENABLED', true),
+            'bonus_amount' => env('AFFILIATES_BONUS_CONSISTENCY_AMOUNT_MINOR', 5000),
+            'min_weeks' => env('AFFILIATES_BONUS_CONSISTENCY_MIN_WEEKS', 4),
+            'min_conversions_per_week' => env('AFFILIATES_BONUS_CONSISTENCY_MIN_CONVERSIONS_PER_WEEK', 1),
+        ],
+        'growth' => [
+            'enabled' => env('AFFILIATES_BONUS_GROWTH_ENABLED', true),
+            'bonus_amount' => env('AFFILIATES_BONUS_GROWTH_AMOUNT_MINOR', 10000),
+            'min_growth_percent' => env('AFFILIATES_BONUS_GROWTH_MIN_PERCENT', 25),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Fraud Detection
     |--------------------------------------------------------------------------
     */
@@ -260,19 +346,10 @@ return [
         'anomaly' => [
             'geo' => [
                 'enabled' => env('AFFILIATES_FRAUD_GEO_ENABLED', false),
-                'max_speed_kmh' => env('AFFILIATES_FRAUD_MAX_SPEED_KMH', 500),
             ],
             'conversion_time' => [
                 'min_seconds' => env('AFFILIATES_FRAUD_MIN_CONVERSION_SECONDS', 5),
-                'max_hours' => env('AFFILIATES_FRAUD_MAX_CONVERSION_HOURS', 720),
             ],
-        ],
-
-        'alerts' => [
-            'enabled' => env('AFFILIATES_FRAUD_ALERTS_ENABLED', false),
-            'channels' => ['mail'],
-            'recipients' => array_filter(explode(',', (string) env('AFFILIATES_FRAUD_ALERT_RECIPIENTS', ''))),
-            'threshold' => 'high',
         ],
     ],
 
@@ -285,7 +362,6 @@ return [
     'network' => [
         'enabled' => env('AFFILIATES_NETWORK_ENABLED', false),
         'max_depth' => env('AFFILIATES_NETWORK_MAX_DEPTH', 10),
-        'compression' => env('AFFILIATES_NETWORK_COMPRESSION', true),
     ],
 
     /*
@@ -301,9 +377,7 @@ return [
 
     'registration' => [
         'enabled' => env('AFFILIATES_REGISTRATION_ENABLED', true),
-        'owner_model' => env('AFFILIATES_REGISTRATION_OWNER_MODEL', 'App\\Models\\User'),
         'approval_mode' => env('AFFILIATES_REGISTRATION_APPROVAL_MODE', 'admin'), // auto | open | admin
-        'default_status' => env('AFFILIATES_REGISTRATION_DEFAULT_STATUS', 'pending'), // draft | pending | active
         'default_commission_type' => env('AFFILIATES_REGISTRATION_COMMISSION_TYPE', 'percentage'),
         'default_commission_rate' => env('AFFILIATES_REGISTRATION_COMMISSION_RATE', 1000), // 10% in basis points
     ],

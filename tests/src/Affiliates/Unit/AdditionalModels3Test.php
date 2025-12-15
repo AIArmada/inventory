@@ -50,7 +50,7 @@ test('AffiliateProgramCreative has program relationship', function (): void {
 });
 
 test('AffiliateProgramCreative getTrackingUrl appends affiliate code', function (): void {
-    config(['affiliates.tracking.parameter' => 'ref']);
+    config(['affiliates.links.parameter' => 'ref']);
 
     $affiliate = Affiliate::create([
         'code' => 'CREAT001',
@@ -71,7 +71,7 @@ test('AffiliateProgramCreative getTrackingUrl appends affiliate code', function 
 });
 
 test('AffiliateProgramCreative getTrackingUrl uses ampersand for existing query string', function (): void {
-    config(['affiliates.tracking.parameter' => 'ref']);
+    config(['affiliates.links.parameter' => 'ref']);
 
     $affiliate = Affiliate::create([
         'code' => 'CREAT002',
@@ -92,7 +92,7 @@ test('AffiliateProgramCreative getTrackingUrl uses ampersand for existing query 
 });
 
 test('AffiliateProgramCreative getEmbedCode for banner type', function (): void {
-    config(['affiliates.tracking.parameter' => 'ref']);
+    config(['affiliates.links.parameter' => 'ref']);
 
     $affiliate = Affiliate::create([
         'code' => 'EMBED001',
@@ -121,7 +121,7 @@ test('AffiliateProgramCreative getEmbedCode for banner type', function (): void 
 });
 
 test('AffiliateProgramCreative getEmbedCode for text link type', function (): void {
-    config(['affiliates.tracking.parameter' => 'ref']);
+    config(['affiliates.links.parameter' => 'ref']);
 
     $affiliate = Affiliate::create([
         'code' => 'EMBED002',

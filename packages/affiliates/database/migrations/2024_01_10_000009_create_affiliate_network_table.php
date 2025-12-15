@@ -11,14 +11,14 @@ return new class extends Migration
     public function up(): void
     {
         $tableName = config('affiliates.table_names.network', 'affiliate_network');
-        $affiliatesTable = config('affiliates.table_names.affiliates', 'affiliates');
 
         Schema::create($tableName, function (Blueprint $table): void {
+            $table->uuid('id')->primary();
             $table->foreignUuid('ancestor_id');
             $table->foreignUuid('descendant_id');
             $table->integer('depth');
 
-            $table->primary(['ancestor_id', 'descendant_id']);
+            $table->unique(['ancestor_id', 'descendant_id']);
             $table->index(['descendant_id', 'depth']);
             $table->index(['ancestor_id', 'depth']);
         });

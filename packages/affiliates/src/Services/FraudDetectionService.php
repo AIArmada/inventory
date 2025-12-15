@@ -24,6 +24,14 @@ final class FraudDetectionService
      */
     public function analyzeClick(Affiliate $affiliate, Request $request): array
     {
+        if (! config('affiliates.fraud.enabled', true)) {
+            return [
+                'allowed' => true,
+                'score' => 0,
+                'signals' => [],
+            ];
+        }
+
         $signals = [];
         $context = $this->buildContext($affiliate, $request);
 
@@ -59,6 +67,14 @@ final class FraudDetectionService
      */
     public function analyzeConversion(AffiliateConversion $conversion): array
     {
+        if (! config('affiliates.fraud.enabled', true)) {
+            return [
+                'allowed' => true,
+                'score' => 0,
+                'signals' => [],
+            ];
+        }
+
         $signals = [];
         $affiliate = $conversion->affiliate;
 
@@ -217,11 +233,11 @@ final class FraudDetectionService
             return null;
         }
 
-        $threshold = $config['threshold'] ?? 5;
+        $threshold = max(1, (int) ($config['threshold'] ?? 5));
 
         $existingCount = AffiliateTouchpoint::query()
             ->where('affiliate_id', $affiliate->id)
-            ->whereRaw("metadata->>'$.fingerprint' = ?", [$context['fingerprint']])
+            ->where('metadata->fingerprint', $context['fingerprint'])
             ->where('touched_at', '>=', now()->subHours(24))
             ->count();
 

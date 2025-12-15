@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Collection;
 
 /**
  * Closure table for efficient ancestor/descendant queries.
  *
+ * @property string $id
  * @property string $ancestor_id
  * @property string $descendant_id
  * @property int $depth
@@ -19,13 +22,11 @@ use Illuminate\Support\Collection;
  */
 class AffiliateNetwork extends Model
 {
-    public $incrementing = false;
+    use HasUuids;
 
     public $timestamps = false;
 
-    protected $primaryKey = ['ancestor_id', 'descendant_id'];
-
-    protected $keyType = 'string';
+    public $incrementing = false;
 
     protected $fillable = [
         'ancestor_id',
@@ -44,14 +45,28 @@ class AffiliateNetwork extends Model
      */
     public static function getAncestors(Affiliate $affiliate): Collection
     {
-        return static::query()
+        /** @var Collection<int, self> $paths */
+        $paths = static::query()
             ->where('descendant_id', $affiliate->getKey())
             ->where('depth', '>', 0)
             ->orderBy('depth')
             ->with('ancestor')
-            ->get()
-            ->pluck('ancestor')
-            ->filter();
+            ->get();
+
+        return $paths
+            ->map(function (self $path): ?Affiliate {
+                $ancestor = $path->ancestor;
+
+                if (! $ancestor) {
+                    return null;
+                }
+
+                $ancestor->setRelation('pivot', new Pivot(['depth' => $path->depth]));
+
+                return $ancestor;
+            })
+            ->filter(fn (?Affiliate $ancestor) => $ancestor !== null)
+            ->values();
     }
 
     /**
@@ -61,14 +76,28 @@ class AffiliateNetwork extends Model
      */
     public static function getDescendants(Affiliate $affiliate): Collection
     {
-        return static::query()
+        /** @var Collection<int, self> $paths */
+        $paths = static::query()
             ->where('ancestor_id', $affiliate->getKey())
             ->where('depth', '>', 0)
             ->orderBy('depth')
             ->with('descendant')
-            ->get()
-            ->pluck('descendant')
-            ->filter();
+            ->get();
+
+        return $paths
+            ->map(function (self $path): ?Affiliate {
+                $descendant = $path->descendant;
+
+                if (! $descendant) {
+                    return null;
+                }
+
+                $descendant->setRelation('pivot', new Pivot(['depth' => $path->depth]));
+
+                return $descendant;
+            })
+            ->filter(fn (?Affiliate $descendant) => $descendant !== null)
+            ->values();
     }
 
     /**
@@ -78,13 +107,27 @@ class AffiliateNetwork extends Model
      */
     public static function getAtDepth(Affiliate $affiliate, int $depth): Collection
     {
-        return static::query()
+        /** @var Collection<int, self> $paths */
+        $paths = static::query()
             ->where('ancestor_id', $affiliate->getKey())
             ->where('depth', $depth)
             ->with('descendant')
-            ->get()
-            ->pluck('descendant')
-            ->filter();
+            ->get();
+
+        return $paths
+            ->map(function (self $path): ?Affiliate {
+                $descendant = $path->descendant;
+
+                if (! $descendant) {
+                    return null;
+                }
+
+                $descendant->setRelation('pivot', new Pivot(['depth' => $path->depth]));
+
+                return $descendant;
+            })
+            ->filter(fn (?Affiliate $descendant) => $descendant !== null)
+            ->values();
     }
 
     /**
@@ -114,11 +157,15 @@ class AffiliateNetwork extends Model
     public static function addToNetwork(Affiliate $affiliate, ?Affiliate $sponsor = null): void
     {
         // Self-referencing entry (every node points to itself at depth 0)
-        static::create([
-            'ancestor_id' => $affiliate->getKey(),
-            'descendant_id' => $affiliate->getKey(),
-            'depth' => 0,
-        ]);
+        static::updateOrCreate(
+            [
+                'ancestor_id' => $affiliate->getKey(),
+                'descendant_id' => $affiliate->getKey(),
+            ],
+            [
+                'depth' => 0,
+            ]
+        );
 
         if (! $sponsor) {
             return;
@@ -130,11 +177,15 @@ class AffiliateNetwork extends Model
             ->get();
 
         foreach ($sponsorAncestors as $path) {
-            static::create([
-                'ancestor_id' => $path->ancestor_id,
-                'descendant_id' => $affiliate->getKey(),
-                'depth' => $path->depth + 1,
-            ]);
+            static::updateOrCreate(
+                [
+                    'ancestor_id' => $path->ancestor_id,
+                    'descendant_id' => $affiliate->getKey(),
+                ],
+                [
+                    'depth' => $path->depth + 1,
+                ]
+            );
         }
     }
 
@@ -183,11 +234,15 @@ class AffiliateNetwork extends Model
                 ->value('depth');
 
             foreach ($newSponsorAncestors as $path) {
-                static::create([
-                    'ancestor_id' => $path->ancestor_id,
-                    'descendant_id' => $descendantId,
-                    'depth' => $path->depth + 1 + $currentDepth,
-                ]);
+                static::updateOrCreate(
+                    [
+                        'ancestor_id' => $path->ancestor_id,
+                        'descendant_id' => $descendantId,
+                    ],
+                    [
+                        'depth' => $path->depth + 1 + $currentDepth,
+                    ]
+                );
             }
         }
     }
@@ -197,11 +252,17 @@ class AffiliateNetwork extends Model
         return config('affiliates.table_names.network', 'affiliate_network');
     }
 
+    /**
+     * @return BelongsTo<Affiliate, self>
+     */
     public function ancestor(): BelongsTo
     {
         return $this->belongsTo(Affiliate::class, 'ancestor_id');
     }
 
+    /**
+     * @return BelongsTo<Affiliate, self>
+     */
     public function descendant(): BelongsTo
     {
         return $this->belongsTo(Affiliate::class, 'descendant_id');

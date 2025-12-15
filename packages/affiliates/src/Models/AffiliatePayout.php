@@ -41,9 +41,11 @@ class AffiliatePayout extends Model
         'reference',
         'status',
         'total_minor',
+        'amount_minor',
         'conversion_count',
         'currency',
         'metadata',
+        'external_reference',
         'owner_type',
         'owner_id',
         'scheduled_at',
@@ -117,6 +119,9 @@ class AffiliatePayout extends Model
     {
         return Attribute::make(
             get: fn () => $this->total_minor,
+            set: fn ($value) => [
+                'total_minor' => max(0, (int) $value),
+            ],
         );
     }
 
@@ -129,6 +134,24 @@ class AffiliatePayout extends Model
     {
         return Attribute::make(
             get: fn () => $this->metadata['external_reference'] ?? null,
+            set: function ($value, array $attributes): array {
+                $metadata = $attributes['metadata'] ?? null;
+
+                if (is_string($metadata)) {
+                    $decoded = json_decode($metadata, true);
+                    $metadata = is_array($decoded) ? $decoded : [];
+                }
+
+                $metadata = is_array($metadata) ? $metadata : [];
+
+                if ($value === null || $value === '') {
+                    unset($metadata['external_reference']);
+                } else {
+                    $metadata['external_reference'] = (string) $value;
+                }
+
+                return ['metadata' => $metadata === [] ? null : $this->asJson($metadata)];
+            },
         );
     }
 

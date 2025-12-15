@@ -9,7 +9,6 @@ use AIArmada\Affiliates\Enums\ConversionStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateBalance;
 use AIArmada\Affiliates\Models\AffiliateConversion;
-use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -19,11 +18,6 @@ use Illuminate\Support\Facades\DB;
  */
 final class PerformanceBonusService
 {
-    public function __construct(
-        private readonly NetworkService $networkService,
-        private readonly Dispatcher $events
-    ) {}
-
     /**
      * Calculate performance bonuses for a given period.
      *
@@ -92,13 +86,13 @@ final class PerformanceBonusService
             $balance = AffiliateBalance::firstOrCreate(
                 [
                     'affiliate_id' => $affiliate->id,
-                    'currency' => $affiliate->currency ?? config('affiliates.defaults.currency', 'USD'),
+                    'currency' => $affiliate->currency ?? config('affiliates.currency.default', 'USD'),
                 ],
                 [
                     'holding_minor' => 0,
                     'available_minor' => 0,
                     'lifetime_earnings_minor' => 0,
-                    'minimum_payout_minor' => config('affiliates.payouts.minimum_payout', 5000),
+                    'minimum_payout_minor' => config('affiliates.payouts.minimum_amount', 5000),
                 ]
             );
 

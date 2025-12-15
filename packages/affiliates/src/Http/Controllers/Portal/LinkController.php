@@ -11,6 +11,7 @@ use AIArmada\Affiliates\Support\Links\AffiliateLinkGenerator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Validation\Rule;
 
 final class LinkController extends Controller
 {
@@ -60,12 +61,21 @@ final class LinkController extends Controller
 
         $validated = $request->validate([
             'destination_url' => 'required|url|max:2048',
-            'program_id' => 'nullable|uuid|exists:affiliate_programs,id',
+            'program_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists(config('affiliates.table_names.programs', 'affiliate_programs'), 'id'),
+            ],
             'campaign' => 'nullable|string|max:100',
             'sub_id' => 'nullable|string|max:100',
             'sub_id_2' => 'nullable|string|max:100',
             'sub_id_3' => 'nullable|string|max:100',
-            'custom_slug' => 'nullable|string|max:50|unique:affiliate_links,custom_slug',
+            'custom_slug' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique(config('affiliates.table_names.links', 'affiliate_links'), 'custom_slug'),
+            ],
         ]);
 
         $trackingUrl = $this->linkGenerator->generate($affiliate->code, $validated['destination_url'], [

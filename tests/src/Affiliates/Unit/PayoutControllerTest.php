@@ -281,8 +281,7 @@ describe('PayoutController', function (): void {
             $response = $this->controller->summary($request);
 
             $data = $response->getData(true);
-            // Note: This may return 0 due to model relation bug (hasMany without affiliate_id)
-            expect($data['pending_payouts_minor'])->toBeGreaterThanOrEqual(0);
+            expect($data['pending_payouts_minor'])->toBe(25000);
         });
 
         test('calculates paid this year correctly', function (): void {
@@ -304,7 +303,7 @@ describe('PayoutController', function (): void {
             $response = $this->controller->summary($request);
 
             $data = $response->getData(true);
-            expect($data['paid_this_year_minor'])->toBeGreaterThanOrEqual(0);
+            expect($data['paid_this_year_minor'])->toBe(25000);
         });
 
         test('returns next payout when one is scheduled', function (): void {
@@ -327,8 +326,9 @@ describe('PayoutController', function (): void {
             $response = $this->controller->summary($request);
 
             $data = $response->getData(true);
-            // next_payout may be null due to relation issue
             expect($data)->toHaveKey('next_payout');
+            expect($data['next_payout'])->not->toBeNull()
+                ->and($data['next_payout']['amount_minor'])->toBe(20000);
         });
 
         test('returns null next_payout when none scheduled', function (): void {

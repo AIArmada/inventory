@@ -12,6 +12,8 @@ use AIArmada\Affiliates\Services\NetworkService;
 use Illuminate\Support\Carbon;
 
 beforeEach(function (): void {
+    config(['affiliates.network.enabled' => true]);
+
     $this->service = app(NetworkService::class);
 
     $this->rootAffiliate = Affiliate::create([
@@ -119,7 +121,7 @@ describe('NetworkService', function (): void {
         });
     });
 
-    describe('changeSponso', function (): void {
+    describe('changeSponsor', function (): void {
         test('moves affiliate to new sponsor', function (): void {
             $this->service->addToNetwork($this->rootAffiliate);
 
@@ -147,7 +149,7 @@ describe('NetworkService', function (): void {
             $this->service->addToNetwork($affiliate, $this->rootAffiliate);
 
             // Move to new sponsor
-            $this->service->changeSponso($affiliate, $newSponsor);
+            $this->service->changeSponsor($affiliate, $newSponsor);
 
             // Verify new relationship exists
             $entry = AffiliateNetwork::where('descendant_id', $affiliate->id)
@@ -499,7 +501,7 @@ describe('NetworkService class structure', function (): void {
 
         expect($reflection->hasMethod('addToNetwork'))->toBeTrue();
         expect($reflection->hasMethod('removeFromNetwork'))->toBeTrue();
-        expect($reflection->hasMethod('changeSponso'))->toBeTrue();
+        expect($reflection->hasMethod('changeSponsor'))->toBeTrue();
         expect($reflection->hasMethod('getUpline'))->toBeTrue();
         expect($reflection->hasMethod('getDownline'))->toBeTrue();
         expect($reflection->hasMethod('getDirectRecruits'))->toBeTrue();

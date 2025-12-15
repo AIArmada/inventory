@@ -6,28 +6,30 @@ namespace AIArmada\Affiliates\Services;
 
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateNetwork;
-use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 final class NetworkService
 {
-    public function __construct(
-        private readonly Dispatcher $events
-    ) {}
-
     /**
      * Add an affiliate to the network under a sponsor.
      */
     public function addToNetwork(Affiliate $affiliate, ?Affiliate $sponsor = null): void
     {
-        AffiliateNetwork::addToNetwork($affiliate, $sponsor);
-
-        $this->updateNetworkCounts($affiliate);
-
-        if ($sponsor) {
-            $this->updateNetworkCounts($sponsor);
+        if (! $this->isEnabled()) {
+            return;
         }
+
+        DB::transaction(function () use ($affiliate, $sponsor): void {
+            AffiliateNetwork::addToNetwork($affiliate, $sponsor);
+
+            $this->updateNetworkCounts($affiliate);
+
+            if ($sponsor) {
+                $this->updateNetworkCounts($sponsor);
+            }
+        });
     }
 
     /**
@@ -35,18 +37,28 @@ final class NetworkService
      */
     public function removeFromNetwork(Affiliate $affiliate): void
     {
+        if (! $this->isEnabled()) {
+            return;
+        }
+
         AffiliateNetwork::removeFromNetwork($affiliate);
     }
 
     /**
      * Move an affiliate to a new sponsor.
      */
-    public function changeSponso(Affiliate $affiliate, Affiliate $newSponsor): void
+    public function changeSponsor(Affiliate $affiliate, Affiliate $newSponsor): void
     {
-        AffiliateNetwork::moveToNewSponsor($affiliate, $newSponsor);
+        if (! $this->isEnabled()) {
+            return;
+        }
 
-        $this->updateNetworkCounts($affiliate);
-        $this->updateNetworkCounts($newSponsor);
+        DB::transaction(function () use ($affiliate, $newSponsor): void {
+            AffiliateNetwork::moveToNewSponsor($affiliate, $newSponsor);
+
+            $this->updateNetworkCounts($affiliate);
+            $this->updateNetworkCounts($newSponsor);
+        });
     }
 
     /**
@@ -56,6 +68,10 @@ final class NetworkService
      */
     public function getUpline(Affiliate $affiliate): Collection
     {
+        if (! $this->isEnabled()) {
+            return collect();
+        }
+
         return AffiliateNetwork::getAncestors($affiliate);
     }
 
@@ -66,6 +82,10 @@ final class NetworkService
      */
     public function getDownline(Affiliate $affiliate): Collection
     {
+        if (! $this->isEnabled()) {
+            return collect();
+        }
+
         return AffiliateNetwork::getDescendants($affiliate);
     }
 
@@ -76,6 +96,10 @@ final class NetworkService
      */
     public function getDirectRecruits(Affiliate $affiliate): Collection
     {
+        if (! $this->isEnabled()) {
+            return collect();
+        }
+
         return AffiliateNetwork::getDirectChildren($affiliate);
     }
 
@@ -84,6 +108,10 @@ final class NetworkService
      */
     public function getTeamSales(Affiliate $affiliate, ?Carbon $from = null, ?Carbon $to = null): int
     {
+        if (! $this->isEnabled()) {
+            return 0;
+        }
+
         $descendantIds = AffiliateNetwork::query()
             ->where('ancestor_id', $affiliate->getKey())
             ->where('depth', '>', 0)
@@ -114,6 +142,10 @@ final class NetworkService
      */
     public function getActiveDownlineCount(Affiliate $affiliate): int
     {
+        if (! $this->isEnabled()) {
+            return 0;
+        }
+
         $descendantIds = AffiliateNetwork::query()
             ->where('ancestor_id', $affiliate->getKey())
             ->where('depth', '>', 0)
@@ -132,6 +164,23 @@ final class NetworkService
      */
     public function buildTree(Affiliate $root, int $maxDepth = 5): array
     {
+        if (! $this->isEnabled()) {
+            return [
+                'id' => $root->id,
+                'name' => $root->name,
+                'code' => $root->code,
+                'rank' => $root->rank?->name,
+                'status' => $root->status->value,
+                'stats' => [
+                    'direct_recruits' => $root->direct_downline_count,
+                    'total_downline' => $root->total_downline_count,
+                ],
+                'children' => [],
+            ];
+        }
+
+        $maxDepth = $this->capMaxDepth($maxDepth);
+
         return [
             'id' => $root->id,
             'name' => $root->name,
@@ -171,6 +220,22 @@ final class NetworkService
                 'children' => $this->buildChildren($child, $currentDepth + 1, $maxDepth),
             ];
         })->all();
+    }
+
+    private function isEnabled(): bool
+    {
+        return (bool) config('affiliates.network.enabled', false);
+    }
+
+    private function capMaxDepth(int $maxDepth): int
+    {
+        $configuredMaxDepth = (int) config('affiliates.network.max_depth', 0);
+
+        if ($configuredMaxDepth > 0) {
+            return min($maxDepth, $configuredMaxDepth);
+        }
+
+        return $maxDepth;
     }
 
     private function updateNetworkCounts(Affiliate $affiliate): void

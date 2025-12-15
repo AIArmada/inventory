@@ -35,14 +35,32 @@ final class AffiliateSupportTicket extends Model
         'status',
     ];
 
+    public function getTable(): string
+    {
+        return config('affiliates.table_names.support_tickets', 'affiliate_support_tickets');
+    }
+
+    /**
+     * @return BelongsTo<Affiliate, $this>
+     */
     public function affiliate(): BelongsTo
     {
         return $this->belongsTo(Affiliate::class, 'affiliate_id');
     }
 
+    /**
+     * @return HasMany<AffiliateSupportMessage, $this>
+     */
     public function messages(): HasMany
     {
         return $this->hasMany(AffiliateSupportMessage::class, 'ticket_id')
             ->orderBy('created_at');
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $ticket): void {
+            $ticket->messages()->delete();
+        });
     }
 }

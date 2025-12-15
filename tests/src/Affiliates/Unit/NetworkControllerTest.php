@@ -14,6 +14,8 @@ use Illuminate\Http\Request;
 
 describe('NetworkController', function (): void {
     beforeEach(function (): void {
+        config(['affiliates.network.enabled' => true]);
+
         $this->networkService = app(NetworkService::class);
         $this->controller = new NetworkController($this->networkService);
 

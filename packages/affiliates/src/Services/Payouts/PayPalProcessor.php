@@ -6,6 +6,7 @@ namespace AIArmada\Affiliates\Services\Payouts;
 
 use AIArmada\Affiliates\Contracts\PayoutProcessorInterface;
 use AIArmada\Affiliates\Data\PayoutResult;
+use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use DateTimeInterface;
 use Exception;
@@ -40,7 +41,13 @@ final class PayPalProcessor implements PayoutProcessorInterface
             return PayoutResult::failure('PayPal credentials not configured', 'PAYPAL_NOT_CONFIGURED');
         }
 
-        $payoutMethod = $payout->affiliate->payoutMethods()
+        $affiliate = $payout->affiliate;
+
+        if (! $affiliate) {
+            return PayoutResult::failure('Payout owner is not an affiliate', 'INVALID_PAYOUT_OWNER');
+        }
+
+        $payoutMethod = $affiliate->payoutMethods()
             ->where('type', 'paypal')
             ->where('is_default', true)
             ->first();
@@ -111,15 +118,17 @@ final class PayPalProcessor implements PayoutProcessorInterface
 
     public function getStatus(AffiliatePayout $payout): string
     {
+        $currentStatus = $payout->status instanceof PayoutStatus ? $payout->status->value : (string) $payout->status;
+
         if (empty($payout->external_reference)) {
-            return $payout->status;
+            return $currentStatus;
         }
 
         try {
             $token = $this->getAccessToken();
 
             if (! $token) {
-                return $payout->status;
+                return $currentStatus;
             }
 
             $response = Http::withToken($token)
@@ -133,7 +142,7 @@ final class PayPalProcessor implements PayoutProcessorInterface
                     'SUCCESS' => 'completed',
                     'PENDING', 'PROCESSING' => 'processing',
                     'DENIED', 'CANCELED' => 'failed',
-                    default => $payout->status,
+                    default => $currentStatus,
                 };
             }
         } catch (Exception $e) {
@@ -143,7 +152,7 @@ final class PayPalProcessor implements PayoutProcessorInterface
             ]);
         }
 
-        return $payout->status;
+        return $currentStatus;
     }
 
     public function cancel(AffiliatePayout $payout): bool

@@ -27,14 +27,19 @@ final class PayoutReconciliationService
         }
 
         DB::transaction(function () use ($payout, $newStatus, $externalData): void {
+            $metadata = array_merge($payout->metadata ?? [], [
+                'reconciled_at' => now()->toIso8601String(),
+                'external_data' => $externalData,
+            ]);
+
+            if (isset($externalData['reference']) && is_string($externalData['reference']) && $externalData['reference'] !== '') {
+                $metadata['external_reference'] = $externalData['reference'];
+            }
+
             $payout->update([
                 'status' => $newStatus,
-                'external_reference' => $externalData['reference'] ?? $payout->external_reference,
                 'paid_at' => $newStatus === PayoutStatus::Completed ? now() : $payout->paid_at,
-                'metadata' => array_merge($payout->metadata ?? [], [
-                    'reconciled_at' => now()->toIso8601String(),
-                    'external_data' => $externalData,
-                ]),
+                'metadata' => $metadata,
             ]);
 
             // Create audit event
@@ -59,8 +64,8 @@ final class PayoutReconciliationService
     public function getPayoutsNeedingReconciliation(): Collection
     {
         return AffiliatePayout::query()
-            ->whereIn('status', [PayoutStatus::Processing, PayoutStatus::Pending])
-            ->whereNotNull('external_reference')
+            ->whereIn('status', [PayoutStatus::Processing->value, PayoutStatus::Pending->value])
+            ->whereNotNull('metadata->external_reference')
             ->where('updated_at', '<=', now()->subHours(1))
             ->get();
     }
@@ -117,12 +122,12 @@ final class PayoutReconciliationService
             ->sum('commission_minor');
 
         $paidOut = $affiliate->payouts()
-            ->where('status', PayoutStatus::Completed)
-            ->sum('amount_minor');
+            ->where('status', PayoutStatus::Completed->value)
+            ->sum('total_minor');
 
         $pendingPayouts = $affiliate->payouts()
-            ->whereIn('status', [PayoutStatus::Pending, PayoutStatus::Processing])
-            ->sum('amount_minor');
+            ->whereIn('status', [PayoutStatus::Pending->value, PayoutStatus::Processing->value])
+            ->sum('total_minor');
 
         $expectedAvailable = $approvedCommissions - $paidOut - $pendingPayouts;
         $actualAvailable = $balance?->available_minor ?? 0;

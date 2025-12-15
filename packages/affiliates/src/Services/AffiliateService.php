@@ -41,14 +41,17 @@ final class AffiliateService
     {
         $query = Affiliate::query();
 
+        if (! config('affiliates.owner.enabled', false)) {
+            return $query;
+        }
+
         $owner = $this->resolveOwner();
 
         if ($owner) {
-            $query->where('owner_type', $owner->getMorphClass())
-                ->where('owner_id', $owner->getKey());
+            return $query->forOwner($owner);
         }
 
-        return $query;
+        return $query->globalOnly();
     }
 
     public function findByCode(string $code): ?Affiliate
@@ -538,7 +541,12 @@ final class AffiliateService
             return null;
         }
 
-        return AffiliateAttribution::query()->find($metadata['attribution_id']);
+        $query = AffiliateAttribution::query()
+            ->whereKey($metadata['attribution_id']);
+
+        $this->applyOwnerScope($query);
+
+        return $query->first();
     }
 
     private function resolveMinorAmount(mixed $value, callable $fallback): ?int
@@ -788,15 +796,25 @@ final class AffiliateService
 
     private function applyOwnerScope(Builder $query): Builder
     {
+        if (! config('affiliates.owner.enabled', false)) {
+            return $query;
+        }
+
         $owner = $this->resolveOwner();
 
         if ($owner) {
-            $query
-                ->where('owner_type', $owner->getMorphClass())
-                ->where('owner_id', $owner->getKey());
+            $query->where(function (Builder $builder) use ($owner): void {
+                $builder->where('owner_type', $owner->getMorphClass())
+                    ->where('owner_id', $owner->getKey())
+                    ->orWhere(function (Builder $inner): void {
+                        $inner->whereNull('owner_type')->whereNull('owner_id');
+                    });
+            });
+
+            return $query;
         }
 
-        return $query;
+        return $query->whereNull('owner_type')->whereNull('owner_id');
     }
 
     private function pruneAttributionOverflow(
@@ -819,8 +837,12 @@ final class AffiliateService
             ))
             ->orderByDesc('last_seen_at');
 
-        if (config('affiliates.owner.enabled', false) && $ownerType && $ownerId) {
-            $query->where('owner_type', $ownerType)->where('owner_id', $ownerId);
+        if (config('affiliates.owner.enabled', false)) {
+            if ($ownerType && $ownerId) {
+                $query->where('owner_type', $ownerType)->where('owner_id', $ownerId);
+            } else {
+                $query->whereNull('owner_type')->whereNull('owner_id');
+            }
         }
 
         $ids = $query->pluck('id');

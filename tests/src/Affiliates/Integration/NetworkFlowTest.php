@@ -13,6 +13,8 @@ use AIArmada\Affiliates\Services\RankQualificationService;
 use Illuminate\Support\Facades\Event;
 
 beforeEach(function (): void {
+    config(['affiliates.network.enabled' => true]);
+
     // Create rank hierarchy with proper schema fields
     $this->bronzeRank = AffiliateRank::create([
         'name' => 'Bronze',

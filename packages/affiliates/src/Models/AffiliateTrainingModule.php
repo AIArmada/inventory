@@ -57,8 +57,23 @@ final class AffiliateTrainingModule extends Model
         'is_active' => 'boolean',
     ];
 
+    public function getTable(): string
+    {
+        return config('affiliates.table_names.training_modules', 'affiliate_training_modules');
+    }
+
+    /**
+     * @return HasMany<AffiliateTrainingProgress, $this>
+     */
     public function progress(): HasMany
     {
         return $this->hasMany(AffiliateTrainingProgress::class, 'module_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $module): void {
+            $module->progress()->delete();
+        });
     }
 }

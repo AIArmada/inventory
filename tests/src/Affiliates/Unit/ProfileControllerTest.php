@@ -102,8 +102,6 @@ describe('ProfileController', function (): void {
         });
 
         test('updates affiliate email', function (): void {
-            // Note: The controller uses 'email' field but model has 'contact_email'
-            // This tests the actual behavior which may be a bug in the controller
             $request = Request::create('/affiliate/portal/profile', 'PUT', [
                 'email' => 'new@email.com',
             ]);
@@ -113,8 +111,11 @@ describe('ProfileController', function (): void {
             $response = $this->controller->update($request);
 
             $data = $response->getData(true);
-            // The email may not be returned correctly due to field name mismatch
             expect($data['message'])->toBe('Profile updated successfully.');
+
+            $this->affiliate->refresh();
+            expect($this->affiliate->contact_email)->toBe('new@email.com')
+                ->and($this->affiliate->email)->toBe('new@email.com');
         });
 
         test('updates affiliate metadata', function (): void {

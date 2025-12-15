@@ -62,7 +62,7 @@ class AffiliateProgramCreative extends Model
     {
         $baseUrl = $this->destination_url;
         $separator = str_contains($baseUrl, '?') ? '&' : '?';
-        $param = config('affiliates.tracking.parameter', 'ref');
+        $param = config('affiliates.links.parameter', 'aff');
 
         return $baseUrl . $separator . $param . '=' . $affiliate->code;
     }

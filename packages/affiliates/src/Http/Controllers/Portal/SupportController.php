@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Http\Controllers\Portal;
 
+use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateSupportTicket;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,8 @@ final class SupportController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $tickets = AffiliateSupportTicket::query()
             ->where('affiliate_id', $affiliate->id)
@@ -34,7 +36,8 @@ final class SupportController extends Controller
             'priority' => 'nullable|string|in:low,normal,high',
         ]);
 
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $ticket = AffiliateSupportTicket::create([
             'affiliate_id' => $affiliate->id,
@@ -58,7 +61,8 @@ final class SupportController extends Controller
 
     public function show(Request $request, string $ticketId): JsonResponse
     {
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $ticket = AffiliateSupportTicket::query()
             ->where('affiliate_id', $affiliate->id)
@@ -76,7 +80,8 @@ final class SupportController extends Controller
             'message' => 'required|string|max:5000',
         ]);
 
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $ticket = AffiliateSupportTicket::query()
             ->where('affiliate_id', $affiliate->id)
@@ -104,7 +109,8 @@ final class SupportController extends Controller
 
     public function close(Request $request, string $ticketId): JsonResponse
     {
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $ticket = AffiliateSupportTicket::query()
             ->where('affiliate_id', $affiliate->id)

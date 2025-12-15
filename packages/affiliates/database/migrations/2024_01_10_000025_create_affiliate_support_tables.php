@@ -10,7 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('affiliate_support_tickets', function (Blueprint $table): void {
+        $ticketsTable = config('affiliates.table_names.support_tickets', 'affiliate_support_tickets');
+        $messagesTable = config('affiliates.table_names.support_messages', 'affiliate_support_messages');
+
+        Schema::create($ticketsTable, function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('affiliate_id')->index();
             $table->string('subject');
@@ -20,7 +23,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('affiliate_support_messages', function (Blueprint $table): void {
+        Schema::create($messagesTable, function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('ticket_id')->index();
             $table->foreignUuid('affiliate_id')->nullable()->index();
@@ -33,7 +36,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('affiliate_support_messages');
-        Schema::dropIfExists('affiliate_support_tickets');
+        Schema::dropIfExists(config('affiliates.table_names.support_messages', 'affiliate_support_messages'));
+        Schema::dropIfExists(config('affiliates.table_names.support_tickets', 'affiliate_support_tickets'));
     }
 };

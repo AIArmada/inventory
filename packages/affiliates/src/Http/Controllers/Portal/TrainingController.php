@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Http\Controllers\Portal;
 
+use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateTrainingModule;
 use AIArmada\Affiliates\Models\AffiliateTrainingProgress;
-use DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 
 final class TrainingController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $modules = AffiliateTrainingModule::query()
             ->where('is_active', true)
@@ -55,7 +57,8 @@ final class TrainingController extends Controller
 
     public function show(Request $request, string $moduleId): JsonResponse
     {
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $module = AffiliateTrainingModule::query()
             ->where('is_active', true)
@@ -96,7 +99,8 @@ final class TrainingController extends Controller
             'last_position' => 'nullable|integer|min:0',
         ]);
 
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $module = AffiliateTrainingModule::query()
             ->where('is_active', true)
@@ -126,7 +130,8 @@ final class TrainingController extends Controller
             'answers' => 'required|array',
         ]);
 
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $module = AffiliateTrainingModule::query()
             ->where('is_active', true)
@@ -176,7 +181,8 @@ final class TrainingController extends Controller
 
     public function certificate(Request $request, string $moduleId): JsonResponse
     {
-        $affiliate = $request->user();
+        /** @var Affiliate $affiliate */
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $progress = AffiliateTrainingProgress::query()
             ->where('affiliate_id', $affiliate->id)

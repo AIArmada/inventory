@@ -53,8 +53,15 @@ final class ProfileController extends Controller
             'metadata' => 'sometimes|array',
         ]);
 
-        // Only allow updating certain fields
-        $affiliate->update(array_intersect_key($validated, array_flip(['name', 'email', 'metadata'])));
+        $attributes = array_intersect_key($validated, array_flip(['name', 'metadata']));
+
+        if (array_key_exists('email', $validated)) {
+            $attributes['contact_email'] = $validated['email'];
+        }
+
+        if ($attributes !== []) {
+            $affiliate->update($attributes);
+        }
 
         return response()->json([
             'message' => 'Profile updated successfully.',

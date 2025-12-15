@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Services\Tax;
 
+use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\Affiliates\Models\AffiliateTaxDocument;
@@ -78,13 +79,16 @@ final class TaxDocumentService
         $startDate = Carbon::create($year, 1, 1)->startOfDay();
         $endDate = Carbon::create($year, 12, 31)->endOfDay();
 
+        $affiliateIds = AffiliatePayout::query()
+            ->where('owner_type', Affiliate::class)
+            ->where('status', PayoutStatus::Completed->value)
+            ->whereBetween('paid_at', [$startDate, $endDate])
+            ->groupBy('owner_id')
+            ->havingRaw('SUM(total_minor) >= ?', [$threshold])
+            ->pluck('owner_id');
+
         return Affiliate::query()
-            ->whereHas('payouts', function ($query) use ($startDate, $endDate, $threshold): void {
-                $query->where('status', 'completed')
-                    ->whereBetween('paid_at', [$startDate, $endDate])
-                    ->groupBy('affiliate_id')
-                    ->havingRaw('SUM(amount_minor) >= ?', [$threshold]);
-            })
+            ->whereIn('id', $affiliateIds)
             ->get();
     }
 
@@ -93,11 +97,10 @@ final class TaxDocumentService
         $startDate = Carbon::create($year, 1, 1)->startOfDay();
         $endDate = Carbon::create($year, 12, 31)->endOfDay();
 
-        return (int) AffiliatePayout::query()
-            ->where('affiliate_id', $affiliate->id)
-            ->where('status', 'completed')
+        return (int) $affiliate->payouts()
+            ->where('status', PayoutStatus::Completed->value)
             ->whereBetween('paid_at', [$startDate, $endDate])
-            ->sum('amount_minor');
+            ->sum('total_minor');
     }
 
     public function getDocumentsForAffiliate(Affiliate $affiliate): Collection

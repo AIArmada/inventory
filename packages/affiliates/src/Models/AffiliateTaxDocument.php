@@ -49,6 +49,14 @@ final class AffiliateTaxDocument extends Model
         'sent_at' => 'datetime',
     ];
 
+    public function getTable(): string
+    {
+        return config('affiliates.table_names.tax_documents', 'affiliate_tax_documents');
+    }
+
+    /**
+     * @return BelongsTo<Affiliate, $this>
+     */
     public function affiliate(): BelongsTo
     {
         return $this->belongsTo(Affiliate::class, 'affiliate_id');

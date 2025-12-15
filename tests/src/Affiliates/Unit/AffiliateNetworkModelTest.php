@@ -54,11 +54,11 @@ describe('AffiliateNetwork Model', function (): void {
             ->and($network->depth)->toBe(0);
     });
 
-    it('has composite primary key', function (): void {
+    it('uses a uuid primary key', function (): void {
         $network = new AffiliateNetwork;
 
         expect($network->incrementing)->toBeFalse()
-            ->and($network->getKeyName())->toBe(['ancestor_id', 'descendant_id']);
+            ->and($network->getKeyName())->toBe('id');
     });
 
     it('does not use timestamps', function (): void {

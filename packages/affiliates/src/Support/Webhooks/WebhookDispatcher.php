@@ -21,6 +21,13 @@ class WebhookDispatcher
 
         $endpoints = Arr::wrap(config("affiliates.webhooks.endpoints.{$type}", []));
         $headers = (array) config('affiliates.webhooks.headers', []);
+        $secret = config('affiliates.webhooks.signature_secret');
+
+        if (! is_string($secret) || $secret === '') {
+            $secret = $headers['X-Affiliates-Signature'] ?? config('affiliates.webhooks.headers.X-Affiliates-Signature');
+        }
+
+        unset($headers['X-Affiliates-Signature']);
 
         foreach ($endpoints as $url) {
             $trimmed = mb_trim((string) $url);
@@ -36,10 +43,10 @@ class WebhookDispatcher
                 'sent_at' => now()->toIso8601String(),
             ];
 
-            $signature = $this->sign($body, $headers['X-Affiliates-Signature'] ?? null);
+            $signature = $this->sign($body, is_string($secret) ? $secret : null);
 
             Http::withHeaders(array_merge($headers, [
-                'X-Affiliates-Webhook-Signature' => $signature,
+                'X-Affiliates-Webhook-Signature' => $signature ?? '',
             ]))->asJson()->post($trimmed, $body);
         }
     }
@@ -49,9 +56,7 @@ class WebhookDispatcher
      */
     private function sign(array $body, ?string $secret): ?string
     {
-        $secret ??= config('affiliates.webhooks.headers.X-Affiliates-Signature');
-
-        if (! $secret) {
+        if (! is_string($secret) || $secret === '') {
             return null;
         }
 

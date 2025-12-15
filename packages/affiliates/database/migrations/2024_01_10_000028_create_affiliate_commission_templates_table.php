@@ -10,15 +10,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(config('affiliates.table_names.commission_templates', 'affiliate_commission_templates'), function (Blueprint $table): void {
+        $tableName = config('affiliates.table_names.commission_templates', 'affiliate_commission_templates');
+        $jsonType = commerce_json_column_type('affiliates');
+
+        Schema::create($tableName, function (Blueprint $table) use ($jsonType): void {
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->boolean('is_default')->default(false);
             $table->boolean('is_active')->default(true);
-            $table->json('rules');
-            $table->json('metadata')->nullable();
+            $table->{$jsonType}('rules');
+            $table->{$jsonType}('metadata')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

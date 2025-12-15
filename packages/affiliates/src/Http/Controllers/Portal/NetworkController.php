@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Http\Controllers\Portal;
 
+use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Models\Affiliate;
+use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Services\NetworkService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,9 +21,14 @@ final class NetworkController extends Controller
     public function index(Request $request): JsonResponse
     {
         /** @var Affiliate $affiliate */
-        $affiliate = $request->attributes->get('affiliate');
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
-        $depth = (int) $request->get('depth', 3);
+        $depth = max(1, (int) $request->get('depth', 3));
+        $maxDepth = (int) config('affiliates.network.max_depth', 0);
+        if ($maxDepth > 0) {
+            $depth = min($depth, $maxDepth);
+        }
+
         $tree = $this->networkService->buildTree($affiliate, $depth);
 
         return response()->json([
@@ -33,7 +40,7 @@ final class NetworkController extends Controller
     public function upline(Request $request): JsonResponse
     {
         /** @var Affiliate $affiliate */
-        $affiliate = $request->attributes->get('affiliate');
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $upline = $this->networkService->getUpline($affiliate);
 
@@ -51,7 +58,7 @@ final class NetworkController extends Controller
     public function downline(Request $request): JsonResponse
     {
         /** @var Affiliate $affiliate */
-        $affiliate = $request->attributes->get('affiliate');
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         $level = $request->get('level');
         $perPage = (int) $request->get('per_page', 20);
@@ -92,7 +99,7 @@ final class NetworkController extends Controller
     public function stats(Request $request): JsonResponse
     {
         /** @var Affiliate $affiliate */
-        $affiliate = $request->attributes->get('affiliate');
+        $affiliate = $request->attributes->get('affiliate') ?? $request->user();
 
         return response()->json($this->getNetworkStats($affiliate));
     }
@@ -102,7 +109,9 @@ final class NetworkController extends Controller
         $downline = $this->networkService->getDownline($affiliate);
 
         $totalMembers = $downline->count();
-        $activeMembers = $downline->where('status', 'active')->count();
+        $activeMembers = $downline
+            ->filter(fn (Affiliate $member) => $member->status === AffiliateStatus::Active)
+            ->count();
 
         $byLevel = $downline->groupBy(fn ($a) => $a->pivot?->depth ?? 0)
             ->map(fn ($group) => $group->count())
@@ -113,8 +122,10 @@ final class NetworkController extends Controller
             ->count();
 
         $networkRevenue = 0;
-        foreach ($downline as $member) {
-            $networkRevenue += $member->conversions()
+        $downlineIds = $downline->pluck('id')->all();
+        if ($downlineIds !== []) {
+            $networkRevenue = (int) AffiliateConversion::query()
+                ->whereIn('affiliate_id', $downlineIds)
                 ->where('occurred_at', '>=', now()->startOfMonth())
                 ->sum('total_minor');
         }

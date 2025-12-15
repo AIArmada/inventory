@@ -37,11 +37,22 @@ final class AffiliateSupportMessage extends Model
         'is_staff_reply' => 'boolean',
     ];
 
+    public function getTable(): string
+    {
+        return config('affiliates.table_names.support_messages', 'affiliate_support_messages');
+    }
+
+    /**
+     * @return BelongsTo<AffiliateSupportTicket, $this>
+     */
     public function ticket(): BelongsTo
     {
         return $this->belongsTo(AffiliateSupportTicket::class, 'ticket_id');
     }
 
+    /**
+     * @return BelongsTo<Affiliate, $this>
+     */
     public function affiliate(): BelongsTo
     {
         return $this->belongsTo(Affiliate::class, 'affiliate_id');

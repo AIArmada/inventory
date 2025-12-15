@@ -8,6 +8,7 @@ use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateCommissionPromotion;
 use AIArmada\Affiliates\Models\AffiliateCommissionRule;
 use AIArmada\Affiliates\Models\AffiliateVolumeTier;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 final class CommissionRuleEngine
@@ -44,7 +45,7 @@ final class CommissionRuleEngine
         $volumeBonus = $this->calculateVolumeBonus($affiliate, $orderAmountMinor, $context);
 
         // Apply promotions
-        $promotionBonus = $this->calculatePromotionBonus($affiliate, $orderAmountMinor, $context);
+        $promotionBonus = $this->calculatePromotionBonus($affiliate, $baseCommission, $context);
 
         // Apply caps
         $finalCommission = $this->applyCaps(
@@ -81,9 +82,18 @@ final class CommissionRuleEngine
             return $this->rulesCache[$cacheKey];
         }
 
+        $programId = $context['program_id'] ?? null;
+
         return $this->rulesCache[$cacheKey] = AffiliateCommissionRule::query()
             ->active()
             ->ordered()
+            ->when(
+                $programId,
+                fn (Builder $query) => $query->where(function (Builder $inner) use ($programId): void {
+                    $inner->whereNull('program_id')->orWhere('program_id', $programId);
+                }),
+                fn (Builder $query) => $query->whereNull('program_id')
+            )
             ->get()
             ->filter(fn (AffiliateCommissionRule $rule) => $rule->matches($context));
     }
@@ -116,9 +126,9 @@ final class CommissionRuleEngine
 
         if (! $rule) {
             // Fall back to default config rate
-            $defaultRate = config('affiliates.commissions.default_rate', 10);
+            $defaultRateBasisPoints = (int) config('affiliates.commissions.default_rate', 1000);
 
-            return (int) round($orderAmountMinor * $defaultRate / 100);
+            return (int) round($orderAmountMinor * $defaultRateBasisPoints / 10000);
         }
 
         return $rule->calculateCommission($orderAmountMinor);
@@ -132,8 +142,12 @@ final class CommissionRuleEngine
         $volumeQuery = $affiliate->conversions();
 
         if ($programId) {
-            $volumeQuery->whereHas('attribution', function ($q) use ($programId): void {
-                $q->where('program_id', $programId);
+            $volumeQuery->where(function (Builder $query) use ($programId): void {
+                $query
+                    ->where('metadata->program_id', $programId)
+                    ->orWhereHas('attribution', function (Builder $attributionQuery) use ($programId): void {
+                        $attributionQuery->where('metadata->program_id', $programId);
+                    });
             });
         }
 
@@ -143,7 +157,13 @@ final class CommissionRuleEngine
 
         // Find applicable volume tier
         $tier = AffiliateVolumeTier::query()
-            ->when($programId, fn ($q) => $q->where('program_id', $programId))
+            ->when(
+                $programId,
+                fn (Builder $query) => $query->where(function (Builder $inner) use ($programId): void {
+                    $inner->whereNull('program_id')->orWhere('program_id', $programId);
+                }),
+                fn (Builder $query) => $query->whereNull('program_id')
+            )
             ->where('min_volume_minor', '<=', $periodVolume)
             ->where(function ($q) use ($periodVolume): void {
                 $q->whereNull('max_volume_minor')
@@ -158,8 +178,8 @@ final class CommissionRuleEngine
 
         // Calculate bonus based on volume tier rate
         $tierCommission = (int) round($orderAmountMinor * $tier->commission_rate_basis_points / 10000);
-        $defaultRate = config('affiliates.commissions.default_rate', 10);
-        $defaultCommission = (int) round($orderAmountMinor * $defaultRate / 100);
+        $defaultRateBasisPoints = (int) config('affiliates.commissions.default_rate', 1000);
+        $defaultCommission = (int) round($orderAmountMinor * $defaultRateBasisPoints / 10000);
 
         // Return the difference as bonus
         return max(0, $tierCommission - $defaultCommission);
@@ -171,7 +191,13 @@ final class CommissionRuleEngine
 
         $promotions = AffiliateCommissionPromotion::query()
             ->active()
-            ->when($programId, fn ($q) => $q->where('program_id', $programId))
+            ->when(
+                $programId,
+                fn (Builder $query) => $query->where(function (Builder $inner) use ($programId): void {
+                    $inner->whereNull('program_id')->orWhere('program_id', $programId);
+                }),
+                fn (Builder $query) => $query->whereNull('program_id')
+            )
             ->get()
             ->filter(fn (AffiliateCommissionPromotion $promo) => $promo->appliesToAffiliate($affiliate));
 

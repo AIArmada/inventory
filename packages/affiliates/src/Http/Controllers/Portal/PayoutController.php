@@ -79,16 +79,16 @@ final class PayoutController extends Controller
 
         $pendingPayouts = $affiliate->payouts()
             ->whereIn('status', [PayoutStatus::Pending->value, PayoutStatus::Processing->value])
-            ->sum('amount_minor');
+            ->sum('total_minor');
 
         $paidThisYear = $affiliate->payouts()
             ->where('status', PayoutStatus::Completed->value)
             ->where('paid_at', '>=', now()->startOfYear())
-            ->sum('amount_minor');
+            ->sum('total_minor');
 
         $paidAllTime = $affiliate->payouts()
             ->where('status', PayoutStatus::Completed->value)
-            ->sum('amount_minor');
+            ->sum('total_minor');
 
         $nextPayout = $affiliate->payouts()
             ->where('status', PayoutStatus::Pending->value)

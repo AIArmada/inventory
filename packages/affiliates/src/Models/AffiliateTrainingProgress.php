@@ -29,8 +29,6 @@ final class AffiliateTrainingProgress extends Model
 {
     use HasUuids;
 
-    protected $table = 'affiliate_training_progress';
-
     protected $fillable = [
         'affiliate_id',
         'module_id',
@@ -52,11 +50,22 @@ final class AffiliateTrainingProgress extends Model
         'quiz_passed_at' => 'datetime',
     ];
 
+    public function getTable(): string
+    {
+        return config('affiliates.table_names.training_progress', 'affiliate_training_progress');
+    }
+
+    /**
+     * @return BelongsTo<Affiliate, $this>
+     */
     public function affiliate(): BelongsTo
     {
         return $this->belongsTo(Affiliate::class, 'affiliate_id');
     }
 
+    /**
+     * @return BelongsTo<AffiliateTrainingModule, $this>
+     */
     public function module(): BelongsTo
     {
         return $this->belongsTo(AffiliateTrainingModule::class, 'module_id');

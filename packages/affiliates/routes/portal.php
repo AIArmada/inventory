@@ -33,11 +33,13 @@ Route::prefix(config('affiliates.portal.prefix', 'affiliate-portal'))
         Route::get('/payouts/summary', [PayoutController::class, 'summary'])->name('payouts.summary');
         Route::get('/payouts/{id}', [PayoutController::class, 'show'])->name('payouts.show');
 
-        // Network
-        Route::get('/network', [NetworkController::class, 'index'])->name('network.index');
-        Route::get('/network/upline', [NetworkController::class, 'upline'])->name('network.upline');
-        Route::get('/network/downline', [NetworkController::class, 'downline'])->name('network.downline');
-        Route::get('/network/stats', [NetworkController::class, 'stats'])->name('network.stats');
+        if (config('affiliates.network.enabled', false)) {
+            // Network
+            Route::get('/network', [NetworkController::class, 'index'])->name('network.index');
+            Route::get('/network/upline', [NetworkController::class, 'upline'])->name('network.upline');
+            Route::get('/network/downline', [NetworkController::class, 'downline'])->name('network.downline');
+            Route::get('/network/stats', [NetworkController::class, 'stats'])->name('network.stats');
+        }
 
         // Links & Creatives
         Route::get('/links', [LinkController::class, 'index'])->name('links.index');

@@ -10,16 +10,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('affiliate_training_modules', function (Blueprint $table): void {
+        $modulesTable = config('affiliates.table_names.training_modules', 'affiliate_training_modules');
+        $progressTable = config('affiliates.table_names.training_progress', 'affiliate_training_progress');
+        $jsonType = commerce_json_column_type('affiliates');
+
+        Schema::create($modulesTable, function (Blueprint $table) use ($jsonType): void {
             $table->uuid('id')->primary();
             $table->string('title');
             $table->text('description')->nullable();
             $table->longText('content')->nullable();
             $table->string('type')->default('article');
             $table->string('video_url')->nullable();
-            $jsonType = config('affiliates.json_column_type', 'json');
-            $table->addColumn($jsonType, 'resources')->nullable();
-            $table->addColumn($jsonType, 'quiz')->nullable();
+            $table->{$jsonType}('resources')->nullable();
+            $table->{$jsonType}('quiz')->nullable();
             $table->unsignedInteger('passing_score')->nullable()->default(70);
             $table->unsignedInteger('duration_minutes')->default(10);
             $table->unsignedInteger('sort_order')->default(0);
@@ -28,7 +31,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('affiliate_training_progress', function (Blueprint $table): void {
+        Schema::create($progressTable, function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('affiliate_id')->index();
             $table->foreignUuid('module_id')->index();
@@ -47,7 +50,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('affiliate_training_progress');
-        Schema::dropIfExists('affiliate_training_modules');
+        Schema::dropIfExists(config('affiliates.table_names.training_progress', 'affiliate_training_progress'));
+        Schema::dropIfExists(config('affiliates.table_names.training_modules', 'affiliate_training_modules'));
     }
 };

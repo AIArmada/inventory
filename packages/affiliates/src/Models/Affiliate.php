@@ -257,7 +257,7 @@ final class Affiliate extends Model
         return $this->status === AffiliateStatus::Active;
     }
 
-    public function scopeForOwner(Builder $query, ?Model $owner = null): Builder
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
     {
         if (! config('affiliates.owner.enabled', false)) {
             return $query;
@@ -266,11 +266,19 @@ final class Affiliate extends Model
         $owner ??= app(OwnerResolverInterface::class)->resolve();
 
         if (! $owner) {
-            return $query;
+            return $query->whereNull('owner_type')->whereNull('owner_id');
         }
 
-        return $query->where('owner_type', $owner->getMorphClass())
-            ->where('owner_id', $owner->getKey());
+        return $query->where(function (Builder $builder) use ($owner, $includeGlobal): void {
+            $builder->where('owner_type', $owner->getMorphClass())
+                ->where('owner_id', $owner->getKey());
+
+            if ($includeGlobal) {
+                $builder->orWhere(function (Builder $inner): void {
+                    $inner->whereNull('owner_type')->whereNull('owner_id');
+                });
+            }
+        });
     }
 
     protected static function booted(): void

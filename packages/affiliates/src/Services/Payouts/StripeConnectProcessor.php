@@ -6,6 +6,7 @@ namespace AIArmada\Affiliates\Services\Payouts;
 
 use AIArmada\Affiliates\Contracts\PayoutProcessorInterface;
 use AIArmada\Affiliates\Data\PayoutResult;
+use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use DateTimeInterface;
 use Exception;
@@ -32,7 +33,13 @@ final class StripeConnectProcessor implements PayoutProcessorInterface
             return PayoutResult::failure('Stripe API key not configured', 'STRIPE_NOT_CONFIGURED');
         }
 
-        $payoutMethod = $payout->affiliate->payoutMethods()
+        $affiliate = $payout->affiliate;
+
+        if (! $affiliate) {
+            return PayoutResult::failure('Payout owner is not an affiliate', 'INVALID_PAYOUT_OWNER');
+        }
+
+        $payoutMethod = $affiliate->payoutMethods()
             ->where('type', 'stripe_connect')
             ->where('is_default', true)
             ->first();
@@ -88,8 +95,10 @@ final class StripeConnectProcessor implements PayoutProcessorInterface
 
     public function getStatus(AffiliatePayout $payout): string
     {
+        $currentStatus = $payout->status instanceof PayoutStatus ? $payout->status->value : (string) $payout->status;
+
         if (empty($payout->external_reference) || empty($this->apiKey)) {
-            return $payout->status;
+            return $currentStatus;
         }
 
         try {
@@ -106,7 +115,7 @@ final class StripeConnectProcessor implements PayoutProcessorInterface
             ]);
         }
 
-        return $payout->status;
+        return $currentStatus;
     }
 
     public function cancel(AffiliatePayout $payout): bool

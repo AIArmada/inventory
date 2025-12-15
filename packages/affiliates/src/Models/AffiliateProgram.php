@@ -93,7 +93,9 @@ class AffiliateProgram extends Model
      */
     public function affiliates(): BelongsToMany
     {
-        return $this->belongsToMany(Affiliate::class, 'affiliate_program_memberships', 'program_id', 'affiliate_id')
+        $membershipTable = config('affiliates.table_names.program_memberships', 'affiliate_program_memberships');
+
+        return $this->belongsToMany(Affiliate::class, $membershipTable, 'program_id', 'affiliate_id')
             ->using(AffiliateProgramMembership::class)
             ->withPivot(['tier_id', 'status', 'applied_at', 'approved_at', 'expires_at'])
             ->withTimestamps();
@@ -160,7 +162,7 @@ class AffiliateProgram extends Model
     {
         return $this->cachedComputation(
             __METHOD__,
-            fn () => $this->tiers()->orderBy('level', 'desc')->first()
+            fn () => $this->tiers()->orderBy('level')->first()
         );
     }
 
