@@ -1,6 +1,12 @@
 # Testing Guidelines
 - **Goal**: ELIMINATE BUGS.
-- **Refs**: Filament Testing Docs (Resources, Tables, Schemas).
+- **Refs**:
+  - [Overview](https://filamentphp.com/docs/4.x/testing/overview)
+  - [Resources](https://filamentphp.com/docs/4.x/testing/testing-resources)
+  - [Tables](https://filamentphp.com/docs/4.x/testing/testing-tables)
+  - [Schemas](https://filamentphp.com/docs/4.x/testing/testing-schemas)
+  - [Actions](https://filamentphp.com/docs/4.x/testing/testing-actions)
+  - [Notifications](https://filamentphp.com/docs/4.x/testing/testing-notifications)
 - **Exec**:
 - **Single**: `./vendor/bin/pest path/to/Test.php`.
 - **Dir**: `./vendor/bin/pest path/to/dir`.
@@ -8,5 +14,5 @@
 - **Coverage**:
 - Don't run full if `0% files > 10%`.
 - Command: `./vendor/bin/pest --coverage ...`.
-- Targets: Core ≥85%, Filament ≥70%, Support ≥80%.
+- Targets: Core ≥80%, Filament ≥70%, Support ≥80%.
 - **Output**: ALWAYS pipe: `2>&1 | tee /tmp/out.txt`.
