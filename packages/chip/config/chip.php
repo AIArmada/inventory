@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
 
 $webhookKeysEnv = env('CHIP_WEBHOOK_PUBLIC_KEYS');
 $webhookKeys = [];
@@ -76,13 +75,12 @@ return [
     | Ownership (Multi-Tenancy)
     |--------------------------------------------------------------------------
     |
-    | Register a resolver that returns the current owner (merchant, tenant, etc).
-    | When enabled, purchases are automatically scoped to the owner.
+    | When enabled, purchases are automatically scoped to the current owner.
+    | The OwnerResolverInterface binding is provided by commerce-support.
     |
     */
     'owner' => [
         'enabled' => env('CHIP_OWNER_ENABLED', false),
-        'resolver' => NullOwnerResolver::class,
         'include_global' => env('CHIP_OWNER_INCLUDE_GLOBAL', true),
         'auto_assign_on_create' => env('CHIP_OWNER_AUTO_ASSIGN', true),
     ],

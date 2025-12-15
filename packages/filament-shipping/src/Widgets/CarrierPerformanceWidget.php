@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentShipping\Widgets;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Shipping\Enums\ShipmentStatus;
 use AIArmada\Shipping\Models\Shipment;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class CarrierPerformanceWidget extends ChartWidget
 {
@@ -31,45 +34,46 @@ class CarrierPerformanceWidget extends ChartWidget
     {
         $startDate = Carbon::now()->subDays(30);
 
-        $carriers = Shipment::query()
-            ->select('carrier_code')
+        $delivered = ShipmentStatus::Delivered->value;
+        $inTransitStatuses = [
+            ShipmentStatus::Shipped->value,
+            ShipmentStatus::InTransit->value,
+            ShipmentStatus::OutForDelivery->value,
+        ];
+        $exceptionStatuses = [
+            ShipmentStatus::Exception->value,
+            ShipmentStatus::DeliveryFailed->value,
+        ];
+
+        $inTransitPlaceholders = implode(', ', array_fill(0, count($inTransitStatuses), '?'));
+        $exceptionPlaceholders = implode(', ', array_fill(0, count($exceptionStatuses), '?'));
+
+        $rows = Shipment::query()
+            ->forOwner($this->resolveOwner())
             ->where('created_at', '>=', $startDate)
-            ->distinct()
+            ->whereNotNull('carrier_code')
+            ->select('carrier_code')
+            ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS delivered_count', [$delivered])
+            ->selectRaw(
+                'SUM(CASE WHEN status IN (' . $inTransitPlaceholders . ') THEN 1 ELSE 0 END) AS in_transit_count',
+                $inTransitStatuses
+            )
+            ->selectRaw(
+                'SUM(CASE WHEN status IN (' . $exceptionPlaceholders . ') THEN 1 ELSE 0 END) AS exceptions_count',
+                $exceptionStatuses
+            )
+            ->groupBy('carrier_code')
+            ->orderBy('carrier_code')
+            ->get();
+
+        $labels = $rows
             ->pluck('carrier_code')
-            ->toArray();
+            ->map(fn (?string $code) => $code === null ? 'Unknown' : Str::ucfirst($code))
+            ->all();
 
-        $labels = array_map(fn ($code) => ucfirst($code), $carriers);
-
-        $deliveredData = [];
-        $inTransitData = [];
-        $exceptionsData = [];
-
-        foreach ($carriers as $carrier) {
-            $deliveredData[] = Shipment::query()
-                ->where('carrier_code', $carrier)
-                ->where('status', ShipmentStatus::Delivered)
-                ->where('created_at', '>=', $startDate)
-                ->count();
-
-            $inTransitData[] = Shipment::query()
-                ->where('carrier_code', $carrier)
-                ->whereIn('status', [
-                    ShipmentStatus::Shipped,
-                    ShipmentStatus::InTransit,
-                    ShipmentStatus::OutForDelivery,
-                ])
-                ->where('created_at', '>=', $startDate)
-                ->count();
-
-            $exceptionsData[] = Shipment::query()
-                ->where('carrier_code', $carrier)
-                ->whereIn('status', [
-                    ShipmentStatus::Exception,
-                    ShipmentStatus::DeliveryFailed,
-                ])
-                ->where('created_at', '>=', $startDate)
-                ->count();
-        }
+        $deliveredData = $rows->pluck('delivered_count')->map(fn ($v) => (int) $v)->all();
+        $inTransitData = $rows->pluck('in_transit_count')->map(fn ($v) => (int) $v)->all();
+        $exceptionsData = $rows->pluck('exceptions_count')->map(fn ($v) => (int) $v)->all();
 
         return [
             'datasets' => [
@@ -91,6 +95,15 @@ class CarrierPerformanceWidget extends ChartWidget
             ],
             'labels' => $labels,
         ];
+    }
+
+    private function resolveOwner(): ?Model
+    {
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        return app(OwnerResolverInterface::class)->resolve();
     }
 
     protected function getOptions(): array

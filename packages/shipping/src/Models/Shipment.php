@@ -201,6 +201,10 @@ class Shipment extends Model
             if (empty($shipment->ulid)) {
                 $shipment->ulid = (string) Str::ulid();
             }
+
+            if (empty($shipment->currency)) {
+                $shipment->currency = (string) config('shipping.defaults.currency', 'MYR');
+            }
         });
 
         static::deleting(function (Shipment $shipment): void {

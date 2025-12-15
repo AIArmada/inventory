@@ -69,6 +69,7 @@ VOUCHERS_JSON_COLUMN_TYPE=jsonb
 | `VOUCHERS_CHECK_MIN_CART_VALUE` | `true` | Check minimum cart value |
 | `VOUCHERS_TRACK_APPLICATIONS` | `true` | Track applied_count for analytics |
 | `VOUCHERS_OWNER_ENABLED` | `false` | Enable multi-tenancy |
+| `COMMERCE_OWNER_RESOLVER` | `AIArmada\CommerceSupport\Contracts\NullOwnerResolver` | Global owner resolver used when multi-tenancy is enabled |
 | `VOUCHERS_OWNER_INCLUDE_GLOBAL` | `true` | Include global vouchers in scoped queries |
 | `VOUCHERS_OWNER_AUTO_ASSIGN_ON_CREATE` | `true` | Auto-assign vouchers to current owner |
 | `VOUCHERS_MANUAL_REQUIRES_FLAG` | `true` | Require flag for manual redemption |

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentShipping\Pages;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Shipping\Enums\ShipmentStatus;
 use AIArmada\Shipping\Models\Shipment;
 use AIArmada\Shipping\ShippingManager;
@@ -19,6 +20,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use UnitEnum;
 
@@ -82,6 +84,8 @@ class ManifestPage extends Page implements HasTable
 
     public function table(Table $table): Table
     {
+        $weightUnit = (string) config('shipping.defaults.weight_unit', 'g');
+
         return $table
             ->query($this->getTableQuery())
             ->columns([
@@ -105,7 +109,11 @@ class ManifestPage extends Page implements HasTable
 
                 Tables\Columns\TextColumn::make('total_weight')
                     ->label('Weight')
-                    ->formatStateUsing(fn ($state) => number_format($state / 1000, 2) . ' kg'),
+                    ->formatStateUsing(fn ($state) => $state === null
+                        ? '-'
+                        : ($weightUnit === 'kg'
+                            ? number_format($state / 1000, 2) . ' kg'
+                            : number_format($state) . ' g')),
 
                 Tables\Columns\IconColumn::make('picked_up')
                     ->label('Picked Up')
@@ -124,6 +132,7 @@ class ManifestPage extends Page implements HasTable
                     ->icon('heroicon-o-check')
                     ->color('success')
                     ->visible(fn (Shipment $record) => ! ($record->metadata['picked_up'] ?? false))
+                    ->authorize(fn (Shipment $record): bool => auth()->user()?->can('update', $record) ?? false)
                     ->action(function (Shipment $record): void {
                         $record->update([
                             'metadata' => array_merge($record->metadata ?? [], [
@@ -145,8 +154,23 @@ class ManifestPage extends Page implements HasTable
                     ->color('success')
                     ->requiresConfirmation()
                     ->deselectRecordsAfterCompletion()
+                    ->authorize(fn (): bool => auth()->user()?->can('shipping.shipments.update') ?? false)
                     ->action(function ($records): void {
+                        $user = auth()->user();
+
+                        if ($user === null) {
+                            return;
+                        }
+
                         foreach ($records as $record) {
+                            if (! $record instanceof Shipment) {
+                                continue;
+                            }
+
+                            if (! $user->can('update', $record)) {
+                                continue;
+                            }
+
                             $record->update([
                                 'metadata' => array_merge($record->metadata ?? [], [
                                     'picked_up' => true,
@@ -186,11 +210,26 @@ class ManifestPage extends Page implements HasTable
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
+                ->authorize(fn (): bool => auth()->user()?->can('shipping.shipments.update') ?? false)
                 ->action(function (): void {
-                    $this->getTableQuery()
-                        ->whereNull('metadata->picked_up')
-                        ->orWhere('metadata->picked_up', false)
-                        ->each(function (Shipment $shipment): void {
+                    $user = auth()->user();
+
+                    if ($user === null) {
+                        return;
+                    }
+
+                    $query = $this->getTableQuery()
+                        ->where(function (Builder $builder): void {
+                            $builder
+                                ->whereNull('metadata->picked_up')
+                                ->orWhere('metadata->picked_up', false);
+                        });
+
+                    $query->each(function (Shipment $shipment) use ($user): void {
+                            if (! $user->can('update', $shipment)) {
+                                return;
+                            }
+
                             $shipment->update([
                                 'metadata' => array_merge($shipment->metadata ?? [], [
                                     'picked_up' => true,
@@ -213,6 +252,7 @@ class ManifestPage extends Page implements HasTable
     protected function getTableQuery(): Builder
     {
         $query = Shipment::query()
+            ->forOwner($this->resolveOwner())
             ->where('status', ShipmentStatus::Shipped);
 
         if ($this->manifestDate !== null) {
@@ -224,6 +264,15 @@ class ManifestPage extends Page implements HasTable
         }
 
         return $query;
+    }
+
+    private function resolveOwner(): ?Model
+    {
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        return app(OwnerResolverInterface::class)->resolve();
     }
 
     /**

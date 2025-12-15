@@ -10,6 +10,8 @@ use AIArmada\Shipping\Models\ShippingZone;
 use AIArmada\Shipping\Policies\ReturnAuthorizationPolicy;
 use AIArmada\Shipping\Policies\ShipmentPolicy;
 use AIArmada\Shipping\Policies\ShippingZonePolicy;
+use AIArmada\Shipping\Services\FreeShippingEvaluator;
+use AIArmada\Shipping\Services\RateShoppingEngine;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -27,6 +29,21 @@ class ShippingServiceProvider extends ServiceProvider
         });
 
         $this->app->alias(ShippingManager::class, 'shipping');
+
+        $this->app->singleton(RateShoppingEngine::class, function ($app): RateShoppingEngine {
+            /** @var array<string, mixed> $config */
+            $config = (array) $app->make('config')->get('shipping.rate_shopping', []);
+
+            return new RateShoppingEngine($app->make(ShippingManager::class), $config);
+        });
+
+        $this->app->singleton(FreeShippingEvaluator::class, function ($app): FreeShippingEvaluator {
+            /** @var array<string, mixed> $config */
+            $config = (array) $app->make('config')->get('shipping.free_shipping', []);
+            $config['currency'] ??= (string) $app->make('config')->get('shipping.defaults.currency', 'MYR');
+
+            return new FreeShippingEvaluator($config);
+        });
     }
 
     public function boot(): void

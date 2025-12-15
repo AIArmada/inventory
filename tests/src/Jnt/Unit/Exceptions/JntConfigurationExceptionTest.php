@@ -5,24 +5,6 @@ declare(strict_types=1);
 use AIArmada\Jnt\Exceptions\JntConfigurationException;
 
 describe('JntConfigurationException', function (): void {
-    it('creates exception for missing API key', function (): void {
-        $exception = JntConfigurationException::missingApiKey();
-
-        expect($exception)
-            ->toBeInstanceOf(JntConfigurationException::class)
-            ->getMessage()->toContain('API key is not configured')
-            ->and($exception->configKey)->toBe('jnt.api_key');
-    });
-
-    it('creates exception for invalid API key', function (): void {
-        $exception = JntConfigurationException::invalidApiKey();
-
-        expect($exception)
-            ->toBeInstanceOf(JntConfigurationException::class)
-            ->getMessage()->toContain('API key format is invalid')
-            ->and($exception->configKey)->toBe('jnt.api_key');
-    });
-
     it('creates exception for missing private key', function (): void {
         $exception = JntConfigurationException::missingPrivateKey();
 
@@ -41,31 +23,30 @@ describe('JntConfigurationException', function (): void {
             ->and($exception->configKey)->toBe('jnt.private_key');
     });
 
-    it('creates exception for missing public key', function (): void {
-        $exception = JntConfigurationException::missingPublicKey();
-
-        expect($exception)
-            ->toBeInstanceOf(JntConfigurationException::class)
-            ->getMessage()->toContain('public key is not configured')
-            ->and($exception->configKey)->toBe('jnt.public_key');
-    });
-
-    it('creates exception for invalid public key', function (): void {
-        $exception = JntConfigurationException::invalidPublicKey();
-
-        expect($exception)
-            ->toBeInstanceOf(JntConfigurationException::class)
-            ->getMessage()->toContain('public key format is invalid')
-            ->and($exception->configKey)->toBe('jnt.public_key');
-    });
-
     it('creates exception for missing API account', function (): void {
         $exception = JntConfigurationException::missingApiAccount();
-
         expect($exception)
             ->toBeInstanceOf(JntConfigurationException::class)
             ->getMessage()->toContain('API account is not configured')
             ->and($exception->configKey)->toBe('jnt.api_account');
+    });
+
+    it('creates exception for missing customer code', function (): void {
+        $exception = JntConfigurationException::missingCustomerCode();
+
+        expect($exception)
+            ->toBeInstanceOf(JntConfigurationException::class)
+            ->getMessage()->toContain('customer code is not configured')
+            ->and($exception->configKey)->toBe('jnt.customer_code');
+    });
+
+    it('creates exception for missing password', function (): void {
+        $exception = JntConfigurationException::missingPassword();
+
+        expect($exception)
+            ->toBeInstanceOf(JntConfigurationException::class)
+            ->getMessage()->toContain('password is not configured')
+            ->and($exception->configKey)->toBe('jnt.password');
     });
 
     it('creates exception for missing webhook URL', function (): void {
@@ -102,7 +83,7 @@ describe('JntConfigurationException', function (): void {
         expect($exception)
             ->toBeInstanceOf(JntConfigurationException::class)
             ->getMessage()->toContain("Invalid J&T environment 'development'")
-            ->getMessage()->toContain("Must be 'production' or 'sandbox'")
+            ->getMessage()->toContain("Must be 'production' or 'testing'")
             ->and($exception->configKey)->toBe('jnt.environment');
     });
 });

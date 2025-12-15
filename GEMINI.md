@@ -28,7 +28,7 @@
 - **Impl**:
 - Mig: `$table->nullableMorphs('owner')`.
 - Model: `use HasOwner`.
-- Provider: Bind `OwnerResolverInterface`.
+- Provider: Configure `COMMERCE_OWNER_RESOLVER` (or bind `OwnerResolverInterface` once, centrally via commerce-support).
 - **Usage**:
 - Owner: `Model::forOwner($owner)->get()`.
 - Global: `Model::globalOnly()->get()`.

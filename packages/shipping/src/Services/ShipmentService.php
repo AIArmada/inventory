@@ -82,7 +82,7 @@ class ShipmentService
      */
     public function ship(Shipment $shipment): Shipment
     {
-        if (! $shipment->isPending()) {
+        if ($shipment->status !== ShipmentStatus::Pending) {
             throw new ShipmentAlreadyShippedException($shipment);
         }
 

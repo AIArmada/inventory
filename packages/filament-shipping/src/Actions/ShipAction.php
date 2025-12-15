@@ -27,10 +27,13 @@ class ShipAction extends Action
             ->modalHeading('Ship Package')
             ->modalDescription('This will create the shipment with the carrier and generate tracking.')
             ->visible(fn (Shipment $record): bool => $record->status === ShipmentStatus::Pending)
+            ->authorize(fn (Shipment $record): bool => auth()->user()?->can('ship', $record) ?? false)
             ->action(function (Shipment $record): void {
                 try {
                     $shipmentService = app(ShipmentService::class);
                     $shipmentService->ship($record);
+
+                    $record->refresh();
 
                     Notification::make()
                         ->title('Shipment Created')
@@ -38,9 +41,11 @@ class ShipAction extends Action
                         ->success()
                         ->send();
                 } catch (Throwable $e) {
+                    report($e);
+
                     Notification::make()
                         ->title('Shipment Failed')
-                        ->body($e->getMessage())
+                        ->body('Unable to create shipment. Please try again or check logs.')
                         ->danger()
                         ->send();
                 }

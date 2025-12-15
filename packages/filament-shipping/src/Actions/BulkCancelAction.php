@@ -29,6 +29,18 @@ class BulkCancelAction extends BulkAction
             ->modalDescription('Are you sure you want to cancel all selected shipments? This action cannot be undone.')
             ->deselectRecordsAfterCompletion()
             ->action(function (Collection $records): void {
+                $user = auth()->user();
+
+                if ($user === null) {
+                    Notification::make()
+                        ->title('Authentication Required')
+                        ->body('Please sign in to cancel shipments.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 $shipmentService = app(ShipmentService::class);
 
                 $cancellableStatuses = [
@@ -41,6 +53,7 @@ class BulkCancelAction extends BulkAction
                 $cancellableShipments = $records->filter(
                     fn ($record) => $record instanceof Shipment
                     && in_array($record->status, $cancellableStatuses, true)
+                    && $user->can('cancel', $record)
                 );
 
                 if ($cancellableShipments->isEmpty()) {

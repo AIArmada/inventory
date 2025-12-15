@@ -24,28 +24,6 @@ class JntConfigurationException extends JntException
     }
 
     /**
-     * Create exception for missing API key.
-     */
-    public static function missingApiKey(): self
-    {
-        return new self(
-            message: 'J&T API key is not configured. Please set JNT_API_KEY in your environment or config/jnt.php',
-            configKey: 'jnt.api_key'
-        );
-    }
-
-    /**
-     * Create exception for invalid API key format.
-     */
-    public static function invalidApiKey(): self
-    {
-        return new self(
-            message: 'J&T API key format is invalid. Please check your configuration',
-            configKey: 'jnt.api_key'
-        );
-    }
-
-    /**
      * Create exception for missing private key.
      */
     public static function missingPrivateKey(): self
@@ -100,6 +78,22 @@ class JntConfigurationException extends JntException
         );
     }
 
+    public static function missingCustomerCode(): self
+    {
+        return new self(
+            message: 'J&T customer code is not configured. Please set JNT_CUSTOMER_CODE in your environment or config/jnt.php',
+            configKey: 'jnt.customer_code'
+        );
+    }
+
+    public static function missingPassword(): self
+    {
+        return new self(
+            message: 'J&T password is not configured. Please set JNT_PASSWORD in your environment or config/jnt.php',
+            configKey: 'jnt.password'
+        );
+    }
+
     /**
      * Create exception for missing webhook URL.
      */
@@ -139,7 +133,7 @@ class JntConfigurationException extends JntException
     public static function invalidEnvironment(string $environment): self
     {
         return new self(
-            message: sprintf("Invalid J&T environment '%s'. Must be 'production' or 'sandbox'", $environment),
+            message: sprintf("Invalid J&T environment '%s'. Must be 'production' or 'testing' (aliases: 'local', 'development')", $environment),
             configKey: 'jnt.environment'
         );
     }

@@ -391,10 +391,15 @@ class VoucherRemoved
 
 ## Contracts
 
-### VoucherOwnerResolver
+### OwnerResolverInterface
+
+The vouchers package uses the global owner resolver contract from `commerce-support`.
 
 ```php
-interface VoucherOwnerResolver
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use Illuminate\Database\Eloquent\Model;
+
+interface OwnerResolverInterface
 {
     public function resolve(): ?Model;
 }

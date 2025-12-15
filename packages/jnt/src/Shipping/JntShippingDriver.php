@@ -28,6 +28,7 @@ use AIArmada\Shipping\Data\TrackingEventData;
 use AIArmada\Shipping\Enums\DriverCapability;
 use AIArmada\Shipping\Enums\TrackingStatus;
 use Carbon\Carbon;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Throwable;
 
@@ -334,7 +335,7 @@ class JntShippingDriver implements ShippingDriverInterface
         $weightKg = max(1, ceil($weightGrams / 1000));
 
         // Base rate configuration
-        $baseRate = config('jnt.shipping.base_rate', 600); // RM6.00
+        $baseRate = config('jnt.shipping.base_rate', 800); // RM8.00
         $perKgRate = config('jnt.shipping.per_kg_rate', 200); // RM2.00 per additional kg
         $regionMultiplier = $this->getRegionMultiplier($destination);
 
@@ -358,7 +359,11 @@ class JntShippingDriver implements ShippingDriverInterface
 
         foreach ($eastMalaysiaRanges as $range) {
             if ($postcode >= $range[0] && $postcode <= $range[1]) {
-                return config('jnt.shipping.east_malaysia_multiplier', 1.5);
+                return match (true) {
+                    $postcode >= '87000' && $postcode <= '91999' => (float) Arr::get(config('jnt.shipping.region_multipliers', []), 'sabah', 1.5),
+                    $postcode >= '93000' && $postcode <= '98999' => (float) Arr::get(config('jnt.shipping.region_multipliers', []), 'sarawak', 1.5),
+                    default => (float) Arr::get(config('jnt.shipping.region_multipliers', []), 'labuan', 1.5),
+                };
             }
         }
 
@@ -371,6 +376,8 @@ class JntShippingDriver implements ShippingDriverInterface
     protected function getEstimatedDays(AddressData $destination): int
     {
         $postcode = $destination->postCode;
+        $defaultDays = (int) config('jnt.shipping.default_estimated_days', 3);
+        $eastExtraDays = (int) config('jnt.shipping.east_malaysia_extra_days', 2);
 
         // East Malaysia takes longer
         $eastMalaysiaRanges = [
@@ -380,10 +387,10 @@ class JntShippingDriver implements ShippingDriverInterface
 
         foreach ($eastMalaysiaRanges as $range) {
             if ($postcode >= $range[0] && $postcode <= $range[1]) {
-                return config('jnt.shipping.east_malaysia_days', 5);
+                return $defaultDays + $eastExtraDays;
             }
         }
 
-        return config('jnt.shipping.standard_days', 3);
+        return $defaultDays;
     }
 }

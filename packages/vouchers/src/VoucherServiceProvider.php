@@ -8,8 +8,6 @@ use AIArmada\Cart\CartManager;
 use AIArmada\Cart\Contracts\CartManagerInterface;
 use AIArmada\Cart\Facades\Cart as CartFacade;
 use AIArmada\Cart\Services\CartConditionResolver;
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
-use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Vouchers\AI\CartFeatureExtractor;
 use AIArmada\Vouchers\AI\Contracts\AbandonmentPredictorInterface;
 use AIArmada\Vouchers\AI\Contracts\CartFeatureExtractorInterface;
@@ -33,7 +31,6 @@ use AIArmada\Vouchers\Support\CartManagerWithVouchers;
 use AIArmada\Vouchers\Support\VoucherRulesFactory;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Event;
-use InvalidArgumentException;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -60,22 +57,6 @@ final class VoucherServiceProvider extends PackageServiceProvider
 
         // Register affiliate integration
         $this->app->singleton(AffiliateIntegrationRegistrar::class);
-
-        $this->app->singleton(OwnerResolverInterface::class, function (Application $app): OwnerResolverInterface {
-            /** @var string $resolverClass */
-            $resolverClass = config('vouchers.owner.resolver', NullOwnerResolver::class);
-
-            /** @var object $resolver */
-            $resolver = $app->make($resolverClass);
-
-            if (! $resolver instanceof OwnerResolverInterface) {
-                throw new InvalidArgumentException(
-                    sprintf('%s must implement %s', $resolverClass, OwnerResolverInterface::class)
-                );
-            }
-
-            return $resolver;
-        });
 
         $this->app->resolving(CartConditionResolver::class, function (CartConditionResolver $resolver): void {
             $resolver->register(function (mixed $payload) {
@@ -157,7 +138,6 @@ final class VoucherServiceProvider extends PackageServiceProvider
         return [
             VoucherService::class,
             VoucherValidator::class,
-            OwnerResolverInterface::class,
             ConversionPredictorInterface::class,
             AbandonmentPredictorInterface::class,
             DiscountOptimizerInterface::class,

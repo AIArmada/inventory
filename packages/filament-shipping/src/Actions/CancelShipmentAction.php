@@ -31,6 +31,7 @@ class CancelShipmentAction extends Action
                 ShipmentStatus::Pending,
                 ShipmentStatus::Shipped,
             ], true))
+            ->authorize(fn (Shipment $record): bool => auth()->user()?->can('cancel', $record) ?? false)
             ->action(function (Shipment $record): void {
                 try {
                     $shipmentService = app(ShipmentService::class);
@@ -41,9 +42,11 @@ class CancelShipmentAction extends Action
                         ->success()
                         ->send();
                 } catch (Throwable $e) {
+                    report($e);
+
                     Notification::make()
                         ->title('Cancellation Failed')
-                        ->body($e->getMessage())
+                        ->body('Unable to cancel shipment. Please try again or check logs.')
                         ->danger()
                         ->send();
                 }

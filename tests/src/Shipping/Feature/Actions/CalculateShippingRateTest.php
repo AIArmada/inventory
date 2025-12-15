@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AIArmada\Shipping\Actions\CalculateShippingRate;
 use AIArmada\Shipping\Data\AddressData;
 use AIArmada\Shipping\Data\PackageData;
+use AIArmada\Shipping\ShippingManager;
 
 describe('CalculateShippingRate Action', function (): void {
     it('can calculate rates for a specific carrier', function (): void {
@@ -46,6 +47,9 @@ describe('CalculateShippingRate Action', function (): void {
     });
 
     it('can calculate rates from all carriers when no carrier specified', function (): void {
+        // Isolate from any custom drivers registered by other packages.
+        app()->instance(ShippingManager::class, new ShippingManager(app()));
+
         $action = app(CalculateShippingRate::class);
 
         $origin = new AddressData(
@@ -75,7 +79,7 @@ describe('CalculateShippingRate Action', function (): void {
         $rates = $action->handle($origin, $destination, $packages);
 
         expect($rates)->toBeInstanceOf(Illuminate\Support\Collection::class);
-        expect($rates)->toHaveCount(0); // No carriers configured in config
+        expect($rates)->toHaveCount(3); // manual (1) + flat_rate (2)
     });
 
     it('handles multiple packages correctly', function (): void {
@@ -148,10 +152,13 @@ describe('CalculateShippingRate Action', function (): void {
     });
 
     it('skips carriers that throw exceptions', function (): void {
-        // Configure carriers including one that will fail
-        config(['shipping.carriers' => [
-            'null' => [],
-            'failing_carrier' => [], // This doesn't exist and will throw
+        // Isolate from any custom drivers registered by other packages.
+        app()->instance(ShippingManager::class, new ShippingManager(app()));
+
+        // Configure drivers including one that will fail
+        config(['shipping.drivers' => [
+            'manual' => [],
+            'failing_carrier' => [], // No creator method exists -> driver() throws
         ]]);
 
         $action = app(CalculateShippingRate::class);
@@ -180,7 +187,8 @@ describe('CalculateShippingRate Action', function (): void {
         $rates = $action->handle($origin, $destination, $packages);
 
         expect($rates)->toBeInstanceOf(Illuminate\Support\Collection::class);
-        // Only null driver rates should be included
-        expect($rates->count())->toBeGreaterThanOrEqual(0);
+        // Only manual driver rates should be included
+        expect($rates)->toHaveCount(1);
+        expect($rates->first()?->carrier)->toBe('manual');
     });
 });

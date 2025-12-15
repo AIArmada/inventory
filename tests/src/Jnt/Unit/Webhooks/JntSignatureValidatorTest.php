@@ -12,39 +12,33 @@ it('returns the correct signature header name', function (): void {
 
     $reflection = new ReflectionMethod($validator, 'getSignatureHeader');
 
-    expect($reflection->invoke($validator))->toBe('X-JNT-Signature');
-});
-
-it('returns sha256 as the hash algorithm', function (): void {
-    $validator = new JntSignatureValidator;
-
-    $reflection = new ReflectionMethod($validator, 'getHashAlgorithm');
-
-    expect($reflection->invoke($validator))->toBe('sha256');
+    expect($reflection->invoke($validator))->toBe('digest');
 });
 
 it('validates a correct signature', function (): void {
     $validator = new JntSignatureValidator;
     $secret = 'jnt-test-secret';
-    $payload = json_encode(['event' => 'shipment.delivered', 'awb' => 'JNT123456789']);
+    $bizContent = json_encode(['event' => 'shipment.delivered', 'awb' => 'JNT123456789']);
+
+    expect($bizContent)->not->toBeFalse();
 
     // Compute expected signature
-    $expectedSignature = hash_hmac('sha256', $payload, $secret);
+    $expectedSignature = base64_encode(md5($bizContent . $secret, true));
 
     // Create mock request with signature
     $request = Request::create(
         uri: '/webhook/jnt',
         method: 'POST',
-        content: $payload,
+        content: json_encode(['bizContent' => $bizContent]),
     );
-    $request->headers->set('X-JNT-Signature', $expectedSignature);
+    $request->headers->set('digest', $expectedSignature);
     $request->headers->set('Content-Type', 'application/json');
 
     // Create mock webhook config
     $config = new WebhookConfig([
         'name' => 'jnt',
         'signing_secret' => $secret,
-        'signature_header_name' => 'X-JNT-Signature',
+        'signature_header_name' => 'digest',
         'signature_validator' => JntSignatureValidator::class,
         'webhook_profile' => JntWebhookProfile::class,
         'webhook_model' => Spatie\WebhookClient\Models\WebhookCall::class,
@@ -57,22 +51,24 @@ it('validates a correct signature', function (): void {
 it('rejects an incorrect signature', function (): void {
     $validator = new JntSignatureValidator;
     $secret = 'jnt-test-secret';
-    $payload = json_encode(['event' => 'shipment.delivered', 'awb' => 'JNT123456789']);
+    $bizContent = json_encode(['event' => 'shipment.delivered', 'awb' => 'JNT123456789']);
+
+    expect($bizContent)->not->toBeFalse();
 
     // Create mock request with wrong signature
     $request = Request::create(
         uri: '/webhook/jnt',
         method: 'POST',
-        content: $payload,
+        content: json_encode(['bizContent' => $bizContent]),
     );
-    $request->headers->set('X-JNT-Signature', 'invalid-signature');
+    $request->headers->set('digest', 'invalid-signature');
     $request->headers->set('Content-Type', 'application/json');
 
     // Create mock webhook config
     $config = new WebhookConfig([
         'name' => 'jnt',
         'signing_secret' => $secret,
-        'signature_header_name' => 'X-JNT-Signature',
+        'signature_header_name' => 'digest',
         'signature_validator' => JntSignatureValidator::class,
         'webhook_profile' => JntWebhookProfile::class,
         'webhook_model' => Spatie\WebhookClient\Models\WebhookCall::class,
@@ -85,13 +81,15 @@ it('rejects an incorrect signature', function (): void {
 it('rejects request without signature header', function (): void {
     $validator = new JntSignatureValidator;
     $secret = 'jnt-test-secret';
-    $payload = json_encode(['event' => 'shipment.delivered', 'awb' => 'JNT123456789']);
+    $bizContent = json_encode(['event' => 'shipment.delivered', 'awb' => 'JNT123456789']);
+
+    expect($bizContent)->not->toBeFalse();
 
     // Create mock request without signature
     $request = Request::create(
         uri: '/webhook/jnt',
         method: 'POST',
-        content: $payload,
+        content: json_encode(['bizContent' => $bizContent]),
     );
     $request->headers->set('Content-Type', 'application/json');
 
@@ -99,7 +97,7 @@ it('rejects request without signature header', function (): void {
     $config = new WebhookConfig([
         'name' => 'jnt',
         'signing_secret' => $secret,
-        'signature_header_name' => 'X-JNT-Signature',
+        'signature_header_name' => 'digest',
         'signature_validator' => JntSignatureValidator::class,
         'webhook_profile' => JntWebhookProfile::class,
         'webhook_model' => Spatie\WebhookClient\Models\WebhookCall::class,

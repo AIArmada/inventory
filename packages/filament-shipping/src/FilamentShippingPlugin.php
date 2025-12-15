@@ -13,8 +13,6 @@ class FilamentShippingPlugin implements Plugin
 
     protected bool $hasShippingZoneResource = true;
 
-    protected bool $hasShippingRateResource = true;
-
     protected bool $hasReturnAuthorizationResource = true;
 
     protected bool $hasDashboardWidgets = true;

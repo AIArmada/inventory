@@ -315,17 +315,7 @@ class DocService
             return null;
         }
 
-        /** @var class-string<OwnerResolverInterface>|null $resolverClass */
-        $resolverClass = config('docs.owner.resolver');
-
-        if ($resolverClass === null) {
-            return null;
-        }
-
-        /** @var OwnerResolverInterface $resolver */
-        $resolver = app($resolverClass);
-
-        return $resolver->resolve();
+        return app(OwnerResolverInterface::class)->resolve();
     }
 
     /**
@@ -346,14 +336,17 @@ class DocService
                     $query->where(function ($q) use ($owner): void {
                         $q->where('owner_type', $owner->getMorphClass())
                             ->where('owner_id', $owner->getKey())
-                            ->orWhereNull('owner_type');
+                            ->orWhere(function ($q): void {
+                                $q->whereNull('owner_type')
+                                    ->whereNull('owner_id');
+                            });
                     });
                 } else {
                     $query->where('owner_type', $owner->getMorphClass())
                         ->where('owner_id', $owner->getKey());
                 }
             } elseif ($includeGlobal) {
-                $query->whereNull('owner_type');
+                $query->whereNull('owner_type')->whereNull('owner_id');
             }
         }
 

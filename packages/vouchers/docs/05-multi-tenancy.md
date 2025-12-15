@@ -9,10 +9,16 @@ Enable owner scoping in `config/vouchers.php`:
 ```php
 'owner' => [
     'enabled' => true,
-    'resolver' => App\Support\CurrentMerchantResolver::class,
     'include_global' => true,
     'auto_assign_on_create' => true,
 ],
+```
+
+Bind the owner resolver centrally via `commerce-support`:
+
+```env
+VOUCHERS_OWNER_ENABLED=true
+COMMERCE_OWNER_RESOLVER=App\Support\CurrentMerchantResolver
 ```
 
 ### Options
@@ -20,21 +26,20 @@ Enable owner scoping in `config/vouchers.php`:
 | Option | Description |
 |--------|-------------|
 | `enabled` | Enable/disable owner scoping |
-| `resolver` | Class that resolves the current owner |
-| `include_global` | Include global vouchers (owner_id = null) in queries |
+| `include_global` | Include global vouchers (owner_type and owner_id null) in queries |
 | `auto_assign_on_create` | Automatically assign new vouchers to current owner |
 
 ## Creating a Resolver
 
-Implement the `VoucherOwnerResolver` contract:
+Implement `OwnerResolverInterface`:
 
 ```php
 namespace App\Support;
 
-use AIArmada\Vouchers\Contracts\VoucherOwnerResolver;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Illuminate\Database\Eloquent\Model;
 
-class CurrentMerchantResolver implements VoucherOwnerResolver
+class CurrentMerchantResolver implements OwnerResolverInterface
 {
     public function resolve(): ?Model
     {
@@ -51,7 +56,7 @@ class CurrentMerchantResolver implements VoucherOwnerResolver
 ```php
 use Spatie\Multitenancy\Models\Tenant;
 
-class TenantResolver implements VoucherOwnerResolver
+class TenantResolver implements OwnerResolverInterface
 {
     public function resolve(): ?Model
     {
@@ -63,7 +68,7 @@ class TenantResolver implements VoucherOwnerResolver
 **Store-based:**
 
 ```php
-class StoreResolver implements VoucherOwnerResolver
+class StoreResolver implements OwnerResolverInterface
 {
     public function resolve(): ?Model
     {
@@ -77,7 +82,7 @@ class StoreResolver implements VoucherOwnerResolver
 **Domain-based:**
 
 ```php
-class DomainResolver implements VoucherOwnerResolver
+class DomainResolver implements OwnerResolverInterface
 {
     public function resolve(): ?Model
     {
@@ -212,15 +217,22 @@ Complete multi-vendor marketplace setup:
 // config/vouchers.php
 'owner' => [
     'enabled' => true,
-    'resolver' => App\Support\Vouchers\VendorResolver::class,
     'include_global' => true, // Platform-wide promos
     'auto_assign_on_create' => true,
 ],
 ```
 
+```env
+VOUCHERS_OWNER_ENABLED=true
+COMMERCE_OWNER_RESOLVER=App\Support\Vouchers\VendorResolver
+```
+
 ```php
 // app/Support/Vouchers/VendorResolver.php
-class VendorResolver implements VoucherOwnerResolver
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use Illuminate\Database\Eloquent\Model;
+
+class VendorResolver implements OwnerResolverInterface
 {
     public function resolve(): ?Model
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentShipping\Widgets;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentShipping\Resources\ReturnAuthorizationResource;
 use AIArmada\FilamentShipping\Resources\ShipmentResource;
 use AIArmada\Shipping\Enums\ShipmentStatus;
@@ -11,6 +12,7 @@ use AIArmada\Shipping\Models\ReturnAuthorization;
 use AIArmada\Shipping\Models\Shipment;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Database\Eloquent\Model;
 
 class PendingActionsWidget extends StatsOverviewWidget
 {
@@ -58,13 +60,15 @@ class PendingActionsWidget extends StatsOverviewWidget
     protected function getPendingShipmentsCount(): int
     {
         return Shipment::query()
-            ->whereIn('status', [ShipmentStatus::Draft, ShipmentStatus::Pending])
+            ->forOwner($this->resolveOwner())
+            ->where('status', ShipmentStatus::Pending)
             ->count();
     }
 
     protected function getExceptionShipmentsCount(): int
     {
         return Shipment::query()
+            ->forOwner($this->resolveOwner())
             ->whereIn('status', [ShipmentStatus::Exception, ShipmentStatus::DeliveryFailed])
             ->count();
     }
@@ -72,6 +76,7 @@ class PendingActionsWidget extends StatsOverviewWidget
     protected function getPendingReturnsCount(): int
     {
         return ReturnAuthorization::query()
+            ->forOwner($this->resolveOwner())
             ->where('status', 'pending')
             ->count();
     }
@@ -79,7 +84,17 @@ class PendingActionsWidget extends StatsOverviewWidget
     protected function getApprovedReturnsCount(): int
     {
         return ReturnAuthorization::query()
+            ->forOwner($this->resolveOwner())
             ->where('status', 'approved')
             ->count();
+    }
+
+    private function resolveOwner(): ?Model
+    {
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        return app(OwnerResolverInterface::class)->resolve();
     }
 }

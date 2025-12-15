@@ -11,8 +11,6 @@ use AIArmada\Cart\Events\CartDestroyed;
 use AIArmada\Cart\Events\ItemAdded;
 use AIArmada\Cart\Facades\Cart;
 use AIArmada\CashierChip\Events\PaymentSucceeded;
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
-use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Inventory\Cart\CartManagerWithInventory;
 use AIArmada\Inventory\Cart\ValidateInventoryOnAdd;
 use AIArmada\Inventory\Console\CleanupExpiredAllocationsCommand;
@@ -35,9 +33,7 @@ use AIArmada\Inventory\Services\SerialService;
 use AIArmada\Inventory\Services\StandardCostService;
 use AIArmada\Inventory\Services\ValuationService;
 use AIArmada\Inventory\Services\WeightedAverageCostService;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\Facades\Event;
-use InvalidArgumentException;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -58,7 +54,6 @@ final class InventoryServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        $this->registerOwnerResolver();
         $this->registerCoreServices();
         $this->registerBatchSerialServices();
         $this->registerCostingServices();
@@ -81,7 +76,6 @@ final class InventoryServiceProvider extends PackageServiceProvider
         return [
             InventoryService::class,
             InventoryAllocationService::class,
-            OwnerResolverInterface::class,
             BatchService::class,
             SerialService::class,
             SerialLookupService::class,
@@ -99,27 +93,6 @@ final class InventoryServiceProvider extends PackageServiceProvider
             'inventory',
             'inventory.allocations',
         ];
-    }
-
-    /**
-     * Register the owner resolver for multi-tenancy support.
-     */
-    private function registerOwnerResolver(): void
-    {
-        $this->app->singleton(OwnerResolverInterface::class, function (Application $app): OwnerResolverInterface {
-            /** @var class-string<OwnerResolverInterface> $resolverClass */
-            $resolverClass = config('inventory.owner.resolver', NullOwnerResolver::class);
-
-            $resolver = $app->make($resolverClass);
-
-            if (! $resolver instanceof OwnerResolverInterface) {
-                throw new InvalidArgumentException(
-                    sprintf('%s must implement %s', $resolverClass, OwnerResolverInterface::class)
-                );
-            }
-
-            return $resolver;
-        });
     }
 
     /**

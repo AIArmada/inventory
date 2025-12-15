@@ -44,7 +44,7 @@ final class HealthCheckCommand extends Command
         $this->newLine();
 
         // Display configuration status
-        if ($this->option('verbose')) {
+        if ($this->output->isVerbose()) {
             $this->displayConfiguration();
             $this->newLine();
         }
@@ -86,7 +86,7 @@ final class HealthCheckCommand extends Command
         } catch (RuntimeException $e) {
             $this->error('   ❌ Configuration error');
 
-            if ($this->option('verbose')) {
+            if ($this->output->isVerbose()) {
                 $this->line("      Error: {$e->getMessage()}");
             }
 
@@ -95,12 +95,12 @@ final class HealthCheckCommand extends Command
             // Handle specific case where customer_code or password are missing
             if (str_contains($e->getMessage(), 'customerCode') || str_contains($e->getMessage(), 'password')) {
                 $this->error('   ❌ Service requires customer_code and password');
-                if ($this->option('verbose')) {
+                if ($this->output->isVerbose()) {
                     $this->line('      Set JNT_CUSTOMER_CODE and JNT_PASSWORD in your environment');
                 }
             } else {
                 $this->error('   ❌ Service configuration error');
-                if ($this->option('verbose')) {
+                if ($this->output->isVerbose()) {
                     $this->line("      Error: {$e->getMessage()}");
                 }
             }
@@ -118,7 +118,7 @@ final class HealthCheckCommand extends Command
         } catch (Throwable $e) {
             // API call failed - log as warning but don't fail the check
             $this->warn('   ⚠️  API connectivity issue');
-            if ($this->option('verbose')) {
+            if ($this->output->isVerbose()) {
                 $this->line("      Error: {$e->getMessage()}");
             }
             // Don't return false - configuration is valid, connectivity issues are warnings
@@ -179,7 +179,7 @@ final class HealthCheckCommand extends Command
         }
 
         if ($hasErrors) {
-            if ($this->option('verbose')) {
+            if ($this->output->isVerbose()) {
                 $this->line('      Please check your J&T Express configuration');
             }
 

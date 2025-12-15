@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Support\Integrations;
 
-use AIArmada\Cart\CartManager;
-use AIArmada\Cart\Contracts\CartManagerInterface;
-use AIArmada\Cart\Facades\Cart;
 use AIArmada\Jnt\Cart\CartManagerWithJntShipping;
 use AIArmada\Jnt\Cart\JntShippingCalculator;
 use AIArmada\Jnt\Services\JntExpressService;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Facade;
 
 /**
  * Registers JNT shipping integration with the Cart package.
@@ -28,11 +26,21 @@ final class CartIntegrationRegistrar
      */
     public function register(): void
     {
-        if (! class_exists(CartManager::class)) {
+        if (! class_exists('AIArmada\\Cart\\CartManager')) {
             return;
         }
 
-        $this->app->extend('cart', function (CartManagerInterface $manager, Application $app) {
+        if (! interface_exists('AIArmada\\Cart\\Contracts\\CartManagerInterface')) {
+            return;
+        }
+
+        $this->app->extend('cart', function ($manager, Application $app) {
+            $cartManagerInterface = 'AIArmada\\Cart\\Contracts\\CartManagerInterface';
+
+            if (! ($manager instanceof $cartManagerInterface)) {
+                return $manager;
+            }
+
             if ($manager instanceof CartManagerWithJntShipping) {
                 return $manager;
             }
@@ -45,12 +53,10 @@ final class CartIntegrationRegistrar
                 $proxy->setCalculator($calculator);
             }
 
-            $app->instance(CartManager::class, $proxy);
-            $app->instance(CartManagerInterface::class, $proxy);
+            $app->instance('AIArmada\\Cart\\CartManager', $proxy);
+            $app->instance($cartManagerInterface, $proxy);
 
-            if (class_exists(Cart::class)) {
-                Cart::clearResolvedInstance('cart');
-            }
+            Facade::clearResolvedInstance('cart');
 
             return $proxy;
         });

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentShipping\Widgets;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentShipping\Resources\ShipmentResource;
 use AIArmada\Shipping\Enums\ShipmentStatus;
 use AIArmada\Shipping\Models\Shipment;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Model;
 
 class PendingShipmentsWidget extends BaseWidget
 {
@@ -24,10 +26,13 @@ class PendingShipmentsWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $weightUnit = (string) config('shipping.defaults.weight_unit', 'g');
+
         return $table
             ->query(
                 Shipment::query()
-                    ->whereIn('status', [ShipmentStatus::Draft, ShipmentStatus::Pending])
+                    ->forOwner($this->resolveOwner())
+                    ->where('status', ShipmentStatus::Pending)
                     ->latest()
                     ->limit(10)
             )
@@ -45,7 +50,11 @@ class PendingShipmentsWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('total_weight')
                     ->label('Weight')
-                    ->formatStateUsing(fn ($state) => number_format($state / 1000, 2) . ' kg'),
+                    ->formatStateUsing(fn ($state) => $state === null
+                        ? '-'
+                        : ($weightUnit === 'kg'
+                            ? number_format($state / 1000, 2) . ' kg'
+                            : number_format($state) . ' g')),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -56,5 +65,14 @@ class PendingShipmentsWidget extends BaseWidget
                     ->url(fn (Shipment $record) => ShipmentResource::getUrl('view', ['record' => $record])),
             ])
             ->paginated(false);
+    }
+
+    private function resolveOwner(): ?Model
+    {
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        return app(OwnerResolverInterface::class)->resolve();
     }
 }

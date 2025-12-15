@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
 
 $tablePrefix = env('AFFILIATES_TABLE_PREFIX', 'affiliate_');
 $tables = [
@@ -71,14 +70,14 @@ return [
     | Ownership (Multi-Tenancy)
     |--------------------------------------------------------------------------
     |
-    | Register a resolver that returns the current owner (merchant, tenant, etc).
-    | When enabled, affiliates/attributions/conversions are automatically scoped.
+    | When enabled, affiliates/attributions/conversions are automatically scoped
+    | to the current owner. The OwnerResolverInterface binding is provided by
+    | commerce-support.
     |
     */
 
     'owner' => [
         'enabled' => env('AFFILIATES_OWNER_ENABLED', false),
-        'resolver' => NullOwnerResolver::class,
         'auto_assign_on_create' => env('AFFILIATES_OWNER_AUTO_ASSIGN', true),
     ],
 

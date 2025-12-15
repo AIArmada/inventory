@@ -29,11 +29,25 @@ class BulkShipAction extends BulkAction
             ->modalDescription('This will create shipments with carriers for all selected pending packages.')
             ->deselectRecordsAfterCompletion()
             ->action(function (Collection $records): void {
+                $user = auth()->user();
+
+                if ($user === null) {
+                    Notification::make()
+                        ->title('Authentication Required')
+                        ->body('Please sign in to ship shipments.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 $shipmentService = app(ShipmentService::class);
 
                 // Filter to only pending shipments
                 $pendingShipments = $records->filter(
-                    fn ($record) => $record instanceof Shipment && $record->status === ShipmentStatus::Pending
+                    fn ($record) => $record instanceof Shipment
+                        && $record->status === ShipmentStatus::Pending
+                        && $user->can('ship', $record)
                 );
 
                 if ($pendingShipments->isEmpty()) {

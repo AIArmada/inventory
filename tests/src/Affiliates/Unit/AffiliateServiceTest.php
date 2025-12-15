@@ -160,7 +160,6 @@ test('cart metadata hydrates from affiliate cookie automatically', function (): 
 test('affiliate cookies honor owner scoping', function (): void {
     config([
         'affiliates.owner.enabled' => true,
-        'affiliates.owner.resolver' => StaticOwnerResolver::class,
         'affiliates.tracking.block_self_referral' => false,
     ]);
 
@@ -212,7 +211,6 @@ test('affiliate cookies honor owner scoping', function (): void {
 test('self referral is blocked when owner matches current owner', function (): void {
     config([
         'affiliates.owner.enabled' => true,
-        'affiliates.owner.resolver' => StaticOwnerResolver::class,
         'affiliates.tracking.block_self_referral' => true,
     ]);
 

@@ -14,7 +14,9 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 
 class ShippingZoneResource extends Resource
 {
@@ -25,6 +27,26 @@ class ShippingZoneResource extends Resource
     protected static string | UnitEnum | null $navigationGroup = 'Shipping';
 
     protected static ?int $navigationSort = 2;
+
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<ShippingZone> $query */
+        $query = parent::getEloquentQuery();
+
+        $owner = null;
+        if (app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        if (method_exists($query->getModel(), 'scopeForOwner')) {
+            /** @var Builder<ShippingZone> $scoped */
+            $scoped = $query->forOwner($owner);
+
+            return $scoped;
+        }
+
+        return $query;
+    }
 
     public static function form(Schema $schema): Schema
     {
