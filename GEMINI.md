@@ -1,140 +1,36 @@
 <laravel-boost-guidelines>
-=== .ai/test rules ===
+=== .ai/filament rules ===
 
-# Testing Guidelines
+# Filament Guidelines
 
-**The ultimate goal is to ELIMINATE all bugs.**
-Not skipping them. Not avoiding them.
-If there is one thing you should be very sensitive about, it's the bugs.
-**FIX THEM LIKE THE WORLD IS GONNA END IF NOT.**
+## Version & Docs (Mandatory)
 
-## Core Principle: Targeted Testing First
+- Implement using the **Filament v5 API**.
+- Filament v5 is largely compatible with Filament v4 patterns in this repo, but **do not assume** an API exists or behaves identically.
+- **Always verify** any Filament approach, class, method, or signature against the official Filament docs for the relevant version before coding.
 
-- **Never run full package tests unnecessarily**; always prefer targeted test execution for specific files or
-directories you modified.
-- Running full package tests is EXPENSIVE (can take 5-10+ minutes). Reserve it for final verification only.
+## Spatie Integrations (Mandatory)
 
-## ⚠️ MANDATORY: Always Save Test Output
+When implementing Filament functionality around Spatie packages, you MUST use the official FilamentPHP plugins (do not roll your own integrations or use third-party alternatives):
 
-**Every test execution MUST capture output to a temporary file.** This prevents re-running tests just to see error
-details.
+- Tags (Spatie Laravel Tags): https://github.com/filamentphp/spatie-laravel-tags-plugin
+- Settings (Spatie Laravel Settings): https://github.com/filamentphp/spatie-laravel-settings-plugin
+- Google Fonts (Spatie Laravel Google Fonts): https://github.com/filamentphp/spatie-laravel-google-fonts-plugin
+- Media Library (Spatie Laravel Media Library): https://github.com/filamentphp/spatie-laravel-media-library-plugin
 
-```bash
-# ALWAYS use this pattern - pipe output to tee
-./vendor/bin/pest tests/src/Cart/Unit/MyTest.php 2>&1 | tee /tmp/test-output.txt
+## Import / Export (Mandatory)
 
-# For full package runs (rare)
-./vendor/bin/pest --parallel tests/src/PackageName 2>&1 | tee /tmp/package-tests.txt
+For any import or export workflows in Filament, you MUST use Filament's built-in Actions:
 
-# For coverage runs
-./vendor/bin/pest --parallel --coverage --configuration=.xml/package.xml 2>&1 | tee /tmp/coverage.txt
-```
+- Import: https://filamentphp.com/docs/4.x/actions/import
+- Export: https://filamentphp.com/docs/4.x/actions/export
 
-**Why this matters:**
-- If tests fail, you have the full error output saved
-- No need to re-run tests just to see what failed
-- Can analyze failures, group by cause, and batch-fix
-- Coverage output preserved for identifying low-coverage files
+## Rules
 
-**Naming convention for temp files:**
-- Single file test: `/tmp/test-<filename>.txt`
-    - Directory test: `/tmp/test-<dirname>.txt`
-        - Full package: `/tmp/test-<package>-full.txt`
-            - Coverage: `/tmp/coverage-<package>.txt`
-
-                **WARNING: Avoid using `tail` or truncating output if it hinders visibility of all involved files,
-                especially for coverage reports. Always ensure you read the full output.**
-
-                ## Targeted Test Execution (Primary Approach)
-
-                When you create, modify, or fix test files, run ONLY those specific files:
-
-                ```bash
-                # Run a SINGLE test file (PREFERRED for development)
-                ./vendor/bin/pest tests/src/Cart/Unit/MyNewTest.php
-
-                # Run a small directory of related tests
-                ./vendor/bin/pest tests/src/Cart/Unit/Security/
-
-                # Run with a filter for specific test names
-                ./vendor/bin/pest --filter="test name pattern" tests/src/PackageName
-                ```
-
-                ## When to Use `--parallel`
-
-                - `--parallel` MUST be the first argument after `./vendor/bin/pest`.
-                - Use `--parallel` ONLY for full package/directory runs, NOT for single file execution.
-                - Single file tests are faster without the parallel overhead.
-
-                ```bash
-                # Single file (no --parallel needed)
-                ./vendor/bin/pest tests/src/Cart/Unit/MyTest.php
-
-                # Full package (use --parallel)
-                ./vendor/bin/pest --parallel tests/src/Cart
-                ```
-
-                ## Full Package Test Strategy (RESTRICTED)
-
-                Run full package tests ONLY when ALL of these conditions are met:
-
-                1. **High Confidence**: All individual test files pass when run separately
-                2. **Near Completion**: Working on final verification before PR/commit
-                3. **Coverage Analysis**: Need an actual coverage percentage (do pre-calculation first)
-                4. **Pre-Calculation for Coverage Goals**: Before running full coverage, calculate feasibility:
-
-                ### Coverage Feasibility Pre-Check
-
-                Before running a full coverage report, estimate if your goal is achievable:
-
-                ```
-                Calculation Formula:
-                - Count files at 0% coverage → X files
-                - Count total files in package → Y files
-                - Zero coverage ratio = X / Y
-
-                If zero coverage ratio > 10%, full coverage run is premature.
-                Work on reducing 0% files first with targeted tests.
-                ```
-
-                Example: If goal is 90% coverage but 20% of files have 0% coverage, it's mathematically impossible.
-                Focus on covering
-                those files first.
-
-                ## Test Development Workflow
-
-                1. **Create test file(s)** → Batch multiple tests together before running
-                2. **Run ONLY the new file(s)** → `./vendor/bin/pest tests/src/Package/Unit/NewTest.php`
-                3. **Fix failures immediately** → Don't accumulate failing tests
-                4. **Repeat** → Create more tests, run individually
-                5. **Batch verification** → After 5-10 test files, run the directory
-                6. **Full package (rare)** → Only for final verification
-
-                ## When Many Failures Occur
-
-                1. **Capture once**: `./vendor/bin/pest tests/src/PackageName 2>&1 | tee failures.txt`
-                2. **Group by cause**: Identify common patterns (missing mocks, wrong signatures, etc.)
-                3. **Batch-fix**: Fix all similar issues at once
-                4. **Rerun targeted files**: `./vendor/bin/pest tests/src/PackageName/Unit/FailingTest.php`
-                5. **Only after all pass**: Consider full package run
-
-                ## Coverage Command (Use Sparingly)
-
-                ```bash
-                # Full coverage (EXPENSIVE - 5-10+ minutes)
-                ./vendor/bin/pest --parallel --coverage --configuration=.xml/package.xml
-
-                # AFTER running coverage, capture the output and extract:
-                # - List of 0% coverage files (priority targets)
-                # - List of low coverage files (<50%) # - Save this list to avoid re-running coverage just for discovery
-                    ``` ## Test File Size Strategy - Create MULTIPLE tests per file to reduce file count - Use
-                    `describe()` blocks to group related tests - Aim for 5-20 assertions per test file - This reduces
-                    the number of separate test runs needed ## Minimum Coverage Targets - Core packages (cart, vouchers,
-                    inventory, etc.): ≥85% - Filament packages: ≥70% (UI-heavy, harder to unit test) - Support packages:
-                    ≥80% ## Summary Decision Tree ``` Need to verify test I just wrote? → Run SINGLE FILE only Need to
-                    verify a batch of tests I created? → Run DIRECTORY only Need final verification before commit? → Run
-                    FULL PACKAGE (rare) Need coverage percentage? → Pre-calculate feasibility first → Only run if goal
-                    seems achievable → Save output to avoid re-running for discovery ```
+- Do not introduce alternative import/export libraries (e.g., custom CSV/XLSX handlers) unless explicitly requested and approved.
+- Prefer official Filament plugins and documented APIs over custom panels, fields, or bespoke integrations.
+- If a feature is covered by an official plugin/action, use it as the default implementation path.
+- When uncertain or when upgrading patterns, consult docs first; never rely on memory or “common knowledge”.
 
 
 === .ai/multitenancy rules ===
@@ -237,23 +133,77 @@ Model::globalOnly()->get();
 - Test both owner-scoped and global record scenarios
 
 
-=== .ai/phpstan rules ===
+=== .ai/development rules ===
 
-# PHPStan Guidelines
+# Development Guidelines
 
-- All code must pass PHPStan level 6.
-- **Never run PHPStan on the whole `packages` directory.** Run it per package you changed (e.g., `./vendor/bin/phpstan analyse --level=6 packages/inventory`).
-- Verify with the per-package command (`phpstan.neon` baseline applies).
+- **NEVER** do any repo "cleanup" without explicit user instruction/permission.
+- This includes (but is not limited to): `git restore`, `git checkout -- <path>`, `git reset`, `git clean`, removing
+	untracked files, mass-reverting changes, or otherwise trying to "get back to a clean state".
+	- If the working tree is messy or another agent is changing files: stop and ask what to do.
+	- Before destructive changes, copy the file (e.g., `cp file.php file.php.bak`), then delete the backup when done.
+	- Be smart about scope: identify the package for any file you touch and run tooling only for that package.
+	- Pint: never run repo-wide; format only the affected package (e.g., `./vendor/bin/pint packages/inventory`).
 
-## Baseline discipline (strict)
+	## Laravel Best Practices (Opinionated)
 
-- Do **not** add new `ignoreErrors` entries or widen `excludePaths` unless you have exhausted reasonable fixes and can justify why the remaining issue is not safely fixable right now.
-- Prefer fixing root causes (types, generics, nullability, dead code, missing assertions) over suppressing.
-- During development/auditing/planning/execution, proactively try to **reduce** existing `ignoreErrors`/`excludePaths` gradually (delete or narrow them) while keeping targeted tests passing.
-- Any unavoidable ignore must be:
-	- narrowly scoped (specific message + path),
-	- documented in the PR/notes with the fix attempt summary,
-	- and treated as temporary debt to remove soon.
+	- **Strictly enforce Laravel ways**: Reject generic PHP solutions if a "Laravel way" exists.
+	- Use `Arr::get()` over `isset()`/`empty()`.
+	- Use `Collections` over native arrays.
+	- Use `Service Container` injection over `new Class()`.
+	- Use `Model::create()`/`update()` over manual property assignment.
+	- **Modern PHP**: Use PHP 8.2+ features (readonly classes, constructor injection, match expressions).
+
+	## Architecture & Design Patterns
+
+	- **SOLID Principles**: Adhere strictly to S.O.L.I.D.
+	- **Action Classes**: Encapsulate all business logic in Action classes (e.g., `ApproveOrderAction`), **NEVER** in
+	Controllers or Models.
+	- Controllers should only validate input, call an Action, and return a response.
+	- Models should only contain relationships, scopes, and simple accessors/mutators.
+	- **Repository Pattern**: Use repositories for data access logic to separate it from business logic.
+	- **Factory Pattern**: Use factories for complex object creation.
+
+	## Naming Conventions (Strict)
+
+	- **Classes**: `PascalCase` (e.g., `OrderController`)
+	- **Methods**: `camelCase` (e.g., `calculateTotal`)
+	- **Variables**: `camelCase` (e.g., `orderItems`)
+	- **Constants**: `SCREAMING_SNAKE_CASE` (e.g., `MAX_RETRIES`)
+	- **Database Tables**: `snake_case` plural (e.g., `order_items`)
+	- **Database Columns**: `snake_case` (e.g., `user_id`)
+	- **Booleans**: `is_`, `has_`, `can_` prefixes (e.g., `is_active`)
+
+
+=== .ai/model rules ===
+
+<?php /** @var \Illuminate\View\ComponentAttributeBag $attributes */ ?>
+## Model Guidelines
+
+- No DB-level FK constraints or cascades; handle all cascades in application code.
+- Required structure: use `HasUuids`; no `$table` property; `getTable()` pulls from config with prefix fallback; fillables match migration.
+- Relations typed with generics and PHPDoc properties.
+- `booted()` must implement application-level cascades (delete children or null FK as appropriate).
+- `casts()` set for arrays/booleans/datetimes as needed.
+- Migration reminder: use `foreignUuid()` without `constrained()`/cascades.
+
+
+=== .ai/database rules ===
+
+# Database Guidelines
+
+- Primary keys: `uuid('id')->primary()` only.
+- Foreign keys: `foreignUuid('relation_id')`; never use `constrained()` or DB-level cascades—handle in application logic.
+- Sample:
+```php
+Schema::create('orders', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    $table->foreignUuid('user_id');
+    $table->foreignUuid('cart_id');
+    $table->timestamps();
+});
+```
+- Verify migrations contain no DB constraints; ensure cascades are implemented in models/services instead.
 
 
 === .ai/spatie rules ===
@@ -428,118 +378,6 @@ Use this as the default mapping unless a package has documented exceptions.
 
 - Only add configuration keys that are referenced in code.
 - Keep package configs minimal and ordered per the repo config guidelines.
-
-
-=== .ai/development rules ===
-
-# Development Guidelines
-
-- **NEVER** do any repo "cleanup" without explicit user instruction/permission.
-- This includes (but is not limited to): `git restore`, `git checkout -- <path>`, `git reset`, `git clean`, removing
-	untracked files, mass-reverting changes, or otherwise trying to "get back to a clean state".
-	- If the working tree is messy or another agent is changing files: stop and ask what to do.
-	- Before destructive changes, copy the file (e.g., `cp file.php file.php.bak`), then delete the backup when done.
-	- Be smart about scope: identify the package for any file you touch and run tooling only for that package.
-	- Pint: never run repo-wide; format only the affected package (e.g., `./vendor/bin/pint packages/inventory`).
-
-	## Laravel Best Practices (Opinionated)
-
-	- **Strictly enforce Laravel ways**: Reject generic PHP solutions if a "Laravel way" exists.
-	- Use `Arr::get()` over `isset()`/`empty()`.
-	- Use `Collections` over native arrays.
-	- Use `Service Container` injection over `new Class()`.
-	- Use `Model::create()`/`update()` over manual property assignment.
-	- **Modern PHP**: Use PHP 8.2+ features (readonly classes, constructor injection, match expressions).
-
-	## Architecture & Design Patterns
-
-	- **SOLID Principles**: Adhere strictly to S.O.L.I.D.
-	- **Action Classes**: Encapsulate all business logic in Action classes (e.g., `ApproveOrderAction`), **NEVER** in
-	Controllers or Models.
-	- Controllers should only validate input, call an Action, and return a response.
-	- Models should only contain relationships, scopes, and simple accessors/mutators.
-	- **Repository Pattern**: Use repositories for data access logic to separate it from business logic.
-	- **Factory Pattern**: Use factories for complex object creation.
-
-	## Naming Conventions (Strict)
-
-	- **Classes**: `PascalCase` (e.g., `OrderController`)
-	- **Methods**: `camelCase` (e.g., `calculateTotal`)
-	- **Variables**: `camelCase` (e.g., `orderItems`)
-	- **Constants**: `SCREAMING_SNAKE_CASE` (e.g., `MAX_RETRIES`)
-	- **Database Tables**: `snake_case` plural (e.g., `order_items`)
-	- **Database Columns**: `snake_case` (e.g., `user_id`)
-	- **Booleans**: `is_`, `has_`, `can_` prefixes (e.g., `is_active`)
-
-
-=== .ai/filament rules ===
-
-# Filament Guidelines
-
-## Version & Docs (Mandatory)
-
-- Implement using the **Filament v5 API**.
-- Filament v5 is largely compatible with Filament v4 patterns in this repo, but **do not assume** an API exists or behaves identically.
-- **Always verify** any Filament approach, class, method, or signature against the official Filament docs for the relevant version before coding.
-
-## Spatie Integrations (Mandatory)
-
-When implementing Filament functionality around Spatie packages, you MUST use the official FilamentPHP plugins (do not roll your own integrations or use third-party alternatives):
-
-- Tags (Spatie Laravel Tags): https://github.com/filamentphp/spatie-laravel-tags-plugin
-- Settings (Spatie Laravel Settings): https://github.com/filamentphp/spatie-laravel-settings-plugin
-- Google Fonts (Spatie Laravel Google Fonts): https://github.com/filamentphp/spatie-laravel-google-fonts-plugin
-- Media Library (Spatie Laravel Media Library): https://github.com/filamentphp/spatie-laravel-media-library-plugin
-
-## Import / Export (Mandatory)
-
-For any import or export workflows in Filament, you MUST use Filament's built-in Actions:
-
-- Import: https://filamentphp.com/docs/4.x/actions/import
-- Export: https://filamentphp.com/docs/4.x/actions/export
-
-## Rules
-
-- Do not introduce alternative import/export libraries (e.g., custom CSV/XLSX handlers) unless explicitly requested and approved.
-- Prefer official Filament plugins and documented APIs over custom panels, fields, or bespoke integrations.
-- If a feature is covered by an official plugin/action, use it as the default implementation path.
-- When uncertain or when upgrading patterns, consult docs first; never rely on memory or “common knowledge”.
-
-
-=== .ai/config rules ===
-
-# Config Guidelines
-
-- Only keep config keys that are used in code.
-- Order core package configs: Database → Credentials/API → Defaults → Features/Behavior → Integrations → HTTP → Webhooks → Cache → Logging.
-- Order Filament configs: Navigation → Tables → Features → Resources.
-- Keep configs minimal; publish only what is needed; nest related settings.
-- Migrations with JSON columns require a `json_column_type` config key.
-- Prefer defaults over excess env() wrappers; remove unused keys.
-- Comments: Laravel-style section headers only; inline comments only for non-obvious values.
-- Verify with `grep -r "config('package.key')" src/ packages/*/src/`; remove keys with no matches.
-
-
-=== .ai/packages rules ===
-
-# Packages Guidelines
-
-- Independence: each package must run standalone; prefer `suggest`/optional deps over `require`.
-- Integration: when co-installed, auto-enable hooks via service providers using `class_exists()`/config toggles.
-- DTOs: all DTOs must use Laravel Data for consistency.
-- Example integration pattern:
-```php
-public function boot(): void
-{
-    if (class_exists(Cashier::class)) {
-        // Cart-Cashier integration
-    }
-    if (class_exists(Chip::class)) {
-        // Cart-Chip integration
-    }
-}
-```
-- Verification: test package alone via `composer require package/<pkg>` and together to confirm auto-features.
 
 
 === .ai/docs rules ===
@@ -831,35 +669,217 @@ ls packages/*/docs/*.md | grep -v "/[0-9][0-9]-"
 - [ ] All files have frontmatter with `title:`
 
 
-=== .ai/model rules ===
+=== .ai/phpstan rules ===
 
-<?php /** @var \Illuminate\View\ComponentAttributeBag $attributes */ ?>
-## Model Guidelines
+# PHPStan Guidelines
 
-- No DB-level FK constraints or cascades; handle all cascades in application code.
-- Required structure: use `HasUuids`; no `$table` property; `getTable()` pulls from config with prefix fallback; fillables match migration.
-- Relations typed with generics and PHPDoc properties.
-- `booted()` must implement application-level cascades (delete children or null FK as appropriate).
-- `casts()` set for arrays/booleans/datetimes as needed.
-- Migration reminder: use `foreignUuid()` without `constrained()`/cascades.
+- All code must pass PHPStan level 6.
+- **Never run PHPStan on the whole `packages` directory.** Run it per package you changed (e.g., `./vendor/bin/phpstan analyse --level=6 packages/inventory`).
+- Verify with the per-package command (`phpstan.neon` baseline applies).
+
+## Baseline discipline (strict)
+
+- Do **not** add new `ignoreErrors` entries or widen `excludePaths` unless you have exhausted reasonable fixes and can justify why the remaining issue is not safely fixable right now.
+- Prefer fixing root causes (types, generics, nullability, dead code, missing assertions) over suppressing.
+- During development/auditing/planning/execution, proactively try to **reduce** existing `ignoreErrors`/`excludePaths` gradually (delete or narrow them) while keeping targeted tests passing.
+- Any unavoidable ignore must be:
+	- narrowly scoped (specific message + path),
+	- documented in the PR/notes with the fix attempt summary,
+	- and treated as temporary debt to remove soon.
 
 
-=== .ai/database rules ===
+=== .ai/packages rules ===
 
-# Database Guidelines
+# Packages Guidelines
 
-- Primary keys: `uuid('id')->primary()` only.
-- Foreign keys: `foreignUuid('relation_id')`; never use `constrained()` or DB-level cascades—handle in application logic.
-- Sample:
+- Independence: each package must run standalone; prefer `suggest`/optional deps over `require`.
+- Integration: when co-installed, auto-enable hooks via service providers using `class_exists()`/config toggles.
+- DTOs: all DTOs must use Laravel Data for consistency.
+- Example integration pattern:
 ```php
-Schema::create('orders', function (Blueprint $table) {
-    $table->uuid('id')->primary();
-    $table->foreignUuid('user_id');
-    $table->foreignUuid('cart_id');
-    $table->timestamps();
-});
+public function boot(): void
+{
+    if (class_exists(Cashier::class)) {
+        // Cart-Cashier integration
+    }
+    if (class_exists(Chip::class)) {
+        // Cart-Chip integration
+    }
+}
 ```
-- Verify migrations contain no DB constraints; ensure cascades are implemented in models/services instead.
+- Verification: test package alone via `composer require package/<pkg>` and together to confirm auto-features.
+
+
+=== .ai/config rules ===
+
+# Config Guidelines
+
+- Only keep config keys that are used in code.
+- Order core package configs: Database → Credentials/API → Defaults → Features/Behavior → Integrations → HTTP → Webhooks → Cache → Logging.
+- Order Filament configs: Navigation → Tables → Features → Resources.
+- Keep configs minimal; publish only what is needed; nest related settings.
+- Migrations with JSON columns require a `json_column_type` config key.
+- Prefer defaults over excess env() wrappers; remove unused keys.
+- Comments: Laravel-style section headers only; inline comments only for non-obvious values.
+- Verify with `grep -r "config('package.key')" src/ packages/*/src/`; remove keys with no matches.
+
+
+=== .ai/test rules ===
+
+# Testing Guidelines
+
+**The ultimate goal is to ELIMINATE all bugs.**
+Not skipping them. Not avoiding them.
+If there is one thing you should be very sensitive about, it's the bugs.
+**FIX THEM LIKE THE WORLD IS GONNA END IF NOT.**
+
+## Filament PHP Testing References
+
+When testing Filament components, refer to these official documentation pages:
+
+| Topic | Documentation URL |
+|-------|-------------------|
+| Overview | https://filamentphp.com/docs/4.x/testing/overview |
+| Testing Resources | https://filamentphp.com/docs/4.x/testing/testing-resources |
+| Testing Tables | https://filamentphp.com/docs/4.x/testing/testing-tables |
+| Testing Schemas | https://filamentphp.com/docs/4.x/testing/testing-schemas |
+| Testing Actions | https://filamentphp.com/docs/4.x/testing/testing-actions |
+| Testing Notifications | https://filamentphp.com/docs/4.x/testing/testing-notifications |
+
+**Key Testing Helpers:**
+- `Livewire::test()` - For testing Filament pages and components
+- `assertCanSeeTableRecords()` - Assert records visible in table
+- `assertFormFieldExists()` - Assert form field presence
+- `callAction()` - Trigger actions in tests
+- `assertNotified()` - Assert notifications were sent
+
+## Core Principle: Targeted Testing First
+
+- **Never run full package tests unnecessarily**; always prefer targeted test execution for specific files or
+directories you modified.
+- Running full package tests is EXPENSIVE (can take 5-10+ minutes). Reserve it for final verification only.
+
+## ⚠️ MANDATORY: Always Save Test Output
+
+**Every test execution MUST capture output to a temporary file.** This prevents re-running tests just to see error
+details.
+
+```bash
+# ALWAYS use this pattern - pipe output to tee
+./vendor/bin/pest tests/src/Cart/Unit/MyTest.php 2>&1 | tee /tmp/test-output.txt
+
+# For full package runs (rare)
+./vendor/bin/pest --parallel tests/src/PackageName 2>&1 | tee /tmp/package-tests.txt
+
+# For coverage runs
+./vendor/bin/pest --parallel --coverage --configuration=.xml/package.xml 2>&1 | tee /tmp/coverage.txt
+```
+
+**Why this matters:**
+- If tests fail, you have the full error output saved
+- No need to re-run tests just to see what failed
+- Can analyze failures, group by cause, and batch-fix
+- Coverage output preserved for identifying low-coverage files
+
+**Naming convention for temp files:**
+- Single file test: `/tmp/test-<filename>.txt`
+    - Directory test: `/tmp/test-<dirname>.txt`
+        - Full package: `/tmp/test-<package>-full.txt`
+            - Coverage: `/tmp/coverage-<package>.txt`
+
+                **WARNING: Avoid using `tail` or truncating output if it hinders visibility of all involved files,
+                especially for coverage reports. Always ensure you read the full output.**
+
+                ## Targeted Test Execution (Primary Approach)
+
+                When you create, modify, or fix test files, run ONLY those specific files:
+
+                ```bash
+                # Run a SINGLE test file (PREFERRED for development)
+                ./vendor/bin/pest tests/src/Cart/Unit/MyNewTest.php
+
+                # Run a small directory of related tests
+                ./vendor/bin/pest tests/src/Cart/Unit/Security/
+
+                # Run with a filter for specific test names
+                ./vendor/bin/pest --filter="test name pattern" tests/src/PackageName
+                ```
+
+                ## When to Use `--parallel`
+
+                - `--parallel` MUST be the first argument after `./vendor/bin/pest`.
+                - Use `--parallel` ONLY for full package/directory runs, NOT for single file execution.
+                - Single file tests are faster without the parallel overhead.
+
+                ```bash
+                # Single file (no --parallel needed)
+                ./vendor/bin/pest tests/src/Cart/Unit/MyTest.php
+
+                # Full package (use --parallel)
+                ./vendor/bin/pest --parallel tests/src/Cart
+                ```
+
+                ## Full Package Test Strategy (RESTRICTED)
+
+                Run full package tests ONLY when ALL of these conditions are met:
+
+                1. **High Confidence**: All individual test files pass when run separately
+                2. **Near Completion**: Working on final verification before PR/commit
+                3. **Coverage Analysis**: Need an actual coverage percentage (do pre-calculation first)
+                4. **Pre-Calculation for Coverage Goals**: Before running full coverage, calculate feasibility:
+
+                ### Coverage Feasibility Pre-Check
+
+                Before running a full coverage report, estimate if your goal is achievable:
+
+                ```
+                Calculation Formula:
+                - Count files at 0% coverage → X files
+                - Count total files in package → Y files
+                - Zero coverage ratio = X / Y
+
+                If zero coverage ratio > 10%, full coverage run is premature.
+                Work on reducing 0% files first with targeted tests.
+                ```
+
+                Example: If goal is 90% coverage but 20% of files have 0% coverage, it's mathematically impossible.
+                Focus on covering
+                those files first.
+
+                ## Test Development Workflow
+
+                1. **Create test file(s)** → Batch multiple tests together before running
+                2. **Run ONLY the new file(s)** → `./vendor/bin/pest tests/src/Package/Unit/NewTest.php`
+                3. **Fix failures immediately** → Don't accumulate failing tests
+                4. **Repeat** → Create more tests, run individually
+                5. **Batch verification** → After 5-10 test files, run the directory
+                6. **Full package (rare)** → Only for final verification
+
+                ## When Many Failures Occur
+
+                1. **Capture once**: `./vendor/bin/pest tests/src/PackageName 2>&1 | tee failures.txt`
+                2. **Group by cause**: Identify common patterns (missing mocks, wrong signatures, etc.)
+                3. **Batch-fix**: Fix all similar issues at once
+                4. **Rerun targeted files**: `./vendor/bin/pest tests/src/PackageName/Unit/FailingTest.php`
+                5. **Only after all pass**: Consider full package run
+
+                ## Coverage Command (Use Sparingly)
+
+                ```bash
+                # Full coverage (EXPENSIVE - 5-10+ minutes)
+                ./vendor/bin/pest --parallel --coverage --configuration=.xml/package.xml
+
+                # AFTER running coverage, capture the output and extract:
+                # - List of 0% coverage files (priority targets)
+                # - List of low coverage files (<50%) # - Save this list to avoid re-running coverage just for discovery
+                    ``` ## Test File Size Strategy - Create MULTIPLE tests per file to reduce file count - Use
+                    `describe()` blocks to group related tests - Aim for 5-20 assertions per test file - This reduces
+                    the number of separate test runs needed ## Minimum Coverage Targets - Core packages (cart, vouchers,
+                    inventory, etc.): ≥85% - Filament packages: ≥70% (UI-heavy, harder to unit test) - Support packages:
+                    ≥80% ## Summary Decision Tree ``` Need to verify test I just wrote? → Run SINGLE FILE only Need to
+                    verify a batch of tests I created? → Run DIRECTORY only Need final verification before commit? → Run
+                    FULL PACKAGE (rare) Need coverage percentage? → Pre-calculate feasibility first → Only run if goal
+                    seems achievable → Save output to avoid re-running for discovery ```
 
 
 === foundation rules ===

@@ -5,6 +5,26 @@ Not skipping them. Not avoiding them.
 If there is one thing you should be very sensitive about, it's the bugs.
 **FIX THEM LIKE THE WORLD IS GONNA END IF NOT.**
 
+## Filament PHP Testing References
+
+When testing Filament components, refer to these official documentation pages:
+
+| Topic | Documentation URL |
+|-------|-------------------|
+| Overview | https://filamentphp.com/docs/4.x/testing/overview |
+| Testing Resources | https://filamentphp.com/docs/4.x/testing/testing-resources |
+| Testing Tables | https://filamentphp.com/docs/4.x/testing/testing-tables |
+| Testing Schemas | https://filamentphp.com/docs/4.x/testing/testing-schemas |
+| Testing Actions | https://filamentphp.com/docs/4.x/testing/testing-actions |
+| Testing Notifications | https://filamentphp.com/docs/4.x/testing/testing-notifications |
+
+**Key Testing Helpers:**
+- `Livewire::test()` - For testing Filament pages and components
+- `assertCanSeeTableRecords()` - Assert records visible in table
+- `assertFormFieldExists()` - Assert form field presence
+- `callAction()` - Trigger actions in tests
+- `assertNotified()` - Assert notifications were sent
+
 ## Core Principle: Targeted Testing First
 
 - **Never run full package tests unnecessarily**; always prefer targeted test execution for specific files or
