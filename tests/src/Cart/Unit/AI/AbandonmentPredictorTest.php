@@ -5,8 +5,8 @@ declare(strict_types=1);
 use AIArmada\Cart\AI\AbandonmentPrediction;
 use AIArmada\Cart\AI\AbandonmentPredictor;
 use AIArmada\Cart\Cart;
-use AIArmada\Cart\Testing\InMemoryStorage;
 use AIArmada\Cart\Storage\StorageInterface;
+use AIArmada\Cart\Testing\InMemoryStorage;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 

@@ -13,9 +13,9 @@ class TestBuyableProduct extends Model implements BuyableInterface
 {
     use Buyable;
 
-    protected $guarded = [];
-
     public $timestamps = false;
+
+    protected $guarded = [];
 }
 
 beforeEach(function (): void {

@@ -134,7 +134,7 @@ describe('CustomerNote Model', function (): void {
 
             $internal = CustomerNote::internal()->get();
 
-            expect($internal->every(fn($n) => $n->is_internal))->toBeTrue();
+            expect($internal->every(fn ($n) => $n->is_internal))->toBeTrue();
         });
 
         it('can filter visible to customer notes', function (): void {
@@ -146,7 +146,7 @@ describe('CustomerNote Model', function (): void {
 
             $visible = CustomerNote::visibleToCustomer()->get();
 
-            expect($visible->every(fn($n) => !$n->is_internal))->toBeTrue();
+            expect($visible->every(fn ($n) => ! $n->is_internal))->toBeTrue();
         });
 
         it('can filter pinned notes', function (): void {
@@ -164,7 +164,7 @@ describe('CustomerNote Model', function (): void {
 
             $pinned = CustomerNote::pinned()->get();
 
-            expect($pinned->every(fn($n) => $n->is_pinned))->toBeTrue();
+            expect($pinned->every(fn ($n) => $n->is_pinned))->toBeTrue();
         });
     });
 });

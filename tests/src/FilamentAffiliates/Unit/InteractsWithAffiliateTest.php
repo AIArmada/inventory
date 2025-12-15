@@ -2,15 +2,11 @@
 
 declare(strict_types=1);
 
-use AIArmada\Affiliates\Enums\AffiliateStatus;
-use AIArmada\Affiliates\Enums\ConversionStatus;
-use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\FilamentAffiliates\Concerns\InteractsWithAffiliate;
-use Illuminate\Support\Str;
 
 beforeEach(function (): void {
     AffiliatePayout::query()->delete();
@@ -42,7 +38,7 @@ it('getConversions returns empty collection when no affiliate', function (): voi
     $conversions = $testClass->getConversions();
 
     expect($conversions)
-        ->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class)
+        ->toBeInstanceOf(Illuminate\Database\Eloquent\Collection::class)
         ->toBeEmpty();
 });
 
@@ -51,7 +47,7 @@ it('getPayouts returns empty collection when no affiliate', function (): void {
     $payouts = $testClass->getPayouts();
 
     expect($payouts)
-        ->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class)
+        ->toBeInstanceOf(Illuminate\Database\Eloquent\Collection::class)
         ->toBeEmpty();
 });
 

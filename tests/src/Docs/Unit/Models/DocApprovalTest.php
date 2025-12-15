@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Models\DocApproval;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('doc approval status helpers', function () {
+test('doc approval status helpers', function (): void {
     $approval = DocApproval::factory()->create(['status' => 'pending']);
     expect($approval->isPending())->toBeTrue();
     expect($approval->isApproved())->toBeFalse();
@@ -25,7 +27,7 @@ test('doc approval status helpers', function () {
     expect($rejected->rejected_at)->not->toBeNull();
 });
 
-test('doc approval expiry', function () {
+test('doc approval expiry', function (): void {
     $approval = DocApproval::factory()->create([
         'expires_at' => now()->subDay(),
     ]);
@@ -37,7 +39,7 @@ test('doc approval expiry', function () {
     expect($valid->isExpired())->toBeFalse();
 });
 
-test('doc approval relationships', function () {
+test('doc approval relationships', function (): void {
     $doc = Doc::factory()->create();
     $approval = DocApproval::factory()->create(['doc_id' => $doc->id]);
 

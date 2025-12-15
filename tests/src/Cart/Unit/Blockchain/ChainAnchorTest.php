@@ -105,7 +105,7 @@ describe('ChainAnchor', function (): void {
             Config::set('cart.blockchain.ethereum_endpoint', 'https://eth.example.com/rpc');
             Config::set('cart.blockchain.ethereum_contract', '0x1234567890abcdef');
 
-            Http::fake(function () {
+            Http::fake(function (): void {
                 throw new Exception('Network error');
             });
 
@@ -182,7 +182,7 @@ describe('ChainAnchor', function (): void {
         it('handles opentimestamps exception', function (): void {
             Config::set('cart.blockchain.provider', 'opentimestamps');
 
-            Http::fake(function () {
+            Http::fake(function (): void {
                 throw new Exception('Connection timeout');
             });
 

@@ -49,7 +49,7 @@ describe('CashierServiceProvider - Additional Coverage', function (): void {
     describe('route registration', function (): void {
         it('registers routes by default', function (): void {
             // Routes should be registered when $registersRoutes is true
-            expect(\AIArmada\Cashier\Cashier::$registersRoutes)->toBeTrue();
+            expect(AIArmada\Cashier\Cashier::$registersRoutes)->toBeTrue();
         });
     });
 });

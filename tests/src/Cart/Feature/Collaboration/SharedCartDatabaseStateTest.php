@@ -81,4 +81,3 @@ describe('SharedCart database-backed collaboration', function (): void {
         expect($channel->join($stranger, $cartId))->toBeFalse();
     });
 });
-

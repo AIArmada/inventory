@@ -43,7 +43,8 @@ class MockSegmentWithOwnership extends Segment
 describe('CustomerPolicy', function (): void {
     beforeEach(function (): void {
         $this->policy = new CustomerPolicy();
-        $this->user = new class {
+        $this->user = new class
+        {
             public int $id = 1;
         };
         $this->customer = Customer::create([
@@ -195,7 +196,8 @@ describe('CustomerPolicy', function (): void {
 describe('SegmentPolicy', function (): void {
     beforeEach(function (): void {
         $this->policy = new SegmentPolicy();
-        $this->user = new class {
+        $this->user = new class
+        {
             public int $id = 1;
         };
         $this->segment = Segment::create([

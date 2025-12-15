@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\Affiliates\Enums\AffiliateStatus;
-use AIArmada\Affiliates\Enums\ConversionStatus;
-use AIArmada\Affiliates\Enums\FraudSeverity;
 use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateConversion;

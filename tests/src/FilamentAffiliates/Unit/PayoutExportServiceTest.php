@@ -68,7 +68,7 @@ it('downloads payout as CSV', function (): void {
 
     $response = $service->downloadCsv($payout);
 
-    expect($response)->toBeInstanceOf(\Symfony\Component\HttpFoundation\StreamedResponse::class)
+    expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\StreamedResponse::class)
         ->and($response->headers->get('Content-Type'))->toBe('text/csv');
 });
 
@@ -78,7 +78,7 @@ it('download method returns CSV format (backward compatibility)', function (): v
 
     $response = $service->download($payout);
 
-    expect($response)->toBeInstanceOf(\Symfony\Component\HttpFoundation\StreamedResponse::class)
+    expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\StreamedResponse::class)
         ->and($response->headers->get('Content-Type'))->toBe('text/csv');
 });
 
@@ -88,7 +88,7 @@ it('downloads payout as Excel (XML fallback)', function (): void {
 
     $response = $service->downloadExcel($payout);
 
-    expect($response)->toBeInstanceOf(\Symfony\Component\HttpFoundation\StreamedResponse::class)
+    expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\StreamedResponse::class)
         ->and($response->headers->get('Content-Type'))->toBe('application/vnd.ms-excel');
 });
 
@@ -99,7 +99,7 @@ it('downloads payout as PDF (HTML fallback)', function (): void {
     $response = $service->downloadPdf($payout);
 
     // Will fallback to HTML since no PDF library is likely installed in tests
-    expect($response)->toBeInstanceOf(\Symfony\Component\HttpFoundation\StreamedResponse::class);
+    expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\StreamedResponse::class);
 });
 
 it('handles payouts with zero conversions', function (): void {
@@ -126,5 +126,5 @@ it('handles payouts with zero conversions', function (): void {
 
     $response = $service->downloadCsv($payout);
 
-    expect($response)->toBeInstanceOf(\Symfony\Component\HttpFoundation\StreamedResponse::class);
+    expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\StreamedResponse::class);
 });

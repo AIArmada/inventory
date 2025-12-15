@@ -143,7 +143,7 @@ describe('PaymentStage', function (): void {
         $cart->add('item-1', 'Product', 5000, 1);
 
         $stage = new PaymentStage();
-        $stage->onProcess(function ($cart, $context) {
+        $stage->onProcess(function ($cart, $context): void {
             throw new Exception('Payment gateway timeout');
         });
 
@@ -246,7 +246,7 @@ describe('PaymentStage', function (): void {
         $cart->add('item-1', 'Product', 5000, 1);
 
         $stage = new PaymentStage();
-        $stage->onRefund(function () {
+        $stage->onRefund(function (): void {
             throw new Exception('Refund service unavailable');
         });
 

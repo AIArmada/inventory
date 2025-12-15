@@ -253,7 +253,7 @@ describe('ProductRecommender', function (): void {
         $recommender = new ProductRecommender();
         $stats = $recommender->getStatistics();
 
-        foreach ($stats as $type => $data) {
+        foreach ($stats as $data) {
             expect($data['conversion_rate'])->toBe(0.0);
         }
     });

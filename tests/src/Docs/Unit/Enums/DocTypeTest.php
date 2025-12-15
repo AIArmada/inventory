@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 use AIArmada\Docs\Enums\DocType;
 
-test('doc type labels', function () {
+test('doc type labels', function (): void {
     expect(DocType::Invoice->label())->toBe('Invoice');
     expect(DocType::Quotation->label())->toBe('Quotation');
     expect(DocType::CreditNote->label())->toBe('Credit Note');
@@ -11,34 +13,34 @@ test('doc type labels', function () {
     expect(DocType::Receipt->label())->toBe('Receipt');
 });
 
-test('doc type colors', function () {
+test('doc type colors', function (): void {
     expect(DocType::Invoice->color())->toBe('primary');
     expect(DocType::Quotation->color())->toBe('info');
 });
 
-test('doc type icons', function () {
+test('doc type icons', function (): void {
     expect(DocType::Invoice->icon())->toBe('heroicon-o-document-text');
 });
 
-test('doc type default prefix', function () {
+test('doc type default prefix', function (): void {
     expect(DocType::Invoice->defaultPrefix())->toBe('INV');
     expect(DocType::Quotation->defaultPrefix())->toBe('QUO');
     expect(DocType::CreditNote->defaultPrefix())->toBe('CN');
 });
 
-test('doc type requires payment', function () {
+test('doc type requires payment', function (): void {
     expect(DocType::Invoice->requiresPayment())->toBeTrue();
     expect(DocType::ProformaInvoice->requiresPayment())->toBeTrue();
     expect(DocType::Quotation->requiresPayment())->toBeFalse();
 });
 
-test('doc type conversion', function () {
+test('doc type conversion', function (): void {
     expect(DocType::Quotation->canConvertToInvoice())->toBeTrue();
     expect(DocType::ProformaInvoice->canConvertToInvoice())->toBeTrue();
     expect(DocType::Invoice->canConvertToInvoice())->toBeFalse();
 });
 
-test('doc type conversion sources', function () {
+test('doc type conversion sources', function (): void {
     expect(DocType::Invoice->getConversionSources())->toContain(DocType::Quotation, DocType::ProformaInvoice);
     expect(DocType::Receipt->getConversionSources())->toContain(DocType::Invoice);
     expect(DocType::Quotation->getConversionSources())->toBeEmpty();

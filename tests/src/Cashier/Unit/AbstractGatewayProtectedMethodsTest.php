@@ -38,7 +38,7 @@ class TestableGateway extends AbstractGateway
         return ['handled' => true];
     }
 
-    public function subscription(BillableContract $billable, string $type, string|array $prices = []): SubscriptionBuilderContract
+    public function subscription(BillableContract $billable, string $type, string | array $prices = []): SubscriptionBuilderContract
     {
         return Mockery::mock(SubscriptionBuilderContract::class);
     }
@@ -78,7 +78,7 @@ class TestableGateway extends AbstractGateway
         return collect();
     }
 
-    public function invoices(BillableContract $billable, bool|array $parameters = false): Collection
+    public function invoices(BillableContract $billable, bool | array $parameters = false): Collection
     {
         return collect();
     }

@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     Model::unguard();
     $this->analyzer = new CohortAnalyzer();
 
@@ -22,7 +22,7 @@ beforeEach(function () {
     Carbon::setTestNow('2024-06-01 12:00:00');
 });
 
-test('analyzeMonthly returns correct cohort data', function () {
+test('analyzeMonthly returns correct cohort data', function (): void {
     // Create affiliates joined in Jan 2024 (Cohort 2024-01)
     $jan1 = Affiliate::create([
         'code' => 'JAN1',
@@ -124,7 +124,7 @@ test('analyzeMonthly returns correct cohort data', function () {
         ->and($febCohort['total_revenue'])->toBe(20000);
 });
 
-test('calculateRetentionCurve returns aggregated data', function () {
+test('calculateRetentionCurve returns aggregated data', function (): void {
     // 2 Affiliates in Jan
     $jan1 = Affiliate::create([
         'code' => 'JAN_R1',
@@ -200,7 +200,7 @@ test('calculateRetentionCurve returns aggregated data', function () {
         ->and($curve[0]['avg_revenue'])->toBe((float) ((10000 + 20000) / 2)); // Avg of 10000 and 20000
 });
 
-test('calculateLtv returns correct lifetime value metrics', function () {
+test('calculateLtv returns correct lifetime value metrics', function (): void {
     $aff = Affiliate::create([
         'code' => 'LTV1',
         'name' => 'LTV Affiliate',
@@ -251,7 +251,7 @@ test('calculateLtv returns correct lifetime value metrics', function () {
         ->and($ltv['projected_annual_ltv'])->toBeGreaterThan(0);
 });
 
-test('compareCohorts correctly identifies best and worst cohorts', function () {
+test('compareCohorts correctly identifies best and worst cohorts', function (): void {
     // Cohort A (Jan): High performer
     $jan = Affiliate::create([
         'code' => 'COMP_JAN',
@@ -306,7 +306,7 @@ test('compareCohorts correctly identifies best and worst cohorts', function () {
         ->and($comparison['trend'])->toBeString();
 });
 
-test('compareCohorts handles empty data', function () {
+test('compareCohorts handles empty data', function (): void {
     $comparison = $this->analyzer->compareCohorts(
         Carbon::parse('2020-01-01'),
         Carbon::parse('2020-02-01')
@@ -316,7 +316,7 @@ test('compareCohorts handles empty data', function () {
         ->and($comparison['trend'])->toBe('no_data');
 });
 
-test('analyzeBySource groups by metadata source', function () {
+test('analyzeBySource groups by metadata source', function (): void {
     $googleAff = Affiliate::create([
         'code' => 'SRC_GOOGLE',
         'name' => 'Google Aff',

@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\Cart\Cart;
-use AIArmada\Cart\Checkout\StageResult;
 use AIArmada\Cart\Checkout\Stages\FulfillmentStage;
 use AIArmada\Cart\Testing\InMemoryStorage;
 
@@ -108,7 +107,7 @@ describe('FulfillmentStage', function (): void {
         $cart = new Cart($this->storage, 'cart-123');
 
         $stage = new FulfillmentStage();
-        $stage->onCreateOrder(function ($cart, $context) {
+        $stage->onCreateOrder(function ($cart, $context): void {
             throw new Exception('Order service unavailable');
         });
 
@@ -135,7 +134,7 @@ describe('FulfillmentStage', function (): void {
         $cancelledOrderId = null;
 
         $stage = new FulfillmentStage();
-        $stage->onCancelOrder(function ($orderId) use (&$cancelledOrderId) {
+        $stage->onCancelOrder(function ($orderId) use (&$cancelledOrderId): void {
             $cancelledOrderId = $orderId;
         });
 
@@ -151,7 +150,7 @@ describe('FulfillmentStage', function (): void {
         $cancelCalled = false;
 
         $stage = new FulfillmentStage();
-        $stage->onCancelOrder(function () use (&$cancelCalled) {
+        $stage->onCancelOrder(function () use (&$cancelCalled): void {
             $cancelCalled = true;
         });
 
@@ -176,7 +175,7 @@ describe('FulfillmentStage', function (): void {
         $cart = new Cart($this->storage, 'cart-123');
 
         $stage = new FulfillmentStage();
-        $stage->onCancelOrder(function () {
+        $stage->onCancelOrder(function (): void {
             throw new Exception('Cancel service unavailable');
         });
 

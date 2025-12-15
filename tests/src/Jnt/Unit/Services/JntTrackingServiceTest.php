@@ -13,7 +13,8 @@ use Spatie\LaravelData\DataCollection;
 
 /**
  * Helper function to create a TrackingDetailData object with all required fields
- * @param array<string, mixed> $overrides
+ *
+ * @param  array<string, mixed>  $overrides
  */
 function createTrackingDetail(array $overrides = []): TrackingDetailData
 {

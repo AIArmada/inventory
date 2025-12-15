@@ -30,10 +30,10 @@ describe('CartReadModel owner scoping', function (): void {
 
         expect($cartIdB)->not->toBeNull();
 
-        /** @var \Illuminate\Database\ConnectionInterface $connection */
+        /** @var Illuminate\Database\ConnectionInterface $connection */
         $connection = app('db')->connection();
 
-        /** @var \Illuminate\Contracts\Cache\Repository $cache */
+        /** @var Illuminate\Contracts\Cache\Repository $cache */
         $cache = app('cache')->store();
 
         /** @var StorageInterface $baseStorage */
@@ -58,4 +58,3 @@ describe('CartReadModel owner scoping', function (): void {
         expect($summaryA)->toBeNull();
     });
 });
-

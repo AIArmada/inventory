@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use AIArmada\Jnt\Data\PrintWaybillData;
 use AIArmada\Jnt\Data\TrackingData;
 use AIArmada\Jnt\Data\TrackingDetailData;
 use AIArmada\Jnt\Enums\CancellationReason;
@@ -40,7 +39,7 @@ describe('OrderCancelCommand', function (): void {
         $this->instance(JntExpressService::class, $jntService);
 
         $reasons = collect(CancellationReason::cases())
-            ->mapWithKeys(fn($reason): array => [$reason->value => $reason->value])
+            ->mapWithKeys(fn ($reason): array => [$reason->value => $reason->value])
             ->toArray();
 
         $this->artisan('jnt:order:cancel', ['order-id' => 'ORDER123'])

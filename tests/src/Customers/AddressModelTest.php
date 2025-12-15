@@ -266,7 +266,7 @@ describe('Address Model', function (): void {
 
             $billing = Address::billing()->get();
 
-            expect($billing->every(fn($a) => $a->isBillingAddress()))->toBeTrue();
+            expect($billing->every(fn ($a) => $a->isBillingAddress()))->toBeTrue();
         });
 
         it('can filter shipping addresses', function (): void {
@@ -281,7 +281,7 @@ describe('Address Model', function (): void {
 
             $shipping = Address::shipping()->get();
 
-            expect($shipping->every(fn($a) => $a->isShippingAddress()))->toBeTrue();
+            expect($shipping->every(fn ($a) => $a->isShippingAddress()))->toBeTrue();
         });
 
         it('can filter default billing addresses', function (): void {
@@ -296,7 +296,7 @@ describe('Address Model', function (): void {
 
             $defaultBilling = Address::defaultBilling()->get();
 
-            expect($defaultBilling->every(fn($a) => $a->is_default_billing))->toBeTrue();
+            expect($defaultBilling->every(fn ($a) => $a->is_default_billing))->toBeTrue();
         });
 
         it('can filter default shipping addresses', function (): void {
@@ -311,7 +311,7 @@ describe('Address Model', function (): void {
 
             $defaultShipping = Address::defaultShipping()->get();
 
-            expect($defaultShipping->every(fn($a) => $a->is_default_shipping))->toBeTrue();
+            expect($defaultShipping->every(fn ($a) => $a->is_default_shipping))->toBeTrue();
         });
 
         it('can filter verified addresses', function (): void {
@@ -326,7 +326,7 @@ describe('Address Model', function (): void {
 
             $verified = Address::verified()->get();
 
-            expect($verified->every(fn($a) => $a->is_verified))->toBeTrue();
+            expect($verified->every(fn ($a) => $a->is_verified))->toBeTrue();
         });
     });
 });

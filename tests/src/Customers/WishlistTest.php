@@ -36,7 +36,7 @@ describe('Wishlist Model', function (): void {
             ]);
 
             expect($wishlist->share_token)->not->toBeEmpty()
-                ->and(strlen($wishlist->share_token))->toBeGreaterThan(10);
+                ->and(mb_strlen($wishlist->share_token))->toBeGreaterThan(10);
         });
 
         it('defaults to private', function (): void {
@@ -75,7 +75,7 @@ describe('Wishlist Model', function (): void {
                 'name' => 'Items Test',
             ]);
 
-            expect($wishlist->items())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+            expect($wishlist->items())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
         });
     });
 
@@ -165,7 +165,7 @@ describe('Wishlist Model', function (): void {
 
             $public = Wishlist::public()->get();
 
-            expect($public->every(fn($w) => $w->is_public))->toBeTrue();
+            expect($public->every(fn ($w) => $w->is_public))->toBeTrue();
         });
 
         it('can filter default wishlists', function (): void {
@@ -177,7 +177,7 @@ describe('Wishlist Model', function (): void {
 
             $default = Wishlist::default()->get();
 
-            expect($default->every(fn($w) => $w->is_default))->toBeTrue();
+            expect($default->every(fn ($w) => $w->is_default))->toBeTrue();
         });
     });
 
@@ -404,7 +404,7 @@ describe('WishlistItem Model', function (): void {
 
             $needsStock = WishlistItem::needsStockNotification()->get();
 
-            expect($needsStock->every(fn($i) => !$i->notified_in_stock))->toBeTrue();
+            expect($needsStock->every(fn ($i) => ! $i->notified_in_stock))->toBeTrue();
         });
 
         it('can filter needs sale notification', function (): void {
@@ -417,7 +417,7 @@ describe('WishlistItem Model', function (): void {
 
             $needsSale = WishlistItem::needsSaleNotification()->get();
 
-            expect($needsSale->every(fn($i) => !$i->notified_on_sale))->toBeTrue();
+            expect($needsSale->every(fn ($i) => ! $i->notified_on_sale))->toBeTrue();
         });
     });
 });

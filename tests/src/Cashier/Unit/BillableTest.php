@@ -48,7 +48,7 @@ describe('Billable Trait', function (): void {
         it('uses ManagesGateway through Billable', function (): void {
             $traits = class_uses_recursive($this->user);
 
-            expect($traits)->toContain(\AIArmada\Cashier\Concerns\ManagesGateway::class);
+            expect($traits)->toContain(AIArmada\Cashier\Concerns\ManagesGateway::class);
         });
     });
 });

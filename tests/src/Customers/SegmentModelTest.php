@@ -68,7 +68,7 @@ describe('Segment Model', function (): void {
                 'slug' => 'customers-rel-' . uniqid(),
             ]);
 
-            expect($segment->customers())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
+            expect($segment->customers())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
         });
 
         it('can add customers', function (): void {
@@ -168,8 +168,8 @@ describe('Segment Model', function (): void {
 
             $matching = $segment->getMatchingCustomers();
 
-            expect($matching)->toBeInstanceOf(\Illuminate\Support\Collection::class)
-                ->and($matching->every(fn($c) => $c->lifetime_value >= 1000))->toBeTrue();
+            expect($matching)->toBeInstanceOf(Illuminate\Support\Collection::class)
+                ->and($matching->every(fn ($c) => $c->lifetime_value >= 1000))->toBeTrue();
         });
 
         it('returns attached customers for manual segment', function (): void {
@@ -236,7 +236,7 @@ describe('Segment Model', function (): void {
 
             $active = Segment::active()->get();
 
-            expect($active->every(fn($s) => $s->is_active))->toBeTrue();
+            expect($active->every(fn ($s) => $s->is_active))->toBeTrue();
         });
 
         it('can filter automatic segments', function (): void {
@@ -248,7 +248,7 @@ describe('Segment Model', function (): void {
 
             $automatic = Segment::automatic()->get();
 
-            expect($automatic->every(fn($s) => $s->is_automatic))->toBeTrue();
+            expect($automatic->every(fn ($s) => $s->is_automatic))->toBeTrue();
         });
 
         it('can filter manual segments', function (): void {
@@ -260,7 +260,7 @@ describe('Segment Model', function (): void {
 
             $manual = Segment::manual()->get();
 
-            expect($manual->every(fn($s) => !$s->is_automatic))->toBeTrue();
+            expect($manual->every(fn ($s) => ! $s->is_automatic))->toBeTrue();
         });
 
         it('can filter by type', function (): void {
@@ -272,7 +272,7 @@ describe('Segment Model', function (): void {
 
             $loyalty = Segment::ofType(SegmentType::Loyalty)->get();
 
-            expect($loyalty->every(fn($s) => $s->type === SegmentType::Loyalty))->toBeTrue();
+            expect($loyalty->every(fn ($s) => $s->type === SegmentType::Loyalty))->toBeTrue();
         });
 
         it('can order by priority', function (): void {
@@ -355,7 +355,7 @@ describe('Segment Model', function (): void {
             $matching = $segment->getMatchingCustomers();
 
             // Should return all active customers
-            expect($matching)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+            expect($matching)->toBeInstanceOf(Illuminate\Support\Collection::class);
         });
 
         it('skips conditions without value', function (): void {
@@ -370,7 +370,7 @@ describe('Segment Model', function (): void {
 
             $matching = $segment->getMatchingCustomers();
 
-            expect($matching)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+            expect($matching)->toBeInstanceOf(Illuminate\Support\Collection::class);
         });
 
         it('handles total_orders_max condition', function (): void {
@@ -401,7 +401,7 @@ describe('Segment Model', function (): void {
 
             $matching = $segment->getMatchingCustomers();
 
-            expect($matching->every(fn($c) => $c->total_orders <= 5))->toBeTrue();
+            expect($matching->every(fn ($c) => $c->total_orders <= 5))->toBeTrue();
         });
 
         it('handles is_tax_exempt condition', function (): void {
@@ -424,7 +424,7 @@ describe('Segment Model', function (): void {
 
             $matching = $segment->getMatchingCustomers();
 
-            expect($matching->every(fn($c) => $c->is_tax_exempt))->toBeTrue();
+            expect($matching->every(fn ($c) => $c->is_tax_exempt))->toBeTrue();
         });
 
         it('handles default field with custom operator', function (): void {
@@ -439,7 +439,7 @@ describe('Segment Model', function (): void {
 
             $matching = $segment->getMatchingCustomers();
 
-            expect($matching->every(fn($c) => $c->status->value === 'active'))->toBeTrue();
+            expect($matching->every(fn ($c) => $c->status->value === 'active'))->toBeTrue();
         });
     });
 });

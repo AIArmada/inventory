@@ -108,7 +108,7 @@ describe('ReservationStage', function (): void {
         $stage->onReserve(function ($itemId, $quantity, $cart) {
             return $itemId !== 'item-2';
         });
-        $stage->onRelease(function ($itemId, $quantity, $cart) use (&$released) {
+        $stage->onRelease(function ($itemId, $quantity, $cart) use (&$released): void {
             $released[$itemId] = $quantity;
         });
 
@@ -123,7 +123,7 @@ describe('ReservationStage', function (): void {
         $cart->add('item-1', 'Product 1', 1000, 1);
 
         $stage = new ReservationStage();
-        $stage->onReserve(function ($itemId, $quantity, $cart) {
+        $stage->onReserve(function ($itemId, $quantity, $cart): void {
             throw new Exception('Inventory service unavailable');
         });
 
@@ -156,7 +156,7 @@ describe('ReservationStage', function (): void {
         $released = [];
 
         $stage = new ReservationStage();
-        $stage->onRelease(function ($itemId, $quantity, $cart) use (&$released) {
+        $stage->onRelease(function ($itemId, $quantity, $cart) use (&$released): void {
             $released[$itemId] = $quantity;
         });
 
@@ -176,7 +176,7 @@ describe('ReservationStage', function (): void {
         $cart = new Cart($this->storage, 'user-123');
 
         $stage = new ReservationStage();
-        $stage->onRelease(function ($itemId, $quantity, $cart) {
+        $stage->onRelease(function ($itemId, $quantity, $cart): void {
             throw new Exception('Release failed');
         });
 
@@ -194,7 +194,7 @@ describe('ReservationStage', function (): void {
         $releaseCallCount = 0;
 
         $stage = new ReservationStage();
-        $stage->onRelease(function () use (&$releaseCallCount) {
+        $stage->onRelease(function () use (&$releaseCallCount): void {
             $releaseCallCount++;
         });
 

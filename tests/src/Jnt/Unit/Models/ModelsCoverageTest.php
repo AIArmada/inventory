@@ -75,7 +75,7 @@ describe('JntOrder model', function (): void {
         $order = new JntOrder;
         $relation = $order->items();
 
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
         expect($relation->getRelated())->toBeInstanceOf(JntOrderItem::class);
     });
 
@@ -83,7 +83,7 @@ describe('JntOrder model', function (): void {
         $order = new JntOrder;
         $relation = $order->parcels();
 
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
         expect($relation->getRelated())->toBeInstanceOf(JntOrderParcel::class);
     });
 
@@ -91,7 +91,7 @@ describe('JntOrder model', function (): void {
         $order = new JntOrder;
         $relation = $order->trackingEvents();
 
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
         expect($relation->getRelated())->toBeInstanceOf(JntTrackingEvent::class);
     });
 
@@ -99,7 +99,7 @@ describe('JntOrder model', function (): void {
         $order = new JntOrder;
         $relation = $order->webhookLogs();
 
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
         expect($relation->getRelated())->toBeInstanceOf(JntWebhookLog::class);
     });
 
@@ -170,7 +170,7 @@ describe('JntOrderItem model', function (): void {
         $item = new JntOrderItem;
         $relation = $item->order();
 
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
         expect($relation->getRelated())->toBeInstanceOf(JntOrder::class);
     });
 });
@@ -231,7 +231,7 @@ describe('JntOrderParcel model', function (): void {
         $parcel = new JntOrderParcel;
         $relation = $parcel->order();
 
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
         expect($relation->getRelated())->toBeInstanceOf(JntOrder::class);
     });
 });
@@ -322,7 +322,7 @@ describe('JntTrackingEvent model', function (): void {
         $event = new JntTrackingEvent;
         $relation = $event->order();
 
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
         expect($relation->getRelated())->toBeInstanceOf(JntOrder::class);
     });
 });
@@ -399,7 +399,7 @@ describe('JntWebhookLog model', function (): void {
         $log = new JntWebhookLog;
         $relation = $log->order();
 
-        expect($relation)->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class);
+        expect($relation)->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
         expect($relation->getRelated())->toBeInstanceOf(JntOrder::class);
     });
 });

@@ -8,8 +8,8 @@ use AIArmada\Cart\Checkout\CheckoutSaga;
 use AIArmada\Cart\Checkout\Contracts\CheckoutStageInterface;
 use AIArmada\Cart\Checkout\Exceptions\CheckoutException;
 use AIArmada\Cart\Checkout\StageResult;
-use AIArmada\Cart\Contracts\CartValidatorInterface;
 use AIArmada\Cart\Contracts\CartValidationResult;
+use AIArmada\Cart\Contracts\CartValidatorInterface;
 use AIArmada\Cart\Testing\InMemoryStorage;
 use Illuminate\Support\Facades\DB;
 

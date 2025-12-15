@@ -1,25 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Models\Doc;
-use AIArmada\Docs\Services\DocService;
-use AIArmada\Docs\Services\SequenceManager;
 use AIArmada\Docs\Numbering\NumberStrategyRegistry;
+use AIArmada\Docs\Services\DocService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Browsershot\Browsershot;
 use Spatie\LaravelPdf\Facades\Pdf;
 use Spatie\LaravelPdf\PdfBuilder;
-use Spatie\Browsershot\Browsershot;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     config()->set('docs.storage.disk', 'docs');
     $this->numberRegistry = new NumberStrategyRegistry();
     $this->service = new DocService($this->numberRegistry);
 });
 
-test('generatePdf creates and stores pdf', function () {
+test('generatePdf creates and stores pdf', function (): void {
     Storage::fake('docs');
 
     $doc = Doc::factory()->create([
@@ -52,7 +53,7 @@ test('generatePdf creates and stores pdf', function () {
     expect($doc->fresh()->pdf_path)->toBe('docs/INV-001.pdf');
 });
 
-test('downloadPdf returns existing path if exists', function () {
+test('downloadPdf returns existing path if exists', function (): void {
     Storage::fake('docs');
 
     $doc = Doc::factory()->create([
@@ -70,7 +71,7 @@ test('downloadPdf returns existing path if exists', function () {
     expect($path)->toBe('docs/INV-001.pdf');
 });
 
-test('downloadPdf generates pdf if missing', function () {
+test('downloadPdf generates pdf if missing', function (): void {
     Storage::fake('docs');
 
     $doc = Doc::factory()->create([
@@ -99,7 +100,7 @@ test('downloadPdf generates pdf if missing', function () {
     expect($path)->toBe('docs/INV-002.pdf');
 });
 
-test('emailDoc marks doc as sent', function () {
+test('emailDoc marks doc as sent', function (): void {
     $doc = Doc::factory()->create([
         'status' => DocStatus::DRAFT,
     ]);

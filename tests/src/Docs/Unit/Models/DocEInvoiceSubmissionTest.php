@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Models\DocEInvoiceSubmission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('einvoice submission status helpers', function () {
+test('einvoice submission status helpers', function (): void {
     $sub = DocEInvoiceSubmission::factory()->create([
         'status' => 'pending',
         'validation_status' => null,
@@ -19,7 +21,7 @@ test('einvoice submission status helpers', function () {
     expect($sub->isSubmitted())->toBeTrue();
 });
 
-test('einvoice submission validation helpers', function () {
+test('einvoice submission validation helpers', function (): void {
     $sub = DocEInvoiceSubmission::factory()->create([
         'validation_status' => 'valid',
         'errors' => null,
@@ -43,7 +45,7 @@ test('einvoice submission validation helpers', function () {
     expect($sub->hasWarnings())->toBeTrue();
 });
 
-test('einvoice portal url generation', function () {
+test('einvoice portal url generation', function (): void {
     // Sandbox default
     config(['docs.einvoice.sandbox' => true]);
 
@@ -59,7 +61,7 @@ test('einvoice portal url generation', function () {
     expect($sub->getPortalUrl())->toBeNull();
 });
 
-test('einvoice relationships', function () {
+test('einvoice relationships', function (): void {
     $doc = Doc::factory()->create();
     $sub = DocEInvoiceSubmission::factory()->create(['doc_id' => $doc->id]);
 

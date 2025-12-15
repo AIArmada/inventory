@@ -3,36 +3,36 @@
 declare(strict_types=1);
 
 use AIArmada\Customers\Enums\CustomerStatus;
-use AIArmada\Customers\Models\Customer;
 use AIArmada\Customers\Events\WalletCreditAdded;
 use AIArmada\Customers\Events\WalletCreditDeducted;
+use AIArmada\Customers\Models\Customer;
 use Illuminate\Support\Facades\Event;
 
 describe('Customer Model - Extended Coverage', function (): void {
     describe('Relationships', function (): void {
         it('has addresses relationship', function (): void {
             $customer = new Customer();
-            expect($customer->addresses())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+            expect($customer->addresses())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
         });
 
         it('has segments relationship', function (): void {
             $customer = new Customer();
-            expect($customer->segments())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
+            expect($customer->segments())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
         });
 
         it('has wishlists relationship', function (): void {
             $customer = new Customer();
-            expect($customer->wishlists())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+            expect($customer->wishlists())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
         });
 
         it('has notes relationship', function (): void {
             $customer = new Customer();
-            expect($customer->notes())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+            expect($customer->notes())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
         });
 
         it('has groups relationship', function (): void {
             $customer = new Customer();
-            expect($customer->groups())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
+            expect($customer->groups())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
         });
     });
 
@@ -236,12 +236,12 @@ describe('Customer Model - Extended Coverage', function (): void {
 
             $highValue = Customer::highValue(50000)->get();
 
-            expect($highValue->every(fn($c) => $c->lifetime_value >= 50000))->toBeTrue();
+            expect($highValue->every(fn ($c) => $c->lifetime_value >= 50000))->toBeTrue();
         });
 
         it('has inSegment scope', function (): void {
             $query = Customer::inSegment('test-id');
-            expect($query)->toBeInstanceOf(\Illuminate\Database\Eloquent\Builder::class);
+            expect($query)->toBeInstanceOf(Illuminate\Database\Eloquent\Builder::class);
         });
 
         it('can filter recently active customers', function (): void {
@@ -270,7 +270,7 @@ describe('Customer Model - Extended Coverage', function (): void {
         it('has taxExempt scope pattern', function (): void {
             // Test active scope instead - taxExempt scope doesn't exist
             $query = Customer::active();
-            expect($query)->toBeInstanceOf(\Illuminate\Database\Eloquent\Builder::class);
+            expect($query)->toBeInstanceOf(Illuminate\Database\Eloquent\Builder::class);
         });
     });
 

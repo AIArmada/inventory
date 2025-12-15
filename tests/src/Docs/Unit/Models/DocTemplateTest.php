@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Models\DocTemplate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('doc template relationships', function () {
+test('doc template relationships', function (): void {
     $template = DocTemplate::factory()->create();
     $doc = Doc::factory()->create(['doc_template_id' => $template->id]);
 
@@ -14,7 +16,7 @@ test('doc template relationships', function () {
         ->and($template->docs->first()->id)->toBe($doc->id);
 });
 
-test('doc template set as default logic', function () {
+test('doc template set as default logic', function (): void {
     // Create existing default
     $default = DocTemplate::factory()->create([
         'doc_type' => 'invoice',
@@ -34,7 +36,7 @@ test('doc template set as default logic', function () {
     expect($default->fresh()->is_default)->toBeFalse();
 });
 
-test('doc template set as default respects owner', function () {
+test('doc template set as default respects owner', function (): void {
     config(['docs.owner.enabled' => true]);
     $migration = require __DIR__ . '/../../../../../packages/docs/database/migrations/2025_12_02_000000_add_owner_columns_to_docs_tables.php';
     $migration->up();
@@ -72,7 +74,7 @@ test('doc template set as default respects owner', function () {
     expect($global->fresh()->is_default)->toBeTrue();
 });
 
-test('doc template deleting logic', function () {
+test('doc template deleting logic', function (): void {
     $template = DocTemplate::factory()->create();
     $doc = Doc::factory()->create(['doc_template_id' => $template->id]);
 
@@ -81,7 +83,7 @@ test('doc template deleting logic', function () {
     expect($doc->fresh()->doc_template_id)->toBeNull();
 });
 
-test('doc template default scope', function () {
+test('doc template default scope', function (): void {
     $default = DocTemplate::factory()->create([
         'doc_type' => 'invoice',
         'is_default' => true,

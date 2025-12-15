@@ -19,7 +19,7 @@ describe('Cashier Class - Additional Coverage', function (): void {
         it('returns gateway via static method', function (): void {
             $gateway = Cashier::gateway();
 
-            expect($gateway)->toBeInstanceOf(\AIArmada\Cashier\Contracts\GatewayContract::class);
+            expect($gateway)->toBeInstanceOf(AIArmada\Cashier\Contracts\GatewayContract::class);
         });
 
         it('returns specific gateway via static method', function (): void {
@@ -61,7 +61,7 @@ describe('Cashier Class - Additional Coverage', function (): void {
     describe('formatAmount', function (): void {
         it('formats amount with default currency', function (): void {
             // Use a fresh formatter
-            Cashier::formatCurrencyUsing(fn ($a, $c, $l) => "$" . number_format($a / 100, 2));
+            Cashier::formatCurrencyUsing(fn ($a, $c, $l) => '$' . number_format($a / 100, 2));
 
             $formatted = Cashier::formatAmount(1000);
 
@@ -69,7 +69,7 @@ describe('Cashier Class - Additional Coverage', function (): void {
         });
 
         it('formats amount with specific currency', function (): void {
-            Cashier::formatCurrencyUsing(fn ($a, $c, $l) => $c . " " . number_format($a / 100, 2));
+            Cashier::formatCurrencyUsing(fn ($a, $c, $l) => $c . ' ' . number_format($a / 100, 2));
 
             $formatted = Cashier::formatAmount(5000, 'MYR');
 

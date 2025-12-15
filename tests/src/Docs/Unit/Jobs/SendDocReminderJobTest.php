@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Jobs\SendDocReminderJob;
 use AIArmada\Docs\Models\Doc;
@@ -9,7 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 uses(RefreshDatabase::class);
 
-test('sends reminder for specific doc', function () {
+test('sends reminder for specific doc', function (): void {
     $doc = Doc::factory()->create([
         'status' => DocStatus::SENT,
         'customer_data' => ['email' => 'test@example.com'],
@@ -24,7 +26,7 @@ test('sends reminder for specific doc', function () {
         ->and($doc->emails->first()->recipient_email)->toBe('test@example.com');
 });
 
-test('logs warning if doc not found for specific reminder', function () {
+test('logs warning if doc not found for specific reminder', function (): void {
     Log::shouldReceive('warning')->once();
 
     $service = new DocEmailService();
@@ -33,7 +35,7 @@ test('logs warning if doc not found for specific reminder', function () {
     $job->handle($service);
 });
 
-test('sends reminders for upcoming due docs', function () {
+test('sends reminders for upcoming due docs', function (): void {
     $dueDate = now()->addDays(3);
     $doc = Doc::factory()->create([
         'status' => DocStatus::SENT,
@@ -54,7 +56,7 @@ test('sends reminders for upcoming due docs', function () {
         ->and($doc->emails->first()->recipient_email)->toBe('upcoming@example.com');
 });
 
-test('sends reminders for overdue docs', function () {
+test('sends reminders for overdue docs', function (): void {
     $overdueDate = now()->subDays(1);
     $doc = Doc::factory()->create([
         'status' => DocStatus::OVERDUE,
@@ -74,7 +76,7 @@ test('sends reminders for overdue docs', function () {
         ->and($doc->emails->first()->recipient_email)->toBe('overdue@example.com');
 });
 
-test('tags return correct array', function () {
+test('tags return correct array', function (): void {
     $job1 = new SendDocReminderJob('123');
     expect($job1->tags())->toContain('docs', 'reminder', 'doc:123');
 

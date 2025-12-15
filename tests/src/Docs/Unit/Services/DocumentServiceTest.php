@@ -1,23 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Enums\DocType;
 use AIArmada\Docs\Models\Doc;
-use AIArmada\Docs\Models\DocVersion;
 use AIArmada\Docs\Services\DocumentService;
 use AIArmada\Docs\Services\SequenceManager;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->sequenceManager = new SequenceManager();
     $this->service = new DocumentService($this->sequenceManager);
 });
 
-test('can create a document', function () {
+test('can create a document', function (): void {
     $data = [
         'issue_date' => now(),
         'currency' => 'USD',
@@ -46,7 +45,7 @@ test('can create a document', function () {
     expect($doc->versions->first()->change_summary)->toBe('Initial creation');
 });
 
-test('can update a document', function () {
+test('can update a document', function (): void {
     $doc = Doc::factory()->create([
         'doc_number' => 'INV-OLD',
         'subtotal' => 100,
@@ -76,7 +75,7 @@ test('can update a document', function () {
     expect($doc->versions->last()->change_summary)->toBe('Document updated');
 });
 
-test('can calculate totals', function () {
+test('can calculate totals', function (): void {
     $items = [
         [
             'quantity' => 2,
@@ -101,7 +100,7 @@ test('can calculate totals', function () {
         ->and($totals['total'])->toBe(205.0);
 });
 
-test('can record payment', function () {
+test('can record payment', function (): void {
     $doc = Doc::factory()->create([
         'total' => 100,
         'status' => DocStatus::SENT,
@@ -125,7 +124,7 @@ test('can record payment', function () {
     expect($doc->fresh()->status)->toBe(DocStatus::PAID);
 });
 
-test('can clone a document', function () {
+test('can clone a document', function (): void {
     $original = Doc::factory()->create([
         'doc_type' => DocType::Invoice,
         'currency' => 'USD',
@@ -139,7 +138,7 @@ test('can clone a document', function () {
         ->and($clone->metadata['cloned_from'])->toBe($original->id);
 });
 
-test('can convert a document', function () {
+test('can convert a document', function (): void {
     $source = Doc::factory()->create([
         'doc_type' => DocType::Quotation,
         'doc_number' => 'QUO-123',

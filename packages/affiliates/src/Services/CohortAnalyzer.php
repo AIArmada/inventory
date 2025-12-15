@@ -352,7 +352,7 @@ final class CohortAnalyzer
             ->whereBetween('created_at', [$from, $to])
             ->get()
             ->groupBy('cohort_month')
-            ->map(fn($group) => $group->pluck('id')->toArray());
+            ->map(fn ($group) => $group->pluck('id')->toArray());
     }
 
     /**

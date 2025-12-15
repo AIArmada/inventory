@@ -9,7 +9,6 @@ use AIArmada\Affiliates\Enums\CommissionType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Support\Str;
 
 /**
@@ -29,7 +28,6 @@ use Illuminate\Support\Str;
 final class AffiliateCommissionTemplate extends Model
 {
     use HasUuids;
-
 
     protected $fillable = [
         'name',

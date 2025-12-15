@@ -12,16 +12,18 @@ class TestUserWithProfile extends Model
 {
     use HasCustomerProfile;
 
-    protected $table = 'users';
-    protected $guarded = [];
     public $timestamps = true;
+
+    protected $table = 'users';
+
+    protected $guarded = [];
 }
 
 describe('HasCustomerProfile Trait', function (): void {
     describe('customerProfile Relationship', function (): void {
         it('returns hasOne relationship', function (): void {
             $user = new TestUserWithProfile();
-            expect($user->customerProfile())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasOne::class);
+            expect($user->customerProfile())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasOne::class);
         });
     });
 

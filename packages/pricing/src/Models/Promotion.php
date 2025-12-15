@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
-
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -44,7 +43,6 @@ class Promotion extends Model
     use HasOwner;
     use HasUuids;
     use LogsActivity;
-
 
     protected $guarded = ['id'];
 
@@ -146,11 +144,11 @@ class Promotion extends Model
      */
     public function scopeForOwner(Builder $query, ?EloquentModel $owner, bool $includeGlobal = true): Builder
     {
-        if (!config('pricing.owner.enabled', false)) {
+        if (! config('pricing.owner.enabled', false)) {
             return $query;
         }
 
-        if (!$owner) {
+        if (! $owner) {
             return $includeGlobal
                 ? $query->whereNull('owner_id')
                 : $query->whereNull('owner_type')->whereNull('owner_id');
@@ -174,7 +172,7 @@ class Promotion extends Model
 
     public function isActive(): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 

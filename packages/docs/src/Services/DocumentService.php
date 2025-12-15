@@ -20,8 +20,7 @@ final class DocumentService
 {
     public function __construct(
         private readonly SequenceManager $sequenceManager,
-    ) {
-    }
+    ) {}
 
     /**
      * Create a new document.
@@ -98,7 +97,7 @@ final class DocumentService
 
         // Validate conversion is allowed
         $allowedSources = $targetType->getConversionSources();
-        if ($sourceType && !in_array($sourceType, $allowedSources, true)) {
+        if ($sourceType && ! in_array($sourceType, $allowedSources, true)) {
             throw new InvalidArgumentException(
                 "Cannot convert {$sourceType->label()} to {$targetType->label()}"
             );

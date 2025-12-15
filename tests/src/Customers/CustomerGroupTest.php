@@ -42,12 +42,12 @@ describe('CustomerGroup Model', function (): void {
     describe('Relationships', function (): void {
         it('has members relationship', function (): void {
             $group = new CustomerGroup();
-            expect($group->members())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
+            expect($group->members())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
         });
 
         it('has admins relationship', function (): void {
             $group = new CustomerGroup();
-            expect($group->admins())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
+            expect($group->admins())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsToMany::class);
         });
     });
 
@@ -61,7 +61,7 @@ describe('CustomerGroup Model', function (): void {
     describe('Scopes', function (): void {
         it('has active scope', function (): void {
             $query = CustomerGroup::active();
-            expect($query)->toBeInstanceOf(\Illuminate\Database\Eloquent\Builder::class);
+            expect($query)->toBeInstanceOf(Illuminate\Database\Eloquent\Builder::class);
         });
     });
 
