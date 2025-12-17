@@ -23,6 +23,7 @@ class PrintLabelAction extends Action
             ->icon(Heroicon::OutlinedPrinter)
             ->color('gray')
             ->visible(fn (Shipment $record): bool => $record->tracking_number !== null)
+            ->authorize(fn (Shipment $record): bool => auth()->user()?->can('printLabel', $record) ?? false)
             ->action(function (Shipment $record): void {
                 try {
                     $shippingManager = app(ShippingManager::class);
@@ -30,7 +31,20 @@ class PrintLabelAction extends Action
                     $label = $driver->generateLabel($record->tracking_number);
 
                     if ($label->url !== null) {
-                        $this->redirect($label->url, true);
+                        $url = $label->url;
+                        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+                        if (! filter_var($url, FILTER_VALIDATE_URL) || ! in_array($scheme, ['http', 'https'], true)) {
+                            Notification::make()
+                                ->title('Invalid Label URL')
+                                ->body('The carrier returned an invalid label URL.')
+                                ->warning()
+                                ->send();
+
+                            return;
+                        }
+
+                        $this->redirect($url, true);
                     } else {
                         Notification::make()
                             ->title('Label Not Available')
@@ -39,9 +53,11 @@ class PrintLabelAction extends Action
                             ->send();
                     }
                 } catch (Throwable $e) {
+                    report($e);
+
                     Notification::make()
                         ->title('Label Generation Failed')
-                        ->body($e->getMessage())
+                        ->body('Unable to generate label. Please try again or check logs.')
                         ->danger()
                         ->send();
                 }

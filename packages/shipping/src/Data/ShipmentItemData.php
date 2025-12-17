@@ -20,7 +20,7 @@ class ShipmentItemData extends Data
         public readonly ?string $description = null,
         public readonly ?string $hsCode = null,
         public readonly ?string $originCountry = null,
-        public readonly ?int $shippableItemId = null,
+        public readonly ?string $shippableItemId = null,
         public readonly ?string $shippableItemType = null,
     ) {}
 }

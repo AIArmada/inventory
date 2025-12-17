@@ -9,10 +9,12 @@ describe('JntHealthCheck', function (): void {
     beforeEach(function (): void {
         // Clear any existing config
         config([
-            'jnt.eccompanyid' => null,
             'jnt.api_account' => null,
             'jnt.private_key' => null,
-            'jnt.base_url' => null,
+            'jnt.customer_code' => null,
+            'jnt.password' => null,
+            'jnt.environment' => 'testing',
+            'jnt.base_urls' => null,
         ]);
     });
 
@@ -32,7 +34,7 @@ describe('JntHealthCheck', function (): void {
 
     it('returns warning when credentials missing', function (): void {
         // Ensure credentials are empty
-        config(['jnt.eccompanyid' => '', 'jnt.api_account' => '']);
+        config(['jnt.api_account' => '', 'jnt.private_key' => '']);
 
         $check = new JntHealthCheck;
         $result = $check->run();
@@ -42,10 +44,15 @@ describe('JntHealthCheck', function (): void {
 
     it('returns result when API configuration is set', function (): void {
         config([
-            'jnt.eccompanyid' => 'test_company',
             'jnt.api_account' => 'test_account',
             'jnt.private_key' => 'test_key',
-            'jnt.base_url' => 'https://api.test.com',
+            'jnt.customer_code' => 'test_customer',
+            'jnt.password' => 'test_password',
+            'jnt.environment' => 'testing',
+            'jnt.base_urls' => [
+                'testing' => 'https://api.test.com',
+                'production' => 'https://api.prod.test.com',
+            ],
             'jnt.retry.times' => 1,
             'jnt.retry.sleep' => 100,
             'jnt.timeout' => 10,

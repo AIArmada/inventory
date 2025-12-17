@@ -67,7 +67,9 @@ class ShipmentLabel extends Model
             return null;
         }
 
-        return base64_decode($this->content);
+        $decoded = base64_decode($this->content, true);
+
+        return $decoded === false ? null : $decoded;
     }
 
     protected function casts(): array

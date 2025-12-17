@@ -520,19 +520,19 @@ class JntSignatureValidator implements SignatureValidator
 {
     public function isValid(Request $request, WebhookConfig $config): bool
     {
-        $signature = $request->header('X-JNT-Signature');
-        $timestamp = $request->header('X-JNT-Timestamp');
+        $signature = $request->header('digest');
+        $bizContent = $request->input('bizContent');
 
-        if (empty($signature)) {
+        if (! is_string($signature) || $signature === '') {
             return false;
         }
 
-        $payload = $request->getContent();
-        $expectedSignature = hash_hmac(
-            'sha256',
-            $timestamp . $payload,
-            $config->signingSecret
-        );
+        if (! is_string($bizContent) || $bizContent === '') {
+            return false;
+        }
+
+        // J&T webhook signature is a base64(md5(bizContent + secret, raw=true)) digest.
+        $expectedSignature = base64_encode(md5($bizContent . $config->signingSecret, true));
 
         return hash_equals($expectedSignature, $signature);
     }
@@ -628,12 +628,12 @@ class ProcessJntWebhook extends ProcessWebhookJob
 
 [
     'name' => 'jnt',
-    'signing_secret' => env('JNT_WEBHOOK_SECRET'),
-    'signature_header_name' => 'X-JNT-Signature',
+    'signing_secret' => env('JNT_PRIVATE_KEY'),
+    'signature_header_name' => 'digest',
     'signature_validator' => \AIArmada\Jnt\Webhooks\JntSignatureValidator::class,
     'webhook_profile' => \Spatie\WebhookClient\WebhookProfile\ProcessEverythingWebhookProfile::class,
     'process_webhook_job' => \AIArmada\Jnt\Webhooks\ProcessJntWebhook::class,
-    'store_headers' => ['X-JNT-Timestamp', 'X-JNT-Event-Type'],
+    'store_headers' => ['digest'],
 ],
 ```
 

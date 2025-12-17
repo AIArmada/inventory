@@ -131,7 +131,6 @@ describe('VoucherServiceProvider', function (): void {
 
             expect($provides)->toContain(VoucherService::class)
                 ->and($provides)->toContain(VoucherValidator::class)
-                ->and($provides)->toContain(OwnerResolverInterface::class)
                 ->and($provides)->toContain(ConversionPredictorInterface::class)
                 ->and($provides)->toContain(AbandonmentPredictorInterface::class)
                 ->and($provides)->toContain(DiscountOptimizerInterface::class)

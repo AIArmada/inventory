@@ -175,19 +175,25 @@ Scope vouchers to specific owners like merchants or stores:
 // config/vouchers.php
 'owner' => [
     'enabled' => true,
-    'resolver' => App\Support\CurrentMerchantResolver::class,
     'include_global' => true, // Also show global vouchers
     'auto_assign_on_create' => true,
 ],
 ```
 
-Create a resolver implementing `VoucherOwnerResolver`:
+Bind the current owner resolver centrally via `commerce-support`:
+
+```env
+VOUCHERS_OWNER_ENABLED=true
+COMMERCE_OWNER_RESOLVER=App\Support\CurrentMerchantResolver
+```
+
+Create a resolver implementing `OwnerResolverInterface`:
 
 ```php
-use AIArmada\Vouchers\Contracts\VoucherOwnerResolver;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Illuminate\Database\Eloquent\Model;
 
-class CurrentMerchantResolver implements VoucherOwnerResolver
+class CurrentMerchantResolver implements OwnerResolverInterface
 {
     public function resolve(): ?Model
     {

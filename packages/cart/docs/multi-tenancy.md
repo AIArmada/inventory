@@ -1,184 +1,76 @@
-# Multi-Tenancy
+# Multi-Tenancy (Owner Scoping)
 
-The Cart package supports multi-tenant applications through configurable tenant isolation. When enabled, all cart operations are scoped to the current tenant, ensuring complete data isolation between tenants.
+The Cart package supports multi-tenant applications via **owner scoping**. When enabled, cart storage and operations are automatically scoped to the current owner (merchant, store, tenant, etc).
+
+Owner resolution is centralized in `commerce-support` via the `OwnerResolverInterface` binding.
 
 ## Configuration
 
-Enable multi-tenancy in your environment or config file:
+Enable owner scoping in `config/cart.php`:
 
 ```php
-// config/cart.php
-'tenancy' => [
-    'enabled' => env('CART_TENANCY_ENABLED', false),
-    'resolver' => env('CART_TENANT_RESOLVER'),
-    'column' => env('CART_TENANT_COLUMN', 'tenant_id'),
+'owner' => [
+    'enabled' => true,
 ],
 ```
 
 ### Environment Variables
 
 ```env
-CART_TENANCY_ENABLED=true
-CART_TENANT_RESOLVER=App\Services\CartTenantResolver
-CART_TENANT_COLUMN=tenant_id
+CART_OWNER_ENABLED=true
+COMMERCE_OWNER_RESOLVER=App\Support\CurrentOwnerResolver
 ```
 
-## Implementing a Tenant Resolver
+## Implementing an Owner Resolver
 
-Create a class that implements `CartTenantResolverInterface`:
+Create a resolver that implements `AIArmada\CommerceSupport\Contracts\OwnerResolverInterface`:
 
 ```php
 <?php
 
-namespace App\Services;
+namespace App\Support;
 
-use AIArmada\Cart\Contracts\CartTenantResolverInterface;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use Illuminate\Database\Eloquent\Model;
 
-class CartTenantResolver implements CartTenantResolverInterface
+class CurrentOwnerResolver implements OwnerResolverInterface
 {
-    /**
-     * Resolve the current tenant ID.
-     *
-     * @return string|null The tenant ID, or null if no tenant context
-     */
-    public function resolve(): ?string
+    public function resolve(): ?Model
     {
-        // Example: Get tenant from authenticated user
-        if (auth()->check()) {
-            return auth()->user()->tenant_id;
-        }
-
-        // Example: Get tenant from subdomain
-        $host = request()->getHost();
-        $subdomain = explode('.', $host)[0];
-        return Tenant::where('subdomain', $subdomain)->value('id');
-
-        // Example: Get tenant from header (for APIs)
-        return request()->header('X-Tenant-ID');
+        return auth()->user()?->merchant;
     }
 }
 ```
 
-## Database Migration
+## How It Works
 
-When tenancy is enabled, run migrations to add the `tenant_id` column:
-
-```bash
-php artisan migrate
-```
-
-The migration is conditional and only runs when `cart.tenancy.enabled` is `true`.
-
-## Storage Drivers
-
-All three storage drivers support multi-tenancy:
-
-### Database Storage
-
-The `tenant_id` column is added to the carts table and included in all queries. The unique constraint becomes `(tenant_id, identifier, instance)`.
-
-### Session Storage
-
-Session keys are prefixed with the tenant ID:
-- Without tenant: `cart.{identifier}.{instance}.items`
-- With tenant: `cart.tenant.{tenant_id}.{identifier}.{instance}.items`
-
-### Cache Storage
-
-Cache keys are prefixed with the tenant ID:
-- Without tenant: `cart.{identifier}.{instance}.items`
-- With tenant: `cart.tenant.{tenant_id}.{identifier}.{instance}.items`
-
-## Admin Operations
-
-For admin panels or background jobs that need to operate on a specific tenant's carts, use the `forTenant()` method:
-
-```php
-use AIArmada\Cart\Facades\Cart;
-
-// Get a cart manager scoped to a specific tenant
-$tenantCart = Cart::forTenant('tenant-uuid-123');
-
-// All operations are now scoped to that tenant
-$cart = $tenantCart->getCartInstance('default', 'user-456');
-$items = $cart->getContent();
-
-// Get cart by ID within tenant scope
-$cart = $tenantCart->getById('cart-uuid');
-```
-
-## Checking Current Tenant
-
-```php
-use AIArmada\Cart\Facades\Cart;
-
-// Get the current tenant ID
-$tenantId = Cart::getTenantId();
-
-if ($tenantId === null) {
-    // Operating without tenant scope (single-tenant mode)
-}
-```
+- When `CART_OWNER_ENABLED=true` and an owner is resolved, cart storage is isolated per owner.
+- When the resolver returns `null`, carts behave as single-tenant (no owner isolation).
 
 ## Fail-Fast Behavior
 
-When tenancy is enabled, the package validates the resolver during boot:
-
-1. Resolver class must be configured
-2. Resolver class must exist
-3. Resolver must implement `CartTenantResolverInterface`
-
-If any validation fails, a `RuntimeException` is thrown immediately, preventing silent failures.
-
-## Cart Migration with Tenancy
-
-Cart migrations (guest to user) are automatically scoped to the current tenant:
-
-```php
-use AIArmada\Cart\Services\CartMigrationService;
-
-$migrationService = new CartMigrationService();
-
-// Migration happens within current tenant context
-$migrationService->migrateGuestCartToUser($userId, 'default', $guestSessionId);
-```
-
-## Backwards Compatibility
-
-Multi-tenancy is fully backwards compatible:
-
-- Disabled by default (`CART_TENANCY_ENABLED=false`)
-- Existing single-tenant installations work without changes
-- Migration only runs when tenancy is enabled
-- All storage drivers work with or without tenant scope
+When owner scoping is enabled, the Cart package expects an `OwnerResolverInterface` binding to exist (provided by `commerce-support`). If it is missing, Cart throws a `RuntimeException` during boot.
 
 ## Example: Filament Integration
 
-When using with Filament in a multi-tenant setup:
+If you use Filament tenancy, you can implement an owner resolver based on the current Filament tenant:
 
 ```php
 <?php
 
-namespace App\Services;
+namespace App\Support;
 
-use AIArmada\Cart\Contracts\CartTenantResolverInterface;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Filament\Facades\Filament;
+use Illuminate\Database\Eloquent\Model;
 
-class FilamentCartTenantResolver implements CartTenantResolverInterface
+class FilamentOwnerResolver implements OwnerResolverInterface
 {
-    public function resolve(): ?string
+    public function resolve(): ?Model
     {
-        return Filament::getTenant()?->id;
+        $tenant = Filament::getTenant();
+
+        return $tenant instanceof Model ? $tenant : null;
     }
 }
 ```
-
-## Best Practices
-
-1. **Always configure resolver when enabling tenancy** - The fail-fast behavior ensures you don't accidentally run without tenant isolation.
-
-2. **Use `forTenant()` for admin operations** - Never bypass tenant resolution for admin panels; explicitly scope operations.
-
-3. **Test tenant isolation** - Write tests that verify carts from one tenant are not visible to another.
-
-4. **Consider cache invalidation** - When switching tenants, ensure session/cache storage doesn't leak between tenants.

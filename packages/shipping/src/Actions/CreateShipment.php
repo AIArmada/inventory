@@ -42,7 +42,7 @@ final class CreateShipment
                 'total_weight' => $data['weight'] ?? $data['total_weight'] ?? 0,
                 'declared_value' => $data['declared_value'] ?? 0,
                 'shipping_cost' => $data['rate_minor'] ?? $data['shipping_cost'] ?? 0,
-                'currency' => $data['currency'] ?? config('shipping.currency', 'MYR'),
+                'currency' => $data['currency'] ?? config('shipping.defaults.currency', 'MYR'),
                 'estimated_delivery_at' => $data['estimated_delivery_at'] ?? null,
                 'shipped_at' => $data['shipped_at'] ?? null,
                 'delivered_at' => $data['delivered_at'] ?? null,
@@ -59,7 +59,7 @@ final class CreateShipment
 
     private function generateReference(): string
     {
-        $prefix = config('shipping.reference_prefix', 'SHP-');
+        $prefix = config('shipping.defaults.reference_prefix', config('shipping.reference_prefix', 'SHP-'));
 
         return $prefix . Str::upper(Str::random(10));
     }

@@ -20,8 +20,6 @@ use AIArmada\Chip\Services\ChipSendService;
 use AIArmada\Chip\Services\RecurringService;
 use AIArmada\Chip\Services\WebhookService;
 use AIArmada\Chip\Support\DocsIntegrationRegistrar;
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
-use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\CommerceSupport\Contracts\Payment\PaymentGatewayInterface;
 use AIArmada\CommerceSupport\Traits\ValidatesConfiguration;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
@@ -62,7 +60,6 @@ final class ChipServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        $this->registerOwnerResolver();
         $this->registerServices();
         $this->registerClients();
         $this->registerGateway();
@@ -95,7 +92,6 @@ final class ChipServiceProvider extends PackageServiceProvider
             ChipSendClient::class,
             ChipGateway::class,
             PaymentGatewayInterface::class,
-            OwnerResolverInterface::class,
             'chip.collect',
             'chip.send',
             'chip.gateway',
@@ -107,14 +103,6 @@ final class ChipServiceProvider extends PackageServiceProvider
     {
         $registrar = new DocsIntegrationRegistrar;
         $registrar->register();
-    }
-
-    protected function registerOwnerResolver(): void
-    {
-        /** @var class-string<OwnerResolverInterface> $resolverClass */
-        $resolverClass = config('chip.owner.resolver', NullOwnerResolver::class);
-
-        $this->app->singleton(OwnerResolverInterface::class, $resolverClass);
     }
 
     protected function registerMiddleware(): void

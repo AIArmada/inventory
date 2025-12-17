@@ -33,7 +33,7 @@ describe('ShipmentItemData', function (): void {
             description: 'A premium widget for testing',
             hsCode: '1234.56.78',
             originCountry: 'US',
-            shippableItemId: 123,
+            shippableItemId: '123',
             shippableItemType: 'App\\Models\\Product'
         );
 
@@ -45,7 +45,7 @@ describe('ShipmentItemData', function (): void {
         expect($item->description)->toBe('A premium widget for testing');
         expect($item->hsCode)->toBe('1234.56.78');
         expect($item->originCountry)->toBe('US');
-        expect($item->shippableItemId)->toBe(123);
+        expect($item->shippableItemId)->toBe('123');
         expect($item->shippableItemType)->toBe('App\\Models\\Product');
     });
 });

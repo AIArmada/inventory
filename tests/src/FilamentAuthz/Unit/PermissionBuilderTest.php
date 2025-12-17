@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\FilamentAuthz\Services\PermissionBuilder;
-use AIArmada\FilamentAuthz\Services\PermissionRegistry;
 
 afterEach(function (): void {
     Mockery::close();

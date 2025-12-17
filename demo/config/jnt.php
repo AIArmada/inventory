@@ -8,18 +8,21 @@ return [
     | J&T Express API Credentials
     |--------------------------------------------------------------------------
     */
-    'customer_code' => env('JNT_CUSTOMER_CODE', 'DEMO123'),
-    'password' => env('JNT_PASSWORD', 'demo_password'),
-    'api_key' => env('JNT_API_KEY', 'demo_api_key'),
-    'api_account' => env('JNT_API_ACCOUNT', 'demo_account'),
+    'customer_code' => env('JNT_CUSTOMER_CODE'),
+    'password' => env('JNT_PASSWORD'),
+    'api_account' => env('JNT_API_ACCOUNT'),
+    'private_key' => env('JNT_PRIVATE_KEY'),
 
     /*
     |--------------------------------------------------------------------------
     | Environment
     |--------------------------------------------------------------------------
     */
-    'sandbox' => env('JNT_SANDBOX', true),
-    'base_url' => env('JNT_BASE_URL', 'https://test-jts3openapi.jtexpress.my'),
+    'environment' => env('JNT_ENVIRONMENT', 'testing'),
+    'base_urls' => [
+        'testing' => env('JNT_BASE_URL_TESTING', 'https://demoopenapi.jtexpress.my/webopenplatformapi'),
+        'production' => env('JNT_BASE_URL_PRODUCTION', 'https://ylopenapi.jtexpress.my/webopenplatformapi'),
+    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -51,8 +54,8 @@ return [
     | Webhook Configuration
     |--------------------------------------------------------------------------
     */
-    'webhook' => [
-        'secret' => env('JNT_WEBHOOK_SECRET'),
-        'verify_signature' => env('JNT_WEBHOOK_VERIFY', false),
+    'webhooks' => [
+        'enabled' => env('JNT_WEBHOOKS_ENABLED', true),
+        'verify_signature' => env('JNT_WEBHOOKS_VERIFY_SIGNATURE', true),
     ],
 ];

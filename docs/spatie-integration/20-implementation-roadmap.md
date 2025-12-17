@@ -262,7 +262,7 @@ return [
         ],
         [
             'name' => 'jnt',
-            'signing_secret' => env('JNT_WEBHOOK_SECRET'),
+            'signing_secret' => env('JNT_PRIVATE_KEY'),
             // ... full config
         ],
     ],

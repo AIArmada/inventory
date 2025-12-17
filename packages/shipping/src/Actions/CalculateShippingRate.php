@@ -43,17 +43,17 @@ final class CalculateShippingRate
             return $driver->getRates($origin, $destination, $packages, $options);
         }
 
-        // Get rates from all configured carriers
+        // Get rates from all registered drivers
         $rates = collect();
-        $carriers = config('shipping.carriers', []);
 
-        foreach (array_keys($carriers) as $carrierName) {
+        foreach ($this->shippingManager->getAvailableDrivers() as $carrierName) {
             try {
                 $driver = $this->shippingManager->driver($carrierName);
                 $carrierRates = $driver->getRates($origin, $destination, $packages, $options);
                 $rates = $rates->merge($carrierRates);
-            } catch (Throwable) {
-                // Skip carriers that fail
+            } catch (Throwable $e) {
+                report($e);
+
                 continue;
             }
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentShipping\Resources;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentShipping\Actions;
 use AIArmada\FilamentShipping\Resources\ShipmentResource\Pages;
 use AIArmada\FilamentShipping\Resources\ShipmentResource\RelationManagers;
@@ -17,6 +18,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class ShipmentResource extends Resource
@@ -29,8 +31,31 @@ class ShipmentResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<Shipment> $query */
+        $query = parent::getEloquentQuery();
+
+        $owner = null;
+        if (app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        if (method_exists($query->getModel(), 'scopeForOwner')) {
+            /** @var Builder<Shipment> $scoped */
+            $scoped = $query->forOwner($owner);
+
+            return $scoped;
+        }
+
+        return $query;
+    }
+
     public static function form(Schema $schema): Schema
     {
+        $currency = (string) config('shipping.defaults.currency', 'MYR');
+        $weightUnit = (string) config('shipping.defaults.weight_unit', 'g');
+
         return $schema
             ->schema([
                 Forms\Components\Section::make('Shipment Details')
@@ -82,17 +107,23 @@ class ShipmentResource extends Resource
 
                         Forms\Components\TextInput::make('total_weight')
                             ->numeric()
-                            ->suffix('g'),
+                            ->suffix($weightUnit)
+                            ->formatStateUsing(fn ($state) => $state === null
+                                ? null
+                                : ($weightUnit === 'kg' ? $state / 1000 : $state))
+                            ->dehydrateStateUsing(fn ($state) => $state === null
+                                ? null
+                                : ($weightUnit === 'kg' ? (int) round($state * 1000) : (int) $state)),
 
                         Forms\Components\TextInput::make('declared_value')
                             ->numeric()
-                            ->prefix('RM')
+                            ->prefix($currency)
                             ->formatStateUsing(fn ($state) => $state ? $state / 100 : null)
                             ->dehydrateStateUsing(fn ($state) => $state ? $state * 100 : null),
 
                         Forms\Components\TextInput::make('shipping_cost')
                             ->numeric()
-                            ->prefix('RM')
+                            ->prefix($currency)
                             ->formatStateUsing(fn ($state) => $state ? $state / 100 : null)
                             ->dehydrateStateUsing(fn ($state) => $state ? $state * 100 : null),
                     ])
@@ -102,6 +133,9 @@ class ShipmentResource extends Resource
 
     public static function table(Table $table): Table
     {
+        $currency = (string) config('shipping.defaults.currency', 'MYR');
+        $weightUnit = (string) config('shipping.defaults.weight_unit', 'g');
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('reference')
@@ -125,12 +159,16 @@ class ShipmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_weight')
                     ->label('Weight')
-                    ->formatStateUsing(fn ($state) => number_format($state / 1000, 2) . ' kg')
+                    ->formatStateUsing(fn ($state) => $state === null
+                        ? '-'
+                        : ($weightUnit === 'kg'
+                            ? number_format($state / 1000, 2) . ' kg'
+                            : number_format($state) . ' g'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('shipping_cost')
                     ->label('Cost')
-                    ->money('MYR', divideBy: 100)
+                    ->money($currency, divideBy: 100)
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('shipped_at')

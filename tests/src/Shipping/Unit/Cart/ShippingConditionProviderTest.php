@@ -19,7 +19,7 @@ beforeEach(function (): void {
     $this->rateEngine = Mockery::mock(RateShoppingEngine::class);
     $this->freeShippingEvaluator = Mockery::mock(FreeShippingEvaluator::class);
 
-    config(['shipping.origin' => [
+    config(['shipping.defaults.origin' => [
         'name' => 'Test Store',
         'phone' => '123456',
         'address' => '1 Main St',

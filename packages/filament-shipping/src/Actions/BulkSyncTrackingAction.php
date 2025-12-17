@@ -25,11 +25,25 @@ class BulkSyncTrackingAction extends BulkAction
             ->color('info')
             ->deselectRecordsAfterCompletion()
             ->action(function (Collection $records): void {
+                $user = auth()->user();
+
+                if ($user === null) {
+                    Notification::make()
+                        ->title('Authentication Required')
+                        ->body('Please sign in to sync tracking.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 $aggregator = app(TrackingAggregator::class);
 
                 // Filter to only trackable shipments
                 $trackableShipments = $records->filter(
-                    fn ($record) => $record instanceof Shipment && $record->tracking_number !== null
+                    fn ($record) => $record instanceof Shipment
+                        && $record->tracking_number !== null
+                        && $user->can('syncTracking', $record)
                 );
 
                 if ($trackableShipments->isEmpty()) {

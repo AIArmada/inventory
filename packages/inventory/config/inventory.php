@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
-
 $tablePrefix = env('INVENTORY_TABLE_PREFIX', 'inventory_');
 
 $tables = [
@@ -58,12 +56,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | Register a resolver that returns the current owner (merchant, tenant, etc).
-    | When enabled, inventory data is automatically scoped to the owner.
+        | When enabled, inventory is automatically scoped to the current owner.
+        | The OwnerResolverInterface binding is provided by commerce-support.
     |
     */
     'owner' => [
         'enabled' => env('INVENTORY_OWNER_ENABLED', false),
-        'resolver' => NullOwnerResolver::class,
         'include_global' => env('INVENTORY_OWNER_INCLUDE_GLOBAL', true),
         'auto_assign_on_create' => env('INVENTORY_OWNER_AUTO_ASSIGN', true),
     ],

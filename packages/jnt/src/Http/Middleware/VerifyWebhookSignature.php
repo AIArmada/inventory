@@ -35,6 +35,10 @@ class VerifyWebhookSignature
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (! config('jnt.webhooks.verify_signature', true)) {
+            return $next($request);
+        }
+
         // Extract digest and bizContent
         $digest = $this->webhookService->extractDigest($request);
         $bizContent = (string) $request->input('bizContent', '');

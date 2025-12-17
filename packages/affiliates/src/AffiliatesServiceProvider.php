@@ -23,10 +23,7 @@ use AIArmada\Affiliates\Support\Integrations\CartIntegrationRegistrar;
 use AIArmada\Affiliates\Support\Integrations\VoucherIntegrationRegistrar;
 use AIArmada\Affiliates\Support\Middleware\TrackAffiliateCookie;
 use AIArmada\Affiliates\Support\Webhooks\WebhookDispatcher;
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
-use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Illuminate\Routing\Router;
-use InvalidArgumentException;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -66,22 +63,6 @@ final class AffiliatesServiceProvider extends PackageServiceProvider
         $this->app->singleton(ProgramService::class);
         $this->app->singleton(CommissionMaturityService::class);
         $this->app->singleton(PayoutReconciliationService::class);
-
-        $this->app->singleton(OwnerResolverInterface::class, function ($app): OwnerResolverInterface {
-            $resolverClass = config('affiliates.owner.resolver', NullOwnerResolver::class);
-
-            $resolver = $app->make($resolverClass);
-
-            if (! $resolver instanceof OwnerResolverInterface) {
-                throw new InvalidArgumentException(sprintf(
-                    '%s must implement %s',
-                    $resolverClass,
-                    OwnerResolverInterface::class
-                ));
-            }
-
-            return $resolver;
-        });
 
         $this->app->singleton(CartIntegrationRegistrar::class);
         $this->app->singleton(VoucherIntegrationRegistrar::class);

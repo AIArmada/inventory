@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Jnt\Webhooks;
 
 use AIArmada\CommerceSupport\Webhooks\CommerceSignatureValidator;
+use Illuminate\Http\Request;
 
 /**
  * Validates J&T webhook signatures.
@@ -18,14 +19,16 @@ class JntSignatureValidator extends CommerceSignatureValidator
      */
     protected function getSignatureHeader(): string
     {
-        return 'X-JNT-Signature';
+        return 'digest';
     }
 
-    /**
-     * Get the hash algorithm.
-     */
-    protected function getHashAlgorithm(): string
+    protected function getPayloadForSigning(Request $request): string
     {
-        return 'sha256';
+        return (string) $request->input('bizContent', '');
+    }
+
+    protected function computeSignature(string $payload, string $secret): string
+    {
+        return base64_encode(md5($payload . $secret, true));
     }
 }

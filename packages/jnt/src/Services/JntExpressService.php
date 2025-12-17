@@ -26,8 +26,8 @@ class JntExpressService
      * @param  array<string, mixed>  $config
      */
     public function __construct(
-        protected readonly string $customerCode,
-        protected readonly string $password,
+        protected readonly ?string $customerCode,
+        protected readonly ?string $password,
         protected readonly array $config = [],
     ) {
         // Client is now lazy-loaded on first use
@@ -38,7 +38,7 @@ class JntExpressService
      */
     public function createOrderBuilder(): OrderBuilder
     {
-        return new OrderBuilder($this->customerCode, $this->password);
+        return new OrderBuilder($this->getCustomerCode(), $this->getPassword());
     }
 
     /**
@@ -55,14 +55,17 @@ class JntExpressService
         ?string $orderId = null,
         array $additionalData = [],
     ): OrderData {
+        $customerCode = $this->getCustomerCode();
+        $password = $this->getPassword();
+
         $orderData = [
             'txlogisticId' => $orderId ?? 'TXN-' . time(),
             'actionType' => 'add',
             'serviceType' => '1',
             'payType' => 'PP_PM',
             'expressType' => 'EZ',
-            'customerCode' => $this->customerCode,
-            'password' => $this->password,
+            'customerCode' => $customerCode,
+            'password' => $password,
             'sender' => $sender->toApiArray(),
             'receiver' => $receiver->toApiArray(),
             'items' => array_map(fn (ItemData $item): array => $item->toApiArray(), $items),
@@ -91,8 +94,8 @@ class JntExpressService
     public function queryOrder(string $orderId): array
     {
         $response = $this->getClient()->post('/api/order/getOrders', [
-            'customerCode' => $this->customerCode,
-            'password' => $this->password,
+            'customerCode' => $this->getCustomerCode(),
+            'password' => $this->getPassword(),
             'txlogisticId' => $orderId,
         ]);
 
@@ -133,8 +136,8 @@ class JntExpressService
     public function cancelOrder(string $orderId, CancellationReason | string $reason, ?string $trackingNumber = null): array
     {
         $payload = [
-            'customerCode' => $this->customerCode,
-            'password' => $this->password,
+            'customerCode' => $this->getCustomerCode(),
+            'password' => $this->getPassword(),
             'txlogisticId' => $orderId,
             'reason' => $reason instanceof CancellationReason ? $reason->value : $reason,
         ];
@@ -154,8 +157,8 @@ class JntExpressService
     public function printOrder(string $orderId, ?string $trackingNumber = null, ?string $templateName = null): array
     {
         $payload = [
-            'customerCode' => $this->customerCode,
-            'password' => $this->password,
+            'customerCode' => $this->getCustomerCode(),
+            'password' => $this->getPassword(),
             'txlogisticId' => $orderId,
         ];
 
@@ -179,8 +182,8 @@ class JntExpressService
         }
 
         $payload = [
-            'customerCode' => $this->customerCode,
-            'password' => $this->password,
+            'customerCode' => $this->getCustomerCode(),
+            'password' => $this->getPassword(),
         ];
 
         if ($orderId !== null) {
@@ -504,10 +507,37 @@ class JntExpressService
 
     protected function getBaseUrl(): string
     {
-        $environment = $this->config['environment'] ?? 'testing';
+        $environment = $this->normalizeEnvironment((string) ($this->config['environment'] ?? 'testing'));
         $baseUrls = $this->config['base_urls'] ?? [];
 
         return $baseUrls[$environment] ?? throw JntConfigurationException::invalidEnvironment($environment);
+    }
+
+    protected function normalizeEnvironment(string $environment): string
+    {
+        return match ($environment) {
+            'production' => 'production',
+            'testing', 'local', 'development' => 'testing',
+            default => throw JntConfigurationException::invalidEnvironment($environment),
+        };
+    }
+
+    protected function getCustomerCode(): string
+    {
+        if ($this->customerCode === null || $this->customerCode === '') {
+            throw JntConfigurationException::missingCustomerCode();
+        }
+
+        return $this->customerCode;
+    }
+
+    protected function getPassword(): string
+    {
+        if ($this->password === null || $this->password === '') {
+            throw JntConfigurationException::missingPassword();
+        }
+
+        return $this->password;
     }
 
     /**

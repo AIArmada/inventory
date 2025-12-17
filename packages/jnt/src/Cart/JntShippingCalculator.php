@@ -143,6 +143,7 @@ class JntShippingCalculator
     private function getEstimatedDays(AddressData $destination): int
     {
         $defaultDays = (int) config('jnt.shipping.default_estimated_days', 3);
+        $eastExtraDays = (int) config('jnt.shipping.east_malaysia_extra_days', 2);
 
         // East Malaysia takes longer
         $eastMalaysiaStates = ['sabah', 'sarawak', 'labuan'];
@@ -150,7 +151,7 @@ class JntShippingCalculator
 
         foreach ($eastMalaysiaStates as $eastState) {
             if (str_contains($state, $eastState)) {
-                return $defaultDays + 2;
+                return $defaultDays + $eastExtraDays;
             }
         }
 

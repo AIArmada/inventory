@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
 use AIArmada\Docs\Numbering\Strategies\DefaultNumberStrategy;
 
 $tablePrefix = env('DOCS_TABLE_PREFIX', 'docs_');
@@ -29,12 +28,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | Multi-tenancy support for scoping docs by owner. When enabled, docs
-    | are isolated per owner using the configured resolver.
+    | are isolated per owner using the OwnerResolverInterface binding from
+    | commerce-support.
     |
     */
     'owner' => [
         'enabled' => env('DOCS_OWNER_ENABLED', false),
-        'resolver' => env('DOCS_OWNER_RESOLVER', NullOwnerResolver::class),
         'include_global' => env('DOCS_OWNER_INCLUDE_GLOBAL', true),
     ],
 

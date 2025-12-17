@@ -29,6 +29,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Defaults
+    |--------------------------------------------------------------------------
+    */
+    'defaults' => [
+        'currency' => 'MYR',
+        'reference_prefix' => env('SHIPPING_REFERENCE_PREFIX', 'SHP-'),
+        'origin' => [
+            'name' => env('SHIPPING_ORIGIN_NAME', env('APP_NAME', 'Store')),
+            'phone' => env('SHIPPING_ORIGIN_PHONE', ''),
+            'address' => env('SHIPPING_ORIGIN_ADDRESS', ''),
+            'post_code' => env('SHIPPING_ORIGIN_POST_CODE', ''),
+            'country_code' => env('SHIPPING_ORIGIN_COUNTRY_CODE', 'MYS'),
+            'state' => env('SHIPPING_ORIGIN_STATE'),
+            'city' => env('SHIPPING_ORIGIN_CITY'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Shipping Driver
     |--------------------------------------------------------------------------
     |
@@ -86,26 +105,14 @@ return [
     |
     */
     'rate_shopping' => [
-        'enabled' => true,
         'strategy' => 'cheapest', // cheapest, fastest, preferred
-        'preferred_carrier' => null,
-        'cache_ttl' => 300, // 5 minutes
+        'cache_ttl' => 300, // seconds
         'fallback_to_manual' => true,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Carrier Priority
-    |--------------------------------------------------------------------------
-    |
-    | When using the 'preferred' rate selection strategy, carriers will be
-    | tried in this priority order. Lower numbers have higher priority.
-    |
-    */
-    'carrier_priority' => [
-        // 'jnt' => 1,
-        // 'poslaju' => 2,
-        // 'gdex' => 3,
+        'carrier_priority' => [
+            // 'jnt' => 1,
+            // 'poslaju' => 2,
+            // 'gdex' => 3,
+        ],
     ],
 
     /*
@@ -120,8 +127,6 @@ return [
     'free_shipping' => [
         'enabled' => false,
         'threshold' => 15000, // RM150.00 in cents
-        'applies_to' => ['standard'], // Which services get free shipping
-        'zones' => [], // Empty = all zones, or specify zone codes
     ],
 
     /*
@@ -133,74 +138,7 @@ return [
     |
     */
     'tracking' => [
-        'auto_sync' => true,
         'sync_interval' => 3600, // 1 hour in seconds
         'max_tracking_age' => 30, // days to keep syncing
-        'webhook_enabled' => true,
-        'webhook_secret' => env('SHIPPING_WEBHOOK_SECRET'),
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Label Generation
-    |--------------------------------------------------------------------------
-    |
-    | Configure shipping label generation and storage.
-    |
-    */
-    'labels' => [
-        'format' => 'pdf', // pdf, png, zpl
-        'size' => 'a6', // a4, a6, 4x6
-        'storage_disk' => 'local',
-        'storage_path' => 'shipping-labels',
-        'keep_days' => 90,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Returns Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configure return merchandise authorization (RMA) settings.
-    |
-    */
-    'returns' => [
-        'enabled' => true,
-        'auto_approve' => false,
-        'return_window_days' => 14,
-        'generate_return_label' => true,
-        'restocking_fee_percent' => 0,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Default Currency
-    |--------------------------------------------------------------------------
-    |
-    | The default currency for shipping rates and costs.
-    |
-    */
-    'currency' => 'MYR',
-
-    /*
-    |--------------------------------------------------------------------------
-    | Weight Unit
-    |--------------------------------------------------------------------------
-    |
-    | The weight unit used throughout the shipping package.
-    | Supported: 'g' (grams), 'kg' (kilograms), 'oz' (ounces), 'lb' (pounds)
-    |
-    */
-    'weight_unit' => 'g',
-
-    /*
-    |--------------------------------------------------------------------------
-    | Dimension Unit
-    |--------------------------------------------------------------------------
-    |
-    | The dimension unit used for package measurements.
-    | Supported: 'cm' (centimeters), 'in' (inches)
-    |
-    */
-    'dimension_unit' => 'cm',
 ];

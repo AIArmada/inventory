@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt;
 
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
-use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
-use AIArmada\CommerceSupport\Traits\ValidatesConfiguration;
 use AIArmada\Jnt\Cart\JntShippingCalculator;
 use AIArmada\Jnt\Cart\JntShippingConditionProvider;
 use AIArmada\Jnt\Console\Commands\ConfigCheckCommand;
@@ -41,8 +38,6 @@ use Spatie\LaravelPackageTools\PackageServiceProvider;
  */
 class JntServiceProvider extends PackageServiceProvider
 {
-    use ValidatesConfiguration;
-
     /**
      * Configure the package.
      */
@@ -70,9 +65,8 @@ class JntServiceProvider extends PackageServiceProvider
      */
     public function registeringPackage(): void
     {
-        $this->registerOwnerResolver();
         $this->registerServices();
-        $this->registerShippingServices();
+        $this->registerOptionalIntegrations();
     }
 
     /**
@@ -80,27 +74,10 @@ class JntServiceProvider extends PackageServiceProvider
      */
     public function bootingPackage(): void
     {
-        $this->validateConfiguration('jnt', [
-            'customer_code',
-            'password',
-            'private_key',
-        ]);
-
         $this->registerMiddleware();
         $this->registerCartIntegration();
         $this->registerShippingDriver();
         $this->registerEventListeners();
-    }
-
-    /**
-     * Register the owner resolver.
-     */
-    protected function registerOwnerResolver(): void
-    {
-        /** @var class-string<OwnerResolverInterface> $resolverClass */
-        $resolverClass = config('jnt.owner.resolver', NullOwnerResolver::class);
-
-        $this->app->singleton(OwnerResolverInterface::class, $resolverClass);
     }
 
     /**
@@ -113,8 +90,8 @@ class JntServiceProvider extends PackageServiceProvider
             $config = $app['config']['jnt'];
 
             return new JntExpressService(
-                customerCode: $config['customer_code'],
-                password: $config['password'],
+                customerCode: $config['customer_code'] ?? null,
+                password: $config['password'] ?? null,
                 config: $config,
             );
         });
@@ -124,7 +101,7 @@ class JntServiceProvider extends PackageServiceProvider
 
         // Register webhook service
         $this->app->singleton(WebhookService::class, fn (Application $app): WebhookService => new WebhookService(
-            privateKey: $app['config']['jnt']['private_key']
+            privateKey: $app['config']['jnt']['private_key'] ?? null,
         ));
 
         // Register status mapper service
@@ -140,39 +117,39 @@ class JntServiceProvider extends PackageServiceProvider
     }
 
     /**
-     * Register shipping-related services.
+     * Register Cart/Shipping optional integrations.
      */
-    protected function registerShippingServices(): void
+    protected function registerOptionalIntegrations(): void
     {
-        // Register shipping calculator
-        $this->app->singleton(
-            JntShippingCalculator::class,
-            fn (Application $app): JntShippingCalculator => new JntShippingCalculator(
-                $app->make(JntExpressService::class)
-            )
-        );
+        if (class_exists('AIArmada\\Cart\\CartManager')) {
+            $this->app->singleton(
+                JntShippingCalculator::class,
+                fn (Application $app): JntShippingCalculator => new JntShippingCalculator(
+                    $app->make(JntExpressService::class)
+                )
+            );
 
-        // Register shipping condition provider
-        $this->app->singleton(
-            JntShippingConditionProvider::class,
-            fn (Application $app): JntShippingConditionProvider => new JntShippingConditionProvider(
-                $app->make(JntExpressService::class),
-                $app->make(JntShippingCalculator::class)
-            )
-        );
+            $this->app->singleton(
+                JntShippingConditionProvider::class,
+                fn (Application $app): JntShippingConditionProvider => new JntShippingConditionProvider(
+                    $app->make(JntExpressService::class),
+                    $app->make(JntShippingCalculator::class)
+                )
+            );
 
-        // Register cart integration registrar
-        $this->app->singleton(CartIntegrationRegistrar::class);
+            $this->app->singleton(CartIntegrationRegistrar::class);
+        }
 
-        // Register JNT shipping driver
-        $this->app->singleton(
-            JntShippingDriver::class,
-            fn (Application $app): JntShippingDriver => new JntShippingDriver(
-                $app->make(JntExpressService::class),
-                $app->make(JntTrackingService::class),
-                $app->make(JntStatusMapper::class),
-            )
-        );
+        if (class_exists(ShippingManager::class)) {
+            $this->app->singleton(
+                JntShippingDriver::class,
+                fn (Application $app): JntShippingDriver => new JntShippingDriver(
+                    $app->make(JntExpressService::class),
+                    $app->make(JntTrackingService::class),
+                    $app->make(JntStatusMapper::class),
+                )
+            );
+        }
     }
 
     /**
@@ -190,6 +167,10 @@ class JntServiceProvider extends PackageServiceProvider
      */
     protected function registerCartIntegration(): void
     {
+        if (! class_exists('AIArmada\\Cart\\CartManager')) {
+            return;
+        }
+
         if (config('jnt.cart.register_manager_proxy', true)) {
             $this->app->make(CartIntegrationRegistrar::class)->register();
         }

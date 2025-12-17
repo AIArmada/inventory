@@ -1,7 +1,6 @@
 <?php
 
 declare(strict_types=1);
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
 
 return [
     /*
@@ -56,13 +55,12 @@ return [
     |--------------------------------------------------------------------------
     |
     | Multi-tenancy support for scoping carts by owner. When enabled, carts
-    | are isolated per owner using the configured resolver. The resolver must
-    | implement OwnerResolverInterface from commerce-support.
+    | are isolated per owner using the OwnerResolverInterface binding from
+    | commerce-support.
     |
     */
     'owner' => [
         'enabled' => env('CART_OWNER_ENABLED', false),
-        'resolver' => env('CART_OWNER_RESOLVER', NullOwnerResolver::class),
         'include_global' => env('CART_OWNER_INCLUDE_GLOBAL', true),
     ],
 

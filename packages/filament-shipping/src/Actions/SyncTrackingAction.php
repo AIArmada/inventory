@@ -23,6 +23,7 @@ class SyncTrackingAction extends Action
             ->icon(Heroicon::OutlinedArrowPath)
             ->color('info')
             ->visible(fn (Shipment $record): bool => $record->tracking_number !== null)
+            ->authorize(fn (Shipment $record): bool => auth()->user()?->can('syncTracking', $record) ?? false)
             ->action(function (Shipment $record): void {
                 try {
                     $aggregator = app(TrackingAggregator::class);
@@ -34,9 +35,11 @@ class SyncTrackingAction extends Action
                         ->success()
                         ->send();
                 } catch (Throwable $e) {
+                    report($e);
+
                     Notification::make()
                         ->title('Tracking Sync Failed')
-                        ->body($e->getMessage())
+                        ->body('Unable to sync tracking. Please try again or check logs.')
                         ->danger()
                         ->send();
                 }

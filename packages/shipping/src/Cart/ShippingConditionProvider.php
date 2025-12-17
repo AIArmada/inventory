@@ -141,7 +141,7 @@ class ShippingConditionProvider implements ConditionProviderInterface
      */
     protected function getOriginAddress(): AddressData
     {
-        $origin = config('shipping.origin', []);
+        $origin = config('shipping.defaults.origin', []);
 
         return new AddressData(
             name: $origin['name'] ?? config('app.name', 'Store'),

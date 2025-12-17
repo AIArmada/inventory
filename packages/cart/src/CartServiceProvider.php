@@ -18,7 +18,6 @@ use AIArmada\Cart\Storage\CacheStorage;
 use AIArmada\Cart\Storage\DatabaseStorage;
 use AIArmada\Cart\Storage\SessionStorage;
 use AIArmada\Cart\Storage\StorageInterface;
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\CommerceSupport\Traits\ValidatesConfiguration;
 use Illuminate\Auth\Events\Attempting;
@@ -107,30 +106,11 @@ final class CartServiceProvider extends PackageServiceProvider
             return;
         }
 
-        $resolverClass = config('cart.owner.resolver', NullOwnerResolver::class);
-
-        if (empty($resolverClass)) {
-            throw new RuntimeException(
-                'Cart owner is enabled but no resolver is configured. ' .
-                'Set CART_OWNER_RESOLVER or cart.owner.resolver to a class implementing OwnerResolverInterface.'
-            );
-        }
-
-        if (! class_exists($resolverClass)) {
-            throw new RuntimeException(
-                "Cart owner resolver class '{$resolverClass}' does not exist."
-            );
-        }
-
-        if (! is_subclass_of($resolverClass, OwnerResolverInterface::class) && $resolverClass !== NullOwnerResolver::class) {
-            throw new RuntimeException(
-                "Cart owner resolver '{$resolverClass}' must implement " . OwnerResolverInterface::class
-            );
-        }
-
-        // Register the resolver in the container (only if not already bound)
         if (! $this->app->bound(OwnerResolverInterface::class)) {
-            $this->app->singleton(OwnerResolverInterface::class, $resolverClass);
+            throw new RuntimeException(
+                'Cart owner is enabled but no resolver is bound. ' .
+                'Bind ' . OwnerResolverInterface::class . ' (recommended via COMMERCE_OWNER_RESOLVER / commerce-support config).'
+            );
         }
     }
 

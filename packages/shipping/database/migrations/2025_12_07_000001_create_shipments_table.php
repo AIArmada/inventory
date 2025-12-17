@@ -17,7 +17,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->ulid('ulid')->unique();
 
-            $table->uuidMorphs('owner');
+            $table->nullableUuidMorphs('owner');
             $table->nullableUuidMorphs('shippable');
 
             $table->string('reference')->index();
@@ -34,7 +34,7 @@ return new class extends Migration
             $table->unsignedInteger('package_count')->default(1);
             $table->unsignedInteger('total_weight')->default(0);
             $table->unsignedInteger('declared_value')->default(0);
-            $table->string('currency', 3)->default(config('shipping.currency', 'MYR'));
+            $table->string('currency', 3)->default(config('shipping.defaults.currency', 'MYR'));
 
             $table->unsignedInteger('shipping_cost')->default(0);
             $table->unsignedInteger('insurance_cost')->default(0);

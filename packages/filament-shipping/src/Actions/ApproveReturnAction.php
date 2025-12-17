@@ -31,6 +31,7 @@ class ApproveReturnAction extends Action
                     ->rows(3),
             ])
             ->visible(fn (ReturnAuthorization $record): bool => $record->isPending())
+            ->authorize(fn (ReturnAuthorization $record): bool => auth()->user()?->can('approve', $record) ?? false)
             ->action(function (ReturnAuthorization $record, array $data): void {
                 $record->update([
                     'status' => 'approved',

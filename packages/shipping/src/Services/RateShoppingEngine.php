@@ -12,6 +12,8 @@ use AIArmada\Shipping\ShippingManager;
 use AIArmada\Shipping\Strategies\CheapestRateStrategy;
 use AIArmada\Shipping\Strategies\FastestRateStrategy;
 use AIArmada\Shipping\Strategies\PreferredCarrierStrategy;
+use Illuminate\Cache\TaggableStore;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Throwable;
@@ -50,7 +52,15 @@ class RateShoppingEngine
         $cacheTtl = $this->config['cache_ttl'] ?? 300;
 
         if ($cacheTtl > 0) {
-            return Cache::remember($cacheKey, $cacheTtl, function () use ($origin, $destination, $packages, $options) {
+            $repository = Cache::store();
+
+            if ($repository->getStore() instanceof TaggableStore) {
+                return $repository->tags($this->cacheTags())->remember($cacheKey, $cacheTtl, function () use ($origin, $destination, $packages, $options) {
+                    return $this->fetchRatesFromAllCarriers($origin, $destination, $packages, $options);
+                });
+            }
+
+            return $repository->remember($cacheKey, $cacheTtl, function () use ($origin, $destination, $packages, $options) {
                 return $this->fetchRatesFromAllCarriers($origin, $destination, $packages, $options);
             });
         }
@@ -130,7 +140,11 @@ class RateShoppingEngine
      */
     public function clearCache(): void
     {
-        Cache::flush(); // In production, use tags: Cache::tags(['shipping', 'rates'])->flush()
+        $repository = Cache::store();
+
+        if ($repository->getStore() instanceof TaggableStore) {
+            $repository->tags($this->cacheTags())->flush();
+        }
     }
 
     /**
@@ -163,15 +177,31 @@ class RateShoppingEngine
         // Extract carrier codes (primitives are safely serializable)
         $carrierCodes = $drivers->map(fn ($driver) => $driver->getCarrierCode())->all();
 
+        // Avoid capturing complex objects in concurrent closures.
+        // Concurrency may fork/process-isolate and require serialization.
+        $originPayload = $origin->toArray();
+        $destinationPayload = $destination->toArray();
+        $packagesPayload = array_map(
+            fn (PackageData $package) => $package->toArray(),
+            $packages
+        );
+
         // Build concurrent tasks - one per carrier
         // We pass primitives and re-resolve the driver in each child process
         // to avoid serialization issues with complex driver objects
-        $tasks = collect($carrierCodes)->mapWithKeys(function (string $carrierCode) use ($origin, $destination, $packages, $options) {
+        $tasks = collect($carrierCodes)->mapWithKeys(function (string $carrierCode) use ($originPayload, $destinationPayload, $packagesPayload, $options) {
             return [
-                $carrierCode => function () use ($carrierCode, $origin, $destination, $packages, $options) {
+                $carrierCode => function () use ($carrierCode, $originPayload, $destinationPayload, $packagesPayload, $options) {
                     try {
                         // Resolve driver fresh in child process
                         $driver = app(ShippingManager::class)->driver($carrierCode);
+
+                        $origin = AddressData::from($originPayload);
+                        $destination = AddressData::from($destinationPayload);
+                        $packages = array_map(
+                            fn (array $package) => PackageData::from($package),
+                            $packagesPayload
+                        );
 
                         return $driver->getRates($origin, $destination, $packages, $options);
                     } catch (Throwable $e) {
@@ -196,6 +226,19 @@ class RateShoppingEngine
         }
 
         return $rates->sortBy('rate');
+    }
+
+    protected function cacheRepository(): CacheRepository
+    {
+        return Cache::store();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function cacheTags(): array
+    {
+        return ['shipping', 'shipping:rates'];
     }
 
     /**

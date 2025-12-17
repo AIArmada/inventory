@@ -140,7 +140,9 @@ final class JntOrder extends Model
         $owner ??= $this->resolveOwner();
 
         if ($owner === null) {
-            return $includeGlobal ? $query->whereNull('owner_type') : $query;
+            return $includeGlobal
+                ? $query->whereNull('owner_type')->whereNull('owner_id')
+                : $query;
         }
 
         if ($includeGlobal) {
@@ -148,7 +150,9 @@ final class JntOrder extends Model
                 $q->where(function (Builder $subQ) use ($owner): void {
                     $subQ->where('owner_type', $owner->getMorphClass())
                         ->where('owner_id', $owner->getKey());
-                })->orWhereNull('owner_type');
+                })->orWhere(function (Builder $subQ): void {
+                    $subQ->whereNull('owner_type')->whereNull('owner_id');
+                });
             });
         }
 

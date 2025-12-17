@@ -25,6 +25,18 @@ class BulkPrintLabelsAction extends BulkAction
             ->color('gray')
             ->deselectRecordsAfterCompletion()
             ->action(function (Collection $records): void {
+                $user = auth()->user();
+
+                if ($user === null) {
+                    Notification::make()
+                        ->title('Authentication Required')
+                        ->body('Please sign in to print labels.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 $shippingManager = app(ShippingManager::class);
                 $labels = [];
                 $errors = [];
@@ -34,18 +46,32 @@ class BulkPrintLabelsAction extends BulkAction
                         continue;
                     }
 
+                    if (! $user->can('printLabel', $record)) {
+                        continue;
+                    }
+
                     try {
                         $driver = $shippingManager->driver($record->carrier_code);
                         $label = $driver->generateLabel($record->tracking_number);
 
                         if ($label->url !== null) {
+                            $url = $label->url;
+                            $scheme = parse_url($url, PHP_URL_SCHEME);
+
+                            if (! filter_var($url, FILTER_VALIDATE_URL) || ! in_array($scheme, ['http', 'https'], true)) {
+                                $errors[] = "{$record->tracking_number}: invalid label URL";
+
+                                continue;
+                            }
+
                             $labels[] = [
                                 'tracking' => $record->tracking_number,
-                                'url' => $label->url,
+                                'url' => $url,
                             ];
                         }
                     } catch (Throwable $e) {
-                        $errors[] = "{$record->tracking_number}: {$e->getMessage()}";
+                        report($e);
+                        $errors[] = "{$record->tracking_number}: error generating label";
                     }
                 }
 

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * @property string $id
@@ -74,7 +75,7 @@ class ReturnAuthorization extends Model
 
     public static function generateRmaNumber(): string
     {
-        return 'RMA-' . mb_strtoupper(uniqid());
+        return 'RMA-' . Str::upper((string) Str::ulid());
     }
 
     public function getTable(): string

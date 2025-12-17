@@ -12,6 +12,7 @@ use AIArmada\Cart\Conditions\Enums\ConditionScope;
 use AIArmada\Cart\Contracts\ConditionProviderInterface;
 use AIArmada\Jnt\Data\AddressData;
 use AIArmada\Jnt\Services\JntExpressService;
+use Illuminate\Support\Carbon;
 
 /**
  * Provides J&T Express shipping rates as cart conditions.
@@ -168,7 +169,7 @@ readonly class JntShippingConditionProvider implements ConditionProviderInterfac
         $ttlMinutes = config('jnt.cart.quote_ttl_minutes', 30);
 
         if ($calculatedAt !== null) {
-            $expiresAt = now()->parse($calculatedAt)->addMinutes($ttlMinutes);
+            $expiresAt = Carbon::parse((string) $calculatedAt)->addMinutes($ttlMinutes);
             if (now()->isAfter($expiresAt)) {
                 return false;
             }

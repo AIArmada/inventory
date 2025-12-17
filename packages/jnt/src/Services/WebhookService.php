@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Jnt\Services;
 
 use AIArmada\Jnt\Data\WebhookData;
+use AIArmada\Jnt\Exceptions\JntConfigurationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -25,7 +26,7 @@ class WebhookService
      * @param  string  $privateKey  The J&T private key for signature verification
      */
     public function __construct(
-        protected string $privateKey
+        protected ?string $privateKey
     ) {}
 
     /**
@@ -62,6 +63,10 @@ class WebhookService
      */
     public function generateSignature(string $bizContent): string
     {
+        if ($this->privateKey === null || $this->privateKey === '') {
+            throw JntConfigurationException::missingPrivateKey();
+        }
+
         // J&T's signature algorithm: base64(md5(content + key))
         return base64_encode(md5($bizContent . $this->privateKey, true));
     }
