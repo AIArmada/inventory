@@ -51,8 +51,8 @@ class ChipGatewayCheck extends CommerceHealthCheck
      */
     protected function performCheck(): Result
     {
-        $brandId = config('chip.brand_id');
-        $apiKey = config('chip.api_key');
+        $brandId = config('chip.collect.brand_id');
+        $apiKey = config('chip.collect.api_key');
 
         if (empty($brandId) || empty($apiKey)) {
             return $this->warning('CHIP credentials not configured');

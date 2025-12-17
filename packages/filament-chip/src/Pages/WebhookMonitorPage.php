@@ -64,7 +64,11 @@ class WebhookMonitorPage extends Page implements HasTable
     {
         return $table
             ->query(
-                Webhook::query()
+                tap(Webhook::query(), function ($query): void {
+                    if (method_exists($query->getModel(), 'scopeForOwner')) {
+                        $query->forOwner();
+                    }
+                })
                     ->orderBy('created_at', 'desc')
             )
             ->columns([

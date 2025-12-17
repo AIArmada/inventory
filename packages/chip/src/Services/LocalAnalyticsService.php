@@ -35,6 +35,7 @@ class LocalAnalyticsService
     public function getRevenueMetrics(Carbon $startDate, Carbon $endDate): RevenueMetrics
     {
         $metrics = Purchase::query()
+            ->forOwner()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('
                 SUM(CASE WHEN status = "paid" THEN total_minor ELSE 0 END) as revenue,
@@ -50,6 +51,7 @@ class LocalAnalyticsService
         $previousEnd = $startDate->copy()->subDay();
 
         $previous = Purchase::query()
+            ->forOwner()
             ->whereBetween('created_at', [$previousStart, $previousEnd])
             ->where('status', 'paid')
             ->sum('total_minor');
@@ -75,6 +77,7 @@ class LocalAnalyticsService
     public function getTransactionMetrics(Carbon $startDate, Carbon $endDate): TransactionMetrics
     {
         $metrics = Purchase::query()
+            ->forOwner()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('
                 COUNT(*) as total,
@@ -107,6 +110,7 @@ class LocalAnalyticsService
     public function getPaymentMethodBreakdown(Carbon $startDate, Carbon $endDate): array
     {
         return Purchase::query()
+            ->forOwner()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('
                 COALESCE(payment_method, "unknown") as payment_method,
@@ -138,6 +142,7 @@ class LocalAnalyticsService
     public function getFailureAnalysis(Carbon $startDate, Carbon $endDate): array
     {
         return Purchase::query()
+            ->forOwner()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->whereIn('status', ['failed', 'error'])
             ->selectRaw('
@@ -172,6 +177,7 @@ class LocalAnalyticsService
         };
 
         return Purchase::query()
+            ->forOwner()
             ->whereBetween('created_at', [$startDate, $endDate])
             ->where('status', 'paid')
             ->selectRaw("{$interval} as period, 
@@ -196,6 +202,7 @@ class LocalAnalyticsService
     public function getAggregatedMetrics(Carbon $startDate, Carbon $endDate, ?string $paymentMethod = null): array
     {
         $query = DailyMetric::query()
+            ->forOwner()
             ->whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()]);
 
         if ($paymentMethod !== null) {

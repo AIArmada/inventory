@@ -6,22 +6,21 @@ use AIArmada\Chip\Commands\AggregateMetricsCommand;
 use AIArmada\Chip\Commands\CleanWebhooksCommand;
 use AIArmada\Chip\Commands\ProcessRecurringCommand;
 use AIArmada\Chip\Commands\RetryWebhooksCommand;
-use AIArmada\Chip\Models\DailyMetric;
 use AIArmada\Chip\Models\RecurringCharge;
 use AIArmada\Chip\Models\RecurringSchedule;
 use AIArmada\Chip\Models\Webhook;
 use AIArmada\Chip\Services\MetricsAggregator;
 use AIArmada\Chip\Services\RecurringService;
 use AIArmada\Chip\Webhooks\WebhookRetryManager;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Carbon;
-use Mockery\MockInterface;
 
 describe('AggregateMetricsCommand', function (): void {
     it('aggregates for yesterday by default', function (): void {
         $aggregator = Mockery::mock(MetricsAggregator::class);
         $aggregator->shouldReceive('aggregateForDate')
             ->once()
-            ->with(Mockery::on(fn($date) => $date instanceof Carbon && $date->isYesterday()));
+            ->with(Mockery::on(fn ($date) => $date instanceof Carbon && $date->isYesterday()));
 
         $this->app->instance(MetricsAggregator::class, $aggregator);
 
@@ -37,7 +36,7 @@ describe('AggregateMetricsCommand', function (): void {
         $aggregator = Mockery::mock(MetricsAggregator::class);
         $aggregator->shouldReceive('aggregateForDate')
             ->once()
-            ->with(Mockery::on(fn($date) => $date instanceof Carbon && $date->toDateString() === '2025-01-15'));
+            ->with(Mockery::on(fn ($date) => $date instanceof Carbon && $date->toDateString() === '2025-01-15'));
 
         $this->app->instance(MetricsAggregator::class, $aggregator);
 
@@ -52,8 +51,8 @@ describe('AggregateMetricsCommand', function (): void {
         $aggregator->shouldReceive('backfill')
             ->once()
             ->with(
-                Mockery::on(fn($from) => $from instanceof Carbon && $from->toDateString() === '2025-01-01'),
-                Mockery::on(fn($to) => $to instanceof Carbon && $to->toDateString() === '2025-01-10')
+                Mockery::on(fn ($from) => $from instanceof Carbon && $from->toDateString() === '2025-01-01'),
+                Mockery::on(fn ($to) => $to instanceof Carbon && $to->toDateString() === '2025-01-10')
             )
             ->andReturn(10);
 
@@ -79,10 +78,15 @@ describe('CleanWebhooksCommand', function (): void {
     it('shows count and does not delete in dry-run mode', function (): void {
         // Create old webhook
         Webhook::create([
+            'title' => 'Test Webhook',
             'event' => 'purchase.paid',
+            'events' => ['purchase.paid'],
             'payload' => ['test' => 'data'],
             'status' => 'processed',
             'created_at' => now()->subDays(60),
+            'created_on' => now()->subDays(60)->timestamp,
+            'updated_on' => now()->subDays(60)->timestamp,
+            'callback' => 'http://example.com/webhook',
         ]);
 
         $this->artisan(CleanWebhooksCommand::class, ['--dry-run' => true])
@@ -96,10 +100,15 @@ describe('CleanWebhooksCommand', function (): void {
     it('deletes webhooks when confirmed', function (): void {
         // Create old webhook
         Webhook::create([
+            'title' => 'Test Webhook',
             'event' => 'purchase.paid',
+            'events' => ['purchase.paid'],
             'payload' => ['test' => 'data'],
             'status' => 'processed',
             'created_at' => now()->subDays(60),
+            'created_on' => now()->subDays(60)->timestamp,
+            'updated_on' => now()->subDays(60)->timestamp,
+            'callback' => 'http://example.com/webhook',
         ]);
 
         $this->artisan(CleanWebhooksCommand::class, ['--days' => 30, '--status' => 'processed'])
@@ -113,10 +122,15 @@ describe('CleanWebhooksCommand', function (): void {
 
     it('cancels when user declines confirmation', function (): void {
         Webhook::create([
+            'title' => 'Test Webhook',
             'event' => 'purchase.paid',
+            'events' => ['purchase.paid'],
             'payload' => ['test' => 'data'],
             'status' => 'processed',
             'created_at' => now()->subDays(60),
+            'created_on' => now()->subDays(60)->timestamp,
+            'updated_on' => now()->subDays(60)->timestamp,
+            'callback' => 'http://example.com/webhook',
         ]);
 
         $this->artisan(CleanWebhooksCommand::class)
@@ -129,10 +143,15 @@ describe('CleanWebhooksCommand', function (): void {
 
     it('respects custom days option', function (): void {
         Webhook::create([
+            'title' => 'Test Webhook',
             'event' => 'purchase.paid',
+            'events' => ['purchase.paid'],
             'payload' => ['test' => 'data'],
             'status' => 'processed',
             'created_at' => now()->subDays(10), // Only 10 days old
+            'created_on' => now()->subDays(10)->timestamp,
+            'updated_on' => now()->subDays(10)->timestamp,
+            'callback' => 'http://example.com/webhook',
         ]);
 
         // Default 30 days should not find it
@@ -148,10 +167,15 @@ describe('CleanWebhooksCommand', function (): void {
 
     it('respects status all option', function (): void {
         Webhook::create([
+            'title' => 'Test Webhook',
             'event' => 'purchase.paid',
+            'events' => ['purchase.paid'],
             'payload' => ['test' => 'data'],
             'status' => 'failed',
             'created_at' => now()->subDays(60),
+            'created_on' => now()->subDays(60)->timestamp,
+            'updated_on' => now()->subDays(60)->timestamp,
+            'callback' => 'http://example.com/webhook',
         ]);
 
         // Default status 'processed' should not find 'failed'
@@ -171,7 +195,7 @@ describe('ProcessRecurringCommand', function (): void {
         $service = Mockery::mock(RecurringService::class);
         $service->shouldReceive('getDueSchedules')
             ->once()
-            ->andReturn(collect());
+            ->andReturn(new EloquentCollection);
 
         $this->app->instance(RecurringService::class, $service);
 
@@ -181,7 +205,21 @@ describe('ProcessRecurringCommand', function (): void {
     });
 
     it('shows table in dry-run mode', function (): void {
-        $mockSchedule = Mockery::mock(RecurringSchedule::class);
+        $mockSchedule = Mockery::mock(RecurringSchedule::class)->shouldIgnoreMissing();
+        $mockSchedule->shouldReceive('getAttribute')->with('id')->andReturn('schedule-123');
+        $mockSchedule->shouldReceive('getAttribute')->with('chip_client_id')->andReturn('client-123');
+        $mockSchedule->shouldReceive('getAttribute')->with('amount_minor')->andReturn(10000);
+        $mockSchedule->shouldReceive('getAttribute')->with('currency')->andReturn('MYR');
+        $mockSchedule->shouldReceive('getAttribute')->with('next_charge_at')->andReturn(now()->addDay());
+        $mockSchedule->shouldReceive('offsetGet')->andReturnUsing(fn ($key) => match ($key) {
+            'id' => 'schedule-123',
+            'chip_client_id' => 'client-123',
+            'amount_minor' => 10000,
+            'currency' => 'MYR',
+            'next_charge_at' => now()->addDay(),
+            default => null,
+        });
+        // Allow magic property access
         $mockSchedule->id = 'schedule-123';
         $mockSchedule->chip_client_id = 'client-123';
         $mockSchedule->amount_minor = 10000;
@@ -191,7 +229,7 @@ describe('ProcessRecurringCommand', function (): void {
         $service = Mockery::mock(RecurringService::class);
         $service->shouldReceive('getDueSchedules')
             ->once()
-            ->andReturn(collect([$mockSchedule]));
+            ->andReturn(new EloquentCollection([$mockSchedule]));
 
         $this->app->instance(RecurringService::class, $service);
 
@@ -202,12 +240,17 @@ describe('ProcessRecurringCommand', function (): void {
     });
 
     it('processes due schedules and reports result', function (): void {
-        $mockSchedule = Mockery::mock(RecurringSchedule::class);
+        $mockSchedule = Mockery::mock(RecurringSchedule::class)->shouldIgnoreMissing();
+        $mockSchedule->shouldReceive('getAttribute')->with('id')->andReturn('schedule-123');
+        $mockSchedule->shouldReceive('getAttribute')->andReturnUsing(fn ($key) => match ($key) {
+            'id' => 'schedule-123',
+            'chip_client_id' => 'client-123',
+            'amount_minor' => 10000,
+            'currency' => 'MYR',
+            'next_charge_at' => now()->addDay(),
+            default => null,
+        });
         $mockSchedule->id = 'schedule-123';
-        $mockSchedule->chip_client_id = 'client-123';
-        $mockSchedule->amount_minor = 10000;
-        $mockSchedule->currency = 'MYR';
-        $mockSchedule->next_charge_at = now()->addDay();
 
         $mockCharge = Mockery::mock(RecurringCharge::class);
         $mockCharge->shouldReceive('isSuccess')->andReturn(true);
@@ -216,7 +259,7 @@ describe('ProcessRecurringCommand', function (): void {
         $service = Mockery::mock(RecurringService::class);
         $service->shouldReceive('getDueSchedules')
             ->once()
-            ->andReturn(collect([$mockSchedule]));
+            ->andReturn(new EloquentCollection([$mockSchedule]));
         $service->shouldReceive('processCharge')
             ->once()
             ->with($mockSchedule)
@@ -233,17 +276,21 @@ describe('ProcessRecurringCommand', function (): void {
     });
 
     it('handles processing exceptions', function (): void {
-        $mockSchedule = Mockery::mock(RecurringSchedule::class);
+        $mockSchedule = Mockery::mock(RecurringSchedule::class)->shouldIgnoreMissing();
+        $mockSchedule->shouldReceive('getAttribute')->andReturnUsing(fn ($key) => match ($key) {
+            'id' => 'schedule-123',
+            'chip_client_id' => 'client-123',
+            'amount_minor' => 10000,
+            'currency' => 'MYR',
+            'next_charge_at' => now()->addDay(),
+            default => null,
+        });
         $mockSchedule->id = 'schedule-123';
-        $mockSchedule->chip_client_id = 'client-123';
-        $mockSchedule->amount_minor = 10000;
-        $mockSchedule->currency = 'MYR';
-        $mockSchedule->next_charge_at = now()->addDay();
 
         $service = Mockery::mock(RecurringService::class);
         $service->shouldReceive('getDueSchedules')
             ->once()
-            ->andReturn(collect([$mockSchedule]));
+            ->andReturn(new EloquentCollection([$mockSchedule]));
         $service->shouldReceive('processCharge')
             ->once()
             ->andThrow(new Exception('API failure'));
@@ -261,7 +308,7 @@ describe('RetryWebhooksCommand', function (): void {
         $retryManager = Mockery::mock(WebhookRetryManager::class);
         $retryManager->shouldReceive('getRetryableWebhooks')
             ->once()
-            ->andReturn(collect());
+            ->andReturn(new EloquentCollection);
 
         $this->app->instance(WebhookRetryManager::class, $retryManager);
 
@@ -273,16 +320,21 @@ describe('RetryWebhooksCommand', function (): void {
     it('shows table in dry-run mode', function (): void {
         $mockWebhook = new Webhook([
             'id' => 'webhook-123',
+            'title' => 'Test Webhook',
             'event' => 'purchase.paid',
             'retry_count' => 2,
             'last_error' => 'Connection timeout',
             'payload' => [],
+            'created_on' => time(),
+            'updated_on' => time(),
+            'callback' => 'http://example.com/webhook',
+            'events' => ['purchase.paid'],
         ]);
 
         $retryManager = Mockery::mock(WebhookRetryManager::class);
         $retryManager->shouldReceive('getRetryableWebhooks')
             ->once()
-            ->andReturn(collect([$mockWebhook]));
+            ->andReturn(new EloquentCollection([$mockWebhook]));
 
         $this->app->instance(WebhookRetryManager::class, $retryManager);
 
@@ -294,15 +346,15 @@ describe('RetryWebhooksCommand', function (): void {
 
     it('respects limit option', function (): void {
         $webhooks = collect([
-            new Webhook(['id' => 'w1', 'event' => 'purchase.paid', 'retry_count' => 1, 'payload' => []]),
-            new Webhook(['id' => 'w2', 'event' => 'purchase.paid', 'retry_count' => 1, 'payload' => []]),
-            new Webhook(['id' => 'w3', 'event' => 'purchase.paid', 'retry_count' => 1, 'payload' => []]),
+            new Webhook(['id' => 'w1', 'title' => 'Test Webhook', 'events' => ['purchase.paid'], 'event' => 'purchase.paid', 'retry_count' => 1, 'payload' => [], 'created_on' => time(), 'updated_on' => time(), 'callback' => 'http://example.com/webhook']),
+            new Webhook(['id' => 'w2', 'title' => 'Test Webhook', 'events' => ['purchase.paid'], 'event' => 'purchase.paid', 'retry_count' => 1, 'payload' => [], 'created_on' => time(), 'updated_on' => time(), 'callback' => 'http://example.com/webhook']),
+            new Webhook(['id' => 'w3', 'title' => 'Test Webhook', 'events' => ['purchase.paid'], 'event' => 'purchase.paid', 'retry_count' => 1, 'payload' => [], 'created_on' => time(), 'updated_on' => time(), 'callback' => 'http://example.com/webhook']),
         ]);
 
         $retryManager = Mockery::mock(WebhookRetryManager::class);
         $retryManager->shouldReceive('getRetryableWebhooks')
             ->once()
-            ->andReturn($webhooks);
+            ->andReturn(new EloquentCollection($webhooks->all()));
 
         $this->app->instance(WebhookRetryManager::class, $retryManager);
 

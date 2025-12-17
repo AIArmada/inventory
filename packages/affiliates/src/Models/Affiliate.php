@@ -316,6 +316,13 @@ final class Affiliate extends Model
         self::deleting(function (self $affiliate): void {
             $affiliate->attributions()->delete();
             $affiliate->conversions()->delete();
+            $affiliate->fraudSignals()->delete();
+            $affiliate->dailyStats()->delete();
+            $affiliate->links()->delete();
+            $affiliate->payoutMethods()->delete();
+            $affiliate->payoutHolds()->delete();
+            $affiliate->payouts()->delete();
+            $affiliate->balance()->delete();
             $affiliate->children()->update(['parent_affiliate_id' => null]);
         });
     }

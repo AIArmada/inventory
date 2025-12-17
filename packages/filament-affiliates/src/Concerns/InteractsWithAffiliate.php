@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAffiliates\Concerns;
 
+use AIArmada\Affiliates\Enums\ConversionStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliatePayout;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
@@ -29,10 +31,12 @@ trait InteractsWithAffiliate
             return null;
         }
 
-        $this->affiliate = Affiliate::query()
-            ->where('owner_type', $owner->getMorphClass())
-            ->where('owner_id', $owner->getKey())
-            ->first();
+        $this->affiliate = (bool) config('affiliates.owner.enabled', false)
+            ? Affiliate::query()->forOwner($owner, false)->first()
+            : Affiliate::query()
+                ->where('owner_type', $owner->getMorphClass())
+                ->where('owner_id', $owner->getKey())
+                ->first();
 
         return $this->affiliate;
     }
@@ -42,6 +46,10 @@ trait InteractsWithAffiliate
      */
     public function getAffiliateOwner(): ?Model
     {
+        if ((bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)) {
+            return app(OwnerResolverInterface::class)->resolve();
+        }
+
         return auth()->user();
     }
 
@@ -103,7 +111,7 @@ trait InteractsWithAffiliate
         }
 
         return (int) $affiliate->conversions()
-            ->where('status', 'approved')
+            ->where('status', ConversionStatus::Approved)
             ->sum('commission_minor');
     }
 
@@ -119,7 +127,7 @@ trait InteractsWithAffiliate
         }
 
         return (int) $affiliate->conversions()
-            ->where('status', 'pending')
+            ->where('status', ConversionStatus::Pending)
             ->sum('commission_minor');
     }
 

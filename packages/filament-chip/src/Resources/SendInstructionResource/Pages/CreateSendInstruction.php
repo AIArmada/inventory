@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentChip\Resources\SendInstructionResource\Pages;
 
+use AIArmada\Chip\Models\BankAccount;
 use AIArmada\Chip\Services\ChipSendService;
 use AIArmada\FilamentChip\Resources\SendInstructionResource;
 use Filament\Notifications\Notification;
@@ -35,6 +36,23 @@ final class CreateSendInstruction extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $service = app(ChipSendService::class);
+
+        $bankAccount = BankAccount::query()
+            ->forOwner()
+            ->whereKey($data['bank_account_id'] ?? null)
+            ->first();
+
+        if ($bankAccount === null) {
+            Notification::make()
+                ->title('Invalid bank account')
+                ->body('Selected bank account is not accessible for the current owner.')
+                ->danger()
+                ->send();
+
+            $this->halt();
+
+            return $data;
+        }
 
         try {
             $amountInCents = (int) round((float) $data['amount'] * 100);

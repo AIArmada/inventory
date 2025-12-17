@@ -12,7 +12,7 @@ use AIArmada\Chip\Webhooks\Handlers\SendCompletedHandler;
 use AIArmada\Chip\Webhooks\Handlers\SendRejectedHandler;
 
 /**
- * @param array<string, mixed> $rawPayload
+ * @param  array<string, mixed>  $rawPayload
  */
 function createTestEnrichedPayload(string $event, array $rawPayload = []): EnrichedWebhookPayload
 {
@@ -37,12 +37,12 @@ function createTestEnrichedPayload(string $event, array $rawPayload = []): Enric
 
 describe('PurchasePaidHandler', function (): void {
     it('can be instantiated', function (): void {
-        $handler = new PurchasePaidHandler();
+        $handler = new PurchasePaidHandler;
         expect($handler)->toBeInstanceOf(PurchasePaidHandler::class);
     });
 
     it('returns skipped result when no local purchase exists', function (): void {
-        $handler = new PurchasePaidHandler();
+        $handler = new PurchasePaidHandler;
         $payload = createTestEnrichedPayload('purchase.paid');
 
         $result = $handler->handle($payload);
@@ -52,7 +52,7 @@ describe('PurchasePaidHandler', function (): void {
     });
 
     it('has handle method that accepts EnrichedWebhookPayload', function (): void {
-        $handler = new PurchasePaidHandler();
+        $handler = new PurchasePaidHandler;
         $reflection = new ReflectionMethod($handler, 'handle');
         $params = $reflection->getParameters();
 
@@ -63,12 +63,12 @@ describe('PurchasePaidHandler', function (): void {
 
 describe('PurchaseCancelledHandler', function (): void {
     it('can be instantiated', function (): void {
-        $handler = new PurchaseCancelledHandler();
+        $handler = new PurchaseCancelledHandler;
         expect($handler)->toBeInstanceOf(PurchaseCancelledHandler::class);
     });
 
     it('returns skipped result when no local purchase exists', function (): void {
-        $handler = new PurchaseCancelledHandler();
+        $handler = new PurchaseCancelledHandler;
         $payload = createTestEnrichedPayload('purchase.cancelled');
 
         $result = $handler->handle($payload);
@@ -80,12 +80,12 @@ describe('PurchaseCancelledHandler', function (): void {
 
 describe('PaymentFailedHandler', function (): void {
     it('can be instantiated', function (): void {
-        $handler = new PaymentFailedHandler();
+        $handler = new PaymentFailedHandler;
         expect($handler)->toBeInstanceOf(PaymentFailedHandler::class);
     });
 
     it('returns skipped result when no local purchase exists', function (): void {
-        $handler = new PaymentFailedHandler();
+        $handler = new PaymentFailedHandler;
         $payload = createTestEnrichedPayload('purchase.payment_failure');
 
         $result = $handler->handle($payload);
@@ -95,7 +95,7 @@ describe('PaymentFailedHandler', function (): void {
     });
 
     it('handles payload with failure reason', function (): void {
-        $handler = new PaymentFailedHandler();
+        $handler = new PaymentFailedHandler;
         $payload = createTestEnrichedPayload('purchase.payment_failure', [
             'status' => 'failed',
             'failure_reason' => 'Insufficient funds',
@@ -109,12 +109,12 @@ describe('PaymentFailedHandler', function (): void {
 
 describe('PurchaseRefundedHandler', function (): void {
     it('can be instantiated', function (): void {
-        $handler = new PurchaseRefundedHandler();
+        $handler = new PurchaseRefundedHandler;
         expect($handler)->toBeInstanceOf(PurchaseRefundedHandler::class);
     });
 
     it('returns skipped result when no local purchase exists', function (): void {
-        $handler = new PurchaseRefundedHandler();
+        $handler = new PurchaseRefundedHandler;
         $payload = createTestEnrichedPayload('payment.refunded');
 
         $result = $handler->handle($payload);
@@ -126,12 +126,12 @@ describe('PurchaseRefundedHandler', function (): void {
 
 describe('SendCompletedHandler', function (): void {
     it('can be instantiated', function (): void {
-        $handler = new SendCompletedHandler();
+        $handler = new SendCompletedHandler;
         expect($handler)->toBeInstanceOf(SendCompletedHandler::class);
     });
 
     it('returns skipped result for unknown payout', function (): void {
-        $handler = new SendCompletedHandler();
+        $handler = new SendCompletedHandler;
         $payload = createTestEnrichedPayload('payout.success', [
             'id' => 'payout-123',
             'type' => 'payout',
@@ -145,7 +145,7 @@ describe('SendCompletedHandler', function (): void {
     });
 
     it('handles payout success payload', function (): void {
-        $handler = new SendCompletedHandler();
+        $handler = new SendCompletedHandler;
         $payload = createTestEnrichedPayload('payout.success', [
             'id' => 'send-123',
             'type' => 'send_instruction',
@@ -162,12 +162,12 @@ describe('SendCompletedHandler', function (): void {
 
 describe('SendRejectedHandler', function (): void {
     it('can be instantiated', function (): void {
-        $handler = new SendRejectedHandler();
+        $handler = new SendRejectedHandler;
         expect($handler)->toBeInstanceOf(SendRejectedHandler::class);
     });
 
     it('returns skipped result for unknown payout', function (): void {
-        $handler = new SendRejectedHandler();
+        $handler = new SendRejectedHandler;
         $payload = createTestEnrichedPayload('payout.failed', [
             'id' => 'payout-123',
             'type' => 'payout',
@@ -181,7 +181,7 @@ describe('SendRejectedHandler', function (): void {
     });
 
     it('handles payout failed payload with reason', function (): void {
-        $handler = new SendRejectedHandler();
+        $handler = new SendRejectedHandler;
         $payload = createTestEnrichedPayload('payout.failed', [
             'id' => 'send-123',
             'type' => 'send_instruction',
@@ -198,12 +198,12 @@ describe('SendRejectedHandler', function (): void {
 describe('Handler edge cases', function (): void {
     it('all handlers handle empty payload gracefully', function (): void {
         $handlers = [
-            new PurchasePaidHandler(),
-            new PurchaseCancelledHandler(),
-            new PaymentFailedHandler(),
-            new PurchaseRefundedHandler(),
-            new SendCompletedHandler(),
-            new SendRejectedHandler(),
+            new PurchasePaidHandler,
+            new PurchaseCancelledHandler,
+            new PaymentFailedHandler,
+            new PurchaseRefundedHandler,
+            new SendCompletedHandler,
+            new SendRejectedHandler,
         ];
 
         $events = [

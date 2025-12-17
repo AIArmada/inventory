@@ -243,14 +243,17 @@ class RecoveryAnalytics
     private function analyzeTimingPerformance(RecoveryCampaign $campaign): ?RecoveryInsight
     {
         // Analyze conversion by hour sent
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $hourExpression = $driver === 'sqlite' ? "strftime('%H', sent_at)" : 'HOUR(sent_at)';
+
         $byHour = RecoveryAttempt::query()
             ->where('campaign_id', $campaign->id)
             ->whereNotNull('sent_at')
-            ->selectRaw('
-                HOUR(sent_at) as hour,
+            ->selectRaw("
+                {$hourExpression} as hour,
                 COUNT(*) as sent,
                 SUM(CASE WHEN converted_at IS NOT NULL THEN 1 ELSE 0 END) as conversions
-            ')
+            ")
             ->groupBy('hour')
             ->having('sent', '>=', 10)
             ->get();
@@ -292,8 +295,10 @@ class RecoveryAnalytics
             return null;
         }
 
-        if ($bestStrategy['strategy'] !== $campaign->strategy &&
-            $bestStrategy['conversion_rate'] > $currentStrategy['conversion_rate'] * 1.3) {
+        if (
+            $bestStrategy['strategy'] !== $campaign->strategy &&
+            $bestStrategy['conversion_rate'] > $currentStrategy['conversion_rate'] * 1.3
+        ) {
             return RecoveryInsight::strategy(
                 recommendation: "Consider using {$bestStrategy['strategy']} strategy which has shown {$bestStrategy['conversion_rate']}% conversion rate.",
                 suggestedStrategy: $bestStrategy['strategy'],
@@ -317,7 +322,7 @@ class RecoveryAnalytics
             ->selectRaw('
                 discount_value,
                 discount_type,
-                AVG(total_recovered / NULLIF(total_sent, 0)) as avg_conversion_rate
+                AVG((total_recovered * 1.0) / NULLIF(total_sent, 0)) as avg_conversion_rate
             ')
             ->groupBy('discount_value', 'discount_type')
             ->having('avg_conversion_rate', '>', 0)

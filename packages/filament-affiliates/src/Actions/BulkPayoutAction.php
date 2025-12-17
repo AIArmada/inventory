@@ -30,7 +30,7 @@ final class BulkPayoutAction extends BulkAction
             $failed = 0;
 
             foreach ($records as $payout) {
-                if ($payout->status !== PayoutStatus::Pending->value) {
+                if ($payout->status !== PayoutStatus::Pending) {
                     continue;
                 }
 
@@ -45,7 +45,8 @@ final class BulkPayoutAction extends BulkAction
                         if (! $payoutMethod) {
                             $payout->update(['status' => PayoutStatus::Failed->value]);
                             $payout->events()->create([
-                                'status' => PayoutStatus::Failed->value,
+                                'from_status' => PayoutStatus::Processing->value,
+                                'to_status' => PayoutStatus::Failed->value,
                                 'notes' => 'No default payout method configured',
                             ]);
                             $failed++;
@@ -59,13 +60,17 @@ final class BulkPayoutAction extends BulkAction
                         if ($result->success) {
                             $payout->update([
                                 'status' => PayoutStatus::Completed->value,
-                                'external_reference' => $result->externalReference,
                                 'paid_at' => now(),
-                                'metadata' => array_merge($payout->metadata ?? [], $result->metadata),
+                                'metadata' => array_merge(
+                                    $payout->metadata ?? [],
+                                    $result->metadata,
+                                    ['external_reference' => $result->externalReference],
+                                ),
                             ]);
 
                             $payout->events()->create([
-                                'status' => PayoutStatus::Completed->value,
+                                'from_status' => PayoutStatus::Processing->value,
+                                'to_status' => PayoutStatus::Completed->value,
                                 'notes' => 'Payout processed successfully',
                             ]);
 
@@ -73,16 +78,22 @@ final class BulkPayoutAction extends BulkAction
                         } else {
                             $payout->update(['status' => PayoutStatus::Failed->value]);
                             $payout->events()->create([
-                                'status' => PayoutStatus::Failed->value,
+                                'from_status' => PayoutStatus::Processing->value,
+                                'to_status' => PayoutStatus::Failed->value,
                                 'notes' => $result->failureReason,
                             ]);
                             $failed++;
                         }
                     });
                 } catch (Exception $e) {
+                    $fromStatus = $payout->status instanceof PayoutStatus
+                        ? $payout->status->value
+                        : (string) $payout->status;
+
                     $payout->update(['status' => PayoutStatus::Failed->value]);
                     $payout->events()->create([
-                        'status' => PayoutStatus::Failed->value,
+                        'from_status' => $fromStatus,
+                        'to_status' => PayoutStatus::Failed->value,
                         'notes' => $e->getMessage(),
                     ]);
                     $failed++;

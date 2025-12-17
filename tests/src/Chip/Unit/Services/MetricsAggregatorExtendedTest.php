@@ -7,7 +7,7 @@ use Illuminate\Support\Carbon;
 
 describe('MetricsAggregator', function (): void {
     beforeEach(function (): void {
-        $this->aggregator = new MetricsAggregator();
+        $this->aggregator = new MetricsAggregator;
     });
 
     it('can be instantiated', function (): void {

@@ -70,24 +70,12 @@ final class AffiliateStatsAggregator
 
     private function affiliateQuery(?Model $owner): Builder
     {
-        if (! $owner) {
-            return Affiliate::query();
-        }
-
         return Affiliate::query()->forOwner($owner);
     }
 
     private function conversionQuery(?Model $owner): Builder
     {
-        $query = AffiliateConversion::query();
-
-        if (! $owner) {
-            return $query;
-        }
-
-        return $query
-            ->where('owner_type', $owner->getMorphClass())
-            ->where('owner_id', $owner->getKey());
+        return AffiliateConversion::query()->forOwner($owner);
     }
 
     private function resolveOwner(): ?Model

@@ -33,10 +33,14 @@ final class CleanupSnapshotOnCartMerged
             $targetIdentifier = $event->originalTargetIdentifier ?? $event->targetCart->getIdentifier();
             $instance = $event->sourceCart->instance();
 
+            $owner = CartSnapshot::resolveCurrentOwner();
+            $targetOwnerKey = CartSnapshot::resolveOwnerKey($owner);
+
             // Find the source cart snapshot (guest cart)
             $sourceSnapshot = CartSnapshot::query()
                 ->where('identifier', $sourceIdentifier)
                 ->where('instance', $instance)
+                ->when(CartSnapshot::ownerScopingEnabled(), fn ($q) => $q->where('owner_key', 'global'))
                 ->first();
 
             if (! $sourceSnapshot) {
@@ -47,6 +51,7 @@ final class CleanupSnapshotOnCartMerged
             $targetSnapshot = CartSnapshot::query()
                 ->where('identifier', $targetIdentifier)
                 ->where('instance', $instance)
+                ->when(CartSnapshot::ownerScopingEnabled(), fn ($q) => $q->where('owner_key', $targetOwnerKey))
                 ->first();
 
             if ($targetSnapshot) {
@@ -61,9 +66,13 @@ final class CleanupSnapshotOnCartMerged
                 $sourceSnapshot->delete();
             } else {
                 // No target snapshot exists, simply update the identifier
-                $sourceSnapshot->update([
-                    'identifier' => $targetIdentifier,
-                ]);
+                $sourceSnapshot->identifier = $targetIdentifier;
+
+                if (CartSnapshot::ownerScopingEnabled() && $owner !== null) {
+                    $sourceSnapshot->assignOwner($owner);
+                }
+
+                $sourceSnapshot->save();
             }
 
             // Note: The target cart snapshot data (totals, metadata, etc.) will be updated

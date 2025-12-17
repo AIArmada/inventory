@@ -14,7 +14,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-final class NormalizedCartSynchronizer
+class NormalizedCartSynchronizer
 {
     public function syncFromCart(BaseCart $cart): void
     {
@@ -22,16 +22,23 @@ final class NormalizedCartSynchronizer
             $identifier = $cart->getIdentifier();
             $instance = $cart->instance();
 
+            $owner = Cart::resolveCurrentOwner();
+            $ownerKey = Cart::resolveOwnerKey($owner);
+
             $items = $cart->getItems();
             $conditions = $cart->getConditions();
 
             $currency = $this->resolveCurrency();
 
-            $cartModel = Cart::query()
-                ->firstOrNew([
-                    'identifier' => $identifier,
-                    'instance' => $instance,
-                ]);
+            $cartModel = Cart::query()->firstOrNew([
+                'identifier' => $identifier,
+                'instance' => $instance,
+                'owner_key' => $ownerKey,
+            ]);
+
+            if (Cart::ownerScopingEnabled() && $owner !== null) {
+                $cartModel->assignOwner($owner);
+            }
 
             /** @phpstan-ignore assign.propertyReadOnly */
             $cartModel->items = $items->isEmpty() ? null : $items->toArray();
@@ -62,9 +69,13 @@ final class NormalizedCartSynchronizer
      */
     public function deleteNormalizedCart(string $identifier, string $instance): void
     {
+        $owner = Cart::resolveCurrentOwner();
+        $ownerKey = Cart::resolveOwnerKey($owner);
+
         $cartModel = Cart::query()
             ->where('identifier', $identifier)
             ->where('instance', $instance)
+            ->where('owner_key', $ownerKey)
             ->first();
 
         if (! $cartModel) {

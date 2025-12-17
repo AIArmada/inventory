@@ -59,6 +59,11 @@ return [
         'ai_recovery' => true,
     ],
 
+    'owner' => [
+        'enabled' => env('FILAMENT_CART_OWNER_ENABLED', false),
+        'include_global' => env('FILAMENT_CART_OWNER_INCLUDE_GLOBAL', false),
+    ],
+
     'dynamic_rules_factory' => BuiltInRulesFactory::class,
 
     /*

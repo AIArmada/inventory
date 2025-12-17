@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace AIArmada\Chip\Tests\Feature;
 
 use AIArmada\Chip\Tests\TestCase;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Schema;
 
 abstract class FeatureTestCase extends TestCase
 {
@@ -17,16 +19,33 @@ abstract class FeatureTestCase extends TestCase
         parent::setUp();
 
         Config::set([
-            'chip.collect.secret_key' => 'test_secret_key',
+            'chip.collect.api_key' => 'test_api_key',
             'chip.collect.brand_id' => 'test_brand_id',
             'chip.send.api_key' => 'test_api_key',
             'chip.send.api_secret' => 'test_api_secret',
-            'chip.is_sandbox' => true,
+            'chip.environment' => 'sandbox',
             'chip.webhooks.verify_signature' => false,
             'chip.logging.channel' => 'single',
             'logging.channels.single.driver' => 'single',
             'logging.channels.single.path' => storage_path('logs/laravel.log'),
         ]);
+
+        $this->createWebhookCallsTable();
+    }
+
+    protected function createWebhookCallsTable(): void
+    {
+        if (! Schema::hasTable('webhook_calls')) {
+            Schema::create('webhook_calls', function (Blueprint $table): void {
+                $table->bigIncrements('id');
+                $table->string('name');
+                $table->string('url')->nullable();
+                $table->json('headers')->nullable();
+                $table->json('payload')->nullable();
+                $table->text('exception')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

@@ -23,7 +23,7 @@ class SendCompletedHandler implements WebhookHandler
             return WebhookResult::skipped('No send instruction ID in payload');
         }
 
-        $instruction = SendInstruction::where('chip_id', $sendInstructionId)->first();
+        $instruction = SendInstruction::where('id', $sendInstructionId)->first();
 
         if ($instruction === null) {
             return WebhookResult::skipped('Send instruction not found locally');
@@ -32,7 +32,6 @@ class SendCompletedHandler implements WebhookHandler
         // Update local status
         $instruction->update([
             'state' => SendInstructionState::COMPLETED,
-            'completed_at' => now(),
         ]);
 
         // Emit Laravel event

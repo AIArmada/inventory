@@ -11,7 +11,7 @@ use Illuminate\Support\Carbon;
 
 describe('LocalAnalyticsService', function (): void {
     beforeEach(function (): void {
-        $this->service = new LocalAnalyticsService();
+        $this->service = new LocalAnalyticsService;
         $this->startDate = Carbon::now()->subDays(30);
         $this->endDate = Carbon::now();
     });

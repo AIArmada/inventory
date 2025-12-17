@@ -6,10 +6,12 @@ namespace AIArmada\FilamentAffiliates\Widgets;
 
 use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\AffiliatePayout;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Filament\Actions\Action;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Model;
 
 final class PayoutQueueWidget extends BaseWidget
 {
@@ -23,9 +25,32 @@ final class PayoutQueueWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         return $table
             ->query(
                 AffiliatePayout::query()
+                    ->when(
+                        (bool) config('affiliates.owner.enabled', false),
+                        fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
+                            if (! $owner) {
+                                $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
+
+                                return;
+                            }
+
+                            $affiliateQuery->where(function ($builder) use ($owner): void {
+                                $builder->where('owner_type', $owner->getMorphClass())
+                                    ->where('owner_id', $owner->getKey())
+                                    ->orWhere(function ($inner): void {
+                                        $inner->whereNull('owner_type')->whereNull('owner_id');
+                                    });
+                            });
+                        }),
+                    )
                     ->with('affiliate')
                     ->whereIn('status', [PayoutStatus::Pending->value, PayoutStatus::Processing->value])
                     ->orderBy('scheduled_at')
@@ -76,7 +101,30 @@ final class PayoutQueueWidget extends BaseWidget
 
     protected function getTableHeading(): ?string
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         $pendingCount = AffiliatePayout::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
+                    if (! $owner) {
+                        $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
+
+                        return;
+                    }
+
+                    $affiliateQuery->where(function ($builder) use ($owner): void {
+                        $builder->where('owner_type', $owner->getMorphClass())
+                            ->where('owner_id', $owner->getKey())
+                            ->orWhere(function ($inner): void {
+                                $inner->whereNull('owner_type')->whereNull('owner_id');
+                            });
+                    });
+                }),
+            )
             ->whereIn('status', [PayoutStatus::Pending->value, PayoutStatus::Processing->value])
             ->count();
 

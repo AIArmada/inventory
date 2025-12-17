@@ -7,7 +7,7 @@ namespace AIArmada\FilamentCart\Services;
 use AIArmada\Cart\Cart as BaseCart;
 use AIArmada\FilamentCart\Jobs\SyncNormalizedCartJob;
 
-final class CartSyncManager
+class CartSyncManager
 {
     public function __construct(
         private NormalizedCartSynchronizer $synchronizer,

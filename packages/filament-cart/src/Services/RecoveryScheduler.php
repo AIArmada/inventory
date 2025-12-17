@@ -125,10 +125,12 @@ class RecoveryScheduler
      */
     private function findEligibleCarts(RecoveryCampaign $campaign): \Illuminate\Database\Eloquent\Collection
     {
+        $cartTable = (new Cart)->getTable();
+
         $query = Cart::query()
             ->whereNotNull('checkout_abandoned_at')
             ->whereNull('recovered_at')
-            ->whereNull('checkout_completed_at');
+            ->where('items_count', '>', 0);
 
         // Apply trigger delay
         $abandonedBefore = now()->subMinutes($campaign->trigger_delay_minutes);
@@ -153,18 +155,18 @@ class RecoveryScheduler
         }
 
         // Exclude carts already in this campaign
-        $query->whereNotExists(function ($subquery) use ($campaign): void {
+        $query->whereNotExists(function ($subquery) use ($campaign, $cartTable): void {
             $prefix = config('filament-cart.database.table_prefix', 'cart_');
             $subquery->select(DB::raw(1))
                 ->from($prefix . 'recovery_attempts')
-                ->whereColumn($prefix . 'recovery_attempts.cart_id', 'carts.id')
+                ->whereColumn($prefix . 'recovery_attempts.cart_id', $cartTable . '.id')
                 ->where($prefix . 'recovery_attempts.campaign_id', $campaign->id);
         });
 
         // Only get carts with contact info
         $query->where(function ($q): void {
-            $q->whereNotNull('email')
-                ->orWhereRaw("JSON_EXTRACT(metadata, '$.email') IS NOT NULL");
+            $q->whereNotNull('metadata->email')
+                ->orWhereNotNull('metadata->phone');
         });
 
         return $query->limit(500)->get();

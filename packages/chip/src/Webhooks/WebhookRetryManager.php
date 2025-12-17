@@ -94,6 +94,7 @@ class WebhookRetryManager
     public function getRetryableWebhooks(): \Illuminate\Database\Eloquent\Collection
     {
         return Webhook::query()
+            ->forOwner()
             ->where('status', 'failed')
             ->where('retry_count', '<', count($this->backoffSchedule))
             ->where(function ($query): void {

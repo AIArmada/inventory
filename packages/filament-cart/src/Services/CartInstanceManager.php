@@ -8,7 +8,7 @@ use AIArmada\Cart\Cart;
 use AIArmada\Cart\Contracts\RulesFactoryInterface;
 use AIArmada\Cart\Facades\Cart as CartFacade;
 
-final class CartInstanceManager
+class CartInstanceManager
 {
     public function __construct(private readonly RulesFactoryInterface $rulesFactory) {}
 

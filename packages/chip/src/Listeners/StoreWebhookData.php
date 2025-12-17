@@ -8,6 +8,8 @@ use AIArmada\Chip\Events\WebhookReceived;
 use AIArmada\Chip\Models\Client;
 use AIArmada\Chip\Models\Payment;
 use AIArmada\Chip\Models\Purchase;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -48,7 +50,9 @@ final class StoreWebhookData
      */
     private function storePurchase(array $payload): void
     {
-        Purchase::updateOrCreate(
+        $owner = $this->resolveOwner();
+
+        $purchase = Purchase::updateOrCreate(
             ['id' => $payload['id']],
             [
                 // Core fields
@@ -115,6 +119,10 @@ final class StoreWebhookData
                 'created_from_ip' => $payload['created_from_ip'] ?? null,
             ]
         );
+
+        if ($owner !== null && ! $purchase->hasOwner()) {
+            $purchase->assignOwner($owner)->save();
+        }
     }
 
     /**
@@ -122,6 +130,8 @@ final class StoreWebhookData
      */
     private function storeClient(array $payload): void
     {
+        $owner = $this->resolveOwner();
+
         $clientId = $payload['client_id'] ?? null;
         $clientData = $payload['client'] ?? null;
 
@@ -129,8 +139,12 @@ final class StoreWebhookData
             return;
         }
 
-        Client::updateOrCreate(
-            ['email' => $clientData['email']],
+        $client = Client::updateOrCreate(
+            [
+                'owner_type' => $owner?->getMorphClass(),
+                'owner_id' => $owner?->getKey(),
+                'email' => $clientData['email'],
+            ],
             [
                 'id' => $clientId,
                 'type' => 'client',
@@ -159,6 +173,10 @@ final class StoreWebhookData
                 'bank_code' => $clientData['bank_code'] ?? null,
             ]
         );
+
+        if ($owner !== null && ! $client->hasOwner()) {
+            $client->assignOwner($owner)->save();
+        }
     }
 
     /**
@@ -166,6 +184,8 @@ final class StoreWebhookData
      */
     private function storePayment(array $payload): void
     {
+        $owner = $this->resolveOwner();
+
         $paymentData = $payload['payment'] ?? null;
 
         if (! is_array($paymentData) || ! isset($paymentData['amount'])) {
@@ -175,7 +195,7 @@ final class StoreWebhookData
         // Payment object in webhook has no ID, generate one
         $paymentId = (string) Str::uuid();
 
-        Payment::updateOrCreate(
+        $payment = Payment::updateOrCreate(
             ['id' => $paymentId],
             [
                 'purchase_id' => $payload['id'],
@@ -194,5 +214,18 @@ final class StoreWebhookData
                 'updated_on' => $payload['updated_on'],
             ]
         );
+
+        if ($owner !== null && ! $payment->hasOwner()) {
+            $payment->assignOwner($owner)->save();
+        }
+    }
+
+    private function resolveOwner(): ?Model
+    {
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        return app(OwnerResolverInterface::class)->resolve();
     }
 }

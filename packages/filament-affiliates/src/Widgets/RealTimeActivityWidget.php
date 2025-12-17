@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AIArmada\FilamentAffiliates\Widgets;
 
 use AIArmada\Affiliates\Models\AffiliateConversion;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Model;
 
 final class RealTimeActivityWidget extends BaseWidget
 {
@@ -21,9 +23,18 @@ final class RealTimeActivityWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         return $table
             ->query(
                 AffiliateConversion::query()
+                    ->when(
+                        (bool) config('affiliates.owner.enabled', false),
+                        fn ($query) => $query->forOwner($owner),
+                    )
                     ->with(['affiliate', 'attribution'])
                     ->latest('occurred_at')
                     ->limit(10)

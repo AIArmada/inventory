@@ -48,7 +48,12 @@ final class PaymentMethodsWidget extends BaseWidget
      */
     private function getPaymentMethodBreakdown(): array
     {
-        $purchases = Purchase::whereIn('status', ['paid', 'completed', 'captured'])
+        $purchases = tap(Purchase::query(), function ($query): void {
+            if (method_exists($query->getModel(), 'scopeForOwner')) {
+                $query->forOwner();
+            }
+        })
+            ->whereIn('status', ['paid', 'completed', 'captured'])
             ->where('is_test', false)
             ->get();
 

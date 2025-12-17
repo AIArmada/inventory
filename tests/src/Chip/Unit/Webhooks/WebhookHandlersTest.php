@@ -15,12 +15,12 @@ use AIArmada\Chip\Webhooks\Handlers\WebhookHandler;
 describe('WebhookHandler interface implementations', function (): void {
     describe('PurchasePaidHandler', function (): void {
         it('can be instantiated', function (): void {
-            $handler = new PurchasePaidHandler();
+            $handler = new PurchasePaidHandler;
             expect($handler)->toBeInstanceOf(PurchasePaidHandler::class);
         });
 
         it('implements WebhookHandler interface', function (): void {
-            $handler = new PurchasePaidHandler();
+            $handler = new PurchasePaidHandler;
             expect($handler)->toBeInstanceOf(WebhookHandler::class);
         });
 
@@ -31,60 +31,60 @@ describe('WebhookHandler interface implementations', function (): void {
 
     describe('PurchaseCancelledHandler', function (): void {
         it('can be instantiated', function (): void {
-            $handler = new PurchaseCancelledHandler();
+            $handler = new PurchaseCancelledHandler;
             expect($handler)->toBeInstanceOf(PurchaseCancelledHandler::class);
         });
 
         it('implements WebhookHandler interface', function (): void {
-            $handler = new PurchaseCancelledHandler();
+            $handler = new PurchaseCancelledHandler;
             expect($handler)->toBeInstanceOf(WebhookHandler::class);
         });
     });
 
     describe('PaymentFailedHandler', function (): void {
         it('can be instantiated', function (): void {
-            $handler = new PaymentFailedHandler();
+            $handler = new PaymentFailedHandler;
             expect($handler)->toBeInstanceOf(PaymentFailedHandler::class);
         });
 
         it('implements WebhookHandler interface', function (): void {
-            $handler = new PaymentFailedHandler();
+            $handler = new PaymentFailedHandler;
             expect($handler)->toBeInstanceOf(WebhookHandler::class);
         });
     });
 
     describe('PurchaseRefundedHandler', function (): void {
         it('can be instantiated', function (): void {
-            $handler = new PurchaseRefundedHandler();
+            $handler = new PurchaseRefundedHandler;
             expect($handler)->toBeInstanceOf(PurchaseRefundedHandler::class);
         });
 
         it('implements WebhookHandler interface', function (): void {
-            $handler = new PurchaseRefundedHandler();
+            $handler = new PurchaseRefundedHandler;
             expect($handler)->toBeInstanceOf(WebhookHandler::class);
         });
     });
 
     describe('SendCompletedHandler', function (): void {
         it('can be instantiated', function (): void {
-            $handler = new SendCompletedHandler();
+            $handler = new SendCompletedHandler;
             expect($handler)->toBeInstanceOf(SendCompletedHandler::class);
         });
 
         it('implements WebhookHandler interface', function (): void {
-            $handler = new SendCompletedHandler();
+            $handler = new SendCompletedHandler;
             expect($handler)->toBeInstanceOf(WebhookHandler::class);
         });
     });
 
     describe('SendRejectedHandler', function (): void {
         it('can be instantiated', function (): void {
-            $handler = new SendRejectedHandler();
+            $handler = new SendRejectedHandler;
             expect($handler)->toBeInstanceOf(SendRejectedHandler::class);
         });
 
         it('implements WebhookHandler interface', function (): void {
-            $handler = new SendRejectedHandler();
+            $handler = new SendRejectedHandler;
             expect($handler)->toBeInstanceOf(WebhookHandler::class);
         });
     });

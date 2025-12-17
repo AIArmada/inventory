@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAffiliates\Pages;
 
+use AIArmada\Affiliates\Data\PayoutResult;
 use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\AffiliatePayout;
-use AIArmada\Affiliates\Services\AffiliatePayoutService;
+use AIArmada\Affiliates\Services\Payouts\PayoutProcessorFactory;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -20,6 +22,9 @@ use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Number;
 use UnitEnum;
 
@@ -40,11 +45,34 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
 
     public function table(Table $table): Table
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         return $table
             ->query(
                 AffiliatePayout::query()
+                    ->when(
+                        (bool) config('affiliates.owner.enabled', false),
+                        fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
+                            if (! $owner) {
+                                $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
+
+                                return;
+                            }
+
+                            $affiliateQuery->where(function ($builder) use ($owner): void {
+                                $builder->where('owner_type', $owner->getMorphClass())
+                                    ->where('owner_id', $owner->getKey())
+                                    ->orWhere(function ($inner): void {
+                                        $inner->whereNull('owner_type')->whereNull('owner_id');
+                                    });
+                            });
+                        }),
+                    )
                     ->where('status', PayoutStatus::Pending)
-                    ->with(['affiliate', 'payoutMethod'])
+                    ->with(['affiliate'])
                     ->latest()
             )
             ->columns([
@@ -62,9 +90,17 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
                     ->formatStateUsing(fn ($state, $record): string => Number::currency($state / 100, $record->currency ?? 'USD'))
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('payoutMethod.type')
+                Tables\Columns\TextColumn::make('payout_method')
                     ->label('Method')
-                    ->badge(),
+                    ->badge()
+                    ->getStateUsing(function (AffiliatePayout $record): string {
+                        $method = $record->affiliate
+                            ?->payoutMethods()
+                            ->where('is_default', true)
+                            ->first();
+
+                        return $method?->type?->value ?? '—';
+                    }),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Requested')
@@ -73,7 +109,28 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('currency')
-                    ->options(fn () => AffiliatePayout::distinct()->pluck('currency', 'currency')->toArray()),
+                    ->options(fn () => AffiliatePayout::query()
+                        ->when(
+                            (bool) config('affiliates.owner.enabled', false),
+                            fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
+                                if (! $owner) {
+                                    $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
+
+                                    return;
+                                }
+
+                                $affiliateQuery->where(function ($builder) use ($owner): void {
+                                    $builder->where('owner_type', $owner->getMorphClass())
+                                        ->where('owner_id', $owner->getKey())
+                                        ->orWhere(function ($inner): void {
+                                            $inner->whereNull('owner_type')->whereNull('owner_id');
+                                        });
+                                });
+                            }),
+                        )
+                        ->distinct()
+                        ->pluck('currency', 'currency')
+                        ->toArray()),
             ])
             ->actions([
                 Action::make('process')
@@ -82,20 +139,19 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(function (AffiliatePayout $record): void {
-                        $service = app(AffiliatePayoutService::class);
-                        $result = $service->processPayout($record);
+                        $result = $this->processPayout($record);
 
                         if ($result->success) {
                             Notification::make()
                                 ->success()
                                 ->title('Payout processed')
-                                ->body("Transaction ID: {$result->transactionId}")
+                                ->body('External reference: ' . ($result->externalReference ?? '—'))
                                 ->send();
                         } else {
                             Notification::make()
                                 ->danger()
                                 ->title('Payout failed')
-                                ->body($result->error)
+                                ->body($result->failureReason ?? 'Unknown error')
                                 ->send();
                         }
                     }),
@@ -111,10 +167,19 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
                             ->required(),
                     ])
                     ->action(function (AffiliatePayout $record, array $data): void {
+                        $fromStatus = $record->status;
+
                         $record->update([
                             'status' => PayoutStatus::Failed,
+                            'metadata' => array_merge($record->metadata ?? [], [
+                                'notes' => $data['reason'],
+                            ]),
+                        ]);
+
+                        $record->events()->create([
+                            'from_status' => $fromStatus instanceof UnitEnum ? $fromStatus->value : (string) $fromStatus,
+                            'to_status' => PayoutStatus::Failed->value,
                             'notes' => $data['reason'],
-                            'failed_at' => now(),
                         ]);
 
                         Notification::make()
@@ -131,13 +196,13 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
                     ->icon('heroicon-o-arrow-right-circle')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->action(function ($records): void {
-                        $service = app(AffiliatePayoutService::class);
+                    ->action(function (Collection $records): void {
                         $success = 0;
                         $failed = 0;
 
                         foreach ($records as $record) {
-                            $result = $service->processPayout($record);
+                            $result = $this->processPayout($record);
+
                             if ($result->success) {
                                 $success++;
                             } else {
@@ -159,11 +224,72 @@ final class PayoutBatchPage extends Page implements HasForms, HasTable
 
         return [
             'pendingCount' => $pending->count(),
-            'pendingTotal' => $pending->sum('amount_minor'),
+            'pendingTotal' => $pending->sum('total_minor'),
             'pendingByCurrency' => AffiliatePayout::where('status', PayoutStatus::Pending)
-                ->selectRaw('currency, SUM(amount_minor) as total, COUNT(*) as count')
+                ->selectRaw('currency, SUM(total_minor) as total, COUNT(*) as count')
                 ->groupBy('currency')
                 ->get(),
         ];
+    }
+
+    private function processPayout(AffiliatePayout $payout): PayoutResult
+    {
+        $factory = app(PayoutProcessorFactory::class);
+
+        if ($payout->status !== PayoutStatus::Pending) {
+            return PayoutResult::failure('Payout is not pending.');
+        }
+
+        return DB::transaction(function () use ($payout, $factory): PayoutResult {
+            $payout->update(['status' => PayoutStatus::Processing]);
+
+            $payoutMethod = $payout->affiliate
+                ?->payoutMethods()
+                ->where('is_default', true)
+                ->first();
+
+            if (! $payoutMethod) {
+                $payout->update(['status' => PayoutStatus::Failed]);
+                $payout->events()->create([
+                    'from_status' => PayoutStatus::Processing->value,
+                    'to_status' => PayoutStatus::Failed->value,
+                    'notes' => 'No default payout method configured',
+                ]);
+
+                return PayoutResult::failure('No default payout method configured');
+            }
+
+            $processor = $factory->make($payoutMethod->type->value);
+            $result = $processor->process($payout);
+
+            if ($result->success) {
+                $payout->update([
+                    'status' => PayoutStatus::Completed,
+                    'paid_at' => now(),
+                    'metadata' => array_merge(
+                        $payout->metadata ?? [],
+                        $result->metadata,
+                        ['external_reference' => $result->externalReference],
+                    ),
+                ]);
+
+                $payout->events()->create([
+                    'from_status' => PayoutStatus::Processing->value,
+                    'to_status' => PayoutStatus::Completed->value,
+                    'notes' => 'Payout processed successfully',
+                ]);
+
+                return $result;
+            }
+
+            $payout->update(['status' => PayoutStatus::Failed]);
+            $payout->events()->create([
+                'from_status' => PayoutStatus::Processing->value,
+                'to_status' => PayoutStatus::Failed->value,
+                'notes' => $result->failureReason ?? 'Payout processing failed',
+            ]);
+
+            return $result;
+        });
     }
 }

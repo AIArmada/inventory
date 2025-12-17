@@ -120,7 +120,7 @@ describe('ChipGateway', function (): void {
             $this->collectService->shouldReceive('getPurchase')
                 ->andThrow(new \Exception('Not found'));
 
-            expect(fn() => $this->gateway->getPayment('invalid-id'))
+            expect(fn () => $this->gateway->getPayment('invalid-id'))
                 ->toThrow(PaymentGatewayException::class);
         });
     });
@@ -150,7 +150,7 @@ describe('ChipGateway', function (): void {
             $this->collectService->shouldReceive('cancelPurchase')
                 ->andThrow(new \Exception('Cannot cancel'));
 
-            expect(fn() => $this->gateway->cancelPayment('purchase-123'))
+            expect(fn () => $this->gateway->cancelPayment('purchase-123'))
                 ->toThrow(PaymentGatewayException::class);
         });
     });
@@ -202,7 +202,7 @@ describe('ChipGateway', function (): void {
             $this->collectService->shouldReceive('refundPurchase')
                 ->andThrow(new \Exception('Cannot refund'));
 
-            expect(fn() => $this->gateway->refundPayment('purchase-123'))
+            expect(fn () => $this->gateway->refundPayment('purchase-123'))
                 ->toThrow(PaymentGatewayException::class);
         });
     });
@@ -254,7 +254,7 @@ describe('ChipGateway', function (): void {
             $this->collectService->shouldReceive('capturePurchase')
                 ->andThrow(new \Exception('Cannot capture'));
 
-            expect(fn() => $this->gateway->capturePayment('purchase-123'))
+            expect(fn () => $this->gateway->capturePayment('purchase-123'))
                 ->toThrow(PaymentGatewayException::class);
         });
     });

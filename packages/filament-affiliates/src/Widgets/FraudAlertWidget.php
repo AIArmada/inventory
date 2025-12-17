@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace AIArmada\FilamentAffiliates\Widgets;
 
 use AIArmada\Affiliates\Enums\FraudSeverity;
+use AIArmada\Affiliates\Enums\FraudSignalStatus;
 use AIArmada\Affiliates\Models\AffiliateFraudSignal;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Filament\Actions\Action;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 final class FraudAlertWidget extends BaseWidget
 {
@@ -23,11 +27,34 @@ final class FraudAlertWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         return $table
             ->query(
                 AffiliateFraudSignal::query()
+                    ->when(
+                        (bool) config('affiliates.owner.enabled', false),
+                        fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
+                            if (! $owner) {
+                                $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
+
+                                return;
+                            }
+
+                            $affiliateQuery->where(function ($builder) use ($owner): void {
+                                $builder->where('owner_type', $owner->getMorphClass())
+                                    ->where('owner_id', $owner->getKey())
+                                    ->orWhere(function ($inner): void {
+                                        $inner->whereNull('owner_type')->whereNull('owner_id');
+                                    });
+                            });
+                        }),
+                    )
                     ->with('affiliate')
-                    ->where('status', 'detected')
+                    ->where('status', FraudSignalStatus::Detected)
                     ->latest()
                     ->limit(10)
             )
@@ -41,8 +68,8 @@ final class FraudAlertWidget extends BaseWidget
                     ->label('Affiliate')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('signal_type')
-                    ->label('Type')
+                Tables\Columns\TextColumn::make('rule_code')
+                    ->label('Rule')
                     ->badge()
                     ->formatStateUsing(fn (string $state) => str_replace('_', ' ', ucfirst($state))),
 
@@ -55,9 +82,9 @@ final class FraudAlertWidget extends BaseWidget
                         FraudSeverity::Critical => 'danger',
                     }),
 
-                Tables\Columns\TextColumn::make('score')
-                    ->label('Score')
-                    ->formatStateUsing(fn ($state) => $state . '%'),
+                Tables\Columns\TextColumn::make('risk_points')
+                    ->label('Risk')
+                    ->formatStateUsing(fn (int $state): string => $state . '%'),
 
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
@@ -73,7 +100,11 @@ final class FraudAlertWidget extends BaseWidget
                     ->icon('heroicon-o-x-mark')
                     ->color('gray')
                     ->requiresConfirmation()
-                    ->action(fn ($record) => $record->update(['status' => 'dismissed'])),
+                    ->action(function (AffiliateFraudSignal $record): void {
+                        $reviewedBy = Auth::id();
+
+                        $record->dismiss($reviewedBy === null ? null : (string) $reviewedBy);
+                    }),
             ])
             ->paginated(false)
             ->emptyStateHeading('No fraud alerts')

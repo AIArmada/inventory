@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentCart\Resources;
 
 use AIArmada\Cart\Models\Condition;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentCart\Resources\ConditionResource\Pages\CreateCondition;
 use AIArmada\FilamentCart\Resources\ConditionResource\Pages\EditCondition;
 use AIArmada\FilamentCart\Resources\ConditionResource\Pages\ListConditions;
@@ -15,6 +16,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 final class ConditionResource extends Resource
@@ -50,6 +53,27 @@ final class ConditionResource extends Resource
         return ConditionsTable::configure($table);
     }
 
+    /**
+     * @return Builder<Condition>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<Condition> $query */
+        $query = parent::getEloquentQuery();
+
+        if (! (bool) config('cart.owner.enabled', false)) {
+            return $query;
+        }
+
+        /** @var Model|null $owner */
+        $owner = null;
+        if (app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        return $query->forOwner($owner, true);
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -68,7 +92,7 @@ final class ConditionResource extends Resource
 
     public static function getNavigationBadge(): string
     {
-        return (string) self::getModel()::where('is_active', true)->count();
+        return (string) self::getEloquentQuery()->where('is_active', true)->count();
     }
 
     public static function getNavigationBadgeColor(): string

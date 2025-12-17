@@ -146,7 +146,9 @@ final class CartItem extends Model
      */
     public function getAttributesCountAttribute(): int
     {
-        return ! empty($this->attributes) && is_array($this->attributes) ? count($this->attributes) : 0;
+        $attributes = $this->getAttribute('attributes');
+
+        return ! empty($attributes) && is_array($attributes) ? count($attributes) : 0;
     }
 
     /**

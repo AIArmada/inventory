@@ -89,17 +89,34 @@ describe('WebhookValidator', function (): void {
     });
 
     it('returns false when signature header is missing', function (): void {
-        config(['chip.webhook_signature_header' => 'X-Signature']);
+        $keyPair = openssl_pkey_new([
+            'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            'private_key_bits' => 2048,
+        ]);
+
+        expect($keyPair)->not->toBeFalse();
+
+        openssl_pkey_export($keyPair, $privateKey);
+        $publicKeyDetails = openssl_pkey_get_details($keyPair);
+
+        expect($publicKeyDetails)->toBeArray()
+            ->and($publicKeyDetails)->toHaveKey('key');
+
+        config([
+            'chip.webhooks.verify_signature' => true,
+            'chip.webhooks.company_public_key' => $publicKeyDetails['key'],
+        ]);
+
         $validator = new WebhookValidator;
         $request = Request::create('/webhook', 'POST', [], [], [], [], '{"test":"data"}');
 
         expect($validator->validate($request))->toBeFalse();
     });
 
-    it('returns false when webhook secret is not configured', function (): void {
+    it('returns false when company public key is not configured', function (): void {
         config([
-            'chip.webhook_signature_header' => 'X-Signature',
-            'chip.webhook_secret' => null,
+            'chip.webhooks.verify_signature' => true,
+            'chip.webhooks.company_public_key' => null,
         ]);
 
         $validator = new WebhookValidator;
@@ -111,32 +128,59 @@ describe('WebhookValidator', function (): void {
     });
 
     it('returns false for invalid signature', function (): void {
+        $keyPair = openssl_pkey_new([
+            'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            'private_key_bits' => 2048,
+        ]);
+
+        expect($keyPair)->not->toBeFalse();
+
+        $publicKeyDetails = openssl_pkey_get_details($keyPair);
+        expect($publicKeyDetails)->toBeArray()
+            ->and($publicKeyDetails)->toHaveKey('key');
+
         config([
-            'chip.webhook_signature_header' => 'X-Signature',
-            'chip.webhook_secret' => 'test-secret',
+            'chip.webhooks.verify_signature' => true,
+            'chip.webhooks.company_public_key' => $publicKeyDetails['key'],
         ]);
 
         $validator = new WebhookValidator;
+        $payload = '{"test":"data"}';
         $request = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_X_SIGNATURE' => 'invalid-signature',
-        ], '{"test":"data"}');
+            'HTTP_X_SIGNATURE' => base64_encode('definitely-not-a-real-signature'),
+        ], $payload);
 
         expect($validator->validate($request))->toBeFalse();
     });
 
     it('returns true for valid signature', function (): void {
-        $secret = 'test-secret-key';
+        $keyPair = openssl_pkey_new([
+            'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            'private_key_bits' => 2048,
+        ]);
+
+        expect($keyPair)->not->toBeFalse();
+
+        openssl_pkey_export($keyPair, $privateKey);
+        $publicKeyDetails = openssl_pkey_get_details($keyPair);
+
+        expect($publicKeyDetails)->toBeArray()
+            ->and($publicKeyDetails)->toHaveKey('key');
+
         $payload = '{"test":"data"}';
-        $validSignature = hash_hmac('sha256', $payload, $secret);
+        $signature = '';
+        $signed = openssl_sign($payload, $signature, $privateKey, OPENSSL_ALGO_SHA256);
+
+        expect($signed)->toBeTrue();
 
         config([
-            'chip.webhook_signature_header' => 'X-Signature',
-            'chip.webhook_secret' => $secret,
+            'chip.webhooks.verify_signature' => true,
+            'chip.webhooks.company_public_key' => $publicKeyDetails['key'],
         ]);
 
         $validator = new WebhookValidator;
         $request = Request::create('/webhook', 'POST', [], [], [], [
-            'HTTP_X_SIGNATURE' => $validSignature,
+            'HTTP_X_SIGNATURE' => base64_encode($signature),
         ], $payload);
 
         expect($validator->validate($request))->toBeTrue();

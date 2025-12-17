@@ -48,18 +48,30 @@ final class TokenStatsWidget extends BaseWidget
      */
     private function getTokenStats(): array
     {
-        $activeTokens = Purchase::query()
+        $activeTokens = tap(Purchase::query(), function ($query): void {
+            if (method_exists($query->getModel(), 'scopeForOwner')) {
+                $query->forOwner();
+            }
+        })
             ->whereNotNull('purchase->recurring_token')
             ->where('status', 'paid')
             ->distinct('purchase->recurring_token')
             ->count();
 
-        $tokenPurchases = Purchase::query()
+        $tokenPurchases = tap(Purchase::query(), function ($query): void {
+            if (method_exists($query->getModel(), 'scopeForOwner')) {
+                $query->forOwner();
+            }
+        })
             ->whereNotNull('purchase->recurring_token')
             ->where('status', 'paid')
             ->count();
 
-        $tokenRevenue = Purchase::query()
+        $tokenRevenue = tap(Purchase::query(), function ($query): void {
+            if (method_exists($query->getModel(), 'scopeForOwner')) {
+                $query->forOwner();
+            }
+        })
             ->whereNotNull('purchase->recurring_token')
             ->where('status', 'paid')
             ->get()

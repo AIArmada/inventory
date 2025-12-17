@@ -24,6 +24,7 @@ final class CleanWebhooksCommand extends Command
         $cutoffDate = Carbon::now()->subDays($days);
 
         $query = Webhook::query()
+            ->forOwner()
             ->where('created_at', '<', $cutoffDate);
 
         if ($status !== 'all') {

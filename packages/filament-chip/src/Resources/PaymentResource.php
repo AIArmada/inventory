@@ -112,13 +112,21 @@ final class PaymentResource extends BaseChipResource
                     ]),
                 SelectFilter::make('currency')
                     ->label('Currency')
-                    ->options(fn () => Payment::query()
-                        ->select('currency')
-                        ->distinct()
-                        ->orderBy('currency')
-                        ->pluck('currency', 'currency')
-                        ->filter()
-                        ->all()),
+                    ->options(function (): array {
+                        $query = Payment::query();
+
+                        if (method_exists($query->getModel(), 'scopeForOwner')) {
+                            $query->forOwner();
+                        }
+
+                        return $query
+                            ->select('currency')
+                            ->distinct()
+                            ->orderBy('currency')
+                            ->pluck('currency', 'currency')
+                            ->filter()
+                            ->all();
+                    }),
                 Filter::make('is_outgoing')
                     ->label('Outgoing Only')
                     ->toggle()

@@ -19,6 +19,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class CartResource extends Resource
@@ -50,6 +51,14 @@ final class CartResource extends Resource
         return CartsTable::configure($table);
     }
 
+    /**
+     * @return Builder<Cart>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return Cart::query()->forOwner();
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -70,7 +79,7 @@ final class CartResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = self::getModel()::count();
+        $count = self::getEloquentQuery()->count();
 
         return $count > 0 ? (string) $count : null;
     }

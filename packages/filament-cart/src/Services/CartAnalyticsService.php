@@ -91,14 +91,14 @@ class CartAnalyticsService
             recovery_rate: $recoveryRate,
             average_cart_value_cents: (int) ($current?->avg_value ?? 0),
             conversion_rate_change: $prevConversionRate > 0
-                ? ($conversionRate - $prevConversionRate) / $prevConversionRate
-                : null,
+            ? ($conversionRate - $prevConversionRate) / $prevConversionRate
+            : null,
             abandonment_rate_change: $prevAbandonmentRate > 0
-                ? ($abandonmentRate - $prevAbandonmentRate) / $prevAbandonmentRate
-                : null,
+            ? ($abandonmentRate - $prevAbandonmentRate) / $prevAbandonmentRate
+            : null,
             recovery_rate_change: $prevRecoveryRate > 0
-                ? ($recoveryRate - $prevRecoveryRate) / $prevRecoveryRate
-                : null,
+            ? ($recoveryRate - $prevRecoveryRate) / $prevRecoveryRate
+            : null,
         );
     }
 
@@ -143,11 +143,16 @@ class CartAnalyticsService
             ->first();
 
         // Get strategy breakdown from cart metadata
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $strategyExpression = $driver === 'sqlite'
+            ? "json_extract(metadata, '$.last_recovery_strategy')"
+            : "JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.last_recovery_strategy'))";
+
         $strategyBreakdown = Cart::query()
             ->whereBetween('recovered_at', [$from, $to])
             ->whereNotNull('recovered_at')
             ->selectRaw("
-                JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.last_recovery_strategy')) as strategy,
+                {$strategyExpression} as strategy,
                 COUNT(*) as conversions,
                 SUM(subtotal) as revenue
             ")
@@ -178,9 +183,11 @@ class CartAnalyticsService
      */
     public function getValueTrends(Carbon $from, Carbon $to, string $interval = 'day'): array
     {
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+
         $groupBy = match ($interval) {
-            'week' => 'YEARWEEK(date)',
-            'month' => "DATE_FORMAT(date, '%Y-%m')",
+            'week' => $driver === 'sqlite' ? "strftime('%Y-%W', date)" : 'YEARWEEK(date)',
+            'month' => $driver === 'sqlite' ? "strftime('%Y-%m', date)" : "DATE_FORMAT(date, '%Y-%m')",
             default => 'date',
         };
 
@@ -208,10 +215,16 @@ class CartAnalyticsService
      */
     public function getAbandonmentAnalysis(Carbon $from, Carbon $to): AbandonmentAnalysis
     {
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+
         // By hour
+        $hourExpression = $driver === 'sqlite'
+            ? "CAST(strftime('%H', checkout_abandoned_at) AS INTEGER)"
+            : 'HOUR(checkout_abandoned_at)';
+
         $byHour = Cart::query()
             ->whereBetween('checkout_abandoned_at', [$from, $to])
-            ->selectRaw('HOUR(checkout_abandoned_at) as hour, COUNT(*) as count')
+            ->selectRaw("{$hourExpression} as hour, COUNT(*) as count")
             ->groupBy('hour')
             ->pluck('count', 'hour')
             ->toArray();
@@ -223,9 +236,13 @@ class CartAnalyticsService
         ksort($byHour);
 
         // By day of week
+        $dayExpression = $driver === 'sqlite'
+            ? "strftime('%w', checkout_abandoned_at)" // 0=Sunday
+            : 'DAYOFWEEK(checkout_abandoned_at) - 1'; // 1=Sunday -> 0
+
         $byDayOfWeek = Cart::query()
             ->whereBetween('checkout_abandoned_at', [$from, $to])
-            ->selectRaw('DAYOFWEEK(checkout_abandoned_at) - 1 as day, COUNT(*) as count')
+            ->selectRaw("{$dayExpression} as day, COUNT(*) as count")
             ->groupBy('day')
             ->pluck('count', 'day')
             ->toArray();
@@ -270,10 +287,14 @@ class CartAnalyticsService
             ->toArray();
 
         // Common exit points
+        $exitPointExpression = $driver === 'sqlite'
+            ? "COALESCE(json_extract(metadata, '$.last_step'), 'Unknown')"
+            : "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.last_step')), 'Unknown')";
+
         $commonExitPoints = Cart::query()
             ->whereBetween('checkout_abandoned_at', [$from, $to])
             ->selectRaw("
-                COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.last_step')), 'Unknown') as exit_point,
+                {$exitPointExpression} as exit_point,
                 COUNT(*) as count
             ")
             ->groupBy('exit_point')
@@ -309,7 +330,7 @@ class CartAnalyticsService
                 SUM(carts_created) as total_carts,
                 SUM(checkouts_completed) as conversions,
                 AVG(average_cart_value_cents) as avg_value,
-                SUM(checkouts_abandoned) / NULLIF(SUM(checkouts_started), 0) as abandonment_rate
+                SUM(checkouts_abandoned) / NULLIF(SUM(checkouts_started) * 1.0, 0) as abandonment_rate
             ')
             ->groupBy('segment')
             ->orderByDesc('conversions')

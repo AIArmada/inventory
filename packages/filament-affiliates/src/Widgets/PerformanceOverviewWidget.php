@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAffiliates\Widgets;
 
+use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateConversion;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Number;
 
 final class PerformanceOverviewWidget extends StatsOverviewWidget
@@ -18,35 +21,73 @@ final class PerformanceOverviewWidget extends StatsOverviewWidget
 
     protected function getStats(): array
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         $now = now();
         $startOfMonth = $now->copy()->startOfMonth();
         $lastMonth = $now->copy()->subMonth();
 
         // This month stats
         $thisMonthConversions = AffiliateConversion::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->forOwner($owner),
+            )
             ->where('occurred_at', '>=', $startOfMonth)
             ->count();
 
         $thisMonthRevenue = AffiliateConversion::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->forOwner($owner),
+            )
             ->where('occurred_at', '>=', $startOfMonth)
             ->sum('total_minor');
 
         $thisMonthCommission = AffiliateConversion::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->forOwner($owner),
+            )
             ->where('occurred_at', '>=', $startOfMonth)
             ->sum('commission_minor');
 
         // Last month for comparison
         $lastMonthConversions = AffiliateConversion::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->forOwner($owner),
+            )
             ->whereBetween('occurred_at', [$lastMonth->startOfMonth(), $lastMonth->endOfMonth()])
             ->count();
 
         $lastMonthRevenue = AffiliateConversion::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->forOwner($owner),
+            )
             ->whereBetween('occurred_at', [$lastMonth->startOfMonth(), $lastMonth->endOfMonth()])
             ->sum('total_minor');
 
         // Active affiliates
-        $activeAffiliates = Affiliate::where('status', 'active')->count();
-        $newAffiliates = Affiliate::where('created_at', '>=', $startOfMonth)->count();
+        $activeAffiliates = Affiliate::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->forOwner($owner),
+            )
+            ->where('status', AffiliateStatus::Active)
+            ->count();
+
+        $newAffiliates = Affiliate::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->forOwner($owner),
+            )
+            ->where('created_at', '>=', $startOfMonth)
+            ->count();
 
         return [
             Stat::make('Conversions This Month', Number::format($thisMonthConversions))
@@ -83,6 +124,6 @@ final class PerformanceOverviewWidget extends StatsOverviewWidget
 
     private function formatMoney(int $amountMinor): string
     {
-        return Number::currency($amountMinor / 100, config('affiliates.default_currency', 'USD'));
+        return Number::currency($amountMinor / 100, config('affiliates.currency.default', 'USD'));
     }
 }

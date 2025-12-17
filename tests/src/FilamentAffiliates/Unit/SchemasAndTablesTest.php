@@ -104,6 +104,7 @@ it('AffiliateConversionsTable configures table', function (): void {
     $table->shouldReceive('columns')->once()->andReturnSelf();
     $table->shouldReceive('filters')->once()->andReturnSelf();
     $table->shouldReceive('actions')->once()->andReturnSelf();
+    $table->shouldReceive('bulkActions')->once()->andReturnSelf();
 
     AffiliateConversionsTable::configure($table);
 
@@ -115,6 +116,7 @@ it('AffiliatePayoutsTable configures table', function (): void {
     $table->shouldReceive('columns')->once()->andReturnSelf();
     $table->shouldReceive('filters')->once()->andReturnSelf();
     $table->shouldReceive('actions')->once()->andReturnSelf();
+    $table->shouldReceive('bulkActions')->once()->andReturnSelf();
 
     AffiliatePayoutsTable::configure($table);
 

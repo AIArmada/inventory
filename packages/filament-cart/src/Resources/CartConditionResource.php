@@ -14,6 +14,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class CartConditionResource extends Resource
@@ -49,6 +50,17 @@ final class CartConditionResource extends Resource
         return CartConditionsTable::configure($table);
     }
 
+    /**
+     * @return Builder<CartCondition>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<CartCondition> $query */
+        $query = parent::getEloquentQuery();
+
+        return $query->whereIn('cart_id', \AIArmada\FilamentCart\Models\Cart::query()->forOwner()->select('id'));
+    }
+
     public static function getRelations(): array
     {
         return [
@@ -66,7 +78,7 @@ final class CartConditionResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) self::getModel()::count();
+        return (string) self::getEloquentQuery()->count();
     }
 
     public static function getNavigationBadgeColor(): string

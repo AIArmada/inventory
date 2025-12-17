@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAffiliates\Widgets;
 
+use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Models\Affiliate;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use Filament\Widgets\Widget;
+use Illuminate\Database\Eloquent\Model;
 
 final class NetworkVisualizationWidget extends Widget
 {
@@ -26,18 +29,37 @@ final class NetworkVisualizationWidget extends Widget
 
     public function getNetworkData(): array
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         if (! $this->affiliateId) {
             // Get root affiliates (no parent)
             $roots = Affiliate::query()
+                ->when(
+                    (bool) config('affiliates.owner.enabled', false),
+                    fn ($query) => $query->forOwner($owner),
+                )
                 ->whereNull('parent_affiliate_id')
-                ->where('status', 'active')
+                ->where('status', AffiliateStatus::Active)
+                ->with(['rank'])
+                ->withCount(['children', 'conversions'])
                 ->limit(10)
                 ->get();
 
             return $roots->map(fn (Affiliate $a) => $this->buildNode($a, 0))->all();
         }
 
-        $affiliate = Affiliate::find($this->affiliateId);
+        $affiliate = Affiliate::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->forOwner($owner),
+            )
+            ->whereKey($this->affiliateId)
+            ->with(['rank'])
+            ->withCount(['children', 'conversions'])
+            ->first();
 
         if (! $affiliate) {
             return [];
@@ -48,9 +70,25 @@ final class NetworkVisualizationWidget extends Widget
 
     public function getNetworkStats(): array
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         return [
-            'total_affiliates' => Affiliate::count(),
-            'active_affiliates' => Affiliate::where('status', 'active')->count(),
+            'total_affiliates' => Affiliate::query()
+                ->when(
+                    (bool) config('affiliates.owner.enabled', false),
+                    fn ($query) => $query->forOwner($owner),
+                )
+                ->count(),
+            'active_affiliates' => Affiliate::query()
+                ->when(
+                    (bool) config('affiliates.owner.enabled', false),
+                    fn ($query) => $query->forOwner($owner),
+                )
+                ->where('status', AffiliateStatus::Active)
+                ->count(),
             'max_depth' => $this->calculateMaxDepth(),
             'avg_children' => $this->calculateAverageChildren(),
         ];
@@ -62,11 +100,21 @@ final class NetworkVisualizationWidget extends Widget
 
         if ($currentDepth < $this->depth) {
             $children = $affiliate->children()
-                ->where('status', 'active')
+                ->where('status', AffiliateStatus::Active)
+                ->with(['rank'])
+                ->withCount(['children', 'conversions'])
                 ->get()
                 ->map(fn (Affiliate $child) => $this->buildNode($child, $currentDepth + 1))
                 ->all();
         }
+
+        $conversionsCount = is_int($affiliate->getAttribute('conversions_count'))
+            ? (int) $affiliate->getAttribute('conversions_count')
+            : $affiliate->conversions()->count();
+
+        $childrenCount = is_int($affiliate->getAttribute('children_count'))
+            ? (int) $affiliate->getAttribute('children_count')
+            : $affiliate->children()->count();
 
         return [
             'id' => $affiliate->id,
@@ -74,9 +122,9 @@ final class NetworkVisualizationWidget extends Widget
             'code' => $affiliate->code,
             'status' => $affiliate->status->value,
             'rank' => $affiliate->rank?->name,
-            'conversions' => $affiliate->conversions()->count(),
+            'conversions' => $conversionsCount,
             'children' => $children,
-            'children_count' => $affiliate->children()->count(),
+            'children_count' => $childrenCount,
         ];
     }
 
@@ -88,7 +136,16 @@ final class NetworkVisualizationWidget extends Widget
 
     private function calculateAverageChildren(): float
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         $affiliatesWithChildren = Affiliate::query()
+            ->when(
+                (bool) config('affiliates.owner.enabled', false),
+                fn ($query) => $query->forOwner($owner),
+            )
             ->whereHas('children')
             ->withCount('children')
             ->get();

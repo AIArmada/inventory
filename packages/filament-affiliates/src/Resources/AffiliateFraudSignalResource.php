@@ -7,6 +7,7 @@ namespace AIArmada\FilamentAffiliates\Resources;
 use AIArmada\Affiliates\Enums\FraudSeverity;
 use AIArmada\Affiliates\Enums\FraudSignalStatus;
 use AIArmada\Affiliates\Models\AffiliateFraudSignal;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -17,6 +18,8 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 final class AffiliateFraudSignalResource extends Resource
@@ -40,7 +43,7 @@ final class AffiliateFraudSignalResource extends Resource
                         ->relationship('affiliate', 'name')
                         ->disabled(),
 
-                    Forms\Components\TextInput::make('signal_type')
+                    Forms\Components\TextInput::make('rule_code')
                         ->disabled(),
 
                     Forms\Components\Select::make('severity')
@@ -55,7 +58,7 @@ final class AffiliateFraudSignalResource extends Resource
 
             Section::make('Detection')
                 ->schema([
-                    Forms\Components\TextInput::make('score')
+                    Forms\Components\TextInput::make('risk_points')
                         ->disabled(),
 
                     Forms\Components\DateTimePicker::make('detected_at')
@@ -69,7 +72,7 @@ final class AffiliateFraudSignalResource extends Resource
 
             Section::make('Review Notes')
                 ->schema([
-                    Forms\Components\Textarea::make('review_notes')
+                    Forms\Components\Textarea::make('evidence.review_notes')
                         ->rows(3)
                         ->columnSpanFull(),
 
@@ -94,7 +97,7 @@ final class AffiliateFraudSignalResource extends Resource
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('signal_type')
+                Tables\Columns\TextColumn::make('rule_code')
                     ->badge()
                     ->formatStateUsing(fn (string $state) => str_replace('_', ' ', ucfirst($state))),
 
@@ -105,9 +108,9 @@ final class AffiliateFraudSignalResource extends Resource
                         'danger' => fn ($state) => in_array($state, [FraudSeverity::High->value, FraudSeverity::Critical->value]),
                     ]),
 
-                Tables\Columns\TextColumn::make('score')
-                    ->label('Score')
-                    ->formatStateUsing(fn ($state) => $state . '%')
+                Tables\Columns\TextColumn::make('risk_points')
+                    ->label('Risk')
+                    ->formatStateUsing(fn (int $state): string => $state . '%')
                     ->sortable(),
 
                 Tables\Columns\BadgeColumn::make('status')
@@ -129,7 +132,7 @@ final class AffiliateFraudSignalResource extends Resource
                 Tables\Filters\SelectFilter::make('severity')
                     ->options(FraudSeverity::class),
 
-                Tables\Filters\SelectFilter::make('signal_type')
+                Tables\Filters\SelectFilter::make('rule_code')
                     ->options([
                         'velocity' => 'Velocity',
                         'pattern' => 'Pattern',
@@ -145,31 +148,73 @@ final class AffiliateFraudSignalResource extends Resource
                     ->color('gray')
                     ->requiresConfirmation()
                     ->visible(fn ($record) => $record->status === FraudSignalStatus::Detected)
-                    ->action(fn ($record) => $record->update([
-                        'status' => FraudSignalStatus::Dismissed,
-                        'reviewed_at' => now(),
-                    ])),
+                    ->action(function (AffiliateFraudSignal $record): void {
+                        $reviewedBy = auth()->user()?->getAuthIdentifier();
+
+                        $record->dismiss($reviewedBy === null ? null : (string) $reviewedBy);
+                    }),
                 Action::make('confirm')
                     ->icon('heroicon-o-check')
                     ->color('danger')
                     ->requiresConfirmation()
                     ->visible(fn ($record) => $record->status === FraudSignalStatus::Detected)
-                    ->action(fn ($record) => $record->update([
-                        'status' => FraudSignalStatus::Confirmed,
-                        'reviewed_at' => now(),
-                    ])),
+                    ->action(function (AffiliateFraudSignal $record): void {
+                        $reviewedBy = auth()->user()?->getAuthIdentifier();
+
+                        $record->confirm($reviewedBy === null ? null : (string) $reviewedBy);
+                    }),
             ])
             ->bulkActions([
                 BulkAction::make('dismiss_selected')
                     ->label('Dismiss Selected')
                     ->icon('heroicon-o-x-mark')
                     ->requiresConfirmation()
-                    ->action(fn ($records) => $records->each->update([
-                        'status' => FraudSignalStatus::Dismissed,
-                        'reviewed_at' => now(),
-                    ])),
+                    ->action(function ($records): void {
+                        $reviewedBy = auth()->user()?->getAuthIdentifier();
+                        $reviewedBy = $reviewedBy === null ? null : (string) $reviewedBy;
+
+                        $records->each(function (AffiliateFraudSignal $record) use ($reviewedBy): void {
+                            $record->dismiss($reviewedBy);
+                        });
+                    }),
             ])
             ->defaultSort('detected_at', 'desc');
+    }
+
+    /**
+     * @return Builder<AffiliateFraudSignal>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<AffiliateFraudSignal> $query */
+        $query = parent::getEloquentQuery();
+
+        if (! (bool) config('affiliates.owner.enabled', false)) {
+            return $query;
+        }
+
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return $query->whereNull('owner_type')->whereNull('owner_id');
+        }
+
+        /** @var Model|null $owner */
+        $owner = app(OwnerResolverInterface::class)->resolve();
+
+        return $query->whereHas('affiliate', function (Builder $affiliateQuery) use ($owner): void {
+            if (! $owner) {
+                $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
+
+                return;
+            }
+
+            $affiliateQuery->where(function (Builder $builder) use ($owner): void {
+                $builder->where('owner_type', $owner->getMorphClass())
+                    ->where('owner_id', $owner->getKey())
+                    ->orWhere(function (Builder $inner): void {
+                        $inner->whereNull('owner_type')->whereNull('owner_id');
+                    });
+            });
+        });
     }
 
     public static function getRelations(): array
@@ -187,7 +232,34 @@ final class AffiliateFraudSignalResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = self::getModel()::where('status', FraudSignalStatus::Detected)->count();
+        $query = self::getModel()::query()->where('status', FraudSignalStatus::Detected);
+
+        if ((bool) config('affiliates.owner.enabled', false)) {
+            if (app()->bound(OwnerResolverInterface::class)) {
+                /** @var Model|null $owner */
+                $owner = app(OwnerResolverInterface::class)->resolve();
+
+                $query->whereHas('affiliate', function (Builder $affiliateQuery) use ($owner): void {
+                    if (! $owner) {
+                        $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
+
+                        return;
+                    }
+
+                    $affiliateQuery->where(function (Builder $builder) use ($owner): void {
+                        $builder->where('owner_type', $owner->getMorphClass())
+                            ->where('owner_id', $owner->getKey())
+                            ->orWhere(function (Builder $inner): void {
+                                $inner->whereNull('owner_type')->whereNull('owner_id');
+                            });
+                    });
+                });
+            } else {
+                $query->whereNull('owner_type')->whereNull('owner_id');
+            }
+        }
+
+        $count = $query->count();
 
         return $count > 0 ? (string) $count : null;
     }

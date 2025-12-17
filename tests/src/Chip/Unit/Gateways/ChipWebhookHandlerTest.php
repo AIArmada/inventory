@@ -82,7 +82,7 @@ describe('ChipWebhookHandler verifyWebhook', function (): void {
         $handler = new ChipWebhookHandler($webhookService, $collectService);
         $request = createWebhookRequest(['status' => 'paid']);
 
-        expect(fn() => $handler->verifyWebhook($request))
+        expect(fn () => $handler->verifyWebhook($request))
             ->toThrow(WebhookVerificationException::class);
     });
 });

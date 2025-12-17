@@ -25,7 +25,6 @@ class PurchasePaidHandler implements WebhookHandler
         // Update local status
         $localPurchase->update([
             'status' => PurchaseStatus::PAID,
-            'paid_at' => now(),
         ]);
 
         // Emit Laravel event

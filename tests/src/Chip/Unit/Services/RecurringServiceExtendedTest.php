@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use AIArmada\Chip\Enums\RecurringInterval;
 use AIArmada\Chip\Services\ChipCollectService;
 use AIArmada\Chip\Services\RecurringService;
 use Illuminate\Support\Carbon;

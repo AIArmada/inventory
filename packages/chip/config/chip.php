@@ -24,27 +24,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Environment
+    | Credentials / API
     |--------------------------------------------------------------------------
     */
     'environment' => env('CHIP_ENVIRONMENT', 'sandbox'),
 
-    /*
-    |--------------------------------------------------------------------------
-    | Collect API
-    |--------------------------------------------------------------------------
-    */
     'collect' => [
         'base_url' => env('CHIP_COLLECT_BASE_URL', 'https://gate.chip-in.asia/api/v1/'),
         'api_key' => env('CHIP_COLLECT_API_KEY'),
         'brand_id' => env('CHIP_COLLECT_BRAND_ID'),
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Send API
-    |--------------------------------------------------------------------------
-    */
     'send' => [
         'base_url' => [
             'sandbox' => env('CHIP_SEND_SANDBOX_URL', 'https://staging-api.chip-in.asia/api'),
@@ -79,8 +68,8 @@ return [
     |
     */
     'owner' => [
-        'enabled' => env('CHIP_OWNER_ENABLED', false),
-        'include_global' => env('CHIP_OWNER_INCLUDE_GLOBAL', true),
+        'enabled' => env('CHIP_OWNER_ENABLED', true),
+        'include_global' => env('CHIP_OWNER_INCLUDE_GLOBAL', false),
         'auto_assign_on_create' => env('CHIP_OWNER_AUTO_ASSIGN', true),
     ],
 

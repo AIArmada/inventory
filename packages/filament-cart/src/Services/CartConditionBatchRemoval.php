@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AIArmada\FilamentCart\Services;
 
 use AIArmada\Cart\Cart;
-use AIArmada\Cart\Models\Condition;
 use AIArmada\FilamentCart\Models\Cart as CartModel;
+use AIArmada\FilamentCart\Models\CartCondition as CartConditionModel;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -48,30 +48,14 @@ final class CartConditionBatchRemoval
         $errors = [];
 
         try {
-            // Find all cart snapshots that might have this condition
-            // We check both cart conditions and item conditions
-            $driver = CartModel::query()->getConnection()->getDriverName();
-            $affectedSnapshots = CartModel::query()
-                ->where(function ($query) use ($conditionName, $driver): void {
-                    // Check in normalized_data->conditions
-                    $query->whereJsonContains('normalized_data->conditions', [['name' => $conditionName]]);
+            // Find all cart snapshots that have this condition, via normalized table.
+            $affectedCartIds = CartConditionModel::query()
+                ->where('name', $conditionName)
+                ->distinct()
+                ->pluck('cart_id');
 
-                    // Or check in normalized_data->items->*->conditions (database-specific)
-                    match ($driver) {
-                        'pgsql' => $query->orWhereRaw(
-                            "EXISTS (SELECT 1 FROM jsonb_array_elements(normalized_data->'items') AS item, jsonb_array_elements(item->'conditions') AS cond WHERE cond->>'name' = ?)",
-                            [$conditionName]
-                        ),
-                        'mysql', 'mariadb' => $query->orWhereRaw(
-                            "JSON_SEARCH(normalized_data, 'one', ?, null, '$.items[*].conditions[*].name') IS NOT NULL",
-                            [$conditionName]
-                        ),
-                        default => $query->orWhereRaw(
-                            'normalized_data LIKE ?',
-                            ['%"name":"' . str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $conditionName) . '"%']
-                        ),
-                    };
-                })
+            $affectedSnapshots = CartModel::query()
+                ->whereIn('id', $affectedCartIds)
                 ->get();
 
             Log::info("Found {$affectedSnapshots->count()} cart snapshots with condition '{$conditionName}'");

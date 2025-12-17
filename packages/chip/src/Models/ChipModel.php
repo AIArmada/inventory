@@ -6,11 +6,11 @@ namespace AIArmada\Chip\Models;
 
 use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use Akaunting\Money\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 use Override;
 use OwenIt\Auditing\Contracts\Auditable;
@@ -19,11 +19,14 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $owner_type
  * @property string|null $owner_id
  *
- * @method static Builder<static> forOwner(?Model $owner = null, bool $includeGlobal = true)
+ * @method static Builder<static> forOwner(?Model $owner = null, ?bool $includeGlobal = null)
  */
 abstract class ChipModel extends Model implements Auditable
 {
     use HasCommerceAudit;
+    use HasOwner {
+        scopeForOwner as private scopeForOwnerUsingTrait;
+    }
     use HasUuids;
 
     public $timestamps = false;
@@ -41,40 +44,29 @@ abstract class ChipModel extends Model implements Auditable
     }
 
     /**
-     * @return MorphTo<Model, $this>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    final public function owner(): MorphTo
+    final public function scopeForOwner(Builder $query, ?Model $owner = null, ?bool $includeGlobal = null): Builder
     {
-        return $this->morphTo();
+        if (! (bool) config('chip.owner.enabled', true)) {
+            return $query;
+        }
+
+        $owner ??= $this->resolveOwner();
+
+        $includeGlobal ??= (bool) config('chip.owner.include_global', false);
+
+        return $this->scopeForOwnerUsingTrait($query, $owner, $includeGlobal);
     }
 
     /**
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    final public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    final public function scopeForOwnerIncludingGlobal(Builder $query, ?Model $owner = null): Builder
     {
-        if (! config('chip.owner.enabled', false)) {
-            return $query;
-        }
-
-        $owner ??= $this->resolveOwner();
-
-        if ($owner === null) {
-            return $includeGlobal ? $query->whereNull('owner_type') : $query;
-        }
-
-        if ($includeGlobal) {
-            return $query->where(function (Builder $q) use ($owner): void {
-                $q->where(function (Builder $subQ) use ($owner): void {
-                    $subQ->where('owner_type', $owner->getMorphClass())
-                        ->where('owner_id', $owner->getKey());
-                })->orWhereNull('owner_type');
-            });
-        }
-
-        return $query->where('owner_type', $owner->getMorphClass())
-            ->where('owner_id', $owner->getKey());
+        return $this->scopeForOwner($query, $owner, true);
     }
 
     final public function hasOwner(): bool
@@ -129,6 +121,31 @@ abstract class ChipModel extends Model implements Auditable
         }
 
         return app(OwnerResolverInterface::class)->resolve();
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $model): void {
+            if (! (bool) config('chip.owner.enabled', true)) {
+                return;
+            }
+
+            if (! (bool) config('chip.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            if ($model->hasOwner()) {
+                return;
+            }
+
+            $owner = $model->resolveOwner();
+
+            if ($owner === null) {
+                return;
+            }
+
+            $model->assignOwner($owner);
+        });
     }
 
     protected function toTimestamp(?int $value): ?Carbon

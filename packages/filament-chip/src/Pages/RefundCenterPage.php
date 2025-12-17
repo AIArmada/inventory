@@ -8,12 +8,12 @@ use AIArmada\Chip\Models\Purchase;
 use AIArmada\Chip\Services\ChipCollectService;
 use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Forms\Components\Section;
+use Filament\Actions\Action as TableAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -50,7 +50,11 @@ class RefundCenterPage extends Page implements HasTable
     {
         return $table
             ->query(
-                Purchase::query()
+                tap(Purchase::query(), function ($query): void {
+                    if (method_exists($query->getModel(), 'scopeForOwner')) {
+                        $query->forOwner();
+                    }
+                })
                     ->whereIn('status', ['paid', 'partially_refunded'])
                     ->where('is_test', false)
                     ->latest('created_on')
@@ -113,7 +117,11 @@ class RefundCenterPage extends Page implements HasTable
 
                 SelectFilter::make('payment_method')
                     ->options(
-                        Purchase::query()
+                        tap(Purchase::query(), function ($query): void {
+                            if (method_exists($query->getModel(), 'scopeForOwner')) {
+                                $query->forOwner();
+                            }
+                        })
                             ->whereNotNull('payment_method')
                             ->distinct()
                             ->pluck('payment_method', 'payment_method')

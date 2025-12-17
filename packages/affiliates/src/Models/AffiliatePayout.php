@@ -75,6 +75,16 @@ class AffiliatePayout extends Model
     }
 
     /**
+     * Alias relation for owner when it is an Affiliate.
+     *
+     * @return MorphTo<Affiliate, self>
+     */
+    public function affiliate(): MorphTo
+    {
+        return $this->morphTo(__FUNCTION__, 'owner_type', 'owner_id');
+    }
+
+    /**
      * @return HasMany<AffiliateConversion, self>
      */
     public function conversions(): HasMany
@@ -96,18 +106,6 @@ class AffiliatePayout extends Model
             $payout->events()->delete();
             $payout->conversions()->update(['affiliate_payout_id' => null]);
         });
-    }
-
-    /**
-     * Get the affiliate (alias for owner when owner is an Affiliate).
-     *
-     * @return Attribute<Affiliate|null, never>
-     */
-    protected function affiliate(): Attribute
-    {
-        return Attribute::make(
-            get: fn () => $this->owner instanceof Affiliate ? $this->owner : null,
-        );
     }
 
     /**

@@ -1139,5 +1139,20 @@ abstract class TestCase extends Orchestra
             $table->timestamps();
             $table->softDeletes();
         });
+
+        // =========================================================================
+        // SPATIE WEBHOOK CLIENT TABLE
+        // =========================================================================
+        Schema::dropIfExists('webhook_calls');
+        Schema::create('webhook_calls', function (Blueprint $table): void {
+            $table->bigIncrements('id');
+            $table->string('name');
+            $table->string('url')->nullable();
+            $table->json('headers')->nullable();
+            $table->json('payload')->nullable();
+            $table->text('exception')->nullable();
+            $table->timestamp('processed_at')->nullable();
+            $table->timestamps();
+        });
     }
 }

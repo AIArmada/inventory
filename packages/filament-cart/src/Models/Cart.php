@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AIArmada\FilamentCart\Models;
 
 use AIArmada\Cart\Cart as BaseCart;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\FilamentCart\Services\CartInstanceManager;
 use Akaunting\Money\Money;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User;
@@ -32,6 +35,9 @@ use Throwable;
  * @property int $total
  * @property int $savings
  * @property string $currency
+ * @property string|null $owner_type
+ * @property string|null $owner_id
+ * @property string $owner_key
  * @property Carbon|null $last_activity_at
  * @property Carbon|null $checkout_started_at
  * @property Carbon|null $checkout_abandoned_at
@@ -53,9 +59,15 @@ class Cart extends Model
     /** @use HasFactory<\AIArmada\FilamentCart\Database\Factories\CartFactory> */
     use HasFactory;
 
+    use HasOwner {
+        scopeForOwner as baseScopeForOwner;
+    }
     use HasUuids;
 
     protected $fillable = [
+        'owner_type',
+        'owner_id',
+        'owner_key',
         'identifier',
         'instance',
         'items',
@@ -100,6 +112,7 @@ class Cart extends Model
     ];
 
     protected $attributes = [
+        'owner_key' => 'global',
         'items' => null,
         'conditions' => null,
         'metadata' => null,
@@ -122,6 +135,69 @@ class Cart extends Model
         return $tables['snapshots'] ?? $prefix . 'snapshots';
     }
 
+    public static function ownerScopingEnabled(): bool
+    {
+        return (bool) config('filament-cart.owner.enabled', false);
+    }
+
+    public static function resolveCurrentOwner(): ?EloquentModel
+    {
+        if (! self::ownerScopingEnabled()) {
+            return null;
+        }
+
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        /** @var EloquentModel|null $owner */
+        $owner = app(OwnerResolverInterface::class)->resolve();
+
+        return $owner;
+    }
+
+    public static function makeOwnerKey(?string $ownerType, int | string | null $ownerId): string
+    {
+        if ($ownerType === null || $ownerId === null || $ownerType === '' || (string) $ownerId === '') {
+            return 'global';
+        }
+
+        return $ownerType . ':' . (string) $ownerId;
+    }
+
+    public static function resolveOwnerKey(?EloquentModel $owner): string
+    {
+        if (! $owner) {
+            return 'global';
+        }
+
+        return $owner->getMorphClass() . ':' . (string) $owner->getKey();
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForOwner(Builder $query, ?EloquentModel $owner = null, bool $includeGlobal = true): Builder
+    {
+        if (! self::ownerScopingEnabled()) {
+            return $query;
+        }
+
+        if ($owner === null && app()->bound(OwnerResolverInterface::class)) {
+            /** @var EloquentModel|null $resolved */
+            $resolved = app(OwnerResolverInterface::class)->resolve();
+            $owner = $resolved;
+        }
+
+        $includeGlobal = $includeGlobal && (bool) config('filament-cart.owner.include_global', false);
+
+        /** @var Builder<static> $scoped */
+        $scoped = $this->baseScopeForOwner($query, $owner, $includeGlobal);
+
+        return $scoped;
+    }
+
     public function getCartInstance(): ?BaseCart
     {
         try {
@@ -135,6 +211,14 @@ class Cart extends Model
 
             return null;
         }
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Cart $cart): void {
+            /** @phpstan-ignore-next-line assign.propertyReadOnly */
+            $cart->owner_key = self::makeOwnerKey($cart->owner_type, $cart->owner_id);
+        });
     }
 
     public function getSubtotalInDollarsAttribute(): float

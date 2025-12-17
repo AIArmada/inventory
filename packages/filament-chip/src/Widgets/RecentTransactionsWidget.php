@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentChip\Widgets;
 
 use AIArmada\Chip\Models\Purchase;
-use Filament\Tables\Actions\Action;
+use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -22,7 +22,11 @@ final class RecentTransactionsWidget extends BaseWidget
     {
         return $table
             ->query(
-                Purchase::query()
+                tap(Purchase::query(), function ($query): void {
+                    if (method_exists($query->getModel(), 'scopeForOwner')) {
+                        $query->forOwner();
+                    }
+                })
                     ->where('is_test', false)
                     ->orderBy('created_on', 'desc')
                     ->limit(10)

@@ -70,7 +70,12 @@ final class ChipStatsWidget extends BaseWidget
         $sinceTimestamp = $since->getTimestamp();
         $driver = DB::connection()->getDriverName();
 
-        $query = Purchase::where('status', 'paid')
+        $query = tap(Purchase::query(), function ($query): void {
+            if (method_exists($query->getModel(), 'scopeForOwner')) {
+                $query->forOwner();
+            }
+        })
+            ->where('status', 'paid')
             ->where('is_test', false)
             ->where('created_on', '>=', $sinceTimestamp);
 
@@ -92,11 +97,21 @@ final class ChipStatsWidget extends BaseWidget
         $successStatuses = ['paid', 'completed', 'captured'];
         $failedStatuses = ['failed', 'cancelled'];
 
-        $successful = Purchase::whereIn('status', $successStatuses)
+        $successful = tap(Purchase::query(), function ($query): void {
+            if (method_exists($query->getModel(), 'scopeForOwner')) {
+                $query->forOwner();
+            }
+        })
+            ->whereIn('status', $successStatuses)
             ->where('is_test', false)
             ->count();
 
-        $failed = Purchase::whereIn('status', $failedStatuses)
+        $failed = tap(Purchase::query(), function ($query): void {
+            if (method_exists($query->getModel(), 'scopeForOwner')) {
+                $query->forOwner();
+            }
+        })
+            ->whereIn('status', $failedStatuses)
             ->where('is_test', false)
             ->count();
 

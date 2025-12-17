@@ -7,7 +7,7 @@ use Illuminate\Support\Carbon;
 
 describe('MetricsAggregator', function (): void {
     beforeEach(function (): void {
-        $this->aggregator = new MetricsAggregator();
+        $this->aggregator = new MetricsAggregator;
     });
 
     describe('instantiation', function (): void {
@@ -72,6 +72,7 @@ describe('MetricsAggregator', function (): void {
 
             // This should not throw even with no input metrics
             $exception = null;
+
             try {
                 $this->aggregator->aggregateTotals($date);
             } catch (Throwable $e) {
@@ -85,6 +86,7 @@ describe('MetricsAggregator', function (): void {
             $date = Carbon::now()->subDays(1);
 
             $exception = null;
+
             try {
                 $this->aggregator->aggregateTotals($date);
             } catch (Throwable $e) {

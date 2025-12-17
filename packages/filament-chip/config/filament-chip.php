@@ -5,38 +5,12 @@ declare(strict_types=1);
 return [
     /*
     |--------------------------------------------------------------------------
-    | Database
-    |--------------------------------------------------------------------------
-    */
-    'database' => [
-        'table_prefix' => env('FILAMENT_CHIP_TABLE_PREFIX', 'chip_'),
-        'json_column_type' => env('FILAMENT_CHIP_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),
-        'tables' => [
-            'purchases' => env('FILAMENT_CHIP_TABLE_PREFIX', 'chip_') . 'purchases',
-            'payments' => env('FILAMENT_CHIP_TABLE_PREFIX', 'chip_') . 'payments',
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Navigation
     |--------------------------------------------------------------------------
     */
-    'navigation_group' => 'CHIP Operations',
-    'navigation_badge_color' => 'primary',
-
-    'resources' => [
-        'navigation_sort' => [
-            'purchases' => 10,
-            'payments' => 20,
-            'clients' => 30,
-            'bank_accounts' => 40,
-            'webhooks' => 50,
-            'send_instructions' => 60,
-            'send_limits' => 70,
-            'send_webhooks' => 80,
-            'company_statements' => 90,
-        ],
+    'navigation' => [
+        'group' => 'CHIP Operations',
+        'badge_color' => 'primary',
     ],
 
     /*
@@ -51,6 +25,13 @@ return [
         'updated_on_format' => 'Y-m-d H:i:s',
         'amount_precision' => 2,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Features
+    |--------------------------------------------------------------------------
+    */
+    'default_currency' => 'MYR',
 
     /*
     |--------------------------------------------------------------------------
@@ -79,6 +60,25 @@ return [
         'invoice' => [
             'vendor_name' => null,
             'product_name' => 'Subscription',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resources
+    |--------------------------------------------------------------------------
+    */
+    'resources' => [
+        'navigation_sort' => [
+            'purchases' => 10,
+            'payments' => 20,
+            'clients' => 30,
+            'bank_accounts' => 40,
+            'webhooks' => 50,
+            'send_instructions' => 60,
+            'send_limits' => 70,
+            'send_webhooks' => 80,
+            'company_statements' => 90,
         ],
     ],
 ];

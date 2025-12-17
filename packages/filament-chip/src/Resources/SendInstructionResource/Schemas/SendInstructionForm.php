@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AIArmada\FilamentChip\Resources\SendInstructionResource\Schemas;
 
 use AIArmada\Chip\Models\BankAccount;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
 final class SendInstructionForm
@@ -23,6 +23,7 @@ final class SendInstructionForm
                             ->label('Bank Account')
                             ->options(function (): array {
                                 return BankAccount::query()
+                                    ->forOwner()
                                     ->whereIn('status', ['active', 'approved'])
                                     ->get()
                                     ->mapWithKeys(fn (BankAccount $account): array => [

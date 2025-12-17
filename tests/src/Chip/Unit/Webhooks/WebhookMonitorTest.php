@@ -7,43 +7,43 @@ use AIArmada\Chip\Webhooks\WebhookMonitor;
 
 describe('WebhookMonitor', function (): void {
     it('can be instantiated', function (): void {
-        $monitor = new WebhookMonitor();
+        $monitor = new WebhookMonitor;
 
         expect($monitor)->toBeInstanceOf(WebhookMonitor::class);
     });
 
     it('has getHealth method', function (): void {
-        $monitor = new WebhookMonitor();
+        $monitor = new WebhookMonitor;
 
         expect(method_exists($monitor, 'getHealth'))->toBeTrue();
     });
 
     it('has getEventDistribution method', function (): void {
-        $monitor = new WebhookMonitor();
+        $monitor = new WebhookMonitor;
 
         expect(method_exists($monitor, 'getEventDistribution'))->toBeTrue();
     });
 
     it('has getFailureBreakdown method', function (): void {
-        $monitor = new WebhookMonitor();
+        $monitor = new WebhookMonitor;
 
         expect(method_exists($monitor, 'getFailureBreakdown'))->toBeTrue();
     });
 
     it('has getHourlyVolume method', function (): void {
-        $monitor = new WebhookMonitor();
+        $monitor = new WebhookMonitor;
 
         expect(method_exists($monitor, 'getHourlyVolume'))->toBeTrue();
     });
 
     it('has getPendingWebhooks method', function (): void {
-        $monitor = new WebhookMonitor();
+        $monitor = new WebhookMonitor;
 
         expect(method_exists($monitor, 'getPendingWebhooks'))->toBeTrue();
     });
 
     it('has getRecentFailures method', function (): void {
-        $monitor = new WebhookMonitor();
+        $monitor = new WebhookMonitor;
 
         expect(method_exists($monitor, 'getRecentFailures'))->toBeTrue();
     });

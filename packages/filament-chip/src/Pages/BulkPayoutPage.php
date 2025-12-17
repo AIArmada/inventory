@@ -9,7 +9,6 @@ use AIArmada\Chip\Services\ChipSendService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -17,6 +16,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\View\View;
 use Throwable;
@@ -67,6 +67,7 @@ class BulkPayoutPage extends Page implements HasForms
                                     ->label('Bank Account')
                                     ->options(function (): array {
                                         return BankAccount::query()
+                                            ->forOwner()
                                             ->whereIn('status', ['active', 'approved'])
                                             ->get()
                                             ->mapWithKeys(fn (BankAccount $account): array => [
@@ -127,6 +128,21 @@ class BulkPayoutPage extends Page implements HasForms
 
         foreach ($this->payouts as $payout) {
             if (empty($payout['bank_account_id']) || empty($payout['amount'])) {
+                continue;
+            }
+
+            $bankAccount = BankAccount::query()
+                ->forOwner()
+                ->whereKey($payout['bank_account_id'])
+                ->first();
+
+            if ($bankAccount === null) {
+                $this->results[] = [
+                    'reference' => $payout['reference'] ?? 'N/A',
+                    'status' => 'error',
+                    'message' => 'Selected bank account is not accessible for the current owner.',
+                ];
+
                 continue;
             }
 

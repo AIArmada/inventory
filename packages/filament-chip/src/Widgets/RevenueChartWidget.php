@@ -75,7 +75,12 @@ final class RevenueChartWidget extends ChartWidget
             $startOfDay = $date->copy()->startOfDay()->getTimestamp();
             $endOfDay = $date->copy()->endOfDay()->getTimestamp();
 
-            $purchases = Purchase::where('status', 'paid')
+            $purchases = tap(Purchase::query(), function ($query): void {
+                if (method_exists($query->getModel(), 'scopeForOwner')) {
+                    $query->forOwner();
+                }
+            })
+                ->where('status', 'paid')
                 ->where('is_test', false)
                 ->where('created_on', '>=', $startOfDay)
                 ->where('created_on', '<=', $endOfDay)

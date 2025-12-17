@@ -104,14 +104,22 @@ final class ClientResource extends BaseChipResource
             ->filters([
                 SelectFilter::make('country')
                     ->label('Country')
-                    ->options(fn () => Client::query()
-                        ->select('country')
-                        ->distinct()
-                        ->whereNotNull('country')
-                        ->orderBy('country')
-                        ->pluck('country', 'country')
-                        ->mapWithKeys(fn (string $country): array => [$country => mb_strtoupper($country)])
-                        ->all())
+                    ->options(function (): array {
+                        $query = Client::query();
+
+                        if (method_exists($query->getModel(), 'scopeForOwner')) {
+                            $query->forOwner();
+                        }
+
+                        return $query
+                            ->select('country')
+                            ->distinct()
+                            ->whereNotNull('country')
+                            ->orderBy('country')
+                            ->pluck('country', 'country')
+                            ->mapWithKeys(fn (string $country): array => [$country => mb_strtoupper($country)])
+                            ->all();
+                    })
                     ->searchable(),
                 Filter::make('has_phone')
                     ->label('Has Phone')

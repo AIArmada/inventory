@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAffiliates\Pages\Portal;
 
+use AIArmada\Affiliates\Enums\ConversionStatus;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\FilamentAffiliates\Concerns\InteractsWithAffiliate;
 use BackedEnum;
@@ -70,11 +71,17 @@ class PortalConversions extends Page implements HasTable
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'approved' => 'success',
-                        'pending' => 'warning',
-                        'rejected' => 'danger',
-                        default => 'gray',
+                    ->color(function (string | BackedEnum $state): string {
+                        $value = $state instanceof BackedEnum ? $state->value : $state;
+
+                        return match ($value) {
+                            ConversionStatus::Approved->value => 'success',
+                            ConversionStatus::Pending->value => 'warning',
+                            ConversionStatus::Rejected->value => 'danger',
+                            ConversionStatus::Qualified->value => 'info',
+                            ConversionStatus::Paid->value => 'success',
+                            default => 'gray',
+                        };
                     }),
             ])
             ->defaultSort('occurred_at', 'desc')

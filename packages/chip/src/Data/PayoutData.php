@@ -42,7 +42,7 @@ class PayoutData extends ChipData
         $amount = $data['amount'] ?? 0;
 
         return new self(
-            id: $data['id'] ?? '',
+            id: (string) ($data['id'] ?? ''),
             type: $data['type'] ?? 'payout',
             created_on: $data['created_on'] ?? time(),
             updated_on: $data['updated_on'] ?? time(),

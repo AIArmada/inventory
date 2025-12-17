@@ -10,3 +10,9 @@ it('make returns plugin instance', function (): void {
 
     expect($plugin)->toBeInstanceOf(FilamentAffiliatesPlugin::class);
 });
+
+it('get returns plugin instance', function (): void {
+    $plugin = FilamentAffiliates::get();
+
+    expect($plugin)->toBeInstanceOf(FilamentAffiliatesPlugin::class);
+});

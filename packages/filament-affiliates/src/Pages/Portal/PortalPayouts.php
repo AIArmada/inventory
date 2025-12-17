@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAffiliates\Pages\Portal;
 
+use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\FilamentAffiliates\Concerns\InteractsWithAffiliate;
 use BackedEnum;
@@ -44,7 +45,9 @@ class PortalPayouts extends Page implements HasTable
         return $table
             ->query(
                 AffiliatePayout::query()
-                    ->when($affiliate, fn (Builder $query) => $query->where('affiliate_id', $affiliate->getKey()))
+                    ->when($affiliate, fn (Builder $query) => $query
+                        ->where('owner_type', $affiliate->getMorphClass())
+                        ->where('owner_id', $affiliate->getKey()))
                     ->when(! $affiliate, fn (Builder $query) => $query->whereRaw('1 = 0'))
             )
             ->columns([
@@ -65,12 +68,17 @@ class PortalPayouts extends Page implements HasTable
                 TextColumn::make('status')
                     ->label(__('Status'))
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'completed', 'paid' => 'success',
-                        'pending' => 'warning',
-                        'processing' => 'info',
-                        'failed' => 'danger',
-                        default => 'gray',
+                    ->color(function (string | BackedEnum $state): string {
+                        $value = $state instanceof BackedEnum ? $state->value : $state;
+
+                        return match ($value) {
+                            PayoutStatus::Completed->value => 'success',
+                            PayoutStatus::Pending->value => 'warning',
+                            PayoutStatus::Processing->value => 'info',
+                            PayoutStatus::Failed->value => 'danger',
+                            PayoutStatus::Cancelled->value => 'gray',
+                            default => 'gray',
+                        };
                     }),
 
                 TextColumn::make('paid_at')
@@ -90,9 +98,10 @@ class PortalPayouts extends Page implements HasTable
         $affiliate = $this->getAffiliate();
         $totalPaid = $affiliate
             ? (int) AffiliatePayout::query()
-                ->where('affiliate_id', $affiliate->getKey())
-                ->whereIn('status', ['completed', 'paid'])
-                ->sum('amount_minor')
+                ->where('owner_type', $affiliate->getMorphClass())
+                ->where('owner_id', $affiliate->getKey())
+                ->where('status', PayoutStatus::Completed)
+                ->sum('total_minor')
             : 0;
 
         return [

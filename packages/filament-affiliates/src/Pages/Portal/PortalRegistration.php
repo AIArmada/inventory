@@ -7,12 +7,12 @@ namespace AIArmada\FilamentAffiliates\Pages\Portal;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Services\AffiliateRegistrationService;
 use Filament\Actions\Action;
+use Filament\Auth\Http\Responses\Contracts\RegistrationResponse;
+use Filament\Auth\Pages\Register as FilamentRegister;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Filament\Pages\Auth\Register as FilamentRegister;
 use Filament\Schemas\Components\Component;
-use Filament\Schemas\Components\TextInput;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Hash;
 
 class PortalRegistration extends FilamentRegister
 {
@@ -36,7 +36,7 @@ class PortalRegistration extends FilamentRegister
         parent::mount();
     }
 
-    public function register(): ?Model
+    public function register(): ?RegistrationResponse
     {
         if (! $this->registrationEnabled) {
             Notification::make()
@@ -48,21 +48,20 @@ class PortalRegistration extends FilamentRegister
             return null;
         }
 
-        $data = $this->form->getState();
+        return parent::register();
+    }
 
-        $user = $this->getUserModel()::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => Hash::make($data['password']),
-        ]);
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function handleRegistration(array $data): Model
+    {
+        $userData = $data;
+        unset($userData['affiliate_name'], $userData['website_url']);
+
+        $user = $this->getUserModel()::create($userData);
 
         $this->createAffiliateForUser($user, $data);
-
-        $this->sendEmailVerificationNotification($user);
-
-        auth()->guard($this->getGuard())->login($user);
-
-        session()->regenerate();
 
         return $user;
     }
@@ -139,7 +138,7 @@ class PortalRegistration extends FilamentRegister
         ], $user);
     }
 
-    protected function getRegisterFormAction(): Action
+    public function getRegisterFormAction(): Action
     {
         return Action::make('register')
             ->label(__('Register as Affiliate'))

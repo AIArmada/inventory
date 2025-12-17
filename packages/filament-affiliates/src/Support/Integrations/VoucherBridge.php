@@ -32,11 +32,16 @@ final class VoucherBridge
             return null;
         }
 
-        $voucher = Voucher::query()
+        /** @var Voucher|null $voucher */
+        $voucher = VoucherResource::getEloquentQuery()
             ->where('code', $code)
             ->first();
 
         if (! $voucher) {
+            return null;
+        }
+
+        if (method_exists(VoucherResource::class, 'canView') && ! VoucherResource::canView($voucher)) {
             return null;
         }
 

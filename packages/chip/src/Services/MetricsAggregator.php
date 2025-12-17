@@ -6,6 +6,8 @@ namespace AIArmada\Chip\Services;
 
 use AIArmada\Chip\Models\DailyMetric;
 use AIArmada\Chip\Models\Purchase;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
@@ -18,11 +20,14 @@ class MetricsAggregator
      */
     public function aggregateForDate(Carbon $date): void
     {
+        $owner = $this->resolveOwner();
+
         $startOfDay = $date->copy()->startOfDay();
         $endOfDay = $date->copy()->endOfDay();
 
         // Aggregate by payment method
         $byMethod = Purchase::query()
+            ->forOwner($owner)
             ->whereBetween('created_at', [$startOfDay, $endOfDay])
             ->selectRaw('
                 payment_method,
@@ -44,6 +49,8 @@ class MetricsAggregator
 
             DailyMetric::updateOrCreate(
                 [
+                    'owner_type' => $owner?->getMorphClass(),
+                    'owner_id' => $owner?->getKey(),
                     'date' => $date->toDateString(),
                     'payment_method' => $row->payment_method,
                 ],
@@ -70,7 +77,10 @@ class MetricsAggregator
      */
     public function aggregateTotals(Carbon $date): void
     {
+        $owner = $this->resolveOwner();
+
         $totals = DailyMetric::query()
+            ->forOwner($owner)
             ->where('date', $date->toDateString())
             ->whereNotNull('payment_method')
             ->selectRaw('
@@ -93,6 +103,8 @@ class MetricsAggregator
 
         DailyMetric::updateOrCreate(
             [
+                'owner_type' => $owner?->getMorphClass(),
+                'owner_id' => $owner?->getKey(),
                 'date' => $date->toDateString(),
                 'payment_method' => null,
             ],
@@ -133,7 +145,10 @@ class MetricsAggregator
      */
     protected function getFailureBreakdown(Carbon $startDate, Carbon $endDate, ?string $paymentMethod): array
     {
+        $owner = $this->resolveOwner();
+
         $query = Purchase::query()
+            ->forOwner($owner)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->whereIn('status', ['failed', 'error']);
 
@@ -146,5 +161,14 @@ class MetricsAggregator
             ->groupBy('reason')
             ->pluck('count', 'reason')
             ->toArray();
+    }
+
+    protected function resolveOwner(): ?Model
+    {
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        return app(OwnerResolverInterface::class)->resolve();
     }
 }

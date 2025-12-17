@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\DB;
  */
 class CartMonitor
 {
+    private const STATUS_ACTIVE = 'active';
+
+    private const STATUS_CHECKOUT = 'checkout';
+
+    private const STATUS_ABANDONED = 'abandoned';
+
     /**
      * Get live statistics for the dashboard.
      */
@@ -25,19 +31,19 @@ class CartMonitor
         $abandonmentMinutes = (int) config('filament-cart.monitoring.abandonment_detection_minutes', 30);
         $highValueThreshold = (int) config('filament-cart.ai.high_value_threshold_cents', 10000);
 
+        $abandonedBefore = now()->subMinutes($abandonmentMinutes);
+
         // Get cart counts
         $cartStats = DB::table($snapshotsTable)
             ->selectRaw('
                 COUNT(*) as total_carts,
                 SUM(CASE WHEN items_count > 0 THEN 1 ELSE 0 END) as with_items,
-                SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as in_checkout,
-                SUM(CASE WHEN status = ? AND updated_at < ? THEN 1 ELSE 0 END) as abandoned,
-                SUM(total_cents) as total_value,
-                SUM(CASE WHEN total_cents >= ? THEN 1 ELSE 0 END) as high_value
+                SUM(CASE WHEN checkout_started_at IS NOT NULL AND checkout_abandoned_at IS NULL AND recovered_at IS NULL THEN 1 ELSE 0 END) as in_checkout,
+                SUM(CASE WHEN items_count > 0 AND checkout_abandoned_at IS NULL AND recovered_at IS NULL AND COALESCE(last_activity_at, updated_at) < ? THEN 1 ELSE 0 END) as abandoned,
+                SUM(total) as total_value,
+                SUM(CASE WHEN total >= ? THEN 1 ELSE 0 END) as high_value
             ', [
-                'checkout',
-                'active',
-                now()->subMinutes($abandonmentMinutes),
+                $abandonedBefore,
                 $highValueThreshold,
             ])
             ->first();
@@ -73,7 +79,8 @@ class CartMonitor
     public function getActiveCartsCount(): int
     {
         return DB::table($this->getSnapshotsTable())
-            ->where('status', 'active')
+            ->whereNull('checkout_abandoned_at')
+            ->whereNull('recovered_at')
             ->count();
     }
 
@@ -85,11 +92,12 @@ class CartMonitor
     public function getRecentAbandonments(int $minutes = 30): Collection
     {
         return DB::table($this->getSnapshotsTable())
-            ->where('status', 'active')
             ->where('items_count', '>', 0)
-            ->where('updated_at', '<', now()->subMinutes($minutes))
+            ->whereNull('checkout_abandoned_at')
+            ->whereNull('recovered_at')
+            ->whereRaw('COALESCE(last_activity_at, updated_at) < ?', [now()->subMinutes($minutes)])
             ->where('updated_at', '>=', now()->subHours(24))
-            ->orderByDesc('total_cents')
+            ->orderByDesc('total')
             ->limit(50)
             ->get();
     }
@@ -104,9 +112,10 @@ class CartMonitor
         $threshold ??= (int) config('filament-cart.ai.high_value_threshold_cents', 10000);
 
         return DB::table($this->getSnapshotsTable())
-            ->where('status', 'active')
-            ->where('total_cents', '>=', $threshold)
-            ->orderByDesc('total_cents')
+            ->whereNull('checkout_abandoned_at')
+            ->whereNull('recovered_at')
+            ->where('total', '>=', $threshold)
+            ->orderByDesc('total')
             ->limit(50)
             ->get();
     }
@@ -121,9 +130,10 @@ class CartMonitor
         $abandonmentMinutes = (int) config('filament-cart.monitoring.abandonment_detection_minutes', 30);
 
         return DB::table($this->getSnapshotsTable())
-            ->where('status', 'active')
             ->where('items_count', '>', 0)
-            ->where('updated_at', '<', now()->subMinutes($abandonmentMinutes))
+            ->whereNull('checkout_abandoned_at')
+            ->whereNull('recovered_at')
+            ->whereRaw('COALESCE(last_activity_at, updated_at) < ?', [now()->subMinutes($abandonmentMinutes)])
             ->where('updated_at', '>=', now()->subHours(24))
             ->whereNotExists(function (Builder $query): void {
                 $query->select(DB::raw(1))
@@ -132,7 +142,7 @@ class CartMonitor
                     ->where('event_type', 'abandonment')
                     ->where('created_at', '>=', now()->subHours(24));
             })
-            ->orderByDesc('total_cents')
+            ->orderByDesc('total')
             ->get();
     }
 
@@ -146,16 +156,20 @@ class CartMonitor
         // Get carts with suspicious patterns
         // This is a simplified detection - real implementation would be more sophisticated
         return DB::table($this->getSnapshotsTable())
-            ->where('status', 'active')
+            ->whereNull('checkout_abandoned_at')
+            ->whereNull('recovered_at')
             ->where(function ($query): void {
-                // High value + new session
-                $query->where('total_cents', '>=', 50000)
-                    ->where('created_at', '>=', now()->subMinutes(10));
-            })
-            ->orWhere(function ($query): void {
-                // Multiple high-quantity items
-                $query->where('items_count', '>=', 10)
-                    ->where('total_cents', '>=', 100000);
+                $query
+                    ->where(function ($query): void {
+                        // High value + new session
+                        $query->where('total', '>=', 50000)
+                            ->where('created_at', '>=', now()->subMinutes(10));
+                    })
+                    ->orWhere(function ($query): void {
+                        // Multiple high-quantity items
+                        $query->where('items_count', '>=', 10)
+                            ->where('total', '>=', 100000);
+                    });
             })
             ->whereNotExists(function (Builder $query): void {
                 $query->select(DB::raw(1))
@@ -164,7 +178,7 @@ class CartMonitor
                     ->where('event_type', 'fraud')
                     ->where('created_at', '>=', now()->subHours(1));
             })
-            ->orderByDesc('total_cents')
+            ->orderByDesc('total')
             ->limit(20)
             ->get();
     }
@@ -179,14 +193,15 @@ class CartMonitor
         // Carts that were abandoned but might be recoverable
         // (abandoned recently, has items, moderate to high value)
         return DB::table($this->getSnapshotsTable())
-            ->where('status', 'active')
             ->where('items_count', '>', 0)
-            ->where('total_cents', '>=', 2000) // $20+
-            ->whereBetween('updated_at', [
+            ->whereNull('checkout_abandoned_at')
+            ->whereNull('recovered_at')
+            ->where('total', '>=', 2000) // $20+
+            ->whereBetween(DB::raw('COALESCE(last_activity_at, updated_at)'), [
                 now()->subHours(2),
                 now()->subMinutes(30),
             ])
-            ->orderByDesc('total_cents')
+            ->orderByDesc('total')
             ->limit(50)
             ->get();
     }
@@ -199,7 +214,22 @@ class CartMonitor
     public function getRecentActivity(int $limit = 20): Collection
     {
         return DB::table($this->getSnapshotsTable())
-            ->select('id', 'session_id', 'status', 'items_count', 'total_cents', 'updated_at')
+            ->selectRaw('
+                id,
+                identifier as session_id,
+                CASE
+                    WHEN checkout_abandoned_at IS NOT NULL THEN ?
+                    WHEN checkout_started_at IS NOT NULL THEN ?
+                    ELSE ?
+                END as status,
+                items_count,
+                total as total_cents,
+                updated_at
+            ', [
+                self::STATUS_ABANDONED,
+                self::STATUS_CHECKOUT,
+                self::STATUS_ACTIVE,
+            ])
             ->orderByDesc('updated_at')
             ->limit($limit)
             ->get();

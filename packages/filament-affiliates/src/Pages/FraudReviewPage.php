@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAffiliates\Pages;
 
+use AIArmada\Affiliates\Enums\ConversionStatus;
+use AIArmada\Affiliates\Enums\FraudSeverity;
 use AIArmada\Affiliates\Enums\FraudSignalStatus;
 use AIArmada\Affiliates\Models\AffiliateFraudSignal;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
@@ -18,6 +21,7 @@ use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 final class FraudReviewPage extends Page implements HasForms, HasTable
@@ -37,10 +41,33 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
 
     public function table(Table $table): Table
     {
+        /** @var Model|null $owner */
+        $owner = (bool) config('affiliates.owner.enabled', false) && app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         return $table
             ->query(
                 AffiliateFraudSignal::query()
-                    ->where('status', FraudSignalStatus::Pending)
+                    ->when(
+                        (bool) config('affiliates.owner.enabled', false),
+                        fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
+                            if (! $owner) {
+                                $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
+
+                                return;
+                            }
+
+                            $affiliateQuery->where(function ($builder) use ($owner): void {
+                                $builder->where('owner_type', $owner->getMorphClass())
+                                    ->where('owner_id', $owner->getKey())
+                                    ->orWhere(function ($inner): void {
+                                        $inner->whereNull('owner_type')->whereNull('owner_id');
+                                    });
+                            });
+                        }),
+                    )
+                    ->where('status', FraudSignalStatus::Detected)
                     ->with(['affiliate', 'conversion'])
                     ->latest()
             )
@@ -50,26 +77,29 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                     ->searchable()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('signal_type')
+                Tables\Columns\TextColumn::make('rule_code')
+                    ->label('Signal')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
+                    ->color(fn ($state): string => match ((string) $state) {
+                        'velocity' => 'danger',
                         'velocity_abuse' => 'danger',
                         'ip_duplicate' => 'warning',
                         'self_referral' => 'danger',
+                        'pattern' => 'warning',
                         'suspicious_pattern' => 'warning',
                         default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('severity')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'critical' => 'danger',
-                        'high' => 'warning',
-                        'medium' => 'info',
+                    ->color(fn ($state): string => match ($state instanceof FraudSeverity ? $state->value : (string) $state) {
+                        FraudSeverity::Critical->value => 'danger',
+                        FraudSeverity::High->value => 'warning',
+                        FraudSeverity::Medium->value => 'info',
                         default => 'gray',
                     }),
 
-                Tables\Columns\TextColumn::make('score')
+                Tables\Columns\TextColumn::make('risk_points')
                     ->label('Risk Score')
                     ->formatStateUsing(fn ($state): string => $state . '%'),
 
@@ -78,12 +108,12 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('signal_type')
+                Tables\Filters\SelectFilter::make('rule_code')
                     ->options([
-                        'velocity_abuse' => 'Velocity Abuse',
+                        'velocity' => 'Velocity Abuse',
                         'ip_duplicate' => 'IP Duplicate',
                         'self_referral' => 'Self Referral',
-                        'suspicious_pattern' => 'Suspicious Pattern',
+                        'pattern' => 'Suspicious Pattern',
                         'cookie_stuffing' => 'Cookie Stuffing',
                     ]),
 
@@ -102,10 +132,12 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(function (AffiliateFraudSignal $record): void {
+                        $reviewedBy = auth()->user()?->getAuthIdentifier();
+
                         $record->update([
                             'status' => FraudSignalStatus::Dismissed,
                             'reviewed_at' => now(),
-                            'reviewed_by' => auth()->id(),
+                            'reviewed_by' => $reviewedBy === null ? null : (string) $reviewedBy,
                         ]);
                     }),
 
@@ -120,15 +152,19 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                             ->required(),
                     ])
                     ->action(function (AffiliateFraudSignal $record, array $data): void {
+                        $reviewedBy = auth()->user()?->getAuthIdentifier();
+
                         $record->update([
                             'status' => FraudSignalStatus::Confirmed,
                             'reviewed_at' => now(),
-                            'reviewed_by' => auth()->id(),
-                            'review_notes' => $data['notes'],
+                            'reviewed_by' => $reviewedBy === null ? null : (string) $reviewedBy,
+                            'evidence' => array_merge($record->evidence ?? [], [
+                                'review_notes' => $data['notes'],
+                            ]),
                         ]);
 
                         if ($record->conversion) {
-                            $record->conversion->update(['status' => 'rejected']);
+                            $record->conversion->update(['status' => ConversionStatus::Rejected]);
                         }
                     }),
 
@@ -141,11 +177,13 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                     ->color('success')
                     ->requiresConfirmation()
                     ->action(function ($records): void {
-                        $records->each(function ($record): void {
+                        $reviewedBy = auth()->user()?->getAuthIdentifier();
+
+                        $records->each(function ($record) use ($reviewedBy): void {
                             $record->update([
                                 'status' => FraudSignalStatus::Dismissed,
                                 'reviewed_at' => now(),
-                                'reviewed_by' => auth()->id(),
+                                'reviewed_by' => $reviewedBy === null ? null : (string) $reviewedBy,
                             ]);
                         });
                     }),
@@ -156,15 +194,17 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                     ->color('danger')
                     ->requiresConfirmation()
                     ->action(function ($records): void {
-                        $records->each(function ($record): void {
+                        $reviewedBy = auth()->user()?->getAuthIdentifier();
+
+                        $records->each(function ($record) use ($reviewedBy): void {
                             $record->update([
                                 'status' => FraudSignalStatus::Confirmed,
                                 'reviewed_at' => now(),
-                                'reviewed_by' => auth()->id(),
+                                'reviewed_by' => $reviewedBy === null ? null : (string) $reviewedBy,
                             ]);
 
                             if ($record->conversion) {
-                                $record->conversion->update(['status' => 'rejected']);
+                                $record->conversion->update(['status' => ConversionStatus::Rejected]);
                             }
                         });
                     }),
@@ -174,8 +214,8 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
     public function getViewData(): array
     {
         return [
-            'pendingCount' => AffiliateFraudSignal::where('status', FraudSignalStatus::Pending)->count(),
-            'criticalCount' => AffiliateFraudSignal::where('status', FraudSignalStatus::Pending)
+            'pendingCount' => AffiliateFraudSignal::where('status', FraudSignalStatus::Detected)->count(),
+            'criticalCount' => AffiliateFraudSignal::where('status', FraudSignalStatus::Detected)
                 ->where('severity', 'critical')
                 ->count(),
         ];

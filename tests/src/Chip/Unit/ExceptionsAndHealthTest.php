@@ -50,7 +50,7 @@ describe('ChipGatewayCheck', function (): void {
     });
 
     it('returns warning when credentials not configured', function (): void {
-        config(['chip.brand_id' => null, 'chip.api_key' => null]);
+        config(['chip.collect.brand_id' => null, 'chip.collect.api_key' => null]);
 
         $check = new ChipGatewayCheck;
         $result = $check->run();
@@ -60,7 +60,7 @@ describe('ChipGatewayCheck', function (): void {
     });
 
     it('returns warning when only brand_id is missing', function (): void {
-        config(['chip.brand_id' => null, 'chip.api_key' => 'test-key']);
+        config(['chip.collect.brand_id' => null, 'chip.collect.api_key' => 'test-key']);
 
         $check = new ChipGatewayCheck;
         $result = $check->run();
@@ -70,7 +70,7 @@ describe('ChipGatewayCheck', function (): void {
     });
 
     it('returns warning when only api_key is missing', function (): void {
-        config(['chip.brand_id' => 'test-brand', 'chip.api_key' => null]);
+        config(['chip.collect.brand_id' => 'test-brand', 'chip.collect.api_key' => null]);
 
         $check = new ChipGatewayCheck;
         $result = $check->run();
@@ -81,8 +81,8 @@ describe('ChipGatewayCheck', function (): void {
 
     it('returns success when API responds successfully', function (): void {
         config([
-            'chip.brand_id' => 'test-brand-123',
-            'chip.api_key' => 'test-api-key',
+            'chip.collect.brand_id' => 'test-brand-123',
+            'chip.collect.api_key' => 'test-api-key',
         ]);
 
         Http::fake([
@@ -98,8 +98,8 @@ describe('ChipGatewayCheck', function (): void {
 
     it('returns failure when API responds with error', function (): void {
         config([
-            'chip.brand_id' => 'test-brand-123',
-            'chip.api_key' => 'test-api-key',
+            'chip.collect.brand_id' => 'test-brand-123',
+            'chip.collect.api_key' => 'test-api-key',
         ]);
 
         Http::fake([
@@ -115,8 +115,8 @@ describe('ChipGatewayCheck', function (): void {
 
     it('returns failure when connection fails', function (): void {
         config([
-            'chip.brand_id' => 'test-brand-123',
-            'chip.api_key' => 'test-api-key',
+            'chip.collect.brand_id' => 'test-brand-123',
+            'chip.collect.api_key' => 'test-api-key',
         ]);
 
         Http::fake(function (): void {

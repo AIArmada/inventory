@@ -64,7 +64,18 @@ class RecentActivityWidget extends BaseWidget
         $snapshotsTable = $this->getSnapshotsTable();
 
         return \Illuminate\Support\Facades\DB::table($snapshotsTable)
-            ->select('id', 'session_id', 'status', 'items_count', 'total_cents', 'updated_at')
+            ->selectRaw("
+                id,
+                identifier as session_id,
+                CASE
+                    WHEN checkout_abandoned_at IS NOT NULL THEN 'abandoned'
+                    WHEN checkout_started_at IS NOT NULL THEN 'checkout'
+                    ELSE 'active'
+                END as status,
+                items_count,
+                total as total_cents,
+                updated_at
+            ")
             ->orderByDesc('updated_at')
             ->limit(50);
     }
