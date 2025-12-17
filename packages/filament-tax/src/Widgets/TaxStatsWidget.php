@@ -8,6 +8,7 @@ use AIArmada\Tax\Models\TaxClass;
 use AIArmada\Tax\Models\TaxExemption;
 use AIArmada\Tax\Models\TaxRate;
 use AIArmada\Tax\Models\TaxZone;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -19,10 +20,10 @@ class TaxStatsWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $activeZones = TaxZone::active()->count();
-        $activeRates = TaxRate::active()->count();
-        $taxClasses = TaxClass::active()->count();
-        $activeExemptions = TaxExemption::active()->count();
+        $activeZones = TaxOwnerScope::applyToOwnedQuery(TaxZone::query())->active()->count();
+        $activeRates = TaxOwnerScope::applyToOwnedQuery(TaxRate::query())->active()->count();
+        $taxClasses = TaxOwnerScope::applyToOwnedQuery(TaxClass::query())->active()->count();
+        $activeExemptions = TaxOwnerScope::applyToOwnedQuery(TaxExemption::query())->active()->count();
 
         return [
             Stat::make('Tax Zones', number_format($activeZones))

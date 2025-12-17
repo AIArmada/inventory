@@ -1106,12 +1106,15 @@ abstract class TestCase extends Orchestra
 
         Schema::create('tax_rates', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
             $table->uuid('zone_id');
             $table->string('tax_class')->default('standard');
             $table->string('name');
+            $table->text('description')->nullable();
             $table->integer('rate')->default(0);
             $table->integer('priority')->default(0);
             $table->boolean('is_compound')->default(false);
+            $table->boolean('is_shipping')->default(true);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
@@ -1119,6 +1122,7 @@ abstract class TestCase extends Orchestra
 
         Schema::create('tax_exemptions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
             $table->uuidMorphs('exemptable');
             $table->foreignUuid('tax_zone_id')->nullable();
             $table->string('reason');

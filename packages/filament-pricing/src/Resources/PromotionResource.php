@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentPricing\Resources;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentPricing\Resources\PromotionResource\Pages;
 use AIArmada\Pricing\Enums\PromotionType;
 use AIArmada\Pricing\Models\Promotion;
 use BackedEnum;
+use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Group;
@@ -15,6 +17,8 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class PromotionResource extends Resource
@@ -31,7 +35,41 @@ class PromotionResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('is_active', true)->count() ?: null;
+        $count = (int) static::getEloquentQuery()->where('is_active', true)->count();
+
+        return $count ? (string) $count : null;
+    }
+
+    /**
+     * @return Builder<Promotion>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<Promotion> $query */
+        $query = parent::getEloquentQuery();
+
+        if (! (bool) config('pricing.owner.enabled', false)) {
+            return $query;
+        }
+
+        $owner = self::resolveOwner();
+
+        /** @var Builder<Promotion> $scoped */
+        $scoped = $query->forOwner($owner);
+
+        return $scoped;
+    }
+
+    private static function resolveOwner(): ?Model
+    {
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        /** @var OwnerResolverInterface $resolver */
+        $resolver = app(OwnerResolverInterface::class);
+
+        return $resolver->resolve();
     }
 
     public static function form(Schema $schema): Schema
@@ -202,9 +240,9 @@ class PromotionResource extends Resource
                     ->label('Active'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\Action::make('duplicate')
+                Actions\ViewAction::make(),
+                Actions\EditAction::make(),
+                Actions\Action::make('duplicate')
                     ->label('Duplicate')
                     ->icon('heroicon-o-document-duplicate')
                     ->action(function ($record) {
@@ -218,8 +256,8 @@ class PromotionResource extends Resource
                     }),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

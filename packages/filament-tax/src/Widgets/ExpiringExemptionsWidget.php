@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentTax\Widgets;
 
 use AIArmada\Tax\Models\TaxExemption;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -53,7 +54,7 @@ class ExpiringExemptionsWidget extends BaseWidget
      */
     protected function getTableQuery(): Builder
     {
-        return TaxExemption::query()
+        return TaxOwnerScope::applyToOwnedQuery(TaxExemption::query())
             ->whereNotNull('expires_at')
             ->where('expires_at', '<=', now()->addDays(30))
             ->where('expires_at', '>=', now())

@@ -8,10 +8,12 @@ use AIArmada\FilamentTax\Resources\TaxClassResource\Pages;
 use AIArmada\FilamentTax\Resources\TaxClassResource\Schemas\TaxClassForm;
 use AIArmada\FilamentTax\Resources\TaxClassResource\Tables\TaxClassesTable;
 use AIArmada\Tax\Models\TaxClass;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class TaxClassResource extends Resource
@@ -25,6 +27,14 @@ final class TaxClassResource extends Resource
     protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    /**
+     * @return Builder<TaxClass>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return TaxOwnerScope::applyToOwnedQuery(parent::getEloquentQuery());
+    }
 
     public static function form(Schema $schema): Schema
     {

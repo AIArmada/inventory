@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AIArmada\Tax\Models;
 
 use AIArmada\CommerceSupport\Traits\HasOwner;
+use AIArmada\Tax\Support\TaxOwnerScope;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -240,6 +242,26 @@ class TaxZone extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (self $zone): void {
+            if (! TaxOwnerScope::isEnabled()) {
+                return;
+            }
+
+            $owner = TaxOwnerScope::resolveOwner();
+
+            if ($owner === null) {
+                return;
+            }
+
+            if ($zone->owner_type === null && $zone->owner_id === null) {
+                $zone->assignOwner($owner);
+            }
+
+            if (! $zone->belongsToOwner($owner)) {
+                throw new AuthorizationException('Cannot write tax zones outside the current owner scope.');
+            }
+        });
+
         static::deleting(function (TaxZone $zone): void {
             $zone->rates()->delete();
         });

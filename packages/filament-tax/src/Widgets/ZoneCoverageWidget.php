@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentTax\Widgets;
 
 use AIArmada\Tax\Models\TaxZone;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;
 
@@ -21,7 +22,7 @@ class ZoneCoverageWidget extends Widget
      */
     protected function getViewData(): array
     {
-        $zones = TaxZone::query()
+        $zones = TaxOwnerScope::applyToOwnedQuery(TaxZone::query())
             ->with('rates')
             ->active()
             ->orderBy('priority', 'desc')

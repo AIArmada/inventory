@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentTax\Resources\TaxRateResource\Schemas;
 
+use AIArmada\Tax\Support\TaxOwnerScope;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -13,6 +14,7 @@ use Filament\Forms\Get as GetFormState;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 final class TaxRateForm
 {
@@ -26,7 +28,11 @@ final class TaxRateForm
                             ->schema([
                                 Select::make('zone_id')
                                     ->label('Tax Zone')
-                                    ->relationship('zone', 'name')
+                                    ->relationship(
+                                        'zone',
+                                        'name',
+                                        modifyQueryUsing: fn (Builder $query): Builder => TaxOwnerScope::applyToOwnedQuery($query),
+                                    )
                                     ->required()
                                     ->searchable()
                                     ->preload()
@@ -62,6 +68,8 @@ final class TaxRateForm
                                     ->maxValue(100)
                                     ->step(0.01)
                                     ->default(0)
+                                    ->formatStateUsing(fn ($state): ?float => $state === null ? null : ((int) $state) / 100)
+                                    ->dehydrateStateUsing(fn ($state): int => (int) round(((float) $state) * 100))
                                     ->helperText('Tax percentage (e.g., 6 for 6%)'),
                             ])
                             ->columns(2),
@@ -105,7 +113,7 @@ final class TaxRateForm
                                     ->content(function ($record, GetFormState $get) {
                                         $rate = $get('rate') ?? $record?->rate ?? 0;
 
-                                        return number_format((float) $rate, 2) . '%';
+                                        return number_format(((float) $rate) / 100, 2) . '%';
                                     }),
 
                                 Placeholder::make('created_info')

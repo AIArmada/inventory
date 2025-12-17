@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentTax\Resources\TaxRateResource\Tables;
 
+use AIArmada\Tax\Support\TaxOwnerScope;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -13,6 +14,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 final class TaxRatesTable
 {
@@ -45,8 +47,8 @@ final class TaxRatesTable
 
                 TextColumn::make('rate')
                     ->label('Rate')
+                    ->formatStateUsing(fn (int $state): string => number_format($state / 100, 2))
                     ->suffix('%')
-                    ->numeric(decimalPlaces: 2)
                     ->sortable()
                     ->weight('bold'),
 
@@ -80,7 +82,11 @@ final class TaxRatesTable
             ->filters([
                 SelectFilter::make('zone_id')
                     ->label('Zone')
-                    ->relationship('zone', 'name'),
+                    ->relationship(
+                        'zone',
+                        'name',
+                        fn (Builder $query): Builder => TaxOwnerScope::applyToOwnedQuery($query),
+                    ),
 
                 SelectFilter::make('tax_class')
                     ->label('Class')

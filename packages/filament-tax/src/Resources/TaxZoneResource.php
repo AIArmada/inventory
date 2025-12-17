@@ -9,10 +9,12 @@ use AIArmada\FilamentTax\Resources\TaxZoneResource\RelationManagers;
 use AIArmada\FilamentTax\Resources\TaxZoneResource\Schemas\TaxZoneForm;
 use AIArmada\FilamentTax\Resources\TaxZoneResource\Tables\TaxZonesTable;
 use AIArmada\Tax\Models\TaxZone;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class TaxZoneResource extends Resource
@@ -26,6 +28,14 @@ final class TaxZoneResource extends Resource
     protected static ?int $navigationSort = 1;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    /**
+     * @return Builder<TaxZone>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return TaxOwnerScope::applyToOwnedQuery(parent::getEloquentQuery());
+    }
 
     public static function form(Schema $schema): Schema
     {

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AIArmada\Tax\Models;
 
 use AIArmada\CommerceSupport\Traits\HasOwner;
+use AIArmada\Tax\Support\TaxOwnerScope;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -59,6 +61,29 @@ class TaxClass extends Model
         'is_active' => true,
         'position' => 0,
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $class): void {
+            if (! TaxOwnerScope::isEnabled()) {
+                return;
+            }
+
+            $owner = TaxOwnerScope::resolveOwner();
+
+            if ($owner === null) {
+                return;
+            }
+
+            if ($class->owner_type === null && $class->owner_id === null) {
+                $class->assignOwner($owner);
+            }
+
+            if (! $class->belongsToOwner($owner)) {
+                throw new AuthorizationException('Cannot write tax classes outside the current owner scope.');
+            }
+        });
+    }
 
     // =========================================================================
     // STATIC HELPERS

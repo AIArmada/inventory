@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentPricing\Pages;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Pricing\Services\PriceCalculator;
 use BackedEnum;
 use Filament\Forms;
@@ -62,6 +63,7 @@ class PriceSimulator extends Page
                             ->visible(fn (Get $get) => $get('product_type') === 'product')
                             ->options(function () {
                                 return \AIArmada\Products\Models\Product::query()
+                                    ->forOwner()
                                     ->get()
                                     ->mapWithKeys(fn ($p) => [
                                         $p->id => $p->name . ' (Base: RM' . number_format($p->price / 100, 2) . ')',
@@ -74,7 +76,13 @@ class PriceSimulator extends Page
                             ->required()
                             ->visible(fn (Get $get) => $get('product_type') === 'variant')
                             ->options(function () {
-                                return \AIArmada\Products\Models\Variant::with('product')
+                                $productIds = \AIArmada\Products\Models\Product::query()
+                                    ->forOwner()
+                                    ->pluck('id');
+
+                                return \AIArmada\Products\Models\Variant::query()
+                                    ->with('product')
+                                    ->whereIn('product_id', $productIds)
                                     ->get()
                                     ->mapWithKeys(fn ($v) => [
                                         $v->id => $v->product->name . ' - ' . $v->sku . ' (RM' . number_format(($v->price ?? $v->product->price) / 100, 2) . ')',
@@ -86,7 +94,12 @@ class PriceSimulator extends Page
                             ->searchable()
                             ->helperText('Optional: simulate for a specific customer')
                             ->options(function () {
+                                $owner = app()->bound(OwnerResolverInterface::class)
+                                    ? app(OwnerResolverInterface::class)->resolve()
+                                    : null;
+
                                 return \AIArmada\Customers\Models\Customer::query()
+                                    ->forOwner($owner)
                                     ->get()
                                     ->mapWithKeys(fn ($c) => [
                                         $c->id => $c->full_name . ' (' . $c->email . ')',
@@ -115,12 +128,24 @@ class PriceSimulator extends Page
     {
         $data = $this->form->getState();
 
+        $owner = app()->bound(OwnerResolverInterface::class)
+            ? app(OwnerResolverInterface::class)->resolve()
+            : null;
+
         // Get the priceable
         $priceable = null;
         if ($data['product_type'] === 'product') {
-            $priceable = \AIArmada\Products\Models\Product::find($data['product_id']);
+            $priceable = \AIArmada\Products\Models\Product::query()
+                ->forOwner()
+                ->find($data['product_id']);
         } else {
-            $priceable = \AIArmada\Products\Models\Variant::find($data['variant_id']);
+            $productIds = \AIArmada\Products\Models\Product::query()
+                ->forOwner()
+                ->pluck('id');
+
+            $priceable = \AIArmada\Products\Models\Variant::query()
+                ->whereIn('product_id', $productIds)
+                ->find($data['variant_id']);
         }
 
         if (! $priceable) {
@@ -131,7 +156,7 @@ class PriceSimulator extends Page
 
         // Get customer if provided
         $customer = $data['customer_id']
-            ? \AIArmada\Customers\Models\Customer::find($data['customer_id'])
+            ? \AIArmada\Customers\Models\Customer::query()->forOwner($owner)->find($data['customer_id'])
             : null;
 
         // Calculate price using PriceCalculator

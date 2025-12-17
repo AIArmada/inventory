@@ -8,10 +8,12 @@ use AIArmada\FilamentTax\Resources\TaxRateResource\Pages;
 use AIArmada\FilamentTax\Resources\TaxRateResource\Schemas\TaxRateForm;
 use AIArmada\FilamentTax\Resources\TaxRateResource\Tables\TaxRatesTable;
 use AIArmada\Tax\Models\TaxRate;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class TaxRateResource extends Resource
@@ -25,6 +27,14 @@ final class TaxRateResource extends Resource
     protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    /**
+     * @return Builder<TaxRate>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return TaxOwnerScope::applyToOwnedQuery(parent::getEloquentQuery());
+    }
 
     public static function form(Schema $schema): Schema
     {

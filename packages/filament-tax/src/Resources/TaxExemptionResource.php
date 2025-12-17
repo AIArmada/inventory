@@ -8,10 +8,12 @@ use AIArmada\FilamentTax\Resources\TaxExemptionResource\Pages;
 use AIArmada\FilamentTax\Resources\TaxExemptionResource\Schemas\TaxExemptionForm;
 use AIArmada\FilamentTax\Resources\TaxExemptionResource\Tables\TaxExemptionsTable;
 use AIArmada\Tax\Models\TaxExemption;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class TaxExemptionResource extends Resource
@@ -25,6 +27,14 @@ final class TaxExemptionResource extends Resource
     protected static ?int $navigationSort = 4;
 
     protected static ?string $recordTitleAttribute = 'certificate_number';
+
+    /**
+     * @return Builder<TaxExemption>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return TaxOwnerScope::applyToOwnedQuery(parent::getEloquentQuery());
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -48,7 +58,7 @@ final class TaxExemptionResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $expiring = self::getModel()::query()
+        $expiring = TaxOwnerScope::applyToOwnedQuery(self::getModel()::query())
             ->whereNotNull('expires_at')
             ->where('expires_at', '>=', now())
             ->where('expires_at', '<=', now()->addDays(30))

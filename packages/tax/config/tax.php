@@ -40,6 +40,7 @@ return [
 
         'owner' => [
             'enabled' => env('TAX_OWNER_ENABLED', false),
+            'include_global' => true,
         ],
 
         'zone_resolution' => [

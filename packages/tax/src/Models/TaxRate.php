@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\Tax\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
+use AIArmada\Tax\Support\TaxOwnerScope;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,15 +27,20 @@ use Spatie\Activitylog\Traits\LogsActivity;
  */
 class TaxRate extends Model
 {
+    use HasOwner;
     use HasUuids;
     use LogsActivity;
 
     protected $fillable = [
+        'owner_type',
+        'owner_id',
         'zone_id',
         'tax_class',
         'name',
+        'description',
         'rate',
         'is_compound',
+        'is_shipping',
         'priority',
         'is_active',
     ];
@@ -43,6 +51,7 @@ class TaxRate extends Model
     protected $casts = [
         'rate' => 'integer', // Stored as basis points (600 = 6.00%)
         'is_compound' => 'boolean',
+        'is_shipping' => 'boolean',
         'priority' => 'integer',
         'is_active' => 'boolean',
     ];
@@ -53,9 +62,43 @@ class TaxRate extends Model
     protected $attributes = [
         'tax_class' => 'standard',
         'is_compound' => false,
+        'is_shipping' => true,
         'priority' => 0,
         'is_active' => true,
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $rate): void {
+            if (! TaxOwnerScope::isEnabled()) {
+                return;
+            }
+
+            $owner = TaxOwnerScope::resolveOwner();
+
+            if ($owner !== null) {
+                if ($rate->owner_type === null && $rate->owner_id === null) {
+                    $rate->assignOwner($owner);
+                }
+
+                if (! $rate->belongsToOwner($owner)) {
+                    throw new AuthorizationException('Cannot write tax rates outside the current owner scope.');
+                }
+            }
+
+            $zoneQuery = $owner === null
+                ? TaxZone::query()
+                : TaxOwnerScope::applyToOwnedQuery(TaxZone::query());
+
+            $zoneExists = $zoneQuery
+                ->whereKey($rate->zone_id)
+                ->exists();
+
+            if (! $zoneExists) {
+                throw new AuthorizationException('Tax zone is not accessible in the current owner scope.');
+            }
+        });
+    }
 
     // =========================================================================
     // STATIC HELPERS

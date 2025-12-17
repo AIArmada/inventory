@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentTax\Resources\TaxExemptionResource\Tables;
 
 use AIArmada\Tax\Models\TaxExemption;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
@@ -17,6 +18,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 final class TaxExemptionsTable
 {
@@ -100,7 +102,11 @@ final class TaxExemptionsTable
             ->filters([
                 SelectFilter::make('tax_zone_id')
                     ->label('Zone')
-                    ->relationship('taxZone', 'name'),
+                    ->relationship(
+                        'taxZone',
+                        'name',
+                        fn (Builder $query): Builder => TaxOwnerScope::applyToOwnedQuery($query),
+                    ),
 
                 SelectFilter::make('status')
                     ->label('Status')

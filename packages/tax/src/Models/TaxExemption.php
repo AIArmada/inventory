@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\Tax\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
+use AIArmada\Tax\Support\TaxOwnerScope;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,10 +35,13 @@ use Spatie\Activitylog\Traits\LogsActivity;
  */
 class TaxExemption extends Model
 {
+    use HasOwner;
     use HasUuids;
     use LogsActivity;
 
     protected $fillable = [
+        'owner_type',
+        'owner_id',
         'exemptable_id',
         'exemptable_type',
         'tax_zone_id',
@@ -65,6 +71,65 @@ class TaxExemption extends Model
     protected $attributes = [
         'status' => 'pending',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $exemption): void {
+            if (! TaxOwnerScope::isEnabled()) {
+                return;
+            }
+
+            $owner = TaxOwnerScope::resolveOwner();
+
+            if ($owner !== null) {
+                if ($exemption->owner_type === null && $exemption->owner_id === null) {
+                    $exemption->assignOwner($owner);
+                }
+
+                if (! $exemption->belongsToOwner($owner)) {
+                    throw new AuthorizationException('Cannot write tax exemptions outside the current owner scope.');
+                }
+            }
+
+            if ($exemption->tax_zone_id !== null) {
+                $zoneQuery = $owner === null
+                    ? TaxZone::query()
+                    : TaxOwnerScope::applyToOwnedQuery(TaxZone::query());
+
+                $zoneExists = $zoneQuery
+                    ->whereKey($exemption->tax_zone_id)
+                    ->exists();
+
+                if (! $zoneExists) {
+                    throw new AuthorizationException('Tax zone is not accessible in the current owner scope.');
+                }
+            }
+
+            if ($exemption->exemptable_type !== null && $exemption->exemptable_id !== null) {
+                $type = $exemption->exemptable_type;
+
+                if (class_exists($type) && is_a($type, Model::class, true)) {
+                    $usesHasOwner = in_array(HasOwner::class, class_uses_recursive($type), true);
+
+                    if ($usesHasOwner) {
+                        $exemptableQuery = $type::query();
+
+                        if ($owner !== null) {
+                            $exemptableQuery = TaxOwnerScope::applyToOwnedQuery($exemptableQuery);
+                        }
+
+                        $exemptableExists = $exemptableQuery
+                            ->whereKey($exemption->exemptable_id)
+                            ->exists();
+
+                        if (! $exemptableExists) {
+                            throw new AuthorizationException('Exemptable entity is not accessible in the current owner scope.');
+                        }
+                    }
+                }
+            }
+        });
+    }
 
     public function getTable(): string
     {

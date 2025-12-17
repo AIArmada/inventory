@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentTax\Resources\TaxExemptionResource\Schemas;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Tax\Models\TaxExemption;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
@@ -15,6 +17,8 @@ use Filament\Forms\Get as GetFormState;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 final class TaxExemptionForm
 {
@@ -37,30 +41,86 @@ final class TaxExemptionForm
                                     ->label('Customer/Entity')
                                     ->searchable()
                                     ->required()
-                                    ->options(function (GetFormState $get): array {
+                                    ->getSearchResultsUsing(function (string $search, GetFormState $get): array {
                                         $type = $get('exemptable_type');
 
-                                        if (! $type || ! class_exists($type)) {
+                                        if (! $type || ! class_exists($type) || ! is_a($type, Model::class, true)) {
                                             return [];
                                         }
 
-                                        if ($type === 'AIArmada\\Customers\\Models\\Customer' && class_exists($type)) {
-                                            return $type::query()
+                                        /** @var Builder<Model> $query */
+                                        $query = $type::query();
+
+                                        if (in_array(HasOwner::class, class_uses_recursive($type), true)) {
+                                            $query = TaxOwnerScope::applyToOwnedQuery($query);
+                                        }
+
+                                        if ($type === 'AIArmada\\Customers\\Models\\Customer') {
+                                            return $query
+                                                ->where(function (Builder $builder) use ($search): void {
+                                                    $builder
+                                                        ->where('full_name', 'like', "%{$search}%")
+                                                        ->orWhere('email', 'like', "%{$search}%");
+                                                })
+                                                ->limit(50)
                                                 ->get()
                                                 ->mapWithKeys(fn ($c): array => [$c->id => $c->full_name . ' (' . $c->email . ')'])
                                                 ->toArray();
                                         }
 
-                                        if ($type === 'AIArmada\\Customers\\Models\\CustomerGroup' && class_exists($type)) {
-                                            return $type::pluck('name', 'id')->toArray();
+                                        if ($type === 'AIArmada\\Customers\\Models\\CustomerGroup') {
+                                            return $query
+                                                ->where('name', 'like', "%{$search}%")
+                                                ->limit(50)
+                                                ->pluck('name', 'id')
+                                                ->toArray();
                                         }
 
-                                        return [];
+                                        return $query
+                                            ->where(function (Builder $builder) use ($search): void {
+                                                $builder
+                                                    ->where('name', 'like', "%{$search}%")
+                                                    ->orWhere('email', 'like', "%{$search}%");
+                                            })
+                                            ->limit(50)
+                                            ->get()
+                                            ->mapWithKeys(fn (Model $m): array => [$m->getKey() => (string) ($m->name ?? $m->email ?? $m->getKey())])
+                                            ->toArray();
+                                    })
+                                    ->getOptionLabelUsing(function ($value, GetFormState $get): ?string {
+                                        $type = $get('exemptable_type');
+
+                                        if ($value === null || ! $type || ! class_exists($type) || ! is_a($type, Model::class, true)) {
+                                            return null;
+                                        }
+
+                                        /** @var Builder<Model> $query */
+                                        $query = $type::query();
+
+                                        if (in_array(HasOwner::class, class_uses_recursive($type), true)) {
+                                            $query = TaxOwnerScope::applyToOwnedQuery($query);
+                                        }
+
+                                        $record = $query->whereKey($value)->first();
+
+                                        if (! $record) {
+                                            return null;
+                                        }
+
+                                        if ($type === 'AIArmada\\Customers\\Models\\Customer') {
+                                            return $record->full_name . ' (' . $record->email . ')';
+                                        }
+
+                                        return (string) ($record->name ?? $record->email ?? $record->getKey());
                                     }),
 
                                 Select::make('tax_zone_id')
                                     ->label('Tax Zone')
-                                    ->relationship('taxZone', 'name')
+                                    ->relationship(
+                                        'taxZone',
+                                        'name',
+                                        modifyQueryUsing: fn (Builder $query): Builder => TaxOwnerScope::applyToOwnedQuery($query),
+                                    )
                                     ->searchable()
                                     ->preload()
                                     ->placeholder('All Zones')
