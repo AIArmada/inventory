@@ -11,15 +11,13 @@ Before you say work is complete, you MUST ensure ALL of the following are green 
 
 ## Scope (Mandatory)
 - Never run repo-wide commands.
-- Treat scope as a wildcard by default: derive the affected packages from `git diff` and run checks only for those packages.
+- Treat scope as a wildcard by default: scope tools/tests to the packages implied by the **files you are actively working on** (any path under `packages/<pkg>/...` that you edit in this task).
+- **MUST / CRITICAL**: Do not touch unrelated packages. Do not “cleanup”, revert, or fix other packages just because a tool/test reports issues there. Ignore out-of-scope packages (even if failing) and only modify the affected package(s).
 
-```bash
-# Determine affected packages (staged + unstaged)
-(
-  git diff --name-only --cached
-  git diff --name-only
-) | awk -F/ '/^packages\/[^/]+\//{print $2}' | sort -u
-```
+How to pick `<pkg>` (no `git diff`):
+- If you edit `packages/cart/...` then `<pkg>` is `cart`.
+- If you edit multiple packages, run verification per each touched package.
+- If you didn’t touch any `packages/<pkg>/...` path, do not run package-scoped tooling.
 
 ## Verification (Per Affected Package)
 
@@ -74,7 +72,7 @@ The ultimate goal is to **ELIMINATE all bugs.**
 
 ### 1. Targeted Execution (PRIMARY)
 **Never run repo-wide tests.**
-Run tests only for the **affected package(s)** (derived from `git diff`).
+Run tests only for the **package(s) you are actively working on** (based on the `packages/<pkg>/...` file paths you touched in this task).
 ```bash
 # Single File (Dev Loop) -> ALWAYS save output
 ./vendor/bin/pest tests/src/<PackageName>/Unit/Test.php 2>&1 | tee /tmp/test-output.txt

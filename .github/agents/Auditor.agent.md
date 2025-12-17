@@ -16,15 +16,13 @@ Before you claim anything is "done", you MUST ensure ALL of the following are gr
 
 ## Scope (Mandatory)
 - Never run repo-wide commands.
-- Treat scope as a wildcard by default: derive the affected packages from `git diff` and run checks only for those packages.
+- Treat scope as a wildcard by default: scope tools/tests to the packages implied by the **files you are actively working on** (any path under `packages/<pkg>/...` that you edit in this task).
+- **MUST / CRITICAL**: Do not touch unrelated packages. Do not “cleanup”, revert, or fix other packages just because a tool/test reports issues there. Ignore out-of-scope packages (even if failing) and only modify the affected package(s).
 
-```bash
-# Determine affected packages (staged + unstaged)
-(
-  git diff --name-only --cached
-  git diff --name-only
-) | awk -F/ '/^packages\/[^/]+\//{print $2}' | sort -u
-```
+How to pick `<pkg>` (no `git diff`):
+- If you edit `packages/cart/...` then `<pkg>` is `cart`.
+- If you edit multiple packages, run verification per each touched package.
+- If you didn’t touch any `packages/<pkg>/...` path, do not run package-scoped tooling.
 
 ## Verification (Per Affected Package)
 
@@ -148,15 +146,10 @@ Fix:
 ./vendor/bin/pint packages/<pkg>/src
 ```
 
-### Final Verification (Per Affected Package Only)
+### Final Verification (Per Touched Package Only)
 ```bash
-# Determine affected packages (staged + unstaged)
-(
-  git diff --name-only --cached
-  git diff --name-only
-) | awk -F/ '/^packages\/[^/]+\//{print $2}' | sort -u
-
-# Then, for each <pkg>
+# Use ONLY packages implied by the files you touched in this task.
+# For each touched <pkg>:
 ./vendor/bin/rector process packages/<pkg>/src --no-progress-bar 2>&1 | tee /tmp/rector-output-<pkg>.txt
 ./vendor/bin/pint packages/<pkg>/src 2>&1 | tee /tmp/pint-output-<pkg>.txt
 ./vendor/bin/phpstan analyse packages/<pkg>/src --level=6 2>&1 | tee /tmp/phpstan-output-<pkg>.txt
