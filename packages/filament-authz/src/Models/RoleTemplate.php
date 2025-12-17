@@ -149,7 +149,10 @@ class RoleTemplate extends Model
      */
     public function createRole(string $name, array $overrides = []): Role
     {
-        $role = Role::create(array_merge([
+        /** @var class-string<Role> $roleClass */
+        $roleClass = config('permission.models.role', Role::class);
+
+        $role = $roleClass::create(array_merge([
             'name' => $name,
             'guard_name' => $this->guard_name,
             'template_id' => $this->id,
@@ -243,14 +246,26 @@ class RoleTemplate extends Model
     {
         static::deleting(function (RoleTemplate $template): void {
             // Reassign children to parent
-            self::query()
-                ->where('parent_id', $template->id)
-                ->update(['parent_id' => $template->parent_id]);
+            $childrenQuery = self::query()->where('parent_id', $template->id);
+
+            if (config('filament-authz.owner.enabled', false)) {
+                if ($template->owner_type === null || $template->owner_id === null) {
+                    $childrenQuery->whereNull('owner_type')->whereNull('owner_id');
+                } else {
+                    $childrenQuery->where('owner_type', $template->owner_type)
+                        ->where('owner_id', $template->owner_id);
+                }
+            }
+
+            $childrenQuery->update(['parent_id' => $template->parent_id]);
 
             // Disassociate roles from this template
-            Role::query()
-                ->where('template_id', $template->id)
-                ->update(['template_id' => null]);
+            /** @var class-string<Model> $roleClass */
+            $roleClass = config('permission.models.role', Role::class);
+
+            $roleQuery = $roleClass::query()->where('template_id', $template->id);
+
+            $roleQuery->update(['template_id' => null]);
         });
     }
 

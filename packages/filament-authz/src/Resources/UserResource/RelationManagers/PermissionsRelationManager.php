@@ -23,8 +23,6 @@ class PermissionsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        $guards = (array) config('filament-authz.guards');
-
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable(),
@@ -33,7 +31,7 @@ class PermissionsRelationManager extends RelationManager
             ->headerActions([
                 AttachAction::make()
                     ->preloadRecordSelect()
-                    ->recordSelectOptionsQuery(fn ($query) => $query->where('guard_name', config('filament-authz.default_guard_name')))
+                    ->recordSelectOptionsQuery(fn ($query) => $query->where('guard_name', config('filament-authz.default_guard')))
                     ->after(fn () => app(PermissionRegistrar::class)->forgetCachedPermissions()),
             ])
             ->recordActions([

@@ -6,6 +6,7 @@ namespace AIArmada\FilamentAuthz\Console;
 
 use AIArmada\FilamentAuthz\Enums\SetupStage;
 use AIArmada\FilamentAuthz\Services\EntityDiscoveryService;
+use AIArmada\FilamentAuthz\Support\UserModelResolver;
 use Filament\Facades\Filament;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
@@ -112,7 +113,7 @@ class SetupCommand extends Command
         $this->displayDetection('Existing Config', $hasConfig, $hasConfig ? 'Will be updated' : 'Will be created');
 
         // Detect User model
-        $userModel = config('auth.providers.users.model', 'App\\Models\\User');
+        $userModel = UserModelResolver::resolve();
         $hasRoles = class_exists($userModel) && in_array(HasRoles::class, class_uses_recursive($userModel));
         $this->displayDetection('User Model HasRoles', $hasRoles, $userModel);
         $this->state['userModel'] = $userModel;

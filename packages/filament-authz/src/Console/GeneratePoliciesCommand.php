@@ -7,6 +7,7 @@ namespace AIArmada\FilamentAuthz\Console;
 use AIArmada\FilamentAuthz\Enums\PolicyType;
 use AIArmada\FilamentAuthz\Services\EntityDiscoveryService;
 use AIArmada\FilamentAuthz\Services\PolicyGeneratorService;
+use AIArmada\FilamentAuthz\Support\UserModelResolver;
 use AIArmada\FilamentAuthz\ValueObjects\DiscoveredResource;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
@@ -57,7 +58,7 @@ class GeneratePoliciesCommand extends Command
 
             $options = [
                 'namespace' => $this->option('namespace') ?? 'App\\Policies',
-                'userModel' => config('filament-authz.user_model', 'App\\Models\\User'),
+                'userModel' => UserModelResolver::resolve(),
             ];
 
             $policy = $generator->generate($modelClass, $type, $options);

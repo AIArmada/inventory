@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAuthz\Models;
 
+use AIArmada\FilamentAuthz\Support\UserModelResolver;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -44,7 +45,7 @@ class Delegation extends Model
      */
     public function delegator(): BelongsTo
     {
-        $userModel = config('filament-authz.user_model', 'App\\Models\\User');
+        $userModel = UserModelResolver::resolve();
 
         return $this->belongsTo($userModel, 'delegator_id');
     }
@@ -54,7 +55,7 @@ class Delegation extends Model
      */
     public function delegatee(): BelongsTo
     {
-        $userModel = config('filament-authz.user_model', 'App\\Models\\User');
+        $userModel = UserModelResolver::resolve();
 
         return $this->belongsTo($userModel, 'delegatee_id');
     }

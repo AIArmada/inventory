@@ -8,6 +8,7 @@ use AIArmada\FilamentAuthz\Enums\PolicyCombiningAlgorithm;
 use AIArmada\FilamentAuthz\Enums\PolicyDecision;
 use AIArmada\FilamentAuthz\Enums\PolicyEffect;
 use AIArmada\FilamentAuthz\Models\AccessPolicy;
+use Illuminate\Cache\TaggableStore;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -15,12 +16,16 @@ class PolicyEngine
 {
     protected const CACHE_KEY_PREFIX = 'permissions:policies:';
 
+    protected const CACHE_KEYS_INDEX_KEY = self::CACHE_KEY_PREFIX . 'keys-index';
+
     protected PolicyCombiningAlgorithm $combiningAlgorithm;
 
     public function __construct()
     {
+        $configured = config('filament-authz.policies.combining_algorithm');
+
         $this->combiningAlgorithm = PolicyCombiningAlgorithm::from(
-            config('filament-authz.policies.combining_algorithm', 'deny-overrides')
+            $configured ?? PolicyCombiningAlgorithm::DenyOverrides->value
         );
     }
 
@@ -93,7 +98,13 @@ class PolicyEngine
         }
 
         // Evaluate conditions
-        if (! $policy->evaluateConditions($context)) {
+        $conditionsResult = $policy->evaluateConditions($context);
+
+        if ($conditionsResult === null) {
+            return PolicyDecision::Indeterminate;
+        }
+
+        if ($conditionsResult === false) {
             return PolicyDecision::NotApplicable;
         }
 
@@ -111,9 +122,15 @@ class PolicyEngine
     public function getApplicablePolicies(string $action, string $resource): Collection
     {
         $cacheKey = self::CACHE_KEY_PREFIX . "applicable:{$action}:{$resource}";
-        $ttl = config('filament-authz.cache_ttl', 3600);
+        $ttl = (int) config('filament-authz.policies.cache_ttl', 300);
 
-        return Cache::remember($cacheKey, $ttl, function () use ($action, $resource): Collection {
+        $cache = Cache::getStore() instanceof TaggableStore
+            ? Cache::tags(['filament-authz', 'policies'])
+            : Cache::store();
+
+        return $cache->remember($cacheKey, $ttl, function () use ($action, $resource, $cacheKey): Collection {
+            $this->trackCacheKey($cacheKey);
+
             return AccessPolicy::query()
                 ->where('is_active', true)
                 ->where(function ($query) use ($action): void {
@@ -123,6 +140,9 @@ class PolicyEngine
                 ->where(function ($query) use ($resource): void {
                     $query->where('target_resource', $resource)
                         ->orWhere('target_resource', '*');
+
+                    // Treat NULL target_resource as "all resources".
+                    $query->orWhereNull('target_resource');
                 })
                 ->orderBy('priority', 'desc')
                 ->get();
@@ -216,12 +236,48 @@ class PolicyEngine
      */
     public function clearCache(): void
     {
-        // Get all cached policy keys and clear them
-        // In a real implementation, you might want to use cache tags
-        $policies = AccessPolicy::all();
+        if (Cache::getStore() instanceof TaggableStore) {
+            Cache::tags(['filament-authz', 'policies'])->flush();
 
-        foreach ($policies as $policy) {
-            Cache::forget(self::CACHE_KEY_PREFIX . "applicable:{$policy->target_action}:{$policy->target_resource}");
+            return;
         }
+
+        $keys = Cache::get(self::CACHE_KEYS_INDEX_KEY, []);
+
+        if (! is_array($keys)) {
+            Cache::forget(self::CACHE_KEYS_INDEX_KEY);
+
+            return;
+        }
+
+        foreach ($keys as $key) {
+            if (! is_string($key)) {
+                continue;
+            }
+
+            Cache::forget($key);
+        }
+
+        Cache::forget(self::CACHE_KEYS_INDEX_KEY);
+    }
+
+    private function trackCacheKey(string $key): void
+    {
+        $existing = Cache::get(self::CACHE_KEYS_INDEX_KEY, []);
+
+        if (! is_array($existing)) {
+            $existing = [];
+        }
+
+        $existing[] = $key;
+
+        $unique = array_values(array_unique(array_filter($existing, fn ($value): bool => is_string($value) && filled($value))));
+
+        // Prevent unbounded growth.
+        if (count($unique) > 5000) {
+            $unique = array_slice($unique, -5000);
+        }
+
+        Cache::put(self::CACHE_KEYS_INDEX_KEY, $unique, now()->addDay());
     }
 }

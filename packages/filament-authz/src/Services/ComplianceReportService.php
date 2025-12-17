@@ -13,6 +13,19 @@ use Illuminate\Support\Facades\DB;
 
 class ComplianceReportService
 {
+    private function hourExpressionSql(): string
+    {
+        return match (DB::getDriverName()) {
+            'pgsql' => 'EXTRACT(HOUR FROM created_at)',
+            'sqlite' => "CAST(strftime('%H', created_at) AS INTEGER)",
+            default => 'HOUR(created_at)',
+        };
+    }
+
+    private function dateExpressionSql(): string
+    {
+        return 'DATE(created_at)';
+    }
     /**
      * Generate a compliance report for a date range.
      *
@@ -137,18 +150,22 @@ class ComplianceReportService
     public function getAccessPatterns(Carbon $startDate, Carbon $endDate): array
     {
         // Peak hours analysis
+        $hourExpression = $this->hourExpressionSql();
+
         $hourlyDistribution = PermissionAuditLog::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->select(DB::raw('HOUR(created_at) as hour'), DB::raw('count(*) as count'))
-            ->groupBy(DB::raw('HOUR(created_at)'))
+            ->selectRaw($hourExpression.' as hour, count(*) as count')
+            ->groupByRaw($hourExpression)
             ->pluck('count', 'hour')
             ->toArray();
 
         // Daily distribution
+        $dateExpression = $this->dateExpressionSql();
+
         $dailyDistribution = PermissionAuditLog::query()
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->select(DB::raw('DATE(created_at) as date'), DB::raw('count(*) as count'))
-            ->groupBy(DB::raw('DATE(created_at)'))
+            ->selectRaw($dateExpression.' as date, count(*) as count')
+            ->groupByRaw($dateExpression)
             ->pluck('count', 'date')
             ->toArray();
 

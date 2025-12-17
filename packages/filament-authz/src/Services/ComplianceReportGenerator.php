@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAuthz\Services;
 
+use AIArmada\FilamentAuthz\Support\UserModelResolver;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Spatie\Permission\Models\Permission;
@@ -29,7 +30,7 @@ class ComplianceReportGenerator
         ];
 
         // User Access Summary
-        $userModel = config('filament-authz.user_model', 'App\\Models\\User');
+        $userModel = UserModelResolver::resolve();
         $userCount = 0;
         $usersWithRoles = 0;
 
@@ -160,7 +161,7 @@ class ComplianceReportGenerator
             $q->whereIn('id', $piiPermissions->pluck('id'));
         })->get();
 
-        $userModel = config('filament-authz.user_model', 'App\\Models\\User');
+        $userModel = UserModelResolver::resolve();
         $usersWithPiiAccess = 0;
 
         if (class_exists($userModel)) {

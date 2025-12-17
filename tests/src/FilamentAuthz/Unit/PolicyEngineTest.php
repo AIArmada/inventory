@@ -329,7 +329,12 @@ test('getApplicablePolicies caches results', function (): void {
     $this->policyEngine->getApplicablePolicies('orders.view', 'orders');
 
     // Verify cache key exists
-    expect(Cache::has('permissions:policies:applicable:orders.view:orders'))->toBeTrue();
+    $cacheKey = 'permissions:policies:applicable:orders.view:orders';
+    $hasKey = Cache::getStore() instanceof \Illuminate\Cache\TaggableStore
+        ? Cache::tags(['filament-authz', 'policies'])->has($cacheKey)
+        : Cache::has($cacheKey);
+
+    expect($hasKey)->toBeTrue();
 });
 
 test('clearCache removes cached policies', function (): void {
@@ -350,7 +355,12 @@ test('clearCache removes cached policies', function (): void {
     $this->policyEngine->clearCache();
 
     // Cache should be cleared
-    expect(Cache::has('permissions:policies:applicable:orders.view:orders'))->toBeFalse();
+    $cacheKey = 'permissions:policies:applicable:orders.view:orders';
+    $hasKey = Cache::getStore() instanceof \Illuminate\Cache\TaggableStore
+        ? Cache::tags(['filament-authz', 'policies'])->has($cacheKey)
+        : Cache::has($cacheKey);
+
+    expect($hasKey)->toBeFalse();
 });
 
 test('deny overrides algorithm denies when any policy denies', function (): void {

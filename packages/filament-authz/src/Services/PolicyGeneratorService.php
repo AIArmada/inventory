@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentAuthz\Services;
 
 use AIArmada\FilamentAuthz\Enums\PolicyType;
+use AIArmada\FilamentAuthz\Support\UserModelResolver;
 use Illuminate\Support\Str;
 
 class PolicyGeneratorService
@@ -30,7 +31,7 @@ class PolicyGeneratorService
         $modelBasename = class_basename($modelClass);
         $policyClass = $options['className'] ?? "{$modelBasename}Policy";
         $namespace = $options['namespace'] ?? 'App\\Policies';
-        $userModel = $options['userModel'] ?? config('filament-authz.user_model', 'App\\Models\\User');
+        $userModel = $options['userModel'] ?? UserModelResolver::resolve();
         $permissionPrefix = $options['permissionPrefix'] ?? Str::snake($modelBasename);
 
         $stub = $this->getStub($type);

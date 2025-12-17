@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAuthz\Models;
 
+use AIArmada\FilamentAuthz\Support\UserModelResolver;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,7 +42,7 @@ class PermissionSnapshot extends Model
      */
     public function creator(): BelongsTo
     {
-        $userModel = config('filament-authz.user_model', 'App\\Models\\User');
+        $userModel = UserModelResolver::resolve();
 
         return $this->belongsTo($userModel, 'created_by');
     }

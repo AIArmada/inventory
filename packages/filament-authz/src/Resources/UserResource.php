@@ -6,7 +6,7 @@ namespace AIArmada\FilamentAuthz\Resources;
 
 use AIArmada\FilamentAuthz\Resources\UserResource\Pages;
 use AIArmada\FilamentAuthz\Resources\UserResource\RelationManagers;
-use App\Models\User;
+use AIArmada\FilamentAuthz\Support\UserModelResolver;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Resources\Resource;
@@ -23,7 +23,7 @@ class UserResource extends Resource
 
     public static function getModel(): string
     {
-        return (string) config('filament-authz.user_model', User::class);
+        return UserModelResolver::resolve();
     }
 
     public static function getNavigationGroup(): ?string

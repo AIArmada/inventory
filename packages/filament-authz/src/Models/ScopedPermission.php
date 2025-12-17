@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentAuthz\Models;
 
 use AIArmada\FilamentAuthz\Enums\PermissionScope;
+use AIArmada\FilamentAuthz\Support\UserModelResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -79,7 +80,7 @@ class ScopedPermission extends Model
      */
     public function granter(): BelongsTo
     {
-        $userModel = config('auth.providers.users.model', 'App\\Models\\User');
+        $userModel = UserModelResolver::resolve();
 
         return $this->belongsTo($userModel, 'granted_by');
     }

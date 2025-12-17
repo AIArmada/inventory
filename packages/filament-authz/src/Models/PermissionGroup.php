@@ -217,9 +217,18 @@ class PermissionGroup extends Model
     {
         static::deleting(function (PermissionGroup $group): void {
             // Reassign children to parent
-            self::query()
-                ->where('parent_id', $group->id)
-                ->update(['parent_id' => $group->parent_id]);
+            $childrenQuery = self::query()->where('parent_id', $group->id);
+
+            if (config('filament-authz.owner.enabled', false)) {
+                if ($group->owner_type === null || $group->owner_id === null) {
+                    $childrenQuery->whereNull('owner_type')->whereNull('owner_id');
+                } else {
+                    $childrenQuery->where('owner_type', $group->owner_type)
+                        ->where('owner_id', $group->owner_id);
+                }
+            }
+
+            $childrenQuery->update(['parent_id' => $group->parent_id]);
 
             // Detach permissions
             $group->permissions()->detach();
