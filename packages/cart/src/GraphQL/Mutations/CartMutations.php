@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AIArmada\Cart\GraphQL\Mutations;
 
-use AIArmada\Cart\CartManager;
 use AIArmada\Cart\Checkout\CheckoutSaga;
 use AIArmada\Cart\Commands\AddItemCommand;
 use AIArmada\Cart\Commands\ApplyConditionCommand;
@@ -12,6 +11,7 @@ use AIArmada\Cart\Commands\CartCommandBus;
 use AIArmada\Cart\Commands\ClearCartCommand;
 use AIArmada\Cart\Commands\RemoveItemCommand;
 use AIArmada\Cart\Commands\UpdateItemQuantityCommand;
+use AIArmada\Cart\Contracts\CartManagerInterface;
 use Throwable;
 
 /**
@@ -22,9 +22,10 @@ use Throwable;
 final class CartMutations
 {
     public function __construct(
-        private readonly CartManager $cartManager,
+        private readonly CartManagerInterface $cartManager,
         private readonly CartCommandBus $commandBus
-    ) {}
+    ) {
+    }
 
     /**
      * Get the mutations SDL.
@@ -150,11 +151,13 @@ GRAPHQL;
             return [
                 'success' => false,
                 'cart' => null,
-                'errors' => [[
-                    'code' => 'ADD_ITEM_FAILED',
-                    'message' => $e->getMessage(),
-                    'field' => null,
-                ]],
+                'errors' => [
+                    [
+                        'code' => 'ADD_ITEM_FAILED',
+                        'message' => $e->getMessage(),
+                        'field' => null,
+                    ]
+                ],
             ];
         }
     }
@@ -193,11 +196,13 @@ GRAPHQL;
             return [
                 'success' => false,
                 'cart' => null,
-                'errors' => [[
-                    'code' => 'UPDATE_ITEM_FAILED',
-                    'message' => $e->getMessage(),
-                    'field' => null,
-                ]],
+                'errors' => [
+                    [
+                        'code' => 'UPDATE_ITEM_FAILED',
+                        'message' => $e->getMessage(),
+                        'field' => null,
+                    ]
+                ],
             ];
         }
     }
@@ -233,11 +238,13 @@ GRAPHQL;
             return [
                 'success' => false,
                 'cart' => null,
-                'errors' => [[
-                    'code' => 'REMOVE_ITEM_FAILED',
-                    'message' => $e->getMessage(),
-                    'field' => null,
-                ]],
+                'errors' => [
+                    [
+                        'code' => 'REMOVE_ITEM_FAILED',
+                        'message' => $e->getMessage(),
+                        'field' => null,
+                    ]
+                ],
             ];
         }
     }
@@ -279,11 +286,13 @@ GRAPHQL;
             return [
                 'success' => false,
                 'cart' => null,
-                'errors' => [[
-                    'code' => 'APPLY_CONDITION_FAILED',
-                    'message' => $e->getMessage(),
-                    'field' => null,
-                ]],
+                'errors' => [
+                    [
+                        'code' => 'APPLY_CONDITION_FAILED',
+                        'message' => $e->getMessage(),
+                        'field' => null,
+                    ]
+                ],
             ];
         }
     }
@@ -313,11 +322,13 @@ GRAPHQL;
             return [
                 'success' => false,
                 'cart' => null,
-                'errors' => [[
-                    'code' => 'REMOVE_CONDITION_FAILED',
-                    'message' => $e->getMessage(),
-                    'field' => null,
-                ]],
+                'errors' => [
+                    [
+                        'code' => 'REMOVE_CONDITION_FAILED',
+                        'message' => $e->getMessage(),
+                        'field' => null,
+                    ]
+                ],
             ];
         }
     }
@@ -352,11 +363,13 @@ GRAPHQL;
             return [
                 'success' => false,
                 'cart' => null,
-                'errors' => [[
-                    'code' => 'CLEAR_CART_FAILED',
-                    'message' => $e->getMessage(),
-                    'field' => null,
-                ]],
+                'errors' => [
+                    [
+                        'code' => 'CLEAR_CART_FAILED',
+                        'message' => $e->getMessage(),
+                        'field' => null,
+                    ]
+                ],
             ];
         }
     }
@@ -400,11 +413,13 @@ GRAPHQL;
                 'orderId' => null,
                 'orderNumber' => null,
                 'paymentUrl' => null,
-                'errors' => [[
-                    'code' => 'CHECKOUT_FAILED',
-                    'message' => $e->getMessage(),
-                    'field' => null,
-                ]],
+                'errors' => [
+                    [
+                        'code' => 'CHECKOUT_FAILED',
+                        'message' => $e->getMessage(),
+                        'field' => null,
+                    ]
+                ],
             ];
         }
     }
@@ -422,7 +437,7 @@ GRAPHQL;
             'id' => $cart->getId(),
             'identifier' => $cart->getIdentifier(),
             'instance' => $cart->instance(),
-            'items' => $cart->getItems()->map(fn ($item) => [
+            'items' => $cart->getItems()->map(fn($item) => [
                 'id' => $item->id,
                 'name' => $item->name,
                 'price' => [
