@@ -8,12 +8,14 @@ use AIArmada\FilamentInventory\Resources\InventoryMovementResource\Pages\ListInv
 use AIArmada\FilamentInventory\Resources\InventoryMovementResource\Pages\ViewInventoryMovement;
 use AIArmada\FilamentInventory\Resources\InventoryMovementResource\Schemas\InventoryMovementInfolist;
 use AIArmada\FilamentInventory\Resources\InventoryMovementResource\Tables\InventoryMovementsTable;
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryMovement;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class InventoryMovementResource extends Resource
@@ -29,6 +31,13 @@ final class InventoryMovementResource extends Resource
     protected static ?string $modelLabel = 'Movement';
 
     protected static ?string $pluralModelLabel = 'Movements';
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = InventoryMovement::query()->with(['fromLocation', 'toLocation']);
+
+        return InventoryOwnerScope::applyToMovementQuery($query);
+    }
 
     public static function canCreate(): bool
     {

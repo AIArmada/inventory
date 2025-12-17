@@ -23,6 +23,7 @@ final class CancelOrderAction
             ->icon(Heroicon::XCircle)
             ->color('danger')
             ->requiresConfirmation()
+            ->authorize(fn (): bool => auth()->check())
             ->modalHeading('Cancel J&T Order')
             ->modalDescription('This will cancel the order with J&T Express. This action cannot be undone.')
             ->modalSubmitActionLabel('Cancel Order')
@@ -40,6 +41,16 @@ final class CancelOrderAction
                     ->visible(fn (callable $get): bool => $get('reason') === CancellationReason::OTHER->value),
             ])
             ->action(function (JntOrder $record, array $data): void {
+                if (auth()->user() === null) {
+                    Notification::make()
+                        ->title('Authentication Required')
+                        ->body('Please sign in to cancel orders.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 try {
                     $jntService = app(JntExpressService::class);
 
@@ -69,9 +80,11 @@ final class CancelOrderAction
                         ->success()
                         ->send();
                 } catch (Throwable $e) {
+                    report($e);
+
                     Notification::make()
                         ->title('Cancellation Failed')
-                        ->body($e->getMessage())
+                        ->body('Unable to cancel this order. Please try again or check logs.')
                         ->danger()
                         ->send();
                 }

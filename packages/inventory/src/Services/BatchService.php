@@ -10,6 +10,7 @@ use AIArmada\Inventory\Events\BatchExpired;
 use AIArmada\Inventory\Events\BatchRecalled;
 use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -36,6 +37,16 @@ final class BatchService
     ): InventoryBatch {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('Quantity must be positive');
+        }
+
+        if (InventoryOwnerScope::isEnabled()) {
+            $isAllowedLocation = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                ->whereKey($locationId)
+                ->exists();
+
+            if (! $isAllowedLocation) {
+                throw new InvalidArgumentException('Invalid location for current owner');
+            }
         }
 
         return DB::transaction(function () use (
@@ -79,7 +90,12 @@ final class BatchService
      */
     public function findByBatchNumber(string $batchNumber): ?InventoryBatch
     {
-        return InventoryBatch::where('batch_number', $batchNumber)->first();
+        return InventoryOwnerScope::applyToQueryByLocationRelation(
+            InventoryBatch::query(),
+            'location'
+        )
+            ->where('batch_number', $batchNumber)
+            ->first();
     }
 
     /**
@@ -89,7 +105,10 @@ final class BatchService
      */
     public function getBatchesForModel(Model $model): Collection
     {
-        return InventoryBatch::query()
+        return InventoryOwnerScope::applyToQueryByLocationRelation(
+            InventoryBatch::query(),
+            'location'
+        )
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->orderBy('expires_at')
@@ -104,7 +123,10 @@ final class BatchService
      */
     public function getAllocatableBatches(Model $model, ?string $locationId = null): Collection
     {
-        $query = InventoryBatch::query()
+        $query = InventoryOwnerScope::applyToQueryByLocationRelation(
+            InventoryBatch::query(),
+            'location'
+        )
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->allocatable()
@@ -122,7 +144,10 @@ final class BatchService
      */
     public function getTotalAvailable(Model $model, ?string $locationId = null): int
     {
-        $query = InventoryBatch::query()
+        $query = InventoryOwnerScope::applyToQueryByLocationRelation(
+            InventoryBatch::query(),
+            'location'
+        )
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->allocatable();

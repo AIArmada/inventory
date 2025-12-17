@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Products\Models;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Products\Contracts\Buyable;
 use AIArmada\Products\Contracts\Inventoryable;
@@ -15,6 +16,7 @@ use AIArmada\Products\Enums\ProductVisibility;
 use AIArmada\Products\Traits\HasAttributes;
 use Akaunting\Money\Money;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -69,7 +71,9 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
 {
     use HasAttributes;
     use HasFactory;
-    use HasOwner;
+    use HasOwner {
+        scopeForOwner as baseScopeForOwner;
+    }
     use HasSlug;
     use HasTags;
     use HasUuids;
@@ -113,6 +117,28 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
     public function getTable(): string
     {
         return config('products.tables.products', 'products');
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    {
+        if (! (bool) config('products.owner.enabled', true)) {
+            return $query;
+        }
+
+        if ($owner === null && app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        $includeGlobal = $includeGlobal && (bool) config('products.owner.include_global', true);
+
+        /** @var Builder<Product> $scoped */
+        $scoped = $this->baseScopeForOwner($query, $owner, $includeGlobal);
+
+        return $scoped;
     }
 
     // =========================================================================
@@ -542,6 +568,32 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
 
     protected static function booted(): void
     {
+        static::creating(function (Product $product): void {
+            if (! (bool) config('products.owner.enabled', true)) {
+                return;
+            }
+
+            if (! (bool) config('products.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            if ($product->owner_type !== null || $product->owner_id !== null) {
+                return;
+            }
+
+            if (! app()->bound(OwnerResolverInterface::class)) {
+                return;
+            }
+
+            $owner = app(OwnerResolverInterface::class)->resolve();
+
+            if ($owner === null) {
+                return;
+            }
+
+            $product->assignOwner($owner);
+        });
+
         static::deleting(function (Product $product): void {
             $product->options()->delete();
             $product->variants()->delete();

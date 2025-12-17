@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Resources\InventoryLevelResource\Schemas;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Enums\AllocationStrategy;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 final class InventoryLevelForm
 {
@@ -21,7 +23,11 @@ final class InventoryLevelForm
                     Grid::make(2)->schema([
                         Select::make('location_id')
                             ->label('Location')
-                            ->relationship('location', 'name')
+                            ->relationship(
+                                name: 'location',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToLocationQuery($query),
+                            )
                             ->required()
                             ->searchable()
                             ->preload()

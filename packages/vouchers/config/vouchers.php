@@ -30,8 +30,6 @@ return [
         'tables' => $tables,
     ],
 
-    'table_names' => $tables,
-
     /*
     |--------------------------------------------------------------------------
     | Defaults
@@ -40,6 +38,8 @@ return [
     'default_currency' => 'MYR',
 
     'code' => [
+        'prefix' => env('VOUCHERS_CODE_PREFIX', ''),
+        'length' => (int) env('VOUCHERS_CODE_LENGTH', 8),
         'auto_uppercase' => env('VOUCHERS_AUTO_UPPERCASE', true),
     ],
 
@@ -65,7 +65,7 @@ return [
         'rules' => [
             [
                 'type' => 'max_vouchers',
-                'value' => (int) env('VOUCHERS_MAX_PER_CART', 3),
+                'value' => (int) env('VOUCHERS_MAX_PER_CART', 1),
             ],
             [
                 'type' => 'max_discount_percentage',
@@ -184,9 +184,8 @@ return [
         | Affiliates Integration (aiarmada/affiliates)
         |----------------------------------------------------------------------
         |
-        | When the affiliates package is installed, vouchers can be directly
-               | When enabled, vouchers are automatically scoped to the current owner.
-               | The OwnerResolverInterface binding is provided by commerce-support.
+        | When the affiliates package is installed, vouchers can be linked to
+        | affiliates and optionally auto-created during affiliate lifecycle.
         */
         'affiliates' => [
             'enabled' => env('VOUCHERS_AFFILIATES_ENABLED', true),

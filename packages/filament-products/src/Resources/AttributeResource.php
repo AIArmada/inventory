@@ -16,6 +16,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use UnitEnum;
 
@@ -28,6 +29,12 @@ class AttributeResource extends Resource
     protected static string | UnitEnum | null $navigationGroup = 'Catalog';
 
     protected static ?int $navigationSort = 40;
+
+    public static function getEloquentQuery(): Builder
+    {
+        return Attribute::query()
+            ->forOwner();
+    }
 
     public static function getNavigationLabel(): string
     {
@@ -82,7 +89,14 @@ class AttributeResource extends Resource
                         Forms\Components\Select::make('groups')
                             ->label(__('filament-products::resources.attributes.fields.groups'))
                             ->multiple()
-                            ->relationship('groups', 'name')
+                            ->relationship(
+                                'groups',
+                                'name',
+                                modifyQueryUsing: function (Builder $query): Builder {
+                                    /** @var Builder<\AIArmada\Products\Models\AttributeGroup> $query */
+                                    return $query->forOwner();
+                                }
+                            )
                             ->preload()
                             ->searchable()
                             ->createOptionForm([
@@ -240,7 +254,14 @@ class AttributeResource extends Resource
 
                 Tables\Filters\SelectFilter::make('groups')
                     ->label(__('filament-products::resources.attributes.fields.groups'))
-                    ->relationship('groups', 'name')
+                    ->relationship(
+                        'groups',
+                        'name',
+                        modifyQueryUsing: function (Builder $query): Builder {
+                            /** @var Builder<\AIArmada\Products\Models\AttributeGroup> $query */
+                            return $query->forOwner();
+                        }
+                    )
                     ->multiple()
                     ->preload(),
 

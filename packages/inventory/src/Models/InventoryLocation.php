@@ -166,9 +166,7 @@ final class InventoryLocation extends Model
         }
 
         if (! $owner) {
-            return $includeGlobal
-                ? $query->whereNull('owner_id')
-                : $query->whereNull('owner_type')->whereNull('owner_id');
+            return $query->whereNull('owner_type')->whereNull('owner_id');
         }
 
         return $query->where(function (Builder $builder) use ($owner, $includeGlobal): void {

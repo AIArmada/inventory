@@ -9,10 +9,12 @@ use AIArmada\Inventory\Models\InventoryCostLayer;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryValuationSnapshot;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 final class ValuationService
 {
@@ -47,6 +49,8 @@ final class ValuationService
      */
     public function getLocationValuation(string $locationId, CostingMethod $method): array
     {
+        $this->getScopedLocationOrFail($locationId);
+
         $layers = InventoryCostLayer::query()
             ->where('location_id', $locationId)
             ->withRemainingQuantity()
@@ -77,10 +81,23 @@ final class ValuationService
      */
     public function getTotalValuation(CostingMethod $method): array
     {
-        $layers = InventoryCostLayer::query()
+        $query = InventoryCostLayer::query()
             ->withRemainingQuantity()
-            ->usingMethod($method)
-            ->get();
+            ->usingMethod($method);
+
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
+        $layers = $query->get();
 
         $totalQuantity = 0;
         $totalValue = 0;
@@ -114,6 +131,10 @@ final class ValuationService
     ): InventoryValuationSnapshot {
         $snapshotDate = $snapshotDate ?? today();
 
+        $location = $locationId !== null
+            ? $this->getScopedLocationOrFail($locationId)
+            : null;
+
         $valuation = $locationId !== null
             ? $this->getLocationValuation($locationId, $method)
             : $this->getTotalValuation($method);
@@ -125,7 +146,11 @@ final class ValuationService
 
         $breakdown = $this->getBreakdownByCategory($method, $locationId);
 
+        $owner = $location?->owner ?? InventoryOwnerScope::resolveOwner();
+
         return InventoryValuationSnapshot::create([
+            'owner_type' => $owner?->getMorphClass(),
+            'owner_id' => $owner?->getKey(),
             'location_id' => $locationId,
             'costing_method' => $method,
             'snapshot_date' => $snapshotDate,
@@ -150,7 +175,12 @@ final class ValuationService
             ->usingMethod($method)
             ->latestBySnapshotDate();
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $query->forOwner(InventoryOwnerScope::resolveOwner(), InventoryOwnerScope::includeGlobal());
+        }
+
         if ($locationId !== null) {
+            $this->getScopedLocationOrFail($locationId);
             $query->forLocation($locationId);
         } else {
             $query->allLocations();
@@ -175,7 +205,12 @@ final class ValuationService
             ->betweenDates($from, $to)
             ->orderBy('snapshot_date');
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $query->forOwner(InventoryOwnerScope::resolveOwner(), InventoryOwnerScope::includeGlobal());
+        }
+
         if ($locationId !== null) {
+            $this->getScopedLocationOrFail($locationId);
             $query->forLocation($locationId);
         } else {
             $query->allLocations();
@@ -218,7 +253,7 @@ final class ValuationService
      */
     public function generateLocationReport(CostingMethod $method): array
     {
-        $locations = InventoryLocation::query()
+        $locations = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
             ->where('is_active', true)
             ->get();
 
@@ -252,7 +287,7 @@ final class ValuationService
 
             $snapshots->push($this->createSnapshot($method));
 
-            $locations = InventoryLocation::query()
+            $locations = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
                 ->where('is_active', true)
                 ->get();
 
@@ -275,7 +310,12 @@ final class ValuationService
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
 
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
+
         if ($locationId !== null) {
+            $this->getScopedLocationOrFail($locationId);
             $query->where('location_id', $locationId);
         }
 
@@ -303,7 +343,20 @@ final class ValuationService
             ->selectRaw('inventoryable_type, SUM(remaining_quantity) as units, SUM(remaining_quantity * unit_cost_minor) as value')
             ->groupBy('inventoryable_type');
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            $this->getScopedLocationOrFail($locationId);
             $query->where('location_id', $locationId);
         }
 
@@ -318,5 +371,18 @@ final class ValuationService
         }
 
         return $breakdown;
+    }
+
+    private function getScopedLocationOrFail(string $locationId): InventoryLocation
+    {
+        $query = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query());
+
+        $location = $query->whereKey($locationId)->first();
+
+        if ($location === null) {
+            throw new InvalidArgumentException('Invalid location for current owner');
+        }
+
+        return $location;
     }
 }

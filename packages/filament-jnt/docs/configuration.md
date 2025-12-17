@@ -17,7 +17,7 @@ php artisan vendor:publish --tag=filament-jnt-config
 ### Navigation Group
 
 ```php
-'navigation_group' => 'J&T Express',
+'navigation_group' => 'Shipping',
 ```
 
 Controls the navigation group label for all J&T resources. Set to `null` to place resources at the root level.

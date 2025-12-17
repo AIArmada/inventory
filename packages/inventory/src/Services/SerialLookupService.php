@@ -7,6 +7,7 @@ namespace AIArmada\Inventory\Services;
 use AIArmada\Inventory\Enums\SerialCondition;
 use AIArmada\Inventory\Enums\SerialStatus;
 use AIArmada\Inventory\Models\InventorySerial;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -19,7 +20,10 @@ final class SerialLookupService
      */
     public function findBySerialNumber(string $serialNumber): ?InventorySerial
     {
-        return InventorySerial::where('serial_number', $serialNumber)->first();
+        $query = InventorySerial::query()->where('serial_number', $serialNumber);
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->first();
     }
 
     /**
@@ -27,7 +31,10 @@ final class SerialLookupService
      */
     public function findBySerialNumberOrFail(string $serialNumber): InventorySerial
     {
-        return InventorySerial::where('serial_number', $serialNumber)->firstOrFail();
+        $query = InventorySerial::query()->where('serial_number', $serialNumber);
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->firstOrFail();
     }
 
     /**
@@ -37,11 +44,14 @@ final class SerialLookupService
      */
     public function searchBySerialNumber(string $partialSerialNumber, int $limit = 25): Collection
     {
-        return InventorySerial::query()
+        $query = InventorySerial::query()
             ->where('serial_number', 'like', "%{$partialSerialNumber}%")
             ->orderBy('serial_number')
-            ->limit($limit)
-            ->get();
+            ->limit($limit);
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -49,7 +59,10 @@ final class SerialLookupService
      */
     public function findByOrderId(string $orderId): ?InventorySerial
     {
-        return InventorySerial::where('order_id', $orderId)->first();
+        $query = InventorySerial::query()->where('order_id', $orderId);
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->first();
     }
 
     /**
@@ -59,7 +72,10 @@ final class SerialLookupService
      */
     public function getAllByOrderId(string $orderId): Collection
     {
-        return InventorySerial::where('order_id', $orderId)->get();
+        $query = InventorySerial::query()->where('order_id', $orderId);
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -69,9 +85,13 @@ final class SerialLookupService
      */
     public function getByCustomerId(string $customerId): Collection
     {
-        return InventorySerial::where('customer_id', $customerId)
-            ->orderBy('sold_at', 'desc')
-            ->get();
+        $query = InventorySerial::query()
+            ->where('customer_id', $customerId)
+            ->orderBy('sold_at', 'desc');
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -81,11 +101,14 @@ final class SerialLookupService
      */
     public function getForModel(Model $model): Collection
     {
-        return InventorySerial::query()
+        $query = InventorySerial::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
-            ->orderBy('created_at')
-            ->get();
+            ->orderBy('created_at');
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -95,10 +118,13 @@ final class SerialLookupService
      */
     public function getAtLocation(string $locationId): Collection
     {
-        return InventorySerial::query()
+        $query = InventorySerial::query()
             ->atLocation($locationId)
-            ->orderBy('serial_number')
-            ->get();
+            ->orderBy('serial_number');
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -108,9 +134,13 @@ final class SerialLookupService
      */
     public function getByBatch(string $batchId): Collection
     {
-        return InventorySerial::where('batch_id', $batchId)
-            ->orderBy('serial_number')
-            ->get();
+        $query = InventorySerial::query()
+            ->where('batch_id', $batchId)
+            ->orderBy('serial_number');
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -120,9 +150,13 @@ final class SerialLookupService
      */
     public function getByStatus(SerialStatus $status): Collection
     {
-        return InventorySerial::where('status', $status->value)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = InventorySerial::query()
+            ->where('status', $status->value)
+            ->orderBy('created_at', 'desc');
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -132,9 +166,13 @@ final class SerialLookupService
      */
     public function getByCondition(SerialCondition $condition): Collection
     {
-        return InventorySerial::where('condition', $condition->value)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = InventorySerial::query()
+            ->where('condition', $condition->value)
+            ->orderBy('created_at', 'desc');
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -153,6 +191,8 @@ final class SerialLookupService
             $query->atLocation($locationId);
         }
 
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
         return $query->get();
     }
 
@@ -163,12 +203,15 @@ final class SerialLookupService
      */
     public function getExpiringWarranty(int $daysAhead = 30): Collection
     {
-        return InventorySerial::query()
+        $query = InventorySerial::query()
             ->whereNotNull('warranty_expires_at')
             ->where('warranty_expires_at', '>', now())
             ->where('warranty_expires_at', '<=', now()->addDays($daysAhead))
-            ->orderBy('warranty_expires_at')
-            ->get();
+            ->orderBy('warranty_expires_at');
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -178,13 +221,16 @@ final class SerialLookupService
      */
     public function getCustomerWarrantyItems(string $customerId): Collection
     {
-        return InventorySerial::query()
+        $query = InventorySerial::query()
             ->where('customer_id', $customerId)
             ->where('status', SerialStatus::Sold->value)
             ->whereNotNull('warranty_expires_at')
             ->where('warranty_expires_at', '>', now())
-            ->orderBy('warranty_expires_at')
-            ->get();
+            ->orderBy('warranty_expires_at');
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -199,6 +245,8 @@ final class SerialLookupService
 
         $this->applyCriteria($query, $criteria);
 
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
@@ -209,13 +257,16 @@ final class SerialLookupService
      */
     public function countByStatus(Model $model): array
     {
-        $counts = InventorySerial::query()
+        $countsQuery = InventorySerial::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->selectRaw('status, count(*) as count')
             ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
+            ;
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($countsQuery, 'location');
+
+        $counts = $countsQuery->pluck('count', 'status')->toArray();
 
         $result = [];
         foreach (SerialStatus::cases() as $status) {
@@ -232,13 +283,16 @@ final class SerialLookupService
      */
     public function countByCondition(Model $model): array
     {
-        $counts = InventorySerial::query()
+        $countsQuery = InventorySerial::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->selectRaw('`condition`, count(*) as count')
             ->groupBy('condition')
-            ->pluck('count', 'condition')
-            ->toArray();
+            ;
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($countsQuery, 'location');
+
+        $counts = $countsQuery->pluck('count', 'condition')->toArray();
 
         $result = [];
         foreach (SerialCondition::cases() as $condition) {
@@ -253,9 +307,13 @@ final class SerialLookupService
      */
     public function getTotalValue(string $locationId): int
     {
-        return (int) InventorySerial::query()
+        $query = InventorySerial::query()
             ->atLocation($locationId)
-            ->sum('unit_cost_minor');
+            ;
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return (int) $query->sum('unit_cost_minor');
     }
 
     /**
@@ -271,6 +329,8 @@ final class SerialLookupService
             $query->where('status', $status);
         }
 
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
         return (int) $query->sum('unit_cost_minor');
     }
 
@@ -279,7 +339,10 @@ final class SerialLookupService
      */
     public function serialNumberExists(string $serialNumber): bool
     {
-        return InventorySerial::where('serial_number', $serialNumber)->exists();
+        $query = InventorySerial::query()->where('serial_number', $serialNumber);
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->exists();
     }
 
     /**
@@ -290,7 +353,10 @@ final class SerialLookupService
      */
     public function validateSerialNumbers(array $serialNumbers): array
     {
-        $existing = InventorySerial::whereIn('serial_number', $serialNumbers)
+        $existingQuery = InventorySerial::query()->whereIn('serial_number', $serialNumbers);
+        InventoryOwnerScope::applyToQueryByLocationRelation($existingQuery, 'location');
+
+        $existing = $existingQuery
             ->pluck('serial_number')
             ->toArray();
 

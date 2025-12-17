@@ -10,7 +10,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(config('vouchers.table_names.voucher_wallets', 'voucher_wallets'), function (Blueprint $table): void {
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['voucher_wallets'] ?? $prefix.'voucher_wallets';
+
+        Schema::create($tableName, function (Blueprint $table): void {
             $jsonType = (string) commerce_json_column_type('vouchers', 'json');
 
             $table->uuid('id')->primary();
@@ -40,6 +45,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists(config('vouchers.table_names.voucher_wallets', 'voucher_wallets'));
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['voucher_wallets'] ?? $prefix.'voucher_wallets';
+
+        Schema::dropIfExists($tableName);
     }
 };

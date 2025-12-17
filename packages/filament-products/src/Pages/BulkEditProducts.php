@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentProducts\Pages;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Products\Enums\ProductStatus;
 use AIArmada\Products\Models\Product;
 use BackedEnum;
@@ -19,6 +20,8 @@ use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class BulkEditProducts extends Page implements HasForms, HasTable
@@ -36,10 +39,46 @@ class BulkEditProducts extends Page implements HasForms, HasTable
 
     protected static ?string $title = 'Bulk Edit';
 
+    private function resolveOwner(): ?Model
+    {
+        if (! (bool) config('products.owner.enabled', true)) {
+            return null;
+        }
+
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        return app(OwnerResolverInterface::class)->resolve();
+    }
+
+    /**
+     * Bulk editing should never mutate global records when a tenant owner is resolved.
+     *
+     * @return Builder<Product>
+     */
+    private function getOwnerOnlyProductsQuery(): Builder
+    {
+        $owner = $this->resolveOwner();
+
+        return Product::query()->forOwner($owner, false);
+    }
+
+    /**
+     * @param  Builder<\AIArmada\Products\Models\Category>  $query
+     * @return Builder<\AIArmada\Products\Models\Category>
+     */
+    private function scopeCategoriesQuery(Builder $query): Builder
+    {
+        $owner = $this->resolveOwner();
+
+        return $query->forOwner($owner, false);
+    }
+
     public function table(Table $table): Table
     {
         return $table
-            ->query(Product::query())
+            ->query($this->getOwnerOnlyProductsQuery())
             ->columns([
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
@@ -53,7 +92,7 @@ class BulkEditProducts extends Page implements HasForms, HasTable
                     ->color('info'),
 
                 Tables\Columns\TextColumn::make('price')
-                    ->money('MYR', divideBy: 100)
+                    ->money(fn (Product $record): string => $record->currency, divideBy: 100)
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')
@@ -119,7 +158,9 @@ class BulkEditProducts extends Page implements HasForms, HasTable
                                     default => $currentPrice,
                                 };
 
-                                $product->update(['price' => (int) ($newPrice * 100)]);
+                                $newPrice = max(0, $newPrice);
+
+                                $product->update(['price' => (int) round($newPrice * 100)]);
                             }
 
                             Notification::make()
@@ -178,7 +219,11 @@ class BulkEditProducts extends Page implements HasForms, HasTable
                         ->form([
                             Select::make('categories')
                                 ->label('Categories')
-                                ->relationship('categories', 'name')
+                                ->relationship(
+                                    'categories',
+                                    'name',
+                                    modifyQueryUsing: fn (Builder $query): Builder => $this->scopeCategoriesQuery($query)
+                                )
                                 ->multiple()
                                 ->searchable()
                                 ->preload(),

@@ -9,6 +9,7 @@ use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Models\InventoryReorderSuggestion;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -33,15 +34,20 @@ final class StockLevelReport
      */
     public function getStockByLocation(): Collection
     {
-        return InventoryLevel::query()
+        $query = InventoryLevel::query()
             ->select([
                 'location_id',
                 DB::raw('COUNT(DISTINCT CONCAT(inventoryable_type, inventoryable_id)) as sku_count'),
                 DB::raw('SUM(quantity_on_hand) as total_quantity'),
             ])
             ->with('location:id,name')
-            ->groupBy('location_id')
-            ->get()
+            ->groupBy('location_id');
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
+
+        return $query->get()
             ->map(fn ($row) => [
                 'location_id' => $row->location_id,
                 'location_name' => $row->location?->name ?? 'Unknown',
@@ -66,15 +72,21 @@ final class StockLevelReport
      */
     public function getAbcAnalysis(): Collection
     {
-        $stocks = InventoryLevel::query()
+        $stocksQuery = InventoryLevel::query()
             ->select([
                 'inventoryable_type',
                 'inventoryable_id',
                 DB::raw('SUM(quantity_on_hand) as total_quantity'),
             ])
             ->groupBy('inventoryable_type', 'inventoryable_id')
-            ->orderByDesc('total_quantity')
-            ->get();
+
+            ->orderByDesc('total_quantity');
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($stocksQuery, 'location');
+        }
+
+        $stocks = $stocksQuery->get();
 
         $totalQuantity = $stocks->sum('total_quantity');
         if ($totalQuantity === 0) {
@@ -118,9 +130,16 @@ final class StockLevelReport
     {
         $now = CarbonImmutable::now();
 
-        $batches = InventoryBatch::query()
+        $batchesQuery = InventoryBatch::query()
             ->whereNotNull('manufactured_at')
-            ->get();
+
+            ;
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($batchesQuery, 'location');
+        }
+
+        $batches = $batchesQuery->get();
 
         $ranges = [
             '0-30 days' => [0, 30],
@@ -166,25 +185,70 @@ final class StockLevelReport
      */
     public function getReorderStatus(): array
     {
-        $belowReorderPoint = InventoryLevel::query()
-            ->needsReorder()
-            ->distinct('inventoryable_type', 'inventoryable_id')
-            ->count();
+        $belowReorderPointQuery = InventoryLevel::query()
+            ->needsReorder();
 
-        $pendingSuggestions = InventoryReorderSuggestion::query()
-            ->pending()
-            ->count();
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($belowReorderPointQuery, 'location');
+        }
 
-        $approvedSuggestions = InventoryReorderSuggestion::query()
-            ->where('status', 'approved')
-            ->count();
+        $belowReorderPoint = (int) $belowReorderPointQuery
+            ->selectRaw('COUNT(DISTINCT CONCAT(inventoryable_type, ":", inventoryable_id)) as aggregate')
+            ->value('aggregate');
+
+        $pendingSuggestionsQuery = InventoryReorderSuggestion::query()
+            ->pending();
+
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $pendingSuggestionsQuery->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
+        $pendingSuggestions = $pendingSuggestionsQuery->count();
+
+        $approvedSuggestionsQuery = InventoryReorderSuggestion::query()
+            ->where('status', 'approved');
+
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $approvedSuggestionsQuery->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
+        $approvedSuggestions = $approvedSuggestionsQuery->count();
 
         $suggestedValue = 0; // Requires cost integration
 
-        $urgentReorders = InventoryReorderSuggestion::query()
+        $urgentReordersQuery = InventoryReorderSuggestion::query()
             ->pending()
-            ->critical()
-            ->count();
+            ->critical();
+
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $urgentReordersQuery->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
+        $urgentReorders = $urgentReordersQuery->count();
 
         return [
             'items_below_reorder_point' => $belowReorderPoint,
@@ -210,7 +274,7 @@ final class StockLevelReport
      */
     public function getStockDistribution(int $limit = 20): Collection
     {
-        return InventoryLevel::query()
+        $query = InventoryLevel::query()
             ->select([
                 'inventoryable_type',
                 'inventoryable_id',
@@ -223,7 +287,13 @@ final class StockLevelReport
             ->having('location_count', '>', 1)
             ->orderByDesc('total_quantity')
             ->limit($limit)
-            ->get()
+            ;
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
+
+        return $query->get()
             ->map(fn ($row) => [
                 'inventoryable_type' => $row->inventoryable_type,
                 'inventoryable_id' => $row->inventoryable_id,
@@ -254,7 +324,7 @@ final class StockLevelReport
         $cutoffDate = CarbonImmutable::now()->subDays($daysThreshold);
         $tableName = config('inventory.table_names.levels', 'inventory_levels');
 
-        return InventoryLevel::query()
+        $query = InventoryLevel::query()
             ->select([
                 "{$tableName}.inventoryable_type",
                 "{$tableName}.inventoryable_id",
@@ -266,7 +336,14 @@ final class StockLevelReport
             ->where("{$tableName}.updated_at", '<', $cutoffDate)
             ->orderBy("{$tableName}.updated_at")
             ->limit($limit)
-            ->get()
+
+            ;
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
+
+        return $query->get()
             ->map(fn ($row) => [
                 'inventoryable_type' => $row->inventoryable_type,
                 'inventoryable_id' => $row->inventoryable_id,
@@ -296,11 +373,16 @@ final class StockLevelReport
         $startDate ??= CarbonImmutable::now()->subMonth();
         $endDate ??= CarbonImmutable::now();
 
-        $counts = InventoryMovement::query()
+        $countsQuery = InventoryMovement::query()
             ->where('type', MovementType::Adjustment->value)
             ->where('reason', 'cycle_count')
-            ->whereBetween('occurred_at', [$startDate, $endDate])
-            ->get();
+            ->whereBetween('occurred_at', [$startDate, $endDate]);
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($countsQuery);
+        }
+
+        $counts = $countsQuery->get();
 
         $totalCounts = $counts->count();
         $accurateCounts = $counts->filter(

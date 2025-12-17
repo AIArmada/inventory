@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Resources\InventoryAllocationResource\Tables;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Facades\InventoryAllocation as InventoryAllocationFacade;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use Filament\Actions\Action;
@@ -79,7 +80,11 @@ final class InventoryAllocationsTable
             ->filters([
                 SelectFilter::make('location_id')
                     ->label('Location')
-                    ->relationship('location', 'name')
+                    ->relationship(
+                        name: 'location',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToLocationQuery($query),
+                    )
                     ->searchable()
                     ->preload(),
 

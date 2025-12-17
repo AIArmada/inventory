@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Resources\InventoryLevelResource\Tables;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Enums\AllocationStrategy;
 use AIArmada\Inventory\Models\InventoryLevel;
 use Filament\Actions\BulkActionGroup;
@@ -14,6 +15,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 final class InventoryLevelsTable
 {
@@ -89,7 +91,11 @@ final class InventoryLevelsTable
             ->filters([
                 SelectFilter::make('location_id')
                     ->label('Location')
-                    ->relationship('location', 'name')
+                    ->relationship(
+                        name: 'location',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToLocationQuery($query),
+                    )
                     ->searchable()
                     ->preload(),
 

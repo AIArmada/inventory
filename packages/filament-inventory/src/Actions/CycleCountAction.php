@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Actions;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\InventoryService;
@@ -12,6 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Grid;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,7 +35,7 @@ final class CycleCountAction
                     ->schema([
                         Select::make('location_id')
                             ->label('Location')
-                            ->options(InventoryLocation::query()->pluck('name', 'id'))
+                            ->options(fn () => InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())->pluck('name', 'id'))
                             ->required()
                             ->searchable()
                             ->preload()
@@ -43,7 +45,20 @@ final class CycleCountAction
                                     return;
                                 }
 
-                                $stockLevel = InventoryLevel::query()
+                                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                                    ->whereKey($state)
+                                    ->exists();
+
+                                if (! $isAllowed) {
+                                    $set('system_quantity', 0);
+
+                                    return;
+                                }
+
+                                $stockLevel = InventoryOwnerScope::applyToQueryByLocationRelation(
+                                    InventoryLevel::query(),
+                                    'location'
+                                )
                                     ->where('inventoryable_type', $record->getMorphClass())
                                     ->where('inventoryable_id', $record->getKey())
                                     ->where('location_id', $state)
@@ -72,6 +87,21 @@ final class CycleCountAction
             ])
             ->action(function (Model $record, array $data): void {
                 $locationId = $data['location_id'];
+
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    Notification::make()
+                        ->title('Invalid Location')
+                        ->body('This location is not available for the current owner context.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 $countedQuantity = (int) $data['counted_quantity'];
                 $systemQuantity = (int) $data['system_quantity'];
                 $variance = $countedQuantity - $systemQuantity;

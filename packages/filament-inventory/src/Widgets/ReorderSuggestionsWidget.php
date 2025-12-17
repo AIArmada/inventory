@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Widgets;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryReorderSuggestion;
 use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 
 final class ReorderSuggestionsWidget extends TableWidget
@@ -26,14 +28,26 @@ final class ReorderSuggestionsWidget extends TableWidget
 
     public function table(Table $table): Table
     {
+        $query = InventoryReorderSuggestion::query()
+            ->pending()
+            ->byUrgency()
+            ->with(['location', 'supplierLeadtime'])
+            ->limit(10);
+
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::resolveOwner() === null;
+
+            $query->where(function (Builder $builder) use ($includeNullLocation): void {
+                $builder->whereHas('location', fn (Builder $locationQuery): Builder => InventoryOwnerScope::applyToLocationQuery($locationQuery));
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         return $table
-            ->query(
-                InventoryReorderSuggestion::query()
-                    ->pending()
-                    ->byUrgency()
-                    ->with(['location', 'supplierLeadtime'])
-                    ->limit(10)
-            )
+            ->query($query)
             ->columns([
                 TextColumn::make('inventoryable_type')
                     ->label('Product Type')

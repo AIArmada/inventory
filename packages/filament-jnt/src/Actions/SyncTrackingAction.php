@@ -20,13 +20,26 @@ final class SyncTrackingAction
             ->icon(Heroicon::ArrowPath)
             ->color('info')
             ->requiresConfirmation()
+            ->authorize(fn (): bool => auth()->check())
             ->modalHeading('Sync Tracking Information')
             ->modalDescription('This will fetch the latest tracking information from J&T Express. Continue?')
             ->modalSubmitActionLabel('Sync Now')
             ->action(function (JntOrder $record): void {
+                if (auth()->user() === null) {
+                    Notification::make()
+                        ->title('Authentication Required')
+                        ->body('Please sign in to sync tracking.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 try {
                     $trackingService = app(JntTrackingService::class);
                     $trackingService->syncOrderTracking($record);
+
+                    $record->refresh();
 
                     Notification::make()
                         ->title('Tracking Synced')
@@ -34,9 +47,11 @@ final class SyncTrackingAction
                         ->success()
                         ->send();
                 } catch (Throwable $e) {
+                    report($e);
+
                     Notification::make()
                         ->title('Sync Failed')
-                        ->body($e->getMessage())
+                        ->body('Unable to sync tracking. Please try again or check logs.')
                         ->danger()
                         ->send();
                 }

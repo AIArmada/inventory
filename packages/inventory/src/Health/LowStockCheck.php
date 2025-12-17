@@ -6,6 +6,7 @@ namespace AIArmada\Inventory\Health;
 
 use AIArmada\CommerceSupport\Health\CommerceHealthCheck;
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Spatie\Health\Checks\Result;
 
 /**
@@ -50,14 +51,28 @@ class LowStockCheck extends CommerceHealthCheck
      */
     protected function performCheck(): Result
     {
-        $lowStockCount = InventoryLevel::query()
+        $lowStockQuery = InventoryLevel::query()
             ->where('quantity_on_hand', '<=', $this->threshold)
             ->where('quantity_on_hand', '>', 0)
-            ->count();
 
-        $outOfStockCount = InventoryLevel::query()
+            ;
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($lowStockQuery, 'location');
+        }
+
+        $lowStockCount = $lowStockQuery->count();
+
+        $outOfStockQuery = InventoryLevel::query()
             ->where('quantity_on_hand', '<=', 0)
-            ->count();
+
+            ;
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($outOfStockQuery, 'location');
+        }
+
+        $outOfStockCount = $outOfStockQuery->count();
 
         if ($outOfStockCount > 0) {
             $message = "{$outOfStockCount} items are out of stock";

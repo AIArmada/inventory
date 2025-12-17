@@ -21,10 +21,14 @@ trait HasVouchers
      */
     public function assignedVouchers(): BelongsToMany
     {
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+
         return $this->morphToMany(
             Voucher::class,
             'assignee',
-            config('vouchers.table_names.voucher_assignments', 'voucher_assignments')
+            $tables['voucher_assignments'] ?? $prefix.'voucher_assignments'
         )
             ->withPivot('assigned_at', 'expires_at')
             ->withTimestamps();

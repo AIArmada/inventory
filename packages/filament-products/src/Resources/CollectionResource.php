@@ -27,6 +27,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class CollectionResource extends Resource
@@ -41,9 +42,16 @@ class CollectionResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return Collection::query()
+            ->forOwner()
+            ->withCount(['products']);
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('is_visible', true)->count() ?: null;
+        return static::getEloquentQuery()->where('is_visible', true)->count() ?: null;
     }
 
     public static function form(Schema $schema): Schema
@@ -121,7 +129,7 @@ class CollectionResource extends Resource
 
                                         Select::make('value')
                                             ->label('Category')
-                                            ->options(fn () => Category::pluck('name', 'id'))
+                                            ->options(fn () => Category::query()->forOwner()->pluck('name', 'id'))
                                             ->searchable()
                                             ->visible(fn (Get $get) => $get('field') === 'category'),
 
@@ -196,7 +204,14 @@ class CollectionResource extends Resource
                             ->schema([
                                 Select::make('products')
                                     ->label('Products')
-                                    ->relationship('products', 'name')
+                                    ->relationship(
+                                        'products',
+                                        'name',
+                                        modifyQueryUsing: function (\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder {
+                                            /** @var \Illuminate\Database\Eloquent\Builder<\AIArmada\Products\Models\Product> $query */
+                                            return $query->forOwner();
+                                        }
+                                    )
                                     ->multiple()
                                     ->preload()
                                     ->searchable()
@@ -302,8 +317,7 @@ class CollectionResource extends Resource
                         TextEntry::make('type')
                             ->badge(),
                         TextEntry::make('products_count')
-                            ->label('Products')
-                            ->getStateUsing(fn ($record) => $record->products()->count()),
+                            ->label('Products'),
                     ])
                     ->columns(4),
 

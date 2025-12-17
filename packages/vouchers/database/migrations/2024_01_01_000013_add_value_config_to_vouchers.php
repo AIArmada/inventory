@@ -10,7 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tableName = config('vouchers.table_names.vouchers', 'vouchers');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['vouchers'] ?? $prefix.'vouchers';
         $jsonColumnType = config('vouchers.database.json_column_type', 'json');
 
         Schema::table($tableName, function (Blueprint $table) use ($jsonColumnType): void {
@@ -25,7 +28,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        $tableName = config('vouchers.table_names.vouchers', 'vouchers');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['vouchers'] ?? $prefix.'vouchers';
 
         Schema::table($tableName, function (Blueprint $table): void {
             $table->dropColumn(['value_config', 'credit_destination', 'credit_delay_hours']);

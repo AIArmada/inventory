@@ -6,11 +6,13 @@ namespace AIArmada\FilamentVouchers\Resources;
 
 use AIArmada\FilamentVouchers\Resources\VoucherWalletResource\Pages\ListVoucherWallets;
 use AIArmada\FilamentVouchers\Resources\VoucherWalletResource\Tables\VoucherWalletsTable;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Models\VoucherWallet;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class VoucherWalletResource extends Resource
@@ -39,11 +41,25 @@ final class VoucherWalletResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = self::getModel()::where('is_claimed', true)
+        $count = (int) self::getEloquentQuery()->where('is_claimed', true)
             ->where('is_redeemed', false)
             ->count();
 
         return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * @return Builder<VoucherWallet>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<VoucherWallet> $query */
+        $query = parent::getEloquentQuery();
+
+        /** @var Builder<VoucherWallet> $scoped */
+        $scoped = OwnerScopedQueries::scopeOwnerColumns($query, OwnerScopedQueries::owner(), OwnerScopedQueries::includeGlobal());
+
+        return $scoped;
     }
 
     public static function getNavigationBadgeColor(): string

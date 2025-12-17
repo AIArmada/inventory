@@ -4,23 +4,27 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentVouchers\Widgets;
 
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Models\VoucherWallet;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Builder;
 
 final class VoucherWalletStatsWidget extends BaseWidget
 {
     protected function getStats(): array
     {
-        $total = VoucherWallet::count();
-        $claimed = VoucherWallet::where('is_claimed', true)->count();
-        $redeemed = VoucherWallet::where('is_redeemed', true)->count();
-        $available = VoucherWallet::where('is_redeemed', false)->count();
+        $wallets = $this->wallets();
+
+        $total = (clone $wallets)->count();
+        $claimed = (clone $wallets)->where('is_claimed', true)->count();
+        $redeemed = (clone $wallets)->where('is_redeemed', true)->count();
+        $available = (clone $wallets)->where('is_redeemed', false)->count();
 
         // Calculate unique vouchers in wallets
-        $uniqueVouchers = VoucherWallet::distinct('voucher_id')->count('voucher_id');
+        $uniqueVouchers = (clone $wallets)->distinct('voucher_id')->count('voucher_id');
 
         // Calculate unique owners (users/stores/teams) who have vouchers in their wallets
         /** @var Connection $connection */
@@ -29,7 +33,7 @@ final class VoucherWalletStatsWidget extends BaseWidget
         $concat = $driver === 'pgsql'
             ? "owner_type || '-' || owner_id"
             : "CONCAT(owner_type, '-', owner_id)";
-        $uniqueOwners = VoucherWallet::selectRaw("COUNT(DISTINCT {$concat}) as count")
+        $uniqueOwners = (clone $wallets)->selectRaw("COUNT(DISTINCT {$concat}) as count")
             ->value('count') ?? 0;
 
         return [
@@ -81,12 +85,32 @@ final class VoucherWalletStatsWidget extends BaseWidget
         $data = [];
         $now = now();
 
+        $wallets = $this->wallets();
+
         for ($i = 6; $i >= 0; $i--) {
             $date = $now->copy()->subDays($i)->startOfDay();
-            $count = VoucherWallet::whereDate('created_at', $date)->count();
+            $count = (clone $wallets)->whereDate('created_at', $date)->count();
             $data[] = $count;
         }
 
         return $data;
+    }
+
+    /**
+     * @return Builder<VoucherWallet>
+     */
+    private function wallets(): Builder
+    {
+        /** @var Builder<VoucherWallet> $query */
+        $query = VoucherWallet::query();
+
+        /** @var Builder<VoucherWallet> $scoped */
+        $scoped = OwnerScopedQueries::scopeOwnerColumns(
+            $query,
+            OwnerScopedQueries::owner(),
+            OwnerScopedQueries::includeGlobal(),
+        );
+
+        return $scoped;
     }
 }

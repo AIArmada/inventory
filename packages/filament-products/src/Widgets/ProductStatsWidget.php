@@ -17,15 +17,17 @@ class ProductStatsWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $totalProducts = Product::count();
-        $activeProducts = Product::where('status', ProductStatus::Active)->count();
-        $draftProducts = Product::where('status', ProductStatus::Draft)->count();
-        $totalCategories = Category::count();
-        $totalCollections = Collection::where('is_visible', true)->count();
+        $totalProducts = Product::query()->forOwner()->count();
+        $activeProducts = Product::query()->forOwner()->where('status', ProductStatus::Active)->count();
+        $draftProducts = Product::query()->forOwner()->where('status', ProductStatus::Draft)->count();
+        $totalCategories = Category::query()->forOwner()->count();
+        $totalCollections = Collection::query()->forOwner()->where('is_visible', true)->count();
 
         // Calculate weekly trend
-        $lastWeekProducts = Product::where('created_at', '>=', now()->subWeek())->count();
-        $previousWeekProducts = Product::whereBetween('created_at', [now()->subWeeks(2), now()->subWeek()])->count();
+        $lastWeekProducts = Product::query()->forOwner()->where('created_at', '>=', now()->subWeek())->count();
+        $previousWeekProducts = Product::query()->forOwner()
+            ->whereBetween('created_at', [now()->subWeeks(2), now()->subWeek()])
+            ->count();
 
         $trend = $previousWeekProducts > 0
             ? round((($lastWeekProducts - $previousWeekProducts) / $previousWeekProducts) * 100)

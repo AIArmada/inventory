@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentInventory\Widgets;
 
 use AIArmada\Inventory\Models\InventoryBatch;
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -25,15 +26,17 @@ final class ExpiringBatchesWidget extends TableWidget
 
     public function table(Table $table): Table
     {
+        $query = InventoryBatch::query()
+            ->allocatable()
+            ->expiringSoon(config('filament-inventory.tables.expiry_warning_days', 30))
+            ->with(['location'])
+            ->orderBy('expires_at')
+            ->limit(10);
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
         return $table
-            ->query(
-                InventoryBatch::query()
-                    ->allocatable()
-                    ->expiringSoon(config('filament-inventory.tables.expiry_warning_days', 30))
-                    ->with(['location'])
-                    ->orderBy('expires_at')
-                    ->limit(10)
-            )
+            ->query($query)
             ->columns([
                 TextColumn::make('batch_number')
                     ->label('Batch')

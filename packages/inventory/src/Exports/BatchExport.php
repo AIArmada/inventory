@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Exports;
 
 use AIArmada\Inventory\Models\InventoryBatch;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Carbon\CarbonImmutable;
 
 /**
@@ -43,6 +44,10 @@ final class BatchExport implements ExportableInterface
     {
         $query = InventoryBatch::query()
             ->with('location:id,name');
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
 
         if ($this->status !== null) {
             $query->where('status', $this->status);

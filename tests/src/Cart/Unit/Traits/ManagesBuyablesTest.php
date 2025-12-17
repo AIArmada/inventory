@@ -21,8 +21,7 @@ function createTestBuyable(
     int $increment = 1,
     bool $purchasable = true
 ): BuyableInterface {
-    return new class($id, $name, $price, $stock, $minQty, $maxQty, $increment, $purchasable) implements BuyableInterface
-    {
+    return new class ($id, $name, $price, $stock, $minQty, $maxQty, $increment, $purchasable) implements BuyableInterface {
         public function __construct(
             private string $id,
             private string $name,
@@ -32,7 +31,8 @@ function createTestBuyable(
             private ?int $maxQty,
             private int $increment,
             private bool $purchasable
-        ) {}
+        ) {
+        }
 
         public function getBuyableIdentifier(): string
         {
@@ -61,7 +61,7 @@ function createTestBuyable(
 
         public function canBePurchased(?int $quantity = null): bool
         {
-            if (! $this->purchasable) {
+            if (!$this->purchasable) {
                 return false;
             }
             if ($quantity !== null && $this->stock !== null && $quantity > $this->stock) {
@@ -245,4 +245,39 @@ describe('ManagesBuyables Trait', function (): void {
 
         expect($this->cart->getTotalWeight())->toBe(1000);
     });
+
+    it('returns zero weight when no items have weight', function (): void {
+        $this->cart->add('item-1', 'Product', 100, 1);
+
+        $totalWeight = $this->cart->getTotalWeight();
+
+        expect($totalWeight)->toBe(0);
+    });
+
+    it('calculates combined weight for multiple buyables', function (): void {
+        $buyable1 = createTestBuyable(id: 'p1');
+        $buyable2 = createTestBuyable(id: 'p2');
+
+        $this->cart->addBuyable($buyable1, 2); // 500g * 2
+        $this->cart->addBuyable($buyable2, 3); // 500g * 3
+
+        expect($this->cart->getTotalWeight())->toBe(2500);
+    });
+
+    it('skips refresh for non-buyable items', function (): void {
+        $this->cart->add('item-1', 'Regular Item', 500, 1);
+
+        $changes = $this->cart->refreshBuyablePrices(fn() => createTestBuyable());
+
+        expect($changes)->toBeEmpty();
+    });
+
+    it('skips validation for non-buyable items', function (): void {
+        $this->cart->add('item-1', 'Regular Item', 500, 1);
+
+        $errors = $this->cart->validateAllBuyables(fn() => createTestBuyable());
+
+        expect($errors)->toBeEmpty();
+    });
 });
+

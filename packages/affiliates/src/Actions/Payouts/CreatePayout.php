@@ -30,6 +30,7 @@ final class CreatePayout
         return DB::transaction(function () use ($conversionIds, $attributes): AffiliatePayout {
             /** @var Collection<int, AffiliateConversion> $conversions */
             $conversions = AffiliateConversion::query()
+                ->forOwner()
                 ->whereIn('id', $conversionIds)
                 ->whereNull('affiliate_payout_id')
                 ->get();
@@ -59,6 +60,7 @@ final class CreatePayout
 
             if ($conversions->isNotEmpty()) {
                 AffiliateConversion::query()
+                    ->forOwner()
                     ->whereIn('id', $conversions->pluck('id')->all())
                     ->update(['affiliate_payout_id' => $payout->getKey()]);
             }

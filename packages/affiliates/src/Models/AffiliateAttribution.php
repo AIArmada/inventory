@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Affiliates\Models;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -45,6 +47,7 @@ use Illuminate\Support\Carbon;
  */
 class AffiliateAttribution extends Model
 {
+    use HasOwner;
     use HasUuids;
 
     protected $fillable = [
@@ -116,6 +119,30 @@ class AffiliateAttribution extends Model
         });
     }
 
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    {
+        if (! config('affiliates.owner.enabled', false)) {
+            return $query;
+        }
+
+        $owner ??= app(OwnerResolverInterface::class)->resolve();
+
+        if (! $owner) {
+            return $query->whereNull('owner_type')->whereNull('owner_id');
+        }
+
+        return $query->where(function (Builder $builder) use ($owner, $includeGlobal): void {
+            $builder->where('owner_type', $owner->getMorphClass())
+                ->where('owner_id', $owner->getKey());
+
+            if ($includeGlobal) {
+                $builder->orWhere(function (Builder $inner): void {
+                    $inner->whereNull('owner_type')->whereNull('owner_id');
+                });
+            }
+        });
+    }
+
     public function refreshLastSeen(): void
     {
         $this->last_seen_at = now();
@@ -127,6 +154,27 @@ class AffiliateAttribution extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (self $attribution): void {
+            if (! config('affiliates.owner.enabled', false)) {
+                return;
+            }
+
+            if ($attribution->owner_id !== null) {
+                return;
+            }
+
+            if (! config('affiliates.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            $owner = app(OwnerResolverInterface::class)->resolve();
+
+            if ($owner) {
+                $attribution->owner_type = $owner->getMorphClass();
+                $attribution->owner_id = $owner->getKey();
+            }
+        });
+
         static::deleting(function (self $attribution): void {
             $attribution->touchpoints()->delete();
             $attribution->conversions()->update(['affiliate_attribution_id' => null]);

@@ -5,16 +5,21 @@ declare(strict_types=1);
 namespace AIArmada\FilamentOrders\Pages;
 
 use AIArmada\Orders\Models\Order;
+use AIArmada\Orders\Services\OrderService;
 use AIArmada\Orders\States\Processing;
 use AIArmada\Orders\States\Shipped;
 use BackedEnum;
 use Filament\Forms;
+use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Gate;
+use RuntimeException;
 use UnitEnum;
 
 class FulfillmentQueue extends Page implements HasTable
@@ -34,7 +39,8 @@ class FulfillmentQueue extends Page implements HasTable
     public static function getNavigationBadge(): ?string
     {
         $count = Order::query()
-            ->whereIn('status', [Processing::class])
+            ->forOwner()
+            ->whereState('status', Processing::class)
             ->count();
 
         return $count > 0 ? (string) $count : null;
@@ -43,7 +49,8 @@ class FulfillmentQueue extends Page implements HasTable
     public static function getNavigationBadgeColor(): ?string
     {
         $urgentCount = Order::query()
-            ->whereIn('status', [Processing::class])
+            ->forOwner()
+            ->whereState('status', Processing::class)
             ->where('created_at', '<=', now()->subHours(48))
             ->count();
 
@@ -55,7 +62,8 @@ class FulfillmentQueue extends Page implements HasTable
         return $table
             ->query(
                 Order::query()
-                    ->whereIn('status', [Processing::class])
+                    ->forOwner()
+                    ->whereState('status', Processing::class)
                     ->with(['customer', 'items'])
             )
             ->columns([
@@ -75,7 +83,8 @@ class FulfillmentQueue extends Page implements HasTable
                 Tables\Columns\TextColumn::make('customer.full_name')
                     ->label('Customer')
                     ->searchable()
-                    ->description(fn ($record) => $record->customer->email),
+                    ->placeholder('Guest')
+                    ->description(fn (Order $record): string => $record->customer?->email ?? 'Guest'),
 
                 Tables\Columns\TextColumn::make('items_count')
                     ->label('Items')
@@ -85,15 +94,15 @@ class FulfillmentQueue extends Page implements HasTable
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
-                    ->money('MYR')
+                    ->money(fn (Order $record): string => $record->currency, divideBy: 100)
                     ->sortable()
                     ->weight('bold'),
 
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn ($state) => $state->color())
-                    ->icon(fn ($state) => $state->icon()),
+                    ->color(fn ($state) => $state?->color() ?? 'gray')
+                    ->icon(fn ($state) => $state?->icon() ?? 'heroicon-o-question-mark-circle'),
 
                 Tables\Columns\TextColumn::make('shipping_method')
                     ->label('Ship Via')
@@ -139,6 +148,11 @@ class FulfillmentQueue extends Page implements HasTable
                     ->label('Ship')
                     ->icon('heroicon-o-truck')
                     ->color('success')
+                    ->authorize(function (Order $record): bool {
+                        $user = Filament::auth()->user();
+
+                        return $user ? Gate::forUser($user)->allows('update', $record) : false;
+                    })
                     ->form([
                         Forms\Components\Select::make('carrier')
                             ->label('Carrier')
@@ -156,32 +170,28 @@ class FulfillmentQueue extends Page implements HasTable
                             ->label('Tracking Number')
                             ->required()
                             ->maxLength(100),
-
-                        Forms\Components\DateTimePicker::make('shipped_at')
-                            ->label('Ship Date')
-                            ->default(now())
-                            ->required()
-                            ->native(false),
-
-                        Forms\Components\Textarea::make('notes')
-                            ->label('Shipping Notes')
-                            ->rows(2),
                     ])
                     ->action(function (Order $record, array $data): void {
-                        // Update order with shipping info
-                        $record->update([
-                            'shipping_carrier' => $data['carrier'],
-                            'tracking_number' => $data['tracking_number'],
-                            'shipped_at' => $data['shipped_at'],
-                        ]);
+                        try {
+                            $service = app(OrderService::class);
+                            $service->ship(
+                                $record,
+                                $data['carrier'],
+                                $data['tracking_number'],
+                            );
 
-                        // Transition to shipped status
-                        $record->status->transitionTo(Shipped::class);
-
-                        // Optional: Send notification to customer
-                        // event(new OrderShipped($record));
+                            Notification::make()
+                                ->title('Order marked as shipped')
+                                ->success()
+                                ->send();
+                        } catch (RuntimeException $exception) {
+                            Notification::make()
+                                ->title('Unable to ship order')
+                                ->body($exception->getMessage())
+                                ->danger()
+                                ->send();
+                        }
                     })
-                    ->successNotificationTitle('Order marked as shipped')
                     ->modalHeading('Ship Order')
                     ->modalDescription(fn ($record) => "Complete shipment for order {$record->order_number}"),
 
@@ -190,75 +200,6 @@ class FulfillmentQueue extends Page implements HasTable
                     ->icon('heroicon-o-eye')
                     ->url(fn ($record) => \AIArmada\FilamentOrders\Resources\OrderResource::getUrl('view', ['record' => $record]))
                     ->openUrlInNewTab(),
-
-                Tables\Actions\Action::make('print_packing_slip')
-                    ->label('Packing Slip')
-                    ->icon('heroicon-o-printer')
-                    ->url(fn ($record) => route('orders.packing-slip', $record))
-                    ->openUrlInNewTab()
-                    ->color('gray'),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('bulk_ship')
-                        ->label('Bulk Ship')
-                        ->icon('heroicon-o-truck')
-                        ->color('success')
-                        ->form([
-                            Forms\Components\Select::make('carrier')
-                                ->label('Carrier')
-                                ->options([
-                                    'poslaju' => 'Pos Laju',
-                                    'dhl' => 'DHL',
-                                    'fedex' => 'FedEx',
-                                    'jnt' => 'J&T Express',
-                                    'gdex' => 'GDex',
-                                ])
-                                ->required(),
-
-                            Forms\Components\Repeater::make('tracking_numbers')
-                                ->label('Tracking Numbers')
-                                ->schema([
-                                    Forms\Components\Placeholder::make('order')
-                                        ->label('Order')
-                                        ->content(fn ($state, $record) => $record?->order_number ?? 'Loading...'),
-                                    Forms\Components\TextInput::make('tracking')
-                                        ->label('Tracking #')
-                                        ->required(),
-                                ])
-                                ->columns(2)
-                                ->default(function ($records) {
-                                    return $records->map(fn ($record) => [
-                                        'order' => $record->order_number,
-                                        'tracking' => '',
-                                    ])->toArray();
-                                }),
-                        ])
-                        ->action(function ($records, array $data): void {
-                            foreach ($records as $index => $record) {
-                                if (isset($data['tracking_numbers'][$index]['tracking'])) {
-                                    $record->update([
-                                        'shipping_carrier' => $data['carrier'],
-                                        'tracking_number' => $data['tracking_numbers'][$index]['tracking'],
-                                        'shipped_at' => now(),
-                                    ]);
-
-                                    $record->status->transitionTo(Shipped::class);
-                                }
-                            }
-                        })
-                        ->successNotificationTitle('Orders marked as shipped')
-                        ->deselectRecordsAfterCompletion(),
-
-                    Tables\Actions\BulkAction::make('print_packing_slips')
-                        ->label('Print Packing Slips')
-                        ->icon('heroicon-o-printer')
-                        ->url(fn ($records) => route('orders.bulk-packing-slips', [
-                            'orders' => $records->pluck('id')->toArray(),
-                        ]))
-                        ->openUrlInNewTab()
-                        ->color('gray'),
-                ]),
             ])
             ->poll('30s');
     }

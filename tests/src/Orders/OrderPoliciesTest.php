@@ -96,24 +96,6 @@ describe('Order Policies', function (): void {
             expect($policy->delete($user, new Order))->toBeTrue();
         });
 
-        it('allows restoring orders when user has permission', function (): void {
-            $user = Mockery::mock(User::class);
-            $user->shouldReceive('can')->with('restore_order')->andReturn(true);
-
-            $policy = new OrderPolicy;
-
-            expect($policy->restore($user, new Order))->toBeTrue();
-        });
-
-        it('allows force deleting orders when user has permission', function (): void {
-            $user = Mockery::mock(User::class);
-            $user->shouldReceive('can')->with('force_delete_order')->andReturn(true);
-
-            $policy = new OrderPolicy;
-
-            expect($policy->forceDelete($user, new Order))->toBeTrue();
-        });
-
         it('allows canceling cancellable orders when user has permission', function (): void {
             $user = Mockery::mock(User::class);
             $user->shouldReceive('can')->with('cancel_order')->andReturn(true);

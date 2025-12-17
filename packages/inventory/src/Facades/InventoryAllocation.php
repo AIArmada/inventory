@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static int getTotalAvailable(\Illuminate\Database\Eloquent\Model $model)
  * @method static array{available: bool, issues: array<int, array{model: \Illuminate\Database\Eloquent\Model, requested: int, available: int}>} validateAvailability(array<int, array{model: \Illuminate\Database\Eloquent\Model, quantity: int}> $items)
  * @method static int cleanupExpired()
+ * @method static int cleanupExpiredGlobal()
  * @method static \AIArmada\Inventory\Enums\AllocationStrategy getStrategy(\Illuminate\Database\Eloquent\Model $model)
  *
  * @see InventoryAllocationService

@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use UnitEnum;
 
@@ -28,6 +29,12 @@ class AttributeSetResource extends Resource
     protected static ?int $navigationSort = 42;
 
     protected static ?string $navigationParentItem = 'Attributes';
+
+    public static function getEloquentQuery(): Builder
+    {
+        return AttributeSet::query()
+            ->forOwner();
+    }
 
     public static function getNavigationLabel(): string
     {
@@ -81,7 +88,14 @@ class AttributeSetResource extends Resource
                         Forms\Components\Select::make('setAttributes')
                             ->label(__('filament-products::resources.attribute_sets.fields.attributes'))
                             ->multiple()
-                            ->relationship('setAttributes', 'name')
+                            ->relationship(
+                                'setAttributes',
+                                'name',
+                                modifyQueryUsing: function (Builder $query): Builder {
+                                    /** @var Builder<\AIArmada\Products\Models\Attribute> $query */
+                                    return $query->forOwner();
+                                }
+                            )
                             ->preload()
                             ->searchable(),
                     ]),
@@ -91,7 +105,14 @@ class AttributeSetResource extends Resource
                         Forms\Components\Select::make('groups')
                             ->label(__('filament-products::resources.attribute_sets.fields.groups'))
                             ->multiple()
-                            ->relationship('groups', 'name')
+                            ->relationship(
+                                'groups',
+                                'name',
+                                modifyQueryUsing: function (Builder $query): Builder {
+                                    /** @var Builder<\AIArmada\Products\Models\AttributeGroup> $query */
+                                    return $query->forOwner();
+                                }
+                            )
                             ->preload()
                             ->searchable(),
                     ]),

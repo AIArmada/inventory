@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentOrders\Resources\OrderResource\RelationManagers;
 
 use Filament\Forms;
+use Filament\Facades\Filament;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
@@ -61,7 +62,13 @@ class NotesRelationManager extends RelationManager
             ->headerActions([
                 Tables\Actions\CreateAction::make()
                     ->mutateFormDataUsing(function (array $data): array {
-                        $data['user_id'] = auth()->id();
+                        $userId = Filament::auth()->id();
+
+                        if (! $userId) {
+                            throw new \RuntimeException('You must be authenticated to add a note.');
+                        }
+
+                        $data['user_id'] = (string) $userId;
 
                         return $data;
                     }),

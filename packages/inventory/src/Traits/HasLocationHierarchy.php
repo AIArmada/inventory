@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Traits;
 
 use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -84,7 +85,7 @@ trait HasLocationHierarchy
             return new Collection;
         }
 
-        return InventoryLocation::query()
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
             ->where('path', 'like', $this->path . '/%')
             ->orderBy('depth')
             ->orderBy('name')
@@ -109,7 +110,7 @@ trait HasLocationHierarchy
             return new Collection;
         }
 
-        return InventoryLocation::query()
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
             ->whereIn('id', $ancestorIds)
             ->orderBy('depth')
             ->get();
@@ -130,7 +131,9 @@ trait HasLocationHierarchy
 
         $rootId = explode('/', $this->path)[0];
 
-        return InventoryLocation::find($rootId);
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+            ->whereKey($rootId)
+            ->first();
     }
 
     /**
@@ -184,7 +187,7 @@ trait HasLocationHierarchy
      */
     public function getSiblings(): Collection
     {
-        return InventoryLocation::query()
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
             ->where('parent_id', $this->parent_id)
             ->where('id', '!=', $this->id)
             ->orderBy('name')

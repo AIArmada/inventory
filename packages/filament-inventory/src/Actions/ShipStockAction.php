@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Actions;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Exceptions\InsufficientStockException;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\InventoryService;
@@ -35,7 +36,7 @@ final class ShipStockAction
                     ->schema([
                         Select::make('location_id')
                             ->label('Shipping From')
-                            ->options(InventoryLocation::query()->pluck('name', 'id'))
+                            ->options(fn () => InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())->pluck('name', 'id'))
                             ->required()
                             ->searchable()
                             ->preload(),
@@ -94,6 +95,7 @@ final class ShipStockAction
                         reason: $reason,
                         note: $data['notes'] ?? null,
                         userId: Auth::id(),
+                        occurredAt: $data['shipped_at'] ?? null,
                     );
 
                     Notification::make()

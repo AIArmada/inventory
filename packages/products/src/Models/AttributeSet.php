@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace AIArmada\Products\Models;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -28,7 +30,9 @@ use Illuminate\Support\Facades\DB;
 class AttributeSet extends Model
 {
     use HasFactory;
-    use HasOwner;
+    use HasOwner {
+        scopeForOwner as baseScopeForOwner;
+    }
     use HasUuids;
 
     protected $guarded = ['id'];
@@ -44,6 +48,28 @@ class AttributeSet extends Model
     public function getTable(): string
     {
         return config('products.tables.attribute_sets', 'product_attribute_sets');
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    {
+        if (! (bool) config('products.owner.enabled', true)) {
+            return $query;
+        }
+
+        if ($owner === null && app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        $includeGlobal = $includeGlobal && (bool) config('products.owner.include_global', true);
+
+        /** @var Builder<AttributeSet> $scoped */
+        $scoped = $this->baseScopeForOwner($query, $owner, $includeGlobal);
+
+        return $scoped;
     }
 
     /**
@@ -138,6 +164,32 @@ class AttributeSet extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (AttributeSet $set): void {
+            if (! (bool) config('products.owner.enabled', true)) {
+                return;
+            }
+
+            if (! (bool) config('products.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            if ($set->owner_type !== null || $set->owner_id !== null) {
+                return;
+            }
+
+            if (! app()->bound(OwnerResolverInterface::class)) {
+                return;
+            }
+
+            $owner = app(OwnerResolverInterface::class)->resolve();
+
+            if ($owner === null) {
+                return;
+            }
+
+            $set->assignOwner($owner);
+        });
+
         static::deleting(function (AttributeSet $set): void {
             // Detach from attributes and groups
             $set->setAttributes()->detach();

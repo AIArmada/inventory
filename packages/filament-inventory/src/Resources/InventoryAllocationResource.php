@@ -8,12 +8,14 @@ use AIArmada\FilamentInventory\Resources\InventoryAllocationResource\Pages\ListI
 use AIArmada\FilamentInventory\Resources\InventoryAllocationResource\Pages\ViewInventoryAllocation;
 use AIArmada\FilamentInventory\Resources\InventoryAllocationResource\Schemas\InventoryAllocationInfolist;
 use AIArmada\FilamentInventory\Resources\InventoryAllocationResource\Tables\InventoryAllocationsTable;
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class InventoryAllocationResource extends Resource
@@ -27,6 +29,13 @@ final class InventoryAllocationResource extends Resource
     protected static ?string $modelLabel = 'Allocation';
 
     protected static ?string $pluralModelLabel = 'Allocations';
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = InventoryAllocation::query()->with(['location', 'level']);
+
+        return InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+    }
 
     public static function canCreate(): bool
     {
@@ -58,7 +67,7 @@ final class InventoryAllocationResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $expiredCount = self::getModel()::query()
+        $expiredCount = self::getEloquentQuery()
             ->where('expires_at', '<', now())
             ->count();
 

@@ -18,6 +18,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class OrderResource extends Resource
@@ -32,9 +33,16 @@ class OrderResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'order_number';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return Order::query()
+            ->forOwner()
+            ->with(['customer']);
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::whereState('status', [PendingPayment::class, Processing::class])->count() ?: null;
+        return self::getEloquentQuery()->whereState('status', [PendingPayment::class, Processing::class])->count() ?: null;
     }
 
     public static function getNavigationBadgeColor(): ?string
@@ -154,7 +162,7 @@ class OrderResource extends Resource
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
-                    ->money('MYR', divideBy: 100)
+                    ->money(fn (Order $record): string => $record->currency, divideBy: 100)
                     ->sortable()
                     ->alignEnd(),
 
@@ -283,13 +291,25 @@ class OrderResource extends Resource
                     ->schema([
                         TextEntry::make('billingAddress.formatted')
                             ->label('Billing Address')
-                            ->getStateUsing(fn ($record) => $record->billingAddress?->getFormatted())
+                            ->getStateUsing(function (Order $record): ?HtmlString {
+                                if (! $record->billingAddress) {
+                                    return null;
+                                }
+
+                                return new HtmlString(nl2br(e($record->billingAddress->getFormatted())));
+                            })
                             ->placeholder('Not provided')
                             ->html(),
 
                         TextEntry::make('shippingAddress.formatted')
                             ->label('Shipping Address')
-                            ->getStateUsing(fn ($record) => $record->shippingAddress?->getFormatted())
+                            ->getStateUsing(function (Order $record): ?HtmlString {
+                                if (! $record->shippingAddress) {
+                                    return null;
+                                }
+
+                                return new HtmlString(nl2br(e($record->shippingAddress->getFormatted())));
+                            })
                             ->placeholder('Not provided')
                             ->html(),
                     ])
@@ -299,24 +319,24 @@ class OrderResource extends Resource
                     ->schema([
                         TextEntry::make('subtotal')
                             ->label('Subtotal')
-                            ->money('MYR', divideBy: 100),
+                            ->money(fn (Order $record): string => $record->currency, divideBy: 100),
 
                         TextEntry::make('discount_total')
                             ->label('Discount')
-                            ->money('MYR', divideBy: 100)
+                            ->money(fn (Order $record): string => $record->currency, divideBy: 100)
                             ->visible(fn ($record) => $record->discount_total > 0),
 
                         TextEntry::make('shipping_total')
                             ->label('Shipping')
-                            ->money('MYR', divideBy: 100),
+                            ->money(fn (Order $record): string => $record->currency, divideBy: 100),
 
                         TextEntry::make('tax_total')
                             ->label('Tax')
-                            ->money('MYR', divideBy: 100),
+                            ->money(fn (Order $record): string => $record->currency, divideBy: 100),
 
                         TextEntry::make('grand_total')
                             ->label('Grand Total')
-                            ->money('MYR', divideBy: 100)
+                            ->money(fn (Order $record): string => $record->currency, divideBy: 100)
                             ->weight('bold')
                             ->size('lg'),
                     ])

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Actions;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\InventoryService;
 use Filament\Actions\Action;
@@ -33,7 +34,7 @@ final class AdjustStockAction
                     ->schema([
                         Select::make('location_id')
                             ->label('Location')
-                            ->options(InventoryLocation::query()->pluck('name', 'id'))
+                            ->options(fn () => InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())->pluck('name', 'id'))
                             ->required()
                             ->searchable()
                             ->preload(),

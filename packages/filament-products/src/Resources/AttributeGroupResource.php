@@ -14,6 +14,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use UnitEnum;
 
@@ -28,6 +29,12 @@ class AttributeGroupResource extends Resource
     protected static ?int $navigationSort = 41;
 
     protected static ?string $navigationParentItem = 'Attributes';
+
+    public static function getEloquentQuery(): Builder
+    {
+        return AttributeGroup::query()
+            ->forOwner();
+    }
 
     public static function getNavigationLabel(): string
     {
@@ -86,7 +93,14 @@ class AttributeGroupResource extends Resource
                         Forms\Components\Select::make('attributes')
                             ->label(__('filament-products::resources.attribute_groups.fields.attributes'))
                             ->multiple()
-                            ->relationship('attributes', 'name')
+                            ->relationship(
+                                'attributes',
+                                'name',
+                                modifyQueryUsing: function (Builder $query): Builder {
+                                    /** @var Builder<\AIArmada\Products\Models\Attribute> $query */
+                                    return $query->forOwner();
+                                }
+                            )
                             ->preload()
                             ->searchable(),
                     ]),

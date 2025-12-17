@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Exports;
 
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Carbon\CarbonImmutable;
+use InvalidArgumentException;
 
 /**
  * Export stock levels to various formats.
@@ -41,8 +44,24 @@ final class StockLevelExport implements ExportableInterface
         $query = InventoryLevel::query()
             ->with('location:id,name');
 
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
+
         if (isset($this->filters['location_id'])) {
-            $query->where('location_id', $this->filters['location_id']);
+            $locationId = (string) $this->filters['location_id'];
+
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
+            $query->where('location_id', $locationId);
         }
 
         if (isset($this->filters['low_stock_only']) && $this->filters['low_stock_only']) {

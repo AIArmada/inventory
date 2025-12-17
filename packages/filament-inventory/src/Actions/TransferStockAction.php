@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Actions;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\InventoryService;
 use Filament\Actions\Action;
@@ -34,7 +35,7 @@ final class TransferStockAction
                     ->schema([
                         Select::make('from_location_id')
                             ->label('From Location')
-                            ->options(fn () => InventoryLocation::query()->pluck('name', 'id'))
+                            ->options(fn () => InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())->pluck('name', 'id'))
                             ->required()
                             ->searchable()
                             ->preload()
@@ -43,7 +44,7 @@ final class TransferStockAction
 
                         Select::make('to_location_id')
                             ->label('To Location')
-                            ->options(fn (callable $get) => InventoryLocation::query()
+                            ->options(fn (callable $get) => InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
                                 ->when($get('from_location_id'), fn ($query, $fromId) => $query->whereNot('id', $fromId))
                                 ->pluck('name', 'id'))
                             ->required()
@@ -66,18 +67,52 @@ final class TransferStockAction
             ->action(function (Model $record, array $data): void {
                 $inventoryService = app(InventoryService::class);
 
+                $fromLocationId = (string) $data['from_location_id'];
+                $toLocationId = (string) $data['to_location_id'];
+
+                if ($fromLocationId === $toLocationId) {
+                    Notification::make()
+                        ->title('Transfer Failed')
+                        ->body('From and To locations must be different.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                if (InventoryOwnerScope::isEnabled()) {
+                    $allowedLocationCount = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                        ->whereKey([$fromLocationId, $toLocationId])
+                        ->count();
+
+                    if ($allowedLocationCount !== 2) {
+                        Notification::make()
+                            ->title('Transfer Failed')
+                            ->body('One or both locations are not available for the current owner context.')
+                            ->danger()
+                            ->send();
+
+                        return;
+                    }
+                }
+
                 try {
                     $movement = $inventoryService->transfer(
                         model: $record,
-                        fromLocationId: $data['from_location_id'],
-                        toLocationId: $data['to_location_id'],
+                        fromLocationId: $fromLocationId,
+                        toLocationId: $toLocationId,
                         quantity: (int) $data['quantity'],
                         note: $data['notes'] ?? null,
                         userId: Auth::id(),
                     );
 
-                    $fromLocation = InventoryLocation::find($data['from_location_id']);
-                    $toLocation = InventoryLocation::find($data['to_location_id']);
+                    $fromLocation = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                        ->whereKey($fromLocationId)
+                        ->first();
+
+                    $toLocation = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                        ->whereKey($toLocationId)
+                        ->first();
 
                     Notification::make()
                         ->title('Stock Transferred')

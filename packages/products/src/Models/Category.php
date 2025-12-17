@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace AIArmada\Products\Models;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,7 +42,9 @@ use Spatie\Sluggable\SlugOptions;
 class Category extends Model implements HasMedia
 {
     use HasFactory;
-    use HasOwner;
+    use HasOwner {
+        scopeForOwner as baseScopeForOwner;
+    }
     use HasSlug;
     use HasUuids;
     use InteractsWithMedia;
@@ -69,6 +73,28 @@ class Category extends Model implements HasMedia
     public function getTable(): string
     {
         return config('products.tables.categories', 'product_categories');
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    {
+        if (! (bool) config('products.owner.enabled', true)) {
+            return $query;
+        }
+
+        if ($owner === null && app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        $includeGlobal = $includeGlobal && (bool) config('products.owner.include_global', true);
+
+        /** @var Builder<Category> $scoped */
+        $scoped = $this->baseScopeForOwner($query, $owner, $includeGlobal);
+
+        return $scoped;
     }
 
     // =========================================================================
@@ -112,12 +138,49 @@ class Category extends Model implements HasMedia
      */
     public function products(): BelongsToMany
     {
-        return $this->belongsToMany(
+        $relation = $this->belongsToMany(
             Product::class,
             config('products.tables.category_product', 'category_product'),
             'category_id',
             'product_id'
         )->withTimestamps();
+
+        $this->applyOwnerScopeToProductsQuery($relation->getQuery());
+
+        return $relation;
+    }
+
+    /**
+     * Apply owner scoping so category relationships never leak cross-tenant products.
+     *
+     * @param  Builder<Product>  $query
+     */
+    protected function applyOwnerScopeToProductsQuery(Builder $query): void
+    {
+        if (! (bool) config('products.owner.enabled', true)) {
+            return;
+        }
+
+        if ($this->owner_type === null || $this->owner_id === null) {
+            $query->whereNull('owner_type')->whereNull('owner_id');
+
+            return;
+        }
+
+        $ownerType = $this->owner_type;
+        $ownerId = $this->owner_id;
+        $includeGlobal = (bool) config('products.owner.include_global', true);
+
+        $query->where(function (Builder $builder) use ($ownerType, $ownerId, $includeGlobal): void {
+            $builder->where('owner_type', $ownerType)
+                ->where('owner_id', $ownerId);
+
+            if ($includeGlobal) {
+                $builder->orWhere(function (Builder $inner): void {
+                    $inner->whereNull('owner_type')->whereNull('owner_id');
+                });
+            }
+        });
     }
 
     // =========================================================================
@@ -300,6 +363,32 @@ class Category extends Model implements HasMedia
 
     protected static function booted(): void
     {
+        static::creating(function (Category $category): void {
+            if (! (bool) config('products.owner.enabled', true)) {
+                return;
+            }
+
+            if (! (bool) config('products.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            if ($category->owner_type !== null || $category->owner_id !== null) {
+                return;
+            }
+
+            if (! app()->bound(OwnerResolverInterface::class)) {
+                return;
+            }
+
+            $owner = app(OwnerResolverInterface::class)->resolve();
+
+            if ($owner === null) {
+                return;
+            }
+
+            $category->assignOwner($owner);
+        });
+
         static::deleting(function (Category $category): void {
             // Nullify parent_id for children
             $category->children()->update(['parent_id' => null]);

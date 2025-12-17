@@ -10,8 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        /** @var string $table */
-        $table = config('vouchers.table_names.voucher_fraud_signals', 'voucher_fraud_signals');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $table = $tables['voucher_fraud_signals'] ?? $prefix.'voucher_fraud_signals';
 
         Schema::create($table, function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -45,8 +47,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        /** @var string $table */
-        $table = config('vouchers.table_names.voucher_fraud_signals', 'voucher_fraud_signals');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $table = $tables['voucher_fraud_signals'] ?? $prefix.'voucher_fraud_signals';
 
         Schema::dropIfExists($table);
     }

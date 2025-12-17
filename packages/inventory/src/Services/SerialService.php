@@ -7,8 +7,12 @@ namespace AIArmada\Inventory\Services;
 use AIArmada\Inventory\Enums\SerialCondition;
 use AIArmada\Inventory\Enums\SerialEventType;
 use AIArmada\Inventory\Enums\SerialStatus;
+use AIArmada\Inventory\Models\InventoryBatch;
+use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventorySerial;
 use AIArmada\Inventory\Models\InventorySerialHistory;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -40,6 +44,9 @@ final class SerialService
             $warrantyExpiresAt,
             $userId
         ): InventorySerial {
+            $this->assertLocationIdAllowedForCurrentOwner($locationId);
+            $this->assertBatchIdAllowedForCurrentOwner($batchId);
+
             $serial = InventorySerial::create([
                 'inventoryable_type' => $model->getMorphClass(),
                 'inventoryable_id' => $model->getKey(),
@@ -67,7 +74,17 @@ final class SerialService
      */
     public function findBySerialNumber(string $serialNumber): ?InventorySerial
     {
-        return InventorySerial::where('serial_number', $serialNumber)->first();
+        $serial = InventorySerial::where('serial_number', $serialNumber)->first();
+
+        if ($serial === null) {
+            return null;
+        }
+
+        if (! $this->isSerialAllowedForCurrentOwner($serial)) {
+            return null;
+        }
+
+        return $serial;
     }
 
     /**
@@ -77,11 +94,15 @@ final class SerialService
      */
     public function getSerialsForModel(Model $model): Collection
     {
-        return InventorySerial::query()
+        $query = InventorySerial::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->orderBy('created_at')
-            ->get();
+            ;
+
+        $query = InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
+        return $query->get();
     }
 
     /**
@@ -91,10 +112,14 @@ final class SerialService
      */
     public function getAvailableSerials(Model $model, ?string $locationId = null): Collection
     {
+        $this->assertLocationIdAllowedForCurrentOwner($locationId);
+
         $query = InventorySerial::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->sellable();
+
+        $query = InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
 
         if ($locationId !== null) {
             $query->atLocation($locationId);
@@ -112,6 +137,9 @@ final class SerialService
         ?string $userId = null,
         ?string $notes = null
     ): InventorySerial {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+        $this->assertLocationIdAllowedForCurrentOwner($newLocationId);
+
         $fromLocationId = $serial->location_id;
 
         $serial->update(['location_id' => $newLocationId]);
@@ -134,6 +162,8 @@ final class SerialService
         ?string $orderId = null,
         ?string $userId = null
     ): InventorySerial {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+
         if (! $serial->canTransitionTo(SerialStatus::Reserved)) {
             throw new InvalidArgumentException('Serial cannot be reserved from current status');
         }
@@ -156,6 +186,8 @@ final class SerialService
      */
     public function release(InventorySerial $serial, ?string $userId = null): InventorySerial
     {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+
         if (! $serial->canTransitionTo(SerialStatus::Available)) {
             throw new InvalidArgumentException('Serial cannot be released from current status');
         }
@@ -181,6 +213,8 @@ final class SerialService
         ?string $customerId = null,
         ?string $userId = null
     ): InventorySerial {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+
         if (! $serial->canTransitionTo(SerialStatus::Sold)) {
             throw new InvalidArgumentException('Serial cannot be sold from current status');
         }
@@ -209,6 +243,8 @@ final class SerialService
      */
     public function ship(InventorySerial $serial, ?string $trackingNumber = null, ?string $userId = null): InventorySerial
     {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+
         if (! $serial->canTransitionTo(SerialStatus::Shipped)) {
             throw new InvalidArgumentException('Serial cannot be shipped from current status');
         }
@@ -242,6 +278,9 @@ final class SerialService
         ?string $notes = null,
         ?string $userId = null
     ): InventorySerial {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+        $this->assertLocationIdAllowedForCurrentOwner($locationId);
+
         if (! $serial->canTransitionTo(SerialStatus::Returned)) {
             throw new InvalidArgumentException('Serial cannot be returned from current status');
         }
@@ -275,6 +314,8 @@ final class SerialService
      */
     public function startRepair(InventorySerial $serial, ?string $repairNotes = null, ?string $userId = null): InventorySerial
     {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+
         if (! $serial->canTransitionTo(SerialStatus::InRepair)) {
             throw new InvalidArgumentException('Serial cannot be put in repair from current status');
         }
@@ -301,6 +342,8 @@ final class SerialService
         ?string $repairNotes = null,
         ?string $userId = null
     ): InventorySerial {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+
         $previousCondition = $serial->condition;
 
         $serial->update([
@@ -327,6 +370,8 @@ final class SerialService
      */
     public function dispose(InventorySerial $serial, string $reason, ?string $userId = null): InventorySerial
     {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+
         $previousStatus = $serial->status;
         $previousLocation = $serial->location_id;
 
@@ -355,6 +400,8 @@ final class SerialService
         ?string $notes = null,
         ?string $userId = null
     ): InventorySerial {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+
         $previousExpiry = $serial->warranty_expires_at;
 
         $serial->update(['warranty_expires_at' => $newExpiryDate]);
@@ -378,6 +425,8 @@ final class SerialService
      */
     public function getHistory(InventorySerial $serial, ?int $limit = null): Collection
     {
+        $this->assertSerialAllowedForCurrentOwner($serial);
+
         $query = $serial->history();
 
         if ($limit !== null) {
@@ -410,5 +459,90 @@ final class SerialService
             'metadata' => $data['metadata'] ?? null,
             'occurred_at' => now(),
         ]);
+    }
+
+    private function assertSerialAllowedForCurrentOwner(InventorySerial $serial): void
+    {
+        if (! $this->isSerialAllowedForCurrentOwner($serial)) {
+            throw new InvalidArgumentException('Serial is not accessible for current owner');
+        }
+    }
+
+    private function isSerialAllowedForCurrentOwner(InventorySerial $serial): bool
+    {
+        if (! InventoryOwnerScope::isEnabled()) {
+            return true;
+        }
+
+        $scopeLocationId = $this->resolveSerialScopeLocationId($serial);
+
+        if ($scopeLocationId === null) {
+            return false;
+        }
+
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+            ->whereKey($scopeLocationId)
+            ->exists();
+    }
+
+    private function resolveSerialScopeLocationId(InventorySerial $serial): ?string
+    {
+        if ($serial->location_id !== null) {
+            return $serial->location_id;
+        }
+
+        /** @var InventorySerialHistory|null $history */
+        $history = InventorySerialHistory::query()
+            ->where('serial_id', $serial->id)
+            ->where(function (Builder $query): void {
+                $query->whereNotNull('to_location_id')
+                    ->orWhereNotNull('from_location_id');
+            })
+            ->orderByDesc('occurred_at')
+            ->first();
+
+        return $history?->to_location_id ?? $history?->from_location_id;
+    }
+
+    private function assertLocationIdAllowedForCurrentOwner(?string $locationId): void
+    {
+        if (! InventoryOwnerScope::isEnabled()) {
+            return;
+        }
+
+        if ($locationId === null && InventoryOwnerScope::resolveOwner() !== null) {
+            throw new InvalidArgumentException('Location is required when owner scoping is enabled');
+        }
+
+        if ($locationId === null) {
+            return;
+        }
+
+        $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+            ->whereKey($locationId)
+            ->exists();
+
+        if (! $isAllowed) {
+            throw new InvalidArgumentException('Invalid location for current owner');
+        }
+    }
+
+    private function assertBatchIdAllowedForCurrentOwner(?string $batchId): void
+    {
+        if (! InventoryOwnerScope::isEnabled()) {
+            return;
+        }
+
+        if ($batchId === null) {
+            return;
+        }
+
+        $isAllowed = InventoryOwnerScope::applyToQueryByLocationRelation(InventoryBatch::query(), 'location')
+            ->whereKey($batchId)
+            ->exists();
+
+        if (! $isAllowed) {
+            throw new InvalidArgumentException('Invalid batch for current owner');
+        }
     }
 }

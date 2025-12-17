@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentVouchers\Services;
 
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Models\Voucher;
 use AIArmada\Vouchers\Models\VoucherUsage;
+use Illuminate\Database\Eloquent\Builder;
 
 final class VoucherStatsAggregator
 {
@@ -23,21 +25,50 @@ final class VoucherStatsAggregator
     public function overview(): array
     {
         return [
-            'total' => Voucher::query()->count(),
-            'active' => Voucher::query()->where('status', VoucherStatus::Active)->count(),
-            'upcoming' => Voucher::query()
+            'total' => $this->vouchers()->count(),
+            'active' => $this->vouchers()->where('status', VoucherStatus::Active)->count(),
+            'upcoming' => $this->vouchers()
                 ->where('starts_at', '>', now())
                 ->count(),
-            'expired' => Voucher::query()->where('status', VoucherStatus::Expired)->count(),
-            'manual_redemptions' => VoucherUsage::query()->where('channel', VoucherUsage::CHANNEL_MANUAL)->count(),
+            'expired' => $this->vouchers()->where('status', VoucherStatus::Expired)->count(),
+            'manual_redemptions' => $this->usages()->where('channel', VoucherUsage::CHANNEL_MANUAL)->count(),
             'total_discount_minor' => $this->sumDiscountMinor(),
         ];
+    }
+
+    /**
+     * @return Builder<Voucher>
+     */
+    private function vouchers(): Builder
+    {
+        /** @var Builder<Voucher> $query */
+        $query = Voucher::query();
+
+        /** @var Builder<Voucher> $scoped */
+        $scoped = OwnerScopedQueries::scopeVoucherLike($query);
+
+        return $scoped;
+    }
+
+    /**
+     * @return Builder<VoucherUsage>
+     */
+    private function usages(): Builder
+    {
+        /** @var Builder<VoucherUsage> $query */
+        $query = VoucherUsage::query();
+
+        if (! OwnerScopedQueries::isEnabled()) {
+            return $query;
+        }
+
+        return $query->whereIn('voucher_id', OwnerScopedQueries::voucherIds());
     }
 
     private function sumDiscountMinor(): int
     {
         // discount_amount is already stored as integer cents
-        $sum = VoucherUsage::query()->sum('discount_amount');
+        $sum = $this->usages()->sum('discount_amount');
 
         return (int) $sum;
     }

@@ -78,10 +78,11 @@ class Campaign extends Model
 
     public function getTable(): string
     {
-        /** @var string $table */
-        $table = config('vouchers.table_names.campaigns', 'voucher_campaigns');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
 
-        return $table;
+        return $tables['campaigns'] ?? $prefix.'voucher_campaigns';
     }
 
     /**

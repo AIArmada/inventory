@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Exports;
 
 use AIArmada\Inventory\Enums\MovementType;
+use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryMovement;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Carbon\CarbonImmutable;
+use InvalidArgumentException;
 
 /**
  * Export inventory movements to various formats.
@@ -48,11 +51,25 @@ final class MovementExport implements ExportableInterface
             ->whereBetween('occurred_at', [$this->startDate, $this->endDate])
             ->orderBy('occurred_at', 'desc');
 
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($query);
+        }
+
         if ($this->movementType !== null) {
             $query->where('type', $this->movementType->value);
         }
 
         if ($this->locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($this->locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where(function ($q): void {
                 $q->where('from_location_id', $this->locationId)
                     ->orWhere('to_location_id', $this->locationId);

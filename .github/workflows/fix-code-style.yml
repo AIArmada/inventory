@@ -3,9 +3,8 @@ name: fix-code-style
 on:
   push:
     branches: [main, develop]
-
-permissions:
-  contents: write
+  pull_request:
+    branches: [main, develop]
 
 jobs:
   fix-code-style:
@@ -13,9 +12,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -27,15 +23,8 @@ jobs:
       - name: Install dependencies
         run: composer update --prefer-dist --no-interaction --no-progress
 
-      - name: Run Rector
-        run: vendor/bin/rector --no-progress-bar
+      - name: Check Rector (dry-run)
+        run: vendor/bin/rector --dry-run --no-progress-bar
 
-      - name: Run Pint
-        run: vendor/bin/pint
-
-      - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'chore: fix code style'
-          commit_user_name: 'github-actions[bot]'
-          commit_user_email: 'github-actions[bot]@users.noreply.github.com'
+      - name: Check Pint (test)
+        run: vendor/bin/pint --test

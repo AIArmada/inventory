@@ -11,7 +11,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(config('vouchers.table_names.voucher_usage', 'voucher_usage'), function (Blueprint $table): void {
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['voucher_usage'] ?? $prefix.'voucher_usage';
+
+        Schema::create($tableName, function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('voucher_id');
             $table->bigInteger('discount_amount'); // stored in cents
@@ -34,7 +39,6 @@ return new class extends Migration
         });
 
         // Optional: create GIN index when using jsonb on PostgreSQL
-        $tableName = config('vouchers.table_names.voucher_usage', 'voucher_usage');
         $jsonColumnType = commerce_json_column_type('vouchers', 'json');
 
         if (
@@ -48,6 +52,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists(config('vouchers.table_names.voucher_usage', 'voucher_usage'));
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['voucher_usage'] ?? $prefix.'voucher_usage';
+
+        Schema::dropIfExists($tableName);
     }
 };

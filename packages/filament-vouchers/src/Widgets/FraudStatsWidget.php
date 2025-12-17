@@ -4,25 +4,29 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentVouchers\Widgets;
 
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Fraud\Enums\FraudRiskLevel;
 use AIArmada\Vouchers\Fraud\Models\VoucherFraudSignal;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Database\Eloquent\Builder;
 
 final class FraudStatsWidget extends StatsOverviewWidget
 {
     protected function getStats(): array
     {
-        $total = VoucherFraudSignal::count();
-        $unreviewed = VoucherFraudSignal::where('reviewed', false)->count();
-        $highRisk = VoucherFraudSignal::whereIn('risk_level', [
+        $signals = $this->signals();
+
+        $total = (clone $signals)->count();
+        $unreviewed = (clone $signals)->where('reviewed', false)->count();
+        $highRisk = (clone $signals)->whereIn('risk_level', [
             FraudRiskLevel::High->value,
             FraudRiskLevel::Critical->value,
         ])->count();
-        $blocked = VoucherFraudSignal::where('was_blocked', true)->count();
+        $blocked = (clone $signals)->where('was_blocked', true)->count();
 
-        $todayCount = VoucherFraudSignal::whereDate('created_at', today())->count();
-        $yesterdayCount = VoucherFraudSignal::whereDate('created_at', today()->subDay())->count();
+        $todayCount = (clone $signals)->whereDate('created_at', today())->count();
+        $yesterdayCount = (clone $signals)->whereDate('created_at', today()->subDay())->count();
 
         $trend = $yesterdayCount > 0
             ? round((($todayCount - $yesterdayCount) / $yesterdayCount) * 100, 1)
@@ -48,5 +52,23 @@ final class FraudStatsWidget extends StatsOverviewWidget
                 ->description(($trend >= 0 ? '+' : '') . $trend . '% vs yesterday')
                 ->color($trend > 20 ? 'danger' : 'success'),
         ];
+    }
+
+    /**
+     * @return Builder<VoucherFraudSignal>
+     */
+    private function signals(): Builder
+    {
+        /** @var Builder<VoucherFraudSignal> $query */
+        $query = VoucherFraudSignal::query();
+
+        if (! OwnerScopedQueries::isEnabled()) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $builder): void {
+            $builder->whereIn('voucher_id', OwnerScopedQueries::voucherIds())
+                ->orWhereIn('voucher_code', OwnerScopedQueries::voucherCodes());
+        });
     }
 }

@@ -6,10 +6,13 @@ namespace AIArmada\Inventory\Reports;
 
 use AIArmada\Inventory\Enums\MovementType;
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryMovement;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 /**
  * Generates inventory movement analysis reports.
@@ -34,7 +37,11 @@ final class MovementAnalysisReport
         $startDate ??= CarbonImmutable::now()->subMonth();
         $endDate ??= CarbonImmutable::now();
 
-        return InventoryMovement::query()
+        if ($locationId !== null) {
+            $this->getScopedLocationOrFail($locationId);
+        }
+
+        $query = InventoryMovement::query()
             ->select([
                 'type',
                 DB::raw('COUNT(*) as count'),
@@ -46,8 +53,14 @@ final class MovementAnalysisReport
                     ->orWhere('to_location_id', $locationId);
             }))
             ->groupBy('type')
-            ->orderByDesc('count')
-            ->get()
+
+            ->orderByDesc('count');
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($query);
+        }
+
+        return $query->get()
             ->map(fn ($row) => [
                 'movement_type' => $row->type,
                 'count' => (int) $row->count,
@@ -74,15 +87,20 @@ final class MovementAnalysisReport
         $startDate ??= CarbonImmutable::now()->subDays(30);
         $endDate ??= CarbonImmutable::now();
 
-        $movements = InventoryMovement::query()
+        $movementsQuery = InventoryMovement::query()
             ->select([
                 DB::raw('DATE(occurred_at) as date'),
                 'type',
                 DB::raw('SUM(quantity) as total'),
             ])
             ->whereBetween('occurred_at', [$startDate, $endDate])
-            ->groupBy(DB::raw('DATE(occurred_at)'), 'type')
-            ->get();
+            ->groupBy(DB::raw('DATE(occurred_at)'), 'type');
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($movementsQuery);
+        }
+
+        $movements = $movementsQuery->get();
 
         $dates = collect();
         $current = $startDate->copy();
@@ -124,7 +142,7 @@ final class MovementAnalysisReport
         $startDate ??= CarbonImmutable::now()->subMonth();
         $endDate ??= CarbonImmutable::now();
 
-        return InventoryMovement::query()
+        $query = InventoryMovement::query()
             ->select([
                 'inventoryable_type',
                 'inventoryable_id',
@@ -136,7 +154,14 @@ final class MovementAnalysisReport
             ->groupBy('inventoryable_type', 'inventoryable_id')
             ->orderByDesc('movement_count')
             ->limit($limit)
-            ->get()
+
+            ;
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($query);
+        }
+
+        return $query->get()
             ->map(fn ($row) => [
                 'inventoryable_type' => $row->inventoryable_type,
                 'inventoryable_id' => $row->inventoryable_id,
@@ -163,18 +188,35 @@ final class MovementAnalysisReport
     ): Collection {
         $cutoffDate = CarbonImmutable::now()->subDays($minDaysSinceMovement);
 
-        $lastMovements = InventoryMovement::query()
+        $lastMovementsQuery = InventoryMovement::query()
             ->select([
                 'inventoryable_type',
                 'inventoryable_id',
                 DB::raw('MAX(occurred_at) as last_occurred_at'),
             ])
             ->groupBy('inventoryable_type', 'inventoryable_id')
-            ->having('last_occurred_at', '<', $cutoffDate)
+            ->having('last_occurred_at', '<', $cutoffDate);
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($lastMovementsQuery);
+        }
+
+        $lastMovements = $lastMovementsQuery->get()
+            ->keyBy(fn ($row) => $row->inventoryable_type . ':' . $row->inventoryable_id);
+
+        $inventoryablesWithAnyMovementQuery = InventoryMovement::query()
+            ->select(['inventoryable_type', 'inventoryable_id'])
+            ->distinct();
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($inventoryablesWithAnyMovementQuery);
+        }
+
+        $inventoryablesWithAnyMovement = $inventoryablesWithAnyMovementQuery
             ->get()
             ->keyBy(fn ($row) => $row->inventoryable_type . ':' . $row->inventoryable_id);
 
-        return InventoryLevel::query()
+        $levelsQuery = InventoryLevel::query()
             ->select([
                 'inventoryable_type',
                 'inventoryable_id',
@@ -182,14 +224,18 @@ final class MovementAnalysisReport
             ])
             ->where('quantity_on_hand', '>', 0)
             ->groupBy('inventoryable_type', 'inventoryable_id')
-            ->get()
-            ->filter(function ($level) use ($lastMovements) {
+
+            ;
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($levelsQuery, 'location');
+        }
+
+        return $levelsQuery->get()
+            ->filter(function ($level) use ($lastMovements, $inventoryablesWithAnyMovement) {
                 $key = $level->inventoryable_type . ':' . $level->inventoryable_id;
 
-                return $lastMovements->has($key) || ! InventoryMovement::query()
-                    ->where('inventoryable_type', $level->inventoryable_type)
-                    ->where('inventoryable_id', $level->inventoryable_id)
-                    ->exists();
+                return $lastMovements->has($key) || ! $inventoryablesWithAnyMovement->has($key);
             })
             ->map(function ($level) use ($lastMovements) {
                 $key = $level->inventoryable_type . ':' . $level->inventoryable_id;
@@ -231,17 +277,33 @@ final class MovementAnalysisReport
         $endDate ??= CarbonImmutable::now();
         $days = max(1, $startDate->diffInDays($endDate));
 
-        $receipts = (int) InventoryMovement::query()
+        $receiptsQuery = InventoryMovement::query()
             ->where('type', MovementType::Receipt->value)
-            ->whereBetween('occurred_at', [$startDate, $endDate])
-            ->sum('quantity');
+            ->whereBetween('occurred_at', [$startDate, $endDate]);
 
-        $shipments = (int) InventoryMovement::query()
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($receiptsQuery);
+        }
+
+        $receipts = (int) $receiptsQuery->sum('quantity');
+
+        $shipmentsQuery = InventoryMovement::query()
             ->where('type', MovementType::Shipment->value)
-            ->whereBetween('occurred_at', [$startDate, $endDate])
-            ->sum('quantity');
+            ->whereBetween('occurred_at', [$startDate, $endDate]);
 
-        $currentStock = (int) InventoryLevel::query()->sum('quantity_on_hand');
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($shipmentsQuery);
+        }
+
+        $shipments = (int) $shipmentsQuery->sum('quantity');
+
+        $currentStockQuery = InventoryLevel::query();
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($currentStockQuery, 'location');
+        }
+
+        $currentStock = (int) $currentStockQuery->sum('quantity_on_hand');
 
         $shipmentsPerDay = $shipments / $days;
         $netChangePerDay = ($receipts - $shipments) / $days;
@@ -274,10 +336,15 @@ final class MovementAnalysisReport
         $startDate ??= CarbonImmutable::now()->subMonth();
         $endDate ??= CarbonImmutable::now();
 
-        return InventoryMovement::query()
+        $query = InventoryMovement::query()
             ->where('type', MovementType::Adjustment->value)
-            ->whereBetween('occurred_at', [$startDate, $endDate])
-            ->get()
+            ->whereBetween('occurred_at', [$startDate, $endDate]);
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($query);
+        }
+
+        return $query->get()
             ->groupBy(fn ($m) => $m->reason ?? 'unknown')
             ->map(function ($movements, $reason) {
                 return [
@@ -290,5 +357,18 @@ final class MovementAnalysisReport
             })
             ->sortByDesc('count')
             ->values();
+    }
+
+    private function getScopedLocationOrFail(string $locationId): InventoryLocation
+    {
+        $query = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query());
+
+        $location = $query->whereKey($locationId)->first();
+
+        if ($location === null) {
+            throw new InvalidArgumentException('Invalid location for current owner');
+        }
+
+        return $location;
     }
 }

@@ -8,8 +8,11 @@ use AIArmada\Orders\Models\Order;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Facades\Filament;
+use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 
 class OrderTimelineWidget extends Widget implements HasForms
 {
@@ -40,19 +43,24 @@ class OrderTimelineWidget extends Widget implements HasForms
         $events->push([
             'type' => 'created',
             'title' => 'Order Created',
-            'description' => 'Order was placed by ' . $this->record->customer->full_name,
+            'description' => 'Order was placed by ' . ($this->record->customer?->full_name ?? 'Guest'),
             'icon' => 'heroicon-o-shopping-cart',
             'color' => 'success',
             'timestamp' => $this->record->created_at,
         ]);
 
         // Status transitions from activity log (if using spatie/laravel-activitylog)
-        if (method_exists($this->record, 'activities') && property_exists($this->record, 'activities')) {
-            /** @var Collection<int, object> $activities */
-            $activities = $this->record->activities;
-            foreach ($activities as $activity) {
-                /** @var object{description: string, properties: array{old_status?: string, new_status?: string}, created_at: \Carbon\Carbon, causer?: object{name: string}|null} $activity */
-                if ($activity->description === 'status_changed') {
+        if (method_exists($this->record, 'activities')) {
+            try {
+                /** @var Collection<int, object> $activities */
+                $activities = $this->record->activities()->latest()->limit(25)->get();
+
+                foreach ($activities as $activity) {
+                    /** @var object{description: string, properties: array{old_status?: string, new_status?: string}, created_at: \Carbon\Carbon, causer?: object{name: string}|null} $activity */
+                    if ($activity->description !== 'status_changed') {
+                        continue;
+                    }
+
                     $events->push([
                         'type' => 'status_change',
                         'title' => 'Status Updated',
@@ -67,6 +75,8 @@ class OrderTimelineWidget extends Widget implements HasForms
                         'causer' => $activity->causer?->name ?? 'System',
                     ]);
                 }
+            } catch (\Throwable) {
+                // Ignore activity log if not configured.
             }
         }
 
@@ -129,7 +139,7 @@ class OrderTimelineWidget extends Widget implements HasForms
                     ->rows(2)
                     ->placeholder('Add a note to this order timeline...'),
 
-                Forms\Components\Toggle::make('is_visible_to_customer')
+        Forms\Components\Toggle::make('is_customer_visible')
                     ->label('Visible to Customer')
                     ->default(false)
                     ->helperText('Customer will see this note in their order history'),
@@ -141,10 +151,25 @@ class OrderTimelineWidget extends Widget implements HasForms
     {
         $data = $this->form->getState();
 
+        if (! $this->record) {
+            return;
+        }
+
+        $user = Filament::auth()->user();
+
+        if (! $user || ! Gate::forUser($user)->allows('update', $this->record)) {
+            Notification::make()
+                ->title('Not authorized')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         $this->record->orderNotes()->create([
             'content' => $data['content'],
-            'is_visible_to_customer' => $data['is_visible_to_customer'] ?? false,
-            'user_id' => auth()->id(),
+            'is_customer_visible' => $data['is_customer_visible'] ?? false,
+            'user_id' => Filament::auth()->id(),
         ]);
 
         $this->noteData = [];
@@ -152,7 +177,7 @@ class OrderTimelineWidget extends Widget implements HasForms
 
         $this->dispatch('note-added');
 
-        \Filament\Notifications\Notification::make()
+        Notification::make()
             ->title('Note added successfully')
             ->success()
             ->send();

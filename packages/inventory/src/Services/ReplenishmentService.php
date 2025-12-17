@@ -7,10 +7,14 @@ namespace AIArmada\Inventory\Services;
 use AIArmada\Inventory\Enums\ReorderSuggestionStatus;
 use AIArmada\Inventory\Enums\ReorderUrgency;
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryReorderSuggestion;
 use AIArmada\Inventory\Models\InventorySupplierLeadtime;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 final class ReplenishmentService
 {
@@ -25,9 +29,19 @@ final class ReplenishmentService
      */
     public function generateSuggestions(?string $locationId = null): Collection
     {
+        if ($locationId !== null && InventoryOwnerScope::isEnabled()) {
+            $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query()->whereKey($locationId))->exists();
+
+            if (! $isAllowed) {
+                throw new InvalidArgumentException('Invalid location for current owner');
+            }
+        }
+
         $query = InventoryLevel::query()
             ->needsReorder()
             ->with(['location']);
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
 
         if ($locationId !== null) {
             $query->where('location_id', $locationId);
@@ -171,11 +185,14 @@ final class ReplenishmentService
      */
     public function getPendingSuggestions(): Collection
     {
-        return InventoryReorderSuggestion::query()
+        $query = InventoryReorderSuggestion::query()
             ->pending()
             ->byUrgency()
-            ->with(['inventoryable', 'location', 'supplierLeadtime'])
-            ->get();
+            ->with(['inventoryable', 'location', 'supplierLeadtime']);
+
+        $this->applyOwnerScopeToSuggestionQuery($query);
+
+        return $query->get();
     }
 
     /**
@@ -185,11 +202,14 @@ final class ReplenishmentService
      */
     public function getCriticalSuggestions(): Collection
     {
-        return InventoryReorderSuggestion::query()
+        $query = InventoryReorderSuggestion::query()
             ->actionable()
             ->critical()
-            ->with(['inventoryable', 'location', 'supplierLeadtime'])
-            ->get();
+            ->with(['inventoryable', 'location', 'supplierLeadtime']);
+
+        $this->applyOwnerScopeToSuggestionQuery($query);
+
+        return $query->get();
     }
 
     /**
@@ -225,10 +245,13 @@ final class ReplenishmentService
     {
         $cutoff = now()->subDays($daysOld);
 
-        $old = InventoryReorderSuggestion::query()
+        $oldQuery = InventoryReorderSuggestion::query()
             ->actionable()
-            ->where('created_at', '<', $cutoff)
-            ->get();
+            ->where('created_at', '<', $cutoff);
+
+        $this->applyOwnerScopeToSuggestionQuery($oldQuery);
+
+        $old = $oldQuery->get();
 
         $expired = 0;
 
@@ -248,16 +271,22 @@ final class ReplenishmentService
      */
     public function getStatistics(): array
     {
-        $suggestions = InventoryReorderSuggestion::query()
+        $suggestionsQuery = InventoryReorderSuggestion::query()
             ->actionable()
-            ->with('supplierLeadtime')
-            ->get();
+            ->with('supplierLeadtime');
+
+        $this->applyOwnerScopeToSuggestionQuery($suggestionsQuery);
+
+        $suggestions = $suggestionsQuery->get();
 
         $pending = $suggestions->where('status', ReorderSuggestionStatus::Pending)->count();
         $approved = $suggestions->where('status', ReorderSuggestionStatus::Approved)->count();
-        $ordered = InventoryReorderSuggestion::query()
-            ->where('status', ReorderSuggestionStatus::Ordered)
-            ->count();
+        $orderedQuery = InventoryReorderSuggestion::query()
+            ->where('status', ReorderSuggestionStatus::Ordered);
+
+        $this->applyOwnerScopeToSuggestionQuery($orderedQuery);
+
+        $ordered = $orderedQuery->count();
         $critical = $suggestions->where('urgency', ReorderUrgency::Critical)->count();
 
         $totalValue = $suggestions->sum(function ($s) {
@@ -273,6 +302,26 @@ final class ReplenishmentService
             'critical' => $critical,
             'total_value' => (int) $totalValue,
         ];
+    }
+
+    /**
+     * @param  Builder<InventoryReorderSuggestion>  $query
+     */
+    private function applyOwnerScopeToSuggestionQuery(Builder $query): void
+    {
+        if (! InventoryOwnerScope::isEnabled()) {
+            return;
+        }
+
+        $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::resolveOwner() === null;
+
+        $query->where(function (Builder $builder) use ($includeNullLocation): void {
+            $builder->whereHas('location', fn (Builder $locationQuery): Builder => InventoryOwnerScope::applyToLocationQuery($locationQuery));
+
+            if ($includeNullLocation) {
+                $builder->orWhereNull('location_id');
+            }
+        });
     }
 
     /**

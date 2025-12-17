@@ -248,7 +248,7 @@ describe('VoucherUsage Model', function (): void {
 
     describe('getTable method', function (): void {
         it('returns table name from config', function (): void {
-            config(['vouchers.table_names.voucher_usage' => 'custom_voucher_usages']);
+            config(['vouchers.database.tables.voucher_usage' => 'custom_voucher_usages']);
 
             $usage = new VoucherUsage;
 
@@ -256,7 +256,7 @@ describe('VoucherUsage Model', function (): void {
         });
 
         it('returns another custom table name', function (): void {
-            config(['vouchers.table_names.voucher_usage' => 'my_usage_logs']);
+            config(['vouchers.database.tables.voucher_usage' => 'my_usage_logs']);
 
             $usage = new VoucherUsage;
 
@@ -264,7 +264,7 @@ describe('VoucherUsage Model', function (): void {
         });
 
         it('returns prefixed table name from config', function (): void {
-            config(['vouchers.table_names.voucher_usage' => 'acme_voucher_usage']);
+            config(['vouchers.database.tables.voucher_usage' => 'acme_voucher_usage']);
 
             $usage = new VoucherUsage;
 

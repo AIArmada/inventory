@@ -6,9 +6,13 @@ namespace AIArmada\Inventory\Services;
 
 use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Models\InventoryCostLayer;
+use AIArmada\Inventory\Models\InventoryBatch;
+use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 final class WeightedAverageCostService
 {
@@ -27,6 +31,32 @@ final class WeightedAverageCostService
         ?Carbon $layerDate = null
     ): array {
         return DB::transaction(function () use ($model, $quantity, $unitCostMinor, $locationId, $batchId, $reference, $layerDate): array {
+            if (InventoryOwnerScope::isEnabled()) {
+                if ($locationId === null && InventoryOwnerScope::resolveOwner() !== null) {
+                    throw new InvalidArgumentException('Location is required when owner scoping is enabled');
+                }
+
+                if ($locationId !== null) {
+                    $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                        ->whereKey($locationId)
+                        ->exists();
+
+                    if (! $isAllowed) {
+                        throw new InvalidArgumentException('Invalid location for current owner');
+                    }
+                }
+
+                if ($batchId !== null) {
+                    $isAllowed = InventoryOwnerScope::applyToQueryByLocationRelation(InventoryBatch::query(), 'location')
+                        ->whereKey($batchId)
+                        ->exists();
+
+                    if (! $isAllowed) {
+                        throw new InvalidArgumentException('Invalid batch for current owner');
+                    }
+                }
+            }
+
             $currentValuation = $this->calculateValuation($model, $locationId);
 
             $totalQuantity = $currentValuation['quantity'] + $quantity;
@@ -83,7 +113,29 @@ final class WeightedAverageCostService
                 ->usingMethod(CostingMethod::WeightedAverage)
                 ->orderBy('layer_date', 'asc');
 
+            if (InventoryOwnerScope::isEnabled()) {
+                $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+                $query->where(function ($builder) use ($includeNullLocation): void {
+                    InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                    if ($includeNullLocation) {
+                        $builder->orWhereNull('location_id');
+                    }
+                });
+            }
+
             if ($locationId !== null) {
+                if (InventoryOwnerScope::isEnabled()) {
+                    $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                        ->whereKey($locationId)
+                        ->exists();
+
+                    if (! $isAllowed) {
+                        throw new InvalidArgumentException('Invalid location for current owner');
+                    }
+                }
+
                 $query->where('location_id', $locationId);
             }
 
@@ -119,7 +171,29 @@ final class WeightedAverageCostService
             ->withRemainingQuantity()
             ->usingMethod(CostingMethod::WeightedAverage);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -155,7 +229,29 @@ final class WeightedAverageCostService
             ->withRemainingQuantity()
             ->usingMethod(CostingMethod::WeightedAverage);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -185,7 +281,29 @@ final class WeightedAverageCostService
             ->withRemainingQuantity()
             ->usingMethod(CostingMethod::WeightedAverage);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -202,7 +320,29 @@ final class WeightedAverageCostService
             ->withRemainingQuantity()
             ->usingMethod(CostingMethod::WeightedAverage);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 

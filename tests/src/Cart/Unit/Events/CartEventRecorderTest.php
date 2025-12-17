@@ -120,4 +120,69 @@ describe('CartEventRecorder', function (): void {
 
         expect($events)->toBeEmpty();
     });
+
+    it('returns null when event shouldPersist is false', function (): void {
+        $event = Mockery::mock(CartEventInterface::class);
+        $event->shouldReceive('shouldPersist')->andReturn(false);
+
+        $storage = new InMemoryStorage;
+        $cart = new Cart($storage, 'user-persist');
+        $cart->add('item-1', 'Product', 100, 1);
+
+        $result = $this->recorder->record($event, $cart);
+
+        expect($result)->toBeNull();
+    });
+
+    it('records event when shouldPersist is true', function (): void {
+        $event = Mockery::mock(CartEventInterface::class);
+        $event->shouldReceive('shouldPersist')->andReturn(true);
+
+        $storage = new InMemoryStorage;
+        $cart = new Cart($storage, 'user-record');
+        $cart->add('item-1', 'Product', 100, 1);
+
+        $this->repository->shouldReceive('record')
+            ->once()
+            ->andReturn('event-uuid-123');
+
+        $result = $this->recorder->record($event, $cart);
+
+        expect($result)->toBe('event-uuid-123');
+    });
+
+    it('filters non-persistable events in batch', function (): void {
+        $persistableEvent = Mockery::mock(CartEventInterface::class);
+        $persistableEvent->shouldReceive('shouldPersist')->andReturn(true);
+
+        $nonPersistableEvent = Mockery::mock(CartEventInterface::class);
+        $nonPersistableEvent->shouldReceive('shouldPersist')->andReturn(false);
+
+        $storage = new InMemoryStorage;
+        $cart = new Cart($storage, 'user-batch-filter');
+        $cart->add('item-1', 'Product', 100, 1);
+
+        $this->repository->shouldReceive('recordBatch')
+            ->once()
+            ->andReturn(['uuid-1']);
+
+        $result = $this->recorder->recordBatch([$persistableEvent, $nonPersistableEvent], $cart);
+
+        expect($result)->toBe(['uuid-1']);
+    });
+
+    it('returns empty array when all batch events are non-persistable', function (): void {
+        $event1 = Mockery::mock(CartEventInterface::class);
+        $event1->shouldReceive('shouldPersist')->andReturn(false);
+        $event2 = Mockery::mock(CartEventInterface::class);
+        $event2->shouldReceive('shouldPersist')->andReturn(false);
+
+        $storage = new InMemoryStorage;
+        $cart = new Cart($storage, 'user-batch-none');
+        $cart->add('item-1', 'Product', 100, 1);
+
+        $result = $this->recorder->recordBatch([$event1, $event2], $cart);
+
+        expect($result)->toBeEmpty();
+    });
 });

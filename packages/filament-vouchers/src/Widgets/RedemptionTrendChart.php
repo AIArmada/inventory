@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentVouchers\Widgets;
 
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Models\VoucherUsage;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
@@ -84,8 +85,14 @@ final class RedemptionTrendChart extends ChartWidget
         $startDate = Carbon::now()->subDays($days)->startOfDay();
         $endDate = Carbon::now()->endOfDay();
 
+        $usageQuery = VoucherUsage::query();
+
+        if (OwnerScopedQueries::isEnabled()) {
+            $usageQuery->whereIn('voucher_id', OwnerScopedQueries::voucherIds());
+        }
+
         /** @var Collection<string, object{date: string, count: int}> $redemptions */
-        $redemptions = VoucherUsage::query()
+        $redemptions = $usageQuery
             ->selectRaw('DATE(used_at) as date, COUNT(*) as count')
             ->where('used_at', '>=', $startDate)
             ->where('used_at', '<=', $endDate)

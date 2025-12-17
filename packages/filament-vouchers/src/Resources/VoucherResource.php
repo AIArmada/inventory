@@ -14,7 +14,9 @@ use AIArmada\FilamentVouchers\Resources\VoucherResource\RelationManagers\WalletE
 use AIArmada\FilamentVouchers\Resources\VoucherResource\Schemas\VoucherForm;
 use AIArmada\FilamentVouchers\Resources\VoucherResource\Schemas\VoucherInfolist;
 use AIArmada\FilamentVouchers\Resources\VoucherResource\Tables\VouchersTable;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use BackedEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -80,9 +82,23 @@ final class VoucherResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = self::getModel()::count();
+        $count = (int) self::getEloquentQuery()->count();
 
         return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * @return Builder<Voucher>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<Voucher> $query */
+        $query = parent::getEloquentQuery();
+
+        /** @var Builder<Voucher> $scoped */
+        $scoped = OwnerScopedQueries::scopeVoucherLike($query);
+
+        return $scoped;
     }
 
     public static function getNavigationBadgeColor(): string

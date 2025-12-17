@@ -21,6 +21,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class CategoryResource extends Resource
@@ -35,9 +36,16 @@ class CategoryResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return Category::query()
+            ->forOwner()
+            ->withCount(['products', 'children']);
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count() ?: null;
+        return static::getEloquentQuery()->count() ?: null;
     }
 
     public static function form(Schema $schema): Schema
@@ -65,7 +73,14 @@ class CategoryResource extends Resource
 
                                 Select::make('parent_id')
                                     ->label('Parent Category')
-                                    ->relationship('parent', 'name')
+                                    ->relationship(
+                                        'parent',
+                                        'name',
+                                        modifyQueryUsing: function (Builder $query): Builder {
+                                            /** @var Builder<\AIArmada\Products\Models\Category> $query */
+                                            return $query->forOwner();
+                                        }
+                                    )
                                     ->searchable()
                                     ->preload()
                                     ->placeholder('None (Root Category)')
@@ -191,9 +206,16 @@ class CategoryResource extends Resource
 
                 Tables\Filters\SelectFilter::make('parent_id')
                     ->label('Parent')
-                    ->relationship('parent', 'name')
+                    ->relationship(
+                        'parent',
+                        'name',
+                        modifyQueryUsing: function (Builder $query): Builder {
+                            /** @var Builder<\AIArmada\Products\Models\Category> $query */
+                            return $query->forOwner();
+                        }
+                    )
                     ->placeholder('All')
-                    ->options(fn () => ['0' => 'Root Categories'] + Category::whereNull('parent_id')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => ['0' => 'Root Categories'] + Category::query()->forOwner()->whereNull('parent_id')->pluck('name', 'id')->toArray()),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -245,14 +267,12 @@ class CategoryResource extends Resource
                 Section::make('Statistics')
                     ->schema([
                         TextEntry::make('products_count')
-                            ->label('Direct Products')
-                            ->getStateUsing(fn ($record) => $record->products()->count()),
+                            ->label('Direct Products'),
                         TextEntry::make('all_products_count')
                             ->label('All Products (including children)')
                             ->getStateUsing(fn ($record) => $record->getProductCount(true)),
                         TextEntry::make('children_count')
-                            ->label('Child Categories')
-                            ->getStateUsing(fn ($record) => $record->children()->count()),
+                            ->label('Child Categories'),
                     ])
                     ->columns(3),
             ]);

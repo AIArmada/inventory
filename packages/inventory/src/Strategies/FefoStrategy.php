@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Strategies;
 
 use AIArmada\Inventory\Models\InventoryBatch;
+use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 
 /**
  * FEFO (First Expired, First Out) allocation strategy.
@@ -37,11 +40,25 @@ final class FefoStrategy implements AllocationStrategyInterface
     {
         $context = $context ?? new AllocationContext;
 
+        if (InventoryOwnerScope::isEnabled() && $context->locationId !== null) {
+            $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                ->whereKey($context->locationId)
+                ->exists();
+
+            if (! $isAllowed) {
+                throw new InvalidArgumentException('Invalid location for current owner');
+            }
+        }
+
         $query = InventoryBatch::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->allocatable()
             ->fefo();
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
 
         if ($context->locationId !== null) {
             $query->atLocation($context->locationId);
@@ -63,10 +80,24 @@ final class FefoStrategy implements AllocationStrategyInterface
     {
         $context = $context ?? new AllocationContext;
 
+        if (InventoryOwnerScope::isEnabled() && $context->locationId !== null) {
+            $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                ->whereKey($context->locationId)
+                ->exists();
+
+            if (! $isAllowed) {
+                throw new InvalidArgumentException('Invalid location for current owner');
+            }
+        }
+
         $query = InventoryBatch::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->allocatable();
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
 
         if ($context->locationId !== null) {
             $query->atLocation($context->locationId);
@@ -90,11 +121,25 @@ final class FefoStrategy implements AllocationStrategyInterface
     {
         $context = $context ?? new AllocationContext;
 
+        if (InventoryOwnerScope::isEnabled() && $context->locationId !== null) {
+            $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                ->whereKey($context->locationId)
+                ->exists();
+
+            if (! $isAllowed) {
+                throw new InvalidArgumentException('Invalid location for current owner');
+            }
+        }
+
         $query = InventoryBatch::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->allocatable()
             ->fefo();
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
 
         if ($context->locationId !== null) {
             $query->atLocation($context->locationId);

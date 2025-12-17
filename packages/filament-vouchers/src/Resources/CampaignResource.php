@@ -13,12 +13,15 @@ use AIArmada\FilamentVouchers\Resources\CampaignResource\RelationManagers\Vouche
 use AIArmada\FilamentVouchers\Resources\CampaignResource\Schemas\CampaignForm;
 use AIArmada\FilamentVouchers\Resources\CampaignResource\Schemas\CampaignInfolist;
 use AIArmada\FilamentVouchers\Resources\CampaignResource\Tables\CampaignsTable;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
+use AIArmada\Vouchers\Campaigns\Enums\CampaignStatus;
 use AIArmada\Vouchers\Campaigns\Models\Campaign;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class CampaignResource extends Resource
@@ -70,9 +73,25 @@ final class CampaignResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = self::getModel()::where('status', 'active')->count();
+        $count = (int) self::getEloquentQuery()
+            ->where('status', CampaignStatus::Active->value)
+            ->count();
 
         return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * @return Builder<Campaign>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<Campaign> $query */
+        $query = parent::getEloquentQuery();
+
+        /** @var Builder<Campaign> $scoped */
+        $scoped = OwnerScopedQueries::scopeVoucherLike($query);
+
+        return $scoped;
     }
 
     public static function getNavigationBadgeColor(): string

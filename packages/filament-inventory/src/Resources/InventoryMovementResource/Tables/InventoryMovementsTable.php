@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Resources\InventoryMovementResource\Tables;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Enums\MovementType;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
@@ -95,13 +96,21 @@ final class InventoryMovementsTable
 
                 SelectFilter::make('from_location_id')
                     ->label('From Location')
-                    ->relationship('fromLocation', 'name')
+                    ->relationship(
+                        name: 'fromLocation',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToLocationQuery($query),
+                    )
                     ->searchable()
                     ->preload(),
 
                 SelectFilter::make('to_location_id')
                     ->label('To Location')
-                    ->relationship('toLocation', 'name')
+                    ->relationship(
+                        name: 'toLocation',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToLocationQuery($query),
+                    )
                     ->searchable()
                     ->preload(),
 

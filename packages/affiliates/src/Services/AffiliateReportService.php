@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Affiliates\Services;
 
 use AIArmada\Affiliates\Models\Affiliate;
+use AIArmada\Affiliates\Models\AffiliateAttribution;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use Illuminate\Support\Collection;
 
@@ -16,13 +17,14 @@ final class AffiliateReportService
     public function affiliateSummary(string $affiliateId): array
     {
         /** @var Affiliate|null $affiliate */
-        $affiliate = Affiliate::query()->find($affiliateId);
+        $affiliate = Affiliate::query()->forOwner()->find($affiliateId);
 
         if (! $affiliate) {
             return [];
         }
 
         $conversions = AffiliateConversion::query()
+            ->forOwner()
             ->where('affiliate_id', $affiliateId)
             ->get();
 
@@ -32,11 +34,16 @@ final class AffiliateReportService
         $ltv = $conversionCount > 0 ? ($totalRevenue / $conversionCount) : 0;
 
         $utm = $this->aggregateUtm($conversions);
+        $attributionCount = (int) AffiliateAttribution::query()
+            ->forOwner()
+            ->where('affiliate_id', $affiliateId)
+            ->count();
+
         $funnel = [
-            'attributions' => (int) $affiliate->attributions()->count(),
+            'attributions' => $attributionCount,
             'conversions' => $conversionCount,
-            'conversion_rate' => $conversionCount > 0 && $affiliate->attributions()->count() > 0
-                ? round(($conversionCount / $affiliate->attributions()->count()) * 100, 2)
+            'conversion_rate' => $conversionCount > 0 && $attributionCount > 0
+                ? round(($conversionCount / $attributionCount) * 100, 2)
                 : 0,
         ];
 

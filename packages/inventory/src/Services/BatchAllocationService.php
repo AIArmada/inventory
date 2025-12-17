@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Services;
 
 use AIArmada\Inventory\Models\InventoryBatch;
+use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -43,11 +45,25 @@ final class BatchAllocationService
             throw new InvalidArgumentException('Quantity must be positive');
         }
 
+        if (InventoryOwnerScope::isEnabled() && $locationId !== null) {
+            $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                ->whereKey($locationId)
+                ->exists();
+
+            if (! $isAllowed) {
+                throw new InvalidArgumentException('Invalid location for current owner');
+            }
+        }
+
         $query = InventoryBatch::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
             ->allocatable()
             ->fifo();
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
 
         if ($locationId !== null) {
             $query->atLocation($locationId);

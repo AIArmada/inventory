@@ -1,6 +1,6 @@
 # Filament J&T Express
 
-> Filament 4 admin plugin for managing J&T Express shipping orders and tracking, powered by the `aiarmada/jnt` package.
+> Filament 5 admin plugin for managing J&T Express shipping orders and tracking, powered by the `aiarmada/jnt` package.
 
 ## Features
 
@@ -9,7 +9,7 @@
 - **Webhook Logs** – debug incoming webhook notifications
 - **Global Search** – search across orders, tracking numbers, and statuses
 - **Auto-Polling** – real-time updates without page refresh
-- **Read-Only Design** – safe viewing of shipping data (mutations via API)
+- **Operational Actions** – sync tracking and cancel orders via the J&T API
 
 ## Installation
 
@@ -45,7 +45,7 @@ public function panel(Panel $panel): Panel
 // config/filament-jnt.php
 return [
     // Navigation group for all J&T resources
-    'navigation_group' => 'J&T Express',
+    'navigation_group' => 'Shipping',
 
     // Badge color for navigation items
     'navigation_badge_color' => 'primary',
@@ -132,7 +132,7 @@ Set to `null` to disable auto-polling.
 
 - PHP 8.4+
 - Laravel 12+
-- Filament 4.2+
+- Filament 5.0+
 - aiarmada/jnt package
 
 ---

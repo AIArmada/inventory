@@ -11,12 +11,14 @@ use AIArmada\FilamentInventory\Resources\InventoryLocationResource\Pages\ViewInv
 use AIArmada\FilamentInventory\Resources\InventoryLocationResource\Schemas\InventoryLocationForm;
 use AIArmada\FilamentInventory\Resources\InventoryLocationResource\Schemas\InventoryLocationInfolist;
 use AIArmada\FilamentInventory\Resources\InventoryLocationResource\Tables\InventoryLocationsTable;
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryLocation;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class InventoryLocationResource extends Resource
@@ -34,6 +36,14 @@ final class InventoryLocationResource extends Resource
     protected static ?string $modelLabel = 'Location';
 
     protected static ?string $pluralModelLabel = 'Locations';
+
+    /**
+     * @return Builder<InventoryLocation>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query());
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -67,9 +77,7 @@ final class InventoryLocationResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        /** @var class-string<InventoryLocation> $model */
-        $model = self::getModel();
-        $count = $model::active()->count();
+        $count = self::getEloquentQuery()->active()->count();
 
         return $count > 0 ? (string) $count : null;
     }

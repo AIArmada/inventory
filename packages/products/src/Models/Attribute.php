@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\Products\Models;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Products\Enums\AttributeType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -42,7 +44,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Attribute extends Model
 {
     use HasFactory;
-    use HasOwner;
+    use HasOwner {
+        scopeForOwner as baseScopeForOwner;
+    }
     use HasUuids;
 
     protected $guarded = ['id'];
@@ -80,6 +84,28 @@ class Attribute extends Model
     public function getTable(): string
     {
         return config('products.tables.attributes', 'product_attributes');
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    {
+        if (! (bool) config('products.owner.enabled', true)) {
+            return $query;
+        }
+
+        if ($owner === null && app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        $includeGlobal = $includeGlobal && (bool) config('products.owner.include_global', true);
+
+        /** @var Builder<Attribute> $scoped */
+        $scoped = $this->baseScopeForOwner($query, $owner, $includeGlobal);
+
+        return $scoped;
     }
 
     /**
@@ -250,6 +276,32 @@ class Attribute extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (Attribute $attribute): void {
+            if (! (bool) config('products.owner.enabled', true)) {
+                return;
+            }
+
+            if (! (bool) config('products.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            if ($attribute->owner_type !== null || $attribute->owner_id !== null) {
+                return;
+            }
+
+            if (! app()->bound(OwnerResolverInterface::class)) {
+                return;
+            }
+
+            $owner = app(OwnerResolverInterface::class)->resolve();
+
+            if ($owner === null) {
+                return;
+            }
+
+            $attribute->assignOwner($owner);
+        });
+
         static::deleting(function (Attribute $attribute): void {
             // Delete all attribute values
             $attribute->values()->delete();

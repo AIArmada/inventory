@@ -6,6 +6,7 @@ namespace AIArmada\Inventory\Console;
 
 use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Services\InventoryAllocationService;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Console\Command;
 
 final class CleanupExpiredAllocationsCommand extends Command
@@ -32,13 +33,19 @@ final class CleanupExpiredAllocationsCommand extends Command
         $this->info('Cleaning up expired inventory allocations...');
 
         if ($isDryRun) {
-            $count = InventoryAllocation::query()
-                ->expired()
-                ->count();
+            $allocationsQuery = InventoryAllocation::query()->expired();
+
+            if (InventoryOwnerScope::isEnabled()) {
+                InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery, 'location');
+            }
+
+            $count = $allocationsQuery->count();
 
             $this->info("Would clean up {$count} expired allocations.");
         } else {
-            $count = $allocationService->cleanupExpired();
+            $count = InventoryOwnerScope::isEnabled()
+                ? $allocationService->cleanupExpired()
+                : $allocationService->cleanupExpiredGlobal();
             $this->info("Cleaned up {$count} expired allocations.");
         }
 

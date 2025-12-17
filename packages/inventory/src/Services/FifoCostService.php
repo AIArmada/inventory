@@ -6,9 +6,13 @@ namespace AIArmada\Inventory\Services;
 
 use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Models\InventoryCostLayer;
+use AIArmada\Inventory\Models\InventoryBatch;
+use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 final class FifoCostService
 {
@@ -24,6 +28,32 @@ final class FifoCostService
         ?string $reference = null,
         ?Carbon $layerDate = null
     ): InventoryCostLayer {
+        if (InventoryOwnerScope::isEnabled()) {
+            if ($locationId === null && InventoryOwnerScope::resolveOwner() !== null) {
+                throw new InvalidArgumentException('Location is required when owner scoping is enabled');
+            }
+
+            if ($locationId !== null) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
+            if ($batchId !== null) {
+                $isAllowed = InventoryOwnerScope::applyToQueryByLocationRelation(InventoryBatch::query(), 'location')
+                    ->whereKey($batchId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid batch for current owner');
+                }
+            }
+        }
+
         return InventoryCostLayer::create([
             'inventoryable_type' => $model->getMorphClass(),
             'inventoryable_id' => $model->getKey(),
@@ -57,7 +87,29 @@ final class FifoCostService
                 ->usingMethod(CostingMethod::Fifo)
                 ->fifoOrder();
 
+            if (InventoryOwnerScope::isEnabled()) {
+                $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+                $query->where(function ($builder) use ($includeNullLocation): void {
+                    InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                    if ($includeNullLocation) {
+                        $builder->orWhereNull('location_id');
+                    }
+                });
+            }
+
             if ($locationId !== null) {
+                if (InventoryOwnerScope::isEnabled()) {
+                    $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                        ->whereKey($locationId)
+                        ->exists();
+
+                    if (! $isAllowed) {
+                        throw new InvalidArgumentException('Invalid location for current owner');
+                    }
+                }
+
                 $query->where('location_id', $locationId);
             }
 
@@ -105,7 +157,29 @@ final class FifoCostService
             ->withRemainingQuantity()
             ->usingMethod(CostingMethod::Fifo);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -140,7 +214,29 @@ final class FifoCostService
             ->usingMethod(CostingMethod::Fifo)
             ->fifoOrder();
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -175,7 +271,29 @@ final class FifoCostService
             ->usingMethod(CostingMethod::Fifo)
             ->fifoOrder();
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -193,7 +311,29 @@ final class FifoCostService
             ->usingMethod(CostingMethod::Fifo)
             ->fifoOrder();
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -210,7 +350,29 @@ final class FifoCostService
             ->withRemainingQuantity()
             ->usingMethod(CostingMethod::Fifo);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 

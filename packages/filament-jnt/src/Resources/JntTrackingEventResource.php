@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentJnt\Resources;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentJnt\Resources\JntTrackingEventResource\Pages\ListJntTrackingEvents;
 use AIArmada\FilamentJnt\Resources\JntTrackingEventResource\Pages\ViewJntTrackingEvent;
 use AIArmada\FilamentJnt\Resources\JntTrackingEventResource\Schemas\JntTrackingEventInfolist;
@@ -13,6 +14,8 @@ use BackedEnum;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Override;
 
 final class JntTrackingEventResource extends BaseJntResource
@@ -37,6 +40,38 @@ final class JntTrackingEventResource extends BaseJntResource
     public static function infolist(Schema $schema): Schema
     {
         return JntTrackingEventInfolist::configure($schema);
+    }
+
+    /**
+     * @return Builder<Model>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<Model> $query */
+        $query = parent::getEloquentQuery();
+
+        // JntTrackingEvent doesn't have owner columns; scope through the parent order.
+        if (! config('jnt.owner.enabled', false)) {
+            return $query;
+        }
+
+        $owner = null;
+        if (app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        /** @var bool $includeGlobal */
+        $includeGlobal = (bool) config('jnt.owner.include_global', true);
+
+        return $query->whereHas('order', function (Builder $orderQuery) use ($owner, $includeGlobal): void {
+            $model = $orderQuery->getModel();
+
+            if (! method_exists($model, 'scopeForOwner')) {
+                return;
+            }
+
+            call_user_func([$model, 'scopeForOwner'], $orderQuery, $owner, $includeGlobal);
+        });
     }
 
     public static function getGloballySearchableAttributes(): array

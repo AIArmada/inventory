@@ -28,6 +28,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class ProductResource extends Resource
@@ -42,9 +43,15 @@ class ProductResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return Product::query()
+            ->forOwner();
+    }
+
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', ProductStatus::Active)->count() ?: null;
+        return static::getEloquentQuery()->where('status', ProductStatus::Active)->count() ?: null;
     }
 
     public static function form(Schema $schema): Schema
@@ -88,19 +95,30 @@ class ProductResource extends Resource
                                     ->numeric()
                                     ->prefix('RM')
                                     ->required()
-                                    ->minValue(0),
+                                    ->minValue(0)
+                                    ->step(0.01)
+                                    ->formatStateUsing(fn (?int $state): ?float => $state === null ? null : $state / 100)
+                                    ->dehydrateStateUsing(fn (?string $state): int => (int) round(((float) $state) * 100)),
 
                                 TextInput::make('compare_price')
                                     ->label('Compare at Price')
                                     ->numeric()
                                     ->prefix('RM')
-                                    ->helperText('Original price before discount'),
+                                    ->helperText('Original price before discount')
+                                    ->minValue(0)
+                                    ->step(0.01)
+                                    ->formatStateUsing(fn (?int $state): ?float => $state === null ? null : $state / 100)
+                                    ->dehydrateStateUsing(fn (?string $state): ?int => $state === null ? null : (int) round(((float) $state) * 100)),
 
                                 TextInput::make('cost')
                                     ->label('Cost per Item')
                                     ->numeric()
                                     ->prefix('RM')
-                                    ->helperText('For profit calculation'),
+                                    ->helperText('For profit calculation')
+                                    ->minValue(0)
+                                    ->step(0.01)
+                                    ->formatStateUsing(fn (?int $state): ?float => $state === null ? null : $state / 100)
+                                    ->dehydrateStateUsing(fn (?string $state): ?int => $state === null ? null : (int) round(((float) $state) * 100)),
                             ])
                             ->columns(3),
 
@@ -226,7 +244,14 @@ class ProductResource extends Resource
                             ->schema([
                                 Select::make('categories')
                                     ->label('Categories')
-                                    ->relationship('categories', 'name')
+                                    ->relationship(
+                                        'categories',
+                                        'name',
+                                        modifyQueryUsing: function (Builder $query): Builder {
+                                            /** @var Builder<\AIArmada\Products\Models\Category> $query */
+                                            return $query->forOwner();
+                                        }
+                                    )
                                     ->multiple()
                                     ->preload()
                                     ->searchable(),
@@ -278,7 +303,7 @@ class ProductResource extends Resource
 
                 Tables\Columns\TextColumn::make('price')
                     ->label('Price')
-                    ->money('MYR', divideBy: 100)
+                    ->money(fn (Product $record): string => $record->currency, divideBy: 100)
                     ->sortable()
                     ->alignEnd(),
 
@@ -323,7 +348,14 @@ class ProductResource extends Resource
                     ->label('Featured'),
 
                 Tables\Filters\SelectFilter::make('categories')
-                    ->relationship('categories', 'name')
+                    ->relationship(
+                        'categories',
+                        'name',
+                        modifyQueryUsing: function (Builder $query): Builder {
+                            /** @var Builder<\AIArmada\Products\Models\Category> $query */
+                            return $query->forOwner();
+                        }
+                    )
                     ->multiple()
                     ->preload(),
             ])
@@ -333,6 +365,7 @@ class ProductResource extends Resource
                 Tables\Actions\Action::make('duplicate')
                     ->label('Duplicate')
                     ->icon('heroicon-o-document-duplicate')
+                    ->authorize(fn (Product $record): bool => auth()->user()?->can('duplicate', $record) ?? false)
                     ->action(function (Product $record) {
                         $newProduct = $record->replicate();
                         $newProduct->name = $record->name . ' (Copy)';
@@ -389,12 +422,12 @@ class ProductResource extends Resource
                 Section::make('Pricing')
                     ->schema([
                         TextEntry::make('price')
-                            ->money('MYR', divideBy: 100),
+                            ->money(fn (Product $record): string => $record->currency, divideBy: 100),
                         TextEntry::make('compare_price')
-                            ->money('MYR', divideBy: 100)
+                            ->money(fn (Product $record): string => $record->currency, divideBy: 100)
                             ->visible(fn ($record) => $record->compare_price),
                         TextEntry::make('cost')
-                            ->money('MYR', divideBy: 100)
+                            ->money(fn (Product $record): string => $record->currency, divideBy: 100)
                             ->visible(fn ($record) => $record->cost),
                     ])
                     ->columns(3),

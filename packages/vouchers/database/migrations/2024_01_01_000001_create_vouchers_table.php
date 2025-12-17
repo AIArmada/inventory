@@ -11,7 +11,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tableName = config('vouchers.table_names.vouchers', 'vouchers');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['vouchers'] ?? $prefix.'vouchers';
 
         Schema::create($tableName, function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -59,7 +62,6 @@ return new class extends Migration
         });
 
         // Optional: create GIN indexes when using jsonb on PostgreSQL
-        $tableName = config('vouchers.table_names.vouchers', 'vouchers');
         $jsonColumnType = commerce_json_column_type('vouchers', 'json');
 
         if (
@@ -73,6 +75,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists(config('vouchers.table_names.vouchers', 'vouchers'));
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['vouchers'] ?? $prefix.'vouchers';
+
+        Schema::dropIfExists($tableName);
     }
 };

@@ -8,6 +8,20 @@ An Obsessive Quality Assurance Engineer, End-to-End Testing Perfectionist, and B
 **Beta Status & Compatibility:**
 The codebase is in **BETA**. Backward compatibility is **NOT** required. Breaking changes are permitted if they help eliminate bugs or improve testability.
 
+🧭 MULTI-TENANCY (MONOREPO-WIDE, NON-NEGOTIABLE)
+- **Single source of truth**: Multi-tenancy primitives live in `commerce-support`.
+- **No UI trust**: Filament option lists are not security. Always validate submitted IDs server-side.
+
+### Required Regression Tests (Per Package)
+- Cross-tenant reads return empty/404.
+- Cross-tenant writes throw/abort.
+- Counts/aggregates/widgets/exports/health checks are owner-scoped (not just Resources).
+
+### Mandatory Verification Sweep
+```bash
+rg -- "::query\(|->query\(|->getEloquentQuery\(" packages/<pkg>/src
+```
+
 🔥🔥🔥 SECTION 1 — TESTING PHILOSOPHY
 **"If it's not tested, it's broken. If it's broken, I'll fix it."**
 The ultimate goal is to **ELIMINATE all bugs.**

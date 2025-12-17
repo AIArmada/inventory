@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentProducts\Pages;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Products\Enums\ProductStatus;
 use AIArmada\Products\Enums\ProductType;
 use AIArmada\Products\Enums\ProductVisibility;
@@ -14,6 +15,7 @@ use Filament\Actions\Action;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use League\Csv\Reader;
 use League\Csv\Writer;
@@ -32,6 +34,19 @@ class ImportExportProducts extends Page
     protected static ?int $navigationSort = 99;
 
     protected static ?string $title = 'Import / Export';
+
+    private function resolveOwner(): ?Model
+    {
+        if (! (bool) config('products.owner.enabled', true)) {
+            return null;
+        }
+
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        return app(OwnerResolverInterface::class)->resolve();
+    }
 
     public function importForm(): Forms\Form
     {
@@ -83,9 +98,10 @@ class ImportExportProducts extends Page
                         'slug' => $record['slug'] ?? \Illuminate\Support\Str::slug($record['name'] ?? ''),
                         'description' => $record['description'] ?? null,
                         'short_description' => $record['short_description'] ?? null,
-                        'price' => isset($record['price']) ? (int) ($record['price'] * 100) : 0,
-                        'compare_price' => isset($record['compare_price']) ? (int) ($record['compare_price'] * 100) : null,
-                        'cost' => isset($record['cost']) ? (int) ($record['cost'] * 100) : null,
+                        'currency' => $record['currency'] ?? null,
+                        'price' => isset($record['price']) ? (int) round(((float) $record['price']) * 100) : 0,
+                        'compare_price' => isset($record['compare_price']) ? (int) round(((float) $record['compare_price']) * 100) : null,
+                        'cost' => isset($record['cost']) ? (int) round(((float) $record['cost']) * 100) : null,
                         'weight' => $record['weight'] ?? null,
                         'status' => ProductStatus::tryFrom($record['status'] ?? 'draft') ?? ProductStatus::Draft,
                         'type' => ProductType::tryFrom($record['type'] ?? 'simple') ?? ProductType::Simple,
@@ -96,8 +112,11 @@ class ImportExportProducts extends Page
                         'tax_class' => $record['tax_class'] ?? null,
                     ];
 
+                    $productData = array_filter($productData, fn ($value): bool => $value !== null);
+
                     if ($data['update_existing'] && isset($record['sku'])) {
-                        $product = Product::where('sku', $record['sku'])->first();
+                        $owner = $this->resolveOwner();
+                        $product = Product::query()->forOwner($owner, false)->where('sku', $record['sku'])->first();
                         if ($product) {
                             $product->update($productData);
                             $updated++;
@@ -106,7 +125,12 @@ class ImportExportProducts extends Page
                         }
                     }
 
-                    Product::create($productData);
+                    $product = new Product($productData);
+                    $owner = $this->resolveOwner();
+                    if ($owner !== null) {
+                        $product->assignOwner($owner);
+                    }
+                    $product->save();
                     $imported++;
                 } catch (Exception $e) {
                     $errors[] = "Row {$offset}: {$e->getMessage()}";
@@ -159,6 +183,7 @@ class ImportExportProducts extends Page
                             'slug' => 'Slug',
                             'description' => 'Description',
                             'short_description' => 'Short Description',
+                            'currency' => 'Currency',
                             'price' => 'Price',
                             'compare_price' => 'Compare Price',
                             'cost' => 'Cost',
@@ -171,7 +196,7 @@ class ImportExportProducts extends Page
                             'requires_shipping' => 'Requires Shipping',
                             'tax_class' => 'Tax Class',
                         ])
-                        ->default(['name', 'sku', 'price', 'status', 'type'])
+                        ->default(['name', 'sku', 'currency', 'price', 'status', 'type'])
                         ->required()
                         ->columns(3),
 
@@ -201,7 +226,7 @@ class ImportExportProducts extends Page
 
     protected function exportProducts(array $data): \Symfony\Component\HttpFoundation\StreamedResponse
     {
-        $query = Product::query();
+        $query = Product::query()->forOwner();
 
         // Apply status filter
         if ($data['status_filter'] !== 'all') {
@@ -258,6 +283,7 @@ class ImportExportProducts extends Page
             'slug',
             'description',
             'short_description',
+            'currency',
             'price',
             'compare_price',
             'cost',
@@ -278,6 +304,7 @@ class ImportExportProducts extends Page
             'example-product',
             'This is an example product description',
             'Short desc',
+            'MYR',
             '99.99',
             '129.99',
             '50.00',

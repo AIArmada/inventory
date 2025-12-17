@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentVouchers\Widgets;
 
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Campaigns\Enums\CampaignStatus;
 use AIArmada\Vouchers\Campaigns\Models\Campaign;
 use Akaunting\Money\Money;
@@ -17,15 +18,17 @@ final class CampaignStatsWidget extends BaseWidget
     {
         $currency = mb_strtoupper((string) config('filament-vouchers.default_currency', 'MYR'));
 
-        $activeCampaigns = Campaign::where('status', CampaignStatus::Active->value)->count();
-        $totalCampaigns = Campaign::count();
-        $draftCampaigns = Campaign::where('status', CampaignStatus::Draft->value)->count();
+        $campaigns = OwnerScopedQueries::scopeVoucherLike(Campaign::query());
 
-        $totalBudget = Campaign::whereNotNull('budget_cents')->sum('budget_cents');
-        $totalSpent = Campaign::sum('spent_cents');
-        $totalRedemptions = Campaign::sum('current_redemptions');
+        $activeCampaigns = (clone $campaigns)->where('status', CampaignStatus::Active->value)->count();
+        $totalCampaigns = (clone $campaigns)->count();
+        $draftCampaigns = (clone $campaigns)->where('status', CampaignStatus::Draft->value)->count();
 
-        $abTestingActive = Campaign::where('status', CampaignStatus::Active->value)
+        $totalBudget = (clone $campaigns)->whereNotNull('budget_cents')->sum('budget_cents');
+        $totalSpent = (clone $campaigns)->sum('spent_cents');
+        $totalRedemptions = (clone $campaigns)->sum('current_redemptions');
+
+        $abTestingActive = (clone $campaigns)->where('status', CampaignStatus::Active->value)
             ->where('ab_testing_enabled', true)
             ->count();
 

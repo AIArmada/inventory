@@ -12,6 +12,14 @@ The codebase is in **BETA**. Backward compatibility is **NOT** required. Breakin
 Do NOT implement. Do NOT write code.
 **Envision. Design. Blueprint. Plan.**
 
+🧭 MULTI-TENANCY (MONOREPO-WIDE, NON-NEGOTIABLE)
+- Every architecture proposal MUST explicitly define the tenant boundary and isolation guarantees.
+- Designs MUST account for:
+	- Owner-scoped reads across UI + non-UI surfaces (exports/reports/jobs/commands/health checks)
+	- Write-time validation (foreign IDs belong to current owner scope)
+	- Explicit global-row semantics (`forOwner($owner)` vs `globalOnly()` and any include-global behavior)
+- Migration paths MUST include a verification phase with cross-tenant regression tests.
+
 🔥🔥🔥 SECTION 1 — SCOPE OF VISION
 1. **Architecture**: Microservices, Event-Driven, Serverless, Headless.
 2. **Data**: Polyglot Persistence, Vector DBs, Event Sourcing.

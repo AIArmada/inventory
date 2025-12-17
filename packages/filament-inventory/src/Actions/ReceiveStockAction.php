@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Actions;
 
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\InventoryService;
 use Filament\Actions\Action;
@@ -34,7 +35,7 @@ final class ReceiveStockAction
                     ->schema([
                         Select::make('location_id')
                             ->label('Receiving Location')
-                            ->options(InventoryLocation::query()->pluck('name', 'id'))
+                            ->options(fn () => InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())->pluck('name', 'id'))
                             ->required()
                             ->searchable()
                             ->preload(),
@@ -86,6 +87,7 @@ final class ReceiveStockAction
                     reason: $reason,
                     note: $data['notes'] ?? null,
                     userId: Auth::id(),
+                    occurredAt: $data['received_at'] ?? null,
                 );
 
                 Notification::make()

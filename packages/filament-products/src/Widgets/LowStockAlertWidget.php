@@ -17,23 +17,23 @@ class LowStockAlertWidget extends BaseWidget
     protected function getStats(): array
     {
         // Count products by type for visibility into catalog composition
-        $physicalProducts = Product::query()
+        $physicalProducts = Product::query()->forOwner()
             ->where('status', ProductStatus::Active)
             ->whereIn('type', [ProductType::Simple, ProductType::Configurable, ProductType::Bundle])
             ->where('requires_shipping', true)
             ->count();
 
-        $digitalProducts = Product::query()
+        $digitalProducts = Product::query()->forOwner()
             ->where('status', ProductStatus::Active)
             ->where('type', ProductType::Digital)
             ->count();
 
-        $subscriptionProducts = Product::query()
+        $subscriptionProducts = Product::query()->forOwner()
             ->where('status', ProductStatus::Active)
             ->where('type', ProductType::Subscription)
             ->count();
 
-        $totalActive = Product::query()
+        $totalActive = Product::query()->forOwner()
             ->where('status', ProductStatus::Active)
             ->count();
 

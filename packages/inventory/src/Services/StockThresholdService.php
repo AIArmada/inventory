@@ -11,6 +11,7 @@ use AIArmada\Inventory\Events\OutOfInventory;
 use AIArmada\Inventory\Events\SafetyStockBreached;
 use AIArmada\Inventory\Events\StockRestored;
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
@@ -86,14 +87,21 @@ final class StockThresholdService
      */
     public function getLevelsNeedingReorder(): Collection
     {
-        return InventoryLevel::query()
+        $query = InventoryLevel::query()
             ->whereIn('alert_status', [
                 AlertStatus::LowStock->value,
                 AlertStatus::SafetyBreached->value,
                 AlertStatus::OutOfStock->value,
             ])
             ->with('location')
-            ->get();
+
+            ;
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
+
+        return $query->get();
     }
 
     /**

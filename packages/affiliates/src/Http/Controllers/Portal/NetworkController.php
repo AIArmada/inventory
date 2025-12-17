@@ -125,6 +125,7 @@ final class NetworkController extends Controller
         $downlineIds = $downline->pluck('id')->all();
         if ($downlineIds !== []) {
             $networkRevenue = (int) AffiliateConversion::query()
+                ->forOwner()
                 ->whereIn('affiliate_id', $downlineIds)
                 ->where('occurred_at', '>=', now()->startOfMonth())
                 ->sum('total_minor');

@@ -6,6 +6,7 @@ namespace AIArmada\FilamentVouchers\Widgets;
 
 use AIArmada\FilamentCart\Models\Cart;
 use AIArmada\FilamentCart\Services\CartInstanceManager;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
 use AIArmada\Vouchers\Exceptions\VoucherException;
@@ -49,20 +50,28 @@ final class VoucherSuggestionsWidget extends Widget
             $cartCurrency = $this->record->currency;
 
             // Get active vouchers
-            $vouchers = Voucher::query()
+            $voucherQuery = Voucher::query();
+
+            if (OwnerScopedQueries::isEnabled()) {
+                $voucherQuery = OwnerScopedQueries::scopeVoucherLike($voucherQuery);
+            }
+
+            $vouchers = $voucherQuery
+                ->withCount('usages')
                 ->where('status', VoucherStatus::Active)
                 ->where(function ($query): void {
-                    $query->whereNull('start_date')
-                        ->orWhere('start_date', '<=', now());
+                    $query->whereNull('starts_at')
+                        ->orWhere('starts_at', '<=', now());
                 })
                 ->where(function ($query): void {
-                    $query->whereNull('end_date')
-                        ->orWhere('end_date', '>=', now());
+                    $query->whereNull('expires_at')
+                        ->orWhere('expires_at', '>=', now());
                 })
                 ->where(function ($query): void {
-                    // Has remaining uses or unlimited
+                    // Unlimited usage, or still has remaining uses.
+                    // We avoid raw SQL here because table names are configurable.
                     $query->whereNull('usage_limit')
-                        ->orWhereRaw('(SELECT COUNT(*) FROM voucher_usage WHERE voucher_id = vouchers.id) < usage_limit');
+                        ->orWhereColumn('usages_count', '<', 'usage_limit');
                 })
                 ->where('currency', $cartCurrency)
                 ->get();

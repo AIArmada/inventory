@@ -6,6 +6,7 @@ namespace AIArmada\Inventory\Services;
 
 use AIArmada\Inventory\Enums\AlertStatus;
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
 
@@ -98,7 +99,13 @@ final class AlertDispatchService
         $summary = [];
 
         foreach (AlertStatus::cases() as $status) {
-            $count = InventoryLevel::where('alert_status', $status->value)->count();
+            $query = InventoryLevel::query()->where('alert_status', $status->value);
+
+            if (InventoryOwnerScope::isEnabled()) {
+                InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+            }
+
+            $count = $query->count();
 
             if ($count > 0) {
                 $summary[$status->value] = $count;
@@ -115,14 +122,21 @@ final class AlertDispatchService
      */
     public function getCriticalAlerts(): Collection
     {
-        return InventoryLevel::query()
+        $query = InventoryLevel::query()
             ->whereIn('alert_status', array_map(
                 fn (AlertStatus $s): string => $s->value,
                 AlertStatus::criticalStatuses()
             ))
             ->with(['location', 'inventoryable'])
             ->orderByDesc('last_alert_at')
-            ->get();
+
+            ;
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        }
+
+        return $query->get();
     }
 
     /**

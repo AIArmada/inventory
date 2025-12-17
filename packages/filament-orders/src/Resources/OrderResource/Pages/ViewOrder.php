@@ -11,8 +11,11 @@ use AIArmada\Orders\States\PendingPayment;
 use AIArmada\Orders\States\Processing;
 use AIArmada\Orders\States\Shipped;
 use Filament\Actions;
+use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Illuminate\Support\Facades\Gate;
+use RuntimeException;
 
 class ViewOrder extends ViewRecord
 {
@@ -30,6 +33,11 @@ class ViewOrder extends ViewRecord
                 ->requiresConfirmation()
                 ->modalHeading('Confirm Payment')
                 ->modalDescription('Are you sure you want to mark this order as paid?')
+                ->authorize(function (Order $record): bool {
+                    $user = Filament::auth()->user();
+
+                    return $user ? Gate::forUser($user)->allows('update', $record) : false;
+                })
                 ->form([
                     \Filament\Forms\Components\TextInput::make('transaction_id')
                         ->label('Transaction ID')
@@ -44,20 +52,28 @@ class ViewOrder extends ViewRecord
                         ->required(),
                 ])
                 ->action(function (Order $record, array $data): void {
-                    $service = app(OrderService::class);
-                    $service->confirmPayment(
-                        $record,
-                        $data['transaction_id'],
-                        $data['gateway'],
-                        $record->grand_total,
-                    );
+                    try {
+                        $service = app(OrderService::class);
+                        $service->confirmPayment(
+                            $record,
+                            $data['transaction_id'],
+                            $data['gateway'],
+                            $record->grand_total,
+                        );
 
-                    Notification::make()
-                        ->title('Payment confirmed')
-                        ->success()
-                        ->send();
+                        Notification::make()
+                            ->title('Payment confirmed')
+                            ->success()
+                            ->send();
 
-                    $this->refreshFormData(['status', 'paid_at']);
+                        $this->refreshFormData(['status', 'paid_at']);
+                    } catch (RuntimeException $exception) {
+                        Notification::make()
+                            ->title('Unable to confirm payment')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 })
                 ->visible(fn (Order $record) => $record->status instanceof PendingPayment),
 
@@ -67,6 +83,11 @@ class ViewOrder extends ViewRecord
                 ->color('info')
                 ->requiresConfirmation()
                 ->modalHeading('Create Shipment')
+                ->authorize(function (Order $record): bool {
+                    $user = Filament::auth()->user();
+
+                    return $user ? Gate::forUser($user)->allows('update', $record) : false;
+                })
                 ->form([
                     \Filament\Forms\Components\TextInput::make('carrier')
                         ->label('Carrier')
@@ -76,19 +97,27 @@ class ViewOrder extends ViewRecord
                         ->required(),
                 ])
                 ->action(function (Order $record, array $data): void {
-                    $service = app(OrderService::class);
-                    $service->ship(
-                        $record,
-                        $data['carrier'],
-                        $data['tracking_number'],
-                    );
+                    try {
+                        $service = app(OrderService::class);
+                        $service->ship(
+                            $record,
+                            $data['carrier'],
+                            $data['tracking_number'],
+                        );
 
-                    Notification::make()
-                        ->title('Order shipped')
-                        ->success()
-                        ->send();
+                        Notification::make()
+                            ->title('Order shipped')
+                            ->success()
+                            ->send();
 
-                    $this->refreshFormData(['status', 'shipped_at']);
+                        $this->refreshFormData(['status', 'shipped_at']);
+                    } catch (RuntimeException $exception) {
+                        Notification::make()
+                            ->title('Unable to ship order')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 })
                 ->visible(fn (Order $record) => $record->status instanceof Processing),
 
@@ -97,16 +126,29 @@ class ViewOrder extends ViewRecord
                 ->icon('heroicon-o-check')
                 ->color('success')
                 ->requiresConfirmation()
+                ->authorize(function (Order $record): bool {
+                    $user = Filament::auth()->user();
+
+                    return $user ? Gate::forUser($user)->allows('update', $record) : false;
+                })
                 ->action(function (Order $record): void {
-                    $service = app(OrderService::class);
-                    $service->confirmDelivery($record);
+                    try {
+                        $service = app(OrderService::class);
+                        $service->confirmDelivery($record);
 
-                    Notification::make()
-                        ->title('Delivery confirmed')
-                        ->success()
-                        ->send();
+                        Notification::make()
+                            ->title('Delivery confirmed')
+                            ->success()
+                            ->send();
 
-                    $this->refreshFormData(['status', 'delivered_at']);
+                        $this->refreshFormData(['status', 'delivered_at']);
+                    } catch (RuntimeException $exception) {
+                        Notification::make()
+                            ->title('Unable to confirm delivery')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 })
                 ->visible(fn (Order $record) => $record->status instanceof Shipped),
 
@@ -117,21 +159,41 @@ class ViewOrder extends ViewRecord
                 ->requiresConfirmation()
                 ->modalHeading('Cancel Order')
                 ->modalDescription('Are you sure you want to cancel this order? This action cannot be undone.')
+                ->authorize(function (Order $record): bool {
+                    $user = Filament::auth()->user();
+
+                    return $user ? Gate::forUser($user)->allows('cancel', $record) : false;
+                })
                 ->form([
                     \Filament\Forms\Components\Textarea::make('reason')
                         ->label('Cancellation Reason')
                         ->required(),
                 ])
                 ->action(function (Order $record, array $data): void {
-                    $service = app(OrderService::class);
-                    $service->cancel($record, $data['reason'], auth()->id());
+                    try {
+                        $service = app(OrderService::class);
 
-                    Notification::make()
-                        ->title('Order canceled')
-                        ->warning()
-                        ->send();
+                        $canceledBy = Filament::auth()->id();
 
-                    $this->refreshFormData(['status', 'canceled_at', 'cancellation_reason']);
+                        $service->cancel(
+                            $record,
+                            $data['reason'],
+                            $canceledBy ? (string) $canceledBy : null,
+                        );
+
+                        Notification::make()
+                            ->title('Order canceled')
+                            ->warning()
+                            ->send();
+
+                        $this->refreshFormData(['status', 'canceled_at', 'cancellation_reason']);
+                    } catch (RuntimeException $exception) {
+                        Notification::make()
+                            ->title('Unable to cancel order')
+                            ->body($exception->getMessage())
+                            ->danger()
+                            ->send();
+                    }
                 })
                 ->visible(fn (Order $record) => $record->canBeCanceled()),
 
@@ -140,6 +202,11 @@ class ViewOrder extends ViewRecord
                 ->icon('heroicon-o-document-arrow-down')
                 ->url(fn (Order $record) => route('filament-orders.invoice.download', $record))
                 ->openUrlInNewTab()
+                ->authorize(function (Order $record): bool {
+                    $user = Filament::auth()->user();
+
+                    return $user ? Gate::forUser($user)->allows('view', $record) : false;
+                })
                 ->visible(fn (Order $record) => $record->isPaid()),
         ];
     }

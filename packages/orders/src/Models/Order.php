@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AIArmada\Orders\Models;
 
 use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Orders\Database\Factories\OrderFactory;
 use AIArmada\Orders\States\OrderStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -61,7 +63,9 @@ class Order extends Model implements Auditable
     /** @use HasFactory<OrderFactory> */
     use HasFactory;
 
-    use HasOwner;
+    use HasOwner {
+        scopeForOwner as baseScopeForOwner;
+    }
     use HasStates;
     use HasUuids;
 
@@ -130,6 +134,28 @@ class Order extends Model implements Auditable
     public function getTable(): string
     {
         return config('orders.database.tables.orders', 'orders');
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    {
+        if (! (bool) config('orders.owner.enabled', true)) {
+            return $query;
+        }
+
+        if ($owner === null && app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        $includeGlobal = $includeGlobal && (bool) config('orders.owner.include_global', true);
+
+        /** @var Builder<static> $scoped */
+        $scoped = $this->baseScopeForOwner($query, $owner, $includeGlobal);
+
+        return $scoped;
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -378,6 +404,29 @@ class Order extends Model implements Auditable
             if (empty($order->order_number)) {
                 $order->order_number = static::generateOrderNumber();
             }
+
+            if (! (bool) config('orders.owner.enabled', true)) {
+                return;
+            }
+
+            if (! (bool) config('orders.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            if ($order->owner_type !== null || $order->owner_id !== null) {
+                return;
+            }
+
+            if (! app()->bound(OwnerResolverInterface::class)) {
+                return;
+            }
+
+            $owner = app(OwnerResolverInterface::class)->resolve();
+            if ($owner === null) {
+                return;
+            }
+
+            $order->assignOwner($owner);
         });
 
         static::deleting(function (Order $order): void {

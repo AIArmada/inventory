@@ -47,10 +47,11 @@ final class VoucherTransaction extends Model
 
     public function getTable(): string
     {
-        /** @var string $table */
-        $table = config('vouchers.table_names.voucher_transactions', 'voucher_transactions');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
 
-        return $table;
+        return $tables['voucher_transactions'] ?? $prefix.'voucher_transactions';
     }
 
     /**

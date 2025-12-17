@@ -19,18 +19,20 @@ class OrderStatsWidget extends StatsOverviewWidget
         $today = now()->startOfDay();
         $thisMonth = now()->startOfMonth();
 
+        $baseQuery = Order::query()->forOwner();
+
         // Today's orders
-        $todayOrders = Order::whereDate('created_at', $today)->count();
-        $yesterdayOrders = Order::whereDate('created_at', $today->copy()->subDay())->count();
+        $todayOrders = (clone $baseQuery)->whereDate('created_at', $today)->count();
+        $yesterdayOrders = (clone $baseQuery)->whereDate('created_at', $today->copy()->subDay())->count();
         $todayChange = $yesterdayOrders > 0
             ? round((($todayOrders - $yesterdayOrders) / $yesterdayOrders) * 100)
             : 0;
 
         // Today's revenue
-        $todayRevenue = Order::whereDate('created_at', $today)
+        $todayRevenue = (clone $baseQuery)->whereDate('created_at', $today)
             ->whereNotNull('paid_at')
             ->sum('grand_total');
-        $yesterdayRevenue = Order::whereDate('created_at', $today->copy()->subDay())
+        $yesterdayRevenue = (clone $baseQuery)->whereDate('created_at', $today->copy()->subDay())
             ->whereNotNull('paid_at')
             ->sum('grand_total');
         $revenueChange = $yesterdayRevenue > 0
@@ -38,13 +40,13 @@ class OrderStatsWidget extends StatsOverviewWidget
             : 0;
 
         // Pending orders
-        $pendingOrders = Order::whereState('status', [PendingPayment::class, Processing::class])->count();
+        $pendingOrders = (clone $baseQuery)->whereState('status', [PendingPayment::class, Processing::class])->count();
 
         // Monthly revenue
-        $monthlyRevenue = Order::where('created_at', '>=', $thisMonth)
+        $monthlyRevenue = (clone $baseQuery)->where('created_at', '>=', $thisMonth)
             ->whereNotNull('paid_at')
             ->sum('grand_total');
-        $lastMonthRevenue = Order::whereBetween('created_at', [
+        $lastMonthRevenue = (clone $baseQuery)->whereBetween('created_at', [
             $thisMonth->copy()->subMonth(),
             $thisMonth->copy()->subSecond(),
         ])

@@ -6,9 +6,12 @@ namespace AIArmada\Inventory\Services;
 
 use AIArmada\Inventory\Enums\DemandPeriodType;
 use AIArmada\Inventory\Models\InventoryDemandHistory;
+use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 final class DemandForecastService
 {
@@ -25,6 +28,22 @@ final class DemandForecastService
     ): InventoryDemandHistory {
         $periodDate = $periodDate ?? today();
         $lostQuantity = max(0, $quantity - $fulfilledQuantity);
+
+        if (InventoryOwnerScope::isEnabled()) {
+            if ($locationId === null && InventoryOwnerScope::resolveOwner() !== null) {
+                throw new InvalidArgumentException('Location is required when owner scoping is enabled');
+            }
+
+            if ($locationId !== null) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+        }
 
         return DB::transaction(function () use (
             $model,
@@ -81,7 +100,29 @@ final class DemandForecastService
             ->daily()
             ->lastDays($days);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -116,7 +157,29 @@ final class DemandForecastService
             ->orderBy('period_date', 'desc')
             ->limit($periods);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -153,7 +216,29 @@ final class DemandForecastService
             ->orderBy('period_date', 'asc')
             ->limit($periods);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -185,7 +270,29 @@ final class DemandForecastService
             ->daily()
             ->lastDays($days);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -238,7 +345,29 @@ final class DemandForecastService
             ->lastDays($days)
             ->orderBy('period_date');
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 
@@ -288,7 +417,29 @@ final class DemandForecastService
             ->daily()
             ->lastDays($days);
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
+
         if ($locationId !== null) {
+            if (InventoryOwnerScope::isEnabled()) {
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                    ->whereKey($locationId)
+                    ->exists();
+
+                if (! $isAllowed) {
+                    throw new InvalidArgumentException('Invalid location for current owner');
+                }
+            }
+
             $query->where('location_id', $locationId);
         }
 

@@ -6,6 +6,7 @@ namespace AIArmada\FilamentOrders\Widgets;
 
 use AIArmada\Orders\Models\Order;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\DB;
 
 class OrderStatusDistributionWidget extends ChartWidget
 {
@@ -27,17 +28,28 @@ class OrderStatusDistributionWidget extends ChartWidget
             'refunded' => ['label' => 'Refunded', 'color' => '#64748b'],
         ];
 
+        /** @var array<string, int> $countsByStatus */
+        $countsByStatus = Order::query()
+            ->forOwner()
+            ->select('status', DB::raw('COUNT(*) as aggregate'))
+            ->groupBy('status')
+            ->pluck('aggregate', 'status')
+            ->map(fn ($value): int => (int) $value)
+            ->all();
+
         $counts = [];
         $labels = [];
         $colors = [];
 
         foreach ($statuses as $status => $config) {
-            $count = Order::where('status', $status)->count();
-            if ($count > 0) {
-                $counts[] = $count;
-                $labels[] = $config['label'];
-                $colors[] = $config['color'];
+            $count = $countsByStatus[$status] ?? 0;
+            if ($count <= 0) {
+                continue;
             }
+
+            $counts[] = $count;
+            $labels[] = $config['label'];
+            $colors[] = $config['color'];
         }
 
         return [

@@ -10,7 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tableName = config('vouchers.table_names.vouchers', 'vouchers');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['vouchers'] ?? $prefix.'vouchers';
 
         Schema::table($tableName, function (Blueprint $table): void {
             $table->foreignUuid('campaign_id')->nullable()->after('metadata');
@@ -23,7 +26,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        $tableName = config('vouchers.table_names.vouchers', 'vouchers');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['vouchers'] ?? $prefix.'vouchers';
 
         Schema::table($tableName, function (Blueprint $table): void {
             $table->dropIndex(['campaign_id']);

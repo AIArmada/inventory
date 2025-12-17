@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Exports;
 
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryValuationSnapshot;
 use Carbon\CarbonImmutable;
 
@@ -42,6 +43,18 @@ final class ValuationExport implements ExportableInterface
             ->with('location:id,name')
             ->whereBetween('snapshot_date', [$this->startDate, $this->endDate])
             ->orderBy('snapshot_date', 'desc');
+
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
+
+            $query->where(function ($builder) use ($includeNullLocation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
+
+                if ($includeNullLocation) {
+                    $builder->orWhereNull('location_id');
+                }
+            });
+        }
 
         foreach ($query->cursor() as $snapshot) {
             yield [

@@ -8,6 +8,7 @@ use AIArmada\FilamentInventory\Resources\InventoryBatchResource\Pages\CreateInve
 use AIArmada\FilamentInventory\Resources\InventoryBatchResource\Pages\EditInventoryBatch;
 use AIArmada\FilamentInventory\Resources\InventoryBatchResource\Pages\ListInventoryBatches;
 use AIArmada\FilamentInventory\Resources\InventoryBatchResource\Pages\ViewInventoryBatch;
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Enums\BatchStatus;
 use AIArmada\Inventory\Models\InventoryBatch;
 use BackedEnum;
@@ -27,6 +28,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class InventoryBatchResource extends Resource
@@ -42,6 +44,16 @@ final class InventoryBatchResource extends Resource
     protected static ?string $modelLabel = 'Batch';
 
     protected static ?string $pluralModelLabel = 'Batches';
+
+    /**
+     * @return Builder<InventoryBatch>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = InventoryBatch::query()->with('location');
+
+        return InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -63,7 +75,11 @@ final class InventoryBatchResource extends Resource
 
                                 Select::make('location_id')
                                     ->label('Location')
-                                    ->relationship('location', 'name')
+                                    ->relationship(
+                                        name: 'location',
+                                        titleAttribute: 'name',
+                                        modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToLocationQuery($query),
+                                    )
                                     ->searchable()
                                     ->preload(),
 
@@ -207,7 +223,11 @@ final class InventoryBatchResource extends Resource
                     )),
 
                 SelectFilter::make('location')
-                    ->relationship('location', 'name'),
+                    ->relationship(
+                        name: 'location',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToLocationQuery($query),
+                    ),
             ])
             ->actions([
                 ViewAction::make(),
@@ -237,7 +257,7 @@ final class InventoryBatchResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = InventoryBatch::allocatable()->expiringSoon(30)->count();
+        $count = self::getEloquentQuery()->allocatable()->expiringSoon(30)->count();
 
         return $count > 0 ? (string) $count : null;
     }

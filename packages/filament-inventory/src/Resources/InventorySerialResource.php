@@ -8,6 +8,7 @@ use AIArmada\FilamentInventory\Resources\InventorySerialResource\Pages\CreateInv
 use AIArmada\FilamentInventory\Resources\InventorySerialResource\Pages\EditInventorySerial;
 use AIArmada\FilamentInventory\Resources\InventorySerialResource\Pages\ListInventorySerials;
 use AIArmada\FilamentInventory\Resources\InventorySerialResource\Pages\ViewInventorySerial;
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Enums\SerialCondition;
 use AIArmada\Inventory\Enums\SerialStatus;
 use AIArmada\Inventory\Models\InventorySerial;
@@ -27,6 +28,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class InventorySerialResource extends Resource
@@ -42,6 +44,13 @@ final class InventorySerialResource extends Resource
     protected static ?string $modelLabel = 'Serial';
 
     protected static ?string $pluralModelLabel = 'Serial Numbers';
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = InventorySerial::query()->with(['location', 'batch']);
+
+        return InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -59,7 +68,11 @@ final class InventorySerialResource extends Resource
 
                                 Select::make('location_id')
                                     ->label('Location')
-                                    ->relationship('location', 'name')
+                                    ->relationship(
+                                        name: 'location',
+                                        titleAttribute: 'name',
+                                        modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToLocationQuery($query),
+                                    )
                                     ->searchable()
                                     ->preload(),
 
@@ -208,7 +221,11 @@ final class InventorySerialResource extends Resource
                     )),
 
                 SelectFilter::make('location')
-                    ->relationship('location', 'name'),
+                    ->relationship(
+                        name: 'location',
+                        titleAttribute: 'name',
+                        modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToLocationQuery($query),
+                    ),
             ])
             ->actions([
                 ViewAction::make(),
@@ -238,7 +255,7 @@ final class InventorySerialResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = InventorySerial::where('status', SerialStatus::Available->value)->count();
+        $count = self::getEloquentQuery()->where('status', SerialStatus::Available->value)->count();
 
         return $count > 0 ? (string) $count : null;
     }

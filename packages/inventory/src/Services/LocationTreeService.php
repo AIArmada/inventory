@@ -6,6 +6,8 @@ namespace AIArmada\Inventory\Services;
 
 use AIArmada\Inventory\Enums\TemperatureZone;
 use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -19,7 +21,7 @@ final class LocationTreeService
      */
     public function getTree(): Collection
     {
-        $locations = InventoryLocation::query()
+        $locations = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
             ->orderBy('depth')
             ->orderBy('name')
             ->get();
@@ -34,7 +36,7 @@ final class LocationTreeService
      */
     public function getActiveTree(): Collection
     {
-        $locations = InventoryLocation::query()
+        $locations = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
             ->active()
             ->orderBy('depth')
             ->orderBy('name')
@@ -50,9 +52,15 @@ final class LocationTreeService
      */
     public function getSubtree(InventoryLocation $root): Collection
     {
-        $locations = InventoryLocation::query()
-            ->where(function ($q) use ($root): void {
-                $q->where('id', $root->id)
+        $rootIsAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query()->whereKey($root->getKey()))->exists();
+
+        if (! $rootIsAllowed) {
+            throw new InvalidArgumentException('Invalid root location for current owner');
+        }
+
+        $locations = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+            ->where(function (Builder $query) use ($root): void {
+                $query->where('id', $root->id)
                     ->orWhere('path', 'like', $root->path . '/%');
             })
             ->orderBy('depth')
@@ -69,7 +77,7 @@ final class LocationTreeService
      */
     public function getFlatTree(): array
     {
-        return InventoryLocation::query()
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
             ->orderByRaw('COALESCE(path, id)')
             ->get()
             ->map(fn (InventoryLocation $loc): array => [
@@ -78,7 +86,7 @@ final class LocationTreeService
                 'code' => $loc->code,
                 'depth' => $loc->depth,
                 'is_active' => $loc->is_active,
-                'children_count' => InventoryLocation::where('parent_id', $loc->id)->count(),
+                'children_count' => InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query()->where('parent_id', $loc->id))->count(),
             ])
             ->toArray();
     }
@@ -90,7 +98,7 @@ final class LocationTreeService
      */
     public function getSelectOptions(): array
     {
-        return InventoryLocation::query()
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
             ->active()
             ->orderByRaw('COALESCE(path, id)')
             ->get()
@@ -111,6 +119,28 @@ final class LocationTreeService
         bool $isHazmatCertified = false
     ): InventoryLocation {
         return DB::transaction(function () use ($name, $code, $parent, $zone, $isHazmatCertified): InventoryLocation {
+            if (InventoryOwnerScope::isEnabled()) {
+                $owner = InventoryOwnerScope::resolveOwner();
+
+                if ($parent !== null) {
+                    $parentIsAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query()->whereKey($parent->getKey()))->exists();
+
+                    if (! $parentIsAllowed) {
+                        throw new InvalidArgumentException('Invalid parent location for current owner');
+                    }
+
+                    if ($owner !== null) {
+                        if ($parent->owner_type !== $owner->getMorphClass() || $parent->owner_id !== $owner->getKey()) {
+                            throw new InvalidArgumentException('Parent location must belong to current owner');
+                        }
+                    } else {
+                        if ($parent->owner_type !== null || $parent->owner_id !== null) {
+                            throw new InvalidArgumentException('Parent location must be global in global-only context');
+                        }
+                    }
+                }
+            }
+
             $location = new InventoryLocation([
                 'name' => $name,
                 'code' => $code,
@@ -118,6 +148,12 @@ final class LocationTreeService
                 'temperature_zone' => $zone?->value,
                 'is_hazmat_certified' => $isHazmatCertified,
             ]);
+
+            if (InventoryOwnerScope::isEnabled()) {
+                $owner = InventoryOwnerScope::resolveOwner();
+                $location->owner_type = $owner?->getMorphClass();
+                $location->owner_id = $owner?->getKey();
+            }
 
             if ($parent !== null) {
                 $location->parent_id = $parent->id;
@@ -150,6 +186,32 @@ final class LocationTreeService
             throw new InvalidArgumentException('Cannot move a location to its own descendant');
         }
 
+        if (InventoryOwnerScope::isEnabled()) {
+            $owner = InventoryOwnerScope::resolveOwner();
+
+            $locationIsAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query()->whereKey($location->getKey()))->exists();
+            if (! $locationIsAllowed) {
+                throw new InvalidArgumentException('Invalid location for current owner');
+            }
+
+            if ($newParent !== null) {
+                $newParentIsAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query()->whereKey($newParent->getKey()))->exists();
+                if (! $newParentIsAllowed) {
+                    throw new InvalidArgumentException('Invalid new parent for current owner');
+                }
+
+                if ($owner !== null) {
+                    if ($newParent->owner_type !== $owner->getMorphClass() || $newParent->owner_id !== $owner->getKey()) {
+                        throw new InvalidArgumentException('New parent must belong to current owner');
+                    }
+                } else {
+                    if ($newParent->owner_type !== null || $newParent->owner_id !== null) {
+                        throw new InvalidArgumentException('New parent must be global in global-only context');
+                    }
+                }
+            }
+        }
+
         return DB::transaction(function () use ($location, $newParent): InventoryLocation {
             $location->moveTo($newParent);
 
@@ -166,7 +228,9 @@ final class LocationTreeService
             $count = 0;
 
             // First, handle root locations
-            $roots = InventoryLocation::whereNull('parent_id')->get();
+            $roots = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+                ->whereNull('parent_id')
+                ->get();
 
             foreach ($roots as $root) {
                 $root->path = $root->id;
@@ -188,10 +252,13 @@ final class LocationTreeService
      */
     public function getLeafLocations(): Collection
     {
-        return InventoryLocation::leaves()
+        $query = InventoryLocation::leaves()
             ->active()
-            ->orderBy('path')
-            ->get();
+            ->orderBy('path');
+
+        InventoryOwnerScope::applyToLocationQuery($query);
+
+        return $query->get();
     }
 
     /**
@@ -201,10 +268,13 @@ final class LocationTreeService
      */
     public function getLocationsAtDepth(int $depth): Collection
     {
-        return InventoryLocation::atDepth($depth)
+        $query = InventoryLocation::atDepth($depth)
             ->active()
-            ->orderBy('name')
-            ->get();
+            ->orderBy('name');
+
+        InventoryOwnerScope::applyToLocationQuery($query);
+
+        return $query->get();
     }
 
     /**
@@ -212,7 +282,7 @@ final class LocationTreeService
      */
     public function getMaxDepth(): int
     {
-        return (int) InventoryLocation::max('depth');
+        return (int) InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())->max('depth');
     }
 
     /**

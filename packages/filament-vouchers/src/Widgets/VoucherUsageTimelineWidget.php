@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentVouchers\Widgets;
 
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Models\Voucher;
 use AIArmada\Vouchers\Models\VoucherUsage;
 use Akaunting\Money\Money;
@@ -48,6 +49,16 @@ final class VoucherUsageTimelineWidget extends Widget
             return collect();
         }
 
+        if (OwnerScopedQueries::isEnabled()) {
+            $isVisible = OwnerScopedQueries::vouchers()
+                ->whereKey($this->record->getKey())
+                ->exists();
+
+            if (! $isVisible) {
+                return collect();
+            }
+        }
+
         // Get all usage records for this voucher
         $usages = VoucherUsage::query()
             ->where('voucher_id', $this->record->id)
@@ -76,6 +87,20 @@ final class VoucherUsageTimelineWidget extends Widget
                 'total_savings' => 'RM0.00',
                 'unique_customers' => 0,
             ];
+        }
+
+        if (OwnerScopedQueries::isEnabled()) {
+            $isVisible = OwnerScopedQueries::vouchers()
+                ->whereKey($this->record->getKey())
+                ->exists();
+
+            if (! $isVisible) {
+                return [
+                    'total_redemptions' => 0,
+                    'total_savings' => 'RM0.00',
+                    'unique_customers' => 0,
+                ];
+            }
         }
 
         $usages = VoucherUsage::query()

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentOrders\Widgets;
 
+use AIArmada\FilamentOrders\Resources\OrderResource;
 use AIArmada\Orders\Models\Order;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -22,6 +23,7 @@ class RecentOrdersWidget extends BaseWidget
         return $table
             ->query(
                 Order::query()
+                    ->forOwner()
                     ->with(['items'])
                     ->latest()
                     ->limit(10)
@@ -51,7 +53,7 @@ class RecentOrdersWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('grand_total')
                     ->label('Total')
-                    ->money('MYR', divideBy: 100)
+                    ->money(fn (Order $record): string => $record->currency, divideBy: 100)
                     ->alignEnd(),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -63,7 +65,8 @@ class RecentOrdersWidget extends BaseWidget
                 Tables\Actions\Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (Order $record) => route('filament.admin.resources.orders.view', $record)),
+                    ->url(fn (Order $record) => OrderResource::getUrl('view', ['record' => $record]))
+                    ->openUrlInNewTab(),
             ])
             ->paginated(false);
     }

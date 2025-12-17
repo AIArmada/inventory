@@ -52,13 +52,14 @@ final class InventoryService
         int $quantity,
         ?string $reason = null,
         ?string $note = null,
-        ?string $userId = null
+        ?string $userId = null,
+        ?\DateTimeInterface $occurredAt = null,
     ): InventoryMovement {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('Quantity must be positive');
         }
 
-        return DB::transaction(function () use ($model, $locationId, $quantity, $reason, $note, $userId): InventoryMovement {
+        return DB::transaction(function () use ($model, $locationId, $quantity, $reason, $note, $userId, $occurredAt): InventoryMovement {
             $level = $this->getOrCreateLevel($model, $locationId);
             $level->incrementOnHand($quantity);
             $this->clearCache($model);
@@ -72,7 +73,7 @@ final class InventoryService
                 'reason' => $reason,
                 'user_id' => $userId,
                 'note' => $note,
-                'occurred_at' => now(),
+                'occurred_at' => $occurredAt ?? now(),
             ]);
 
             Event::dispatch(new InventoryReceived($model, $level, $movement));
@@ -91,13 +92,14 @@ final class InventoryService
         ?string $reason = null,
         ?string $reference = null,
         ?string $note = null,
-        ?string $userId = null
+        ?string $userId = null,
+        ?\DateTimeInterface $occurredAt = null,
     ): InventoryMovement {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('Quantity must be positive');
         }
 
-        return DB::transaction(function () use ($model, $locationId, $quantity, $reason, $reference, $note, $userId): InventoryMovement {
+        return DB::transaction(function () use ($model, $locationId, $quantity, $reason, $reference, $note, $userId, $occurredAt): InventoryMovement {
             $scope = $this->ownerScope();
 
             $levelQuery = InventoryLevel::query()
@@ -132,7 +134,7 @@ final class InventoryService
                 'reference' => $reference,
                 'user_id' => $userId,
                 'note' => $note,
-                'occurred_at' => now(),
+                'occurred_at' => $occurredAt ?? now(),
             ]);
 
             Event::dispatch(new InventoryShipped($model, $level, $movement));
@@ -152,7 +154,8 @@ final class InventoryService
         string $toLocationId,
         int $quantity,
         ?string $note = null,
-        ?string $userId = null
+        ?string $userId = null,
+        ?\DateTimeInterface $occurredAt = null,
     ): InventoryMovement {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('Quantity must be positive');
@@ -162,7 +165,7 @@ final class InventoryService
             throw new InvalidArgumentException('Source and destination locations must be different');
         }
 
-        return DB::transaction(function () use ($model, $fromLocationId, $toLocationId, $quantity, $note, $userId): InventoryMovement {
+        return DB::transaction(function () use ($model, $fromLocationId, $toLocationId, $quantity, $note, $userId, $occurredAt): InventoryMovement {
             $scope = $this->ownerScope();
 
             $fromLevelQuery = InventoryLevel::query()
@@ -199,7 +202,7 @@ final class InventoryService
                 'type' => MovementType::Transfer->value,
                 'user_id' => $userId,
                 'note' => $note,
-                'occurred_at' => now(),
+                'occurred_at' => $occurredAt ?? now(),
             ]);
 
             Event::dispatch(new InventoryTransferred($model, $fromLevel, $toLevel, $movement));
@@ -219,13 +222,14 @@ final class InventoryService
         int $newQuantity,
         ?string $reason = null,
         ?string $note = null,
-        ?string $userId = null
+        ?string $userId = null,
+        ?\DateTimeInterface $occurredAt = null,
     ): InventoryMovement {
         if ($newQuantity < 0) {
             throw new InvalidArgumentException('New quantity cannot be negative');
         }
 
-        return DB::transaction(function () use ($model, $locationId, $newQuantity, $reason, $note, $userId): InventoryMovement {
+        return DB::transaction(function () use ($model, $locationId, $newQuantity, $reason, $note, $userId, $occurredAt): InventoryMovement {
             $level = $this->getOrCreateLevel($model, $locationId);
             $oldQuantity = $level->quantity_on_hand;
             $difference = $newQuantity - $oldQuantity;
@@ -247,7 +251,7 @@ final class InventoryService
                 'reason' => $reason,
                 'user_id' => $userId,
                 'note' => $note ?? sprintf('Adjusted from %d to %d', $oldQuantity, $newQuantity),
-                'occurred_at' => now(),
+                'occurred_at' => $occurredAt ?? now(),
             ]);
 
             Event::dispatch(new InventoryAdjusted($model, $level, $movement, $oldQuantity, $newQuantity));
@@ -318,10 +322,17 @@ final class InventoryService
      */
     public function getTotalOnHand(Model $model): int
     {
-        return (int) InventoryLevel::query()
+        $scope = $this->ownerScope();
+
+        $query = InventoryLevel::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
-            ->sum('quantity_on_hand');
+            ->whereHas('location', function (Builder $locationQuery) use ($scope): void {
+                $locationQuery->where('is_active', true);
+                $this->applyOwnerScopeToLocationQuery($locationQuery, $scope);
+            });
+
+        return (int) $query->sum('quantity_on_hand');
     }
 
     /**
@@ -420,9 +431,25 @@ final class InventoryService
      */
     public function getMovementHistory(Model $model, int $limit = 50): Collection
     {
-        return InventoryMovement::query()
+        $scope = $this->ownerScope();
+
+        $query = InventoryMovement::query()
             ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
+            ->where('inventoryable_id', $model->getKey());
+
+        if ($scope['enabled']) {
+            $query->where(function (Builder $builder) use ($scope): void {
+                $builder
+                    ->whereHas('fromLocation', function (Builder $locationQuery) use ($scope): void {
+                        $this->applyOwnerScopeToLocationQuery($locationQuery, $scope);
+                    })
+                    ->orWhereHas('toLocation', function (Builder $locationQuery) use ($scope): void {
+                        $this->applyOwnerScopeToLocationQuery($locationQuery, $scope);
+                    });
+            });
+        }
+
+        return $query
             ->orderByDesc('occurred_at')
             ->limit($limit)
             ->get();
@@ -491,12 +518,6 @@ final class InventoryService
         $includeGlobal = $scope['includeGlobal'];
 
         if ($owner === null) {
-            if ($includeGlobal) {
-                $query->whereNull('owner_id');
-
-                return;
-            }
-
             $query->whereNull('owner_type')->whereNull('owner_id');
 
             return;

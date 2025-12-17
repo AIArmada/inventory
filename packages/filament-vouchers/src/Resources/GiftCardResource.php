@@ -12,12 +12,15 @@ use AIArmada\FilamentVouchers\Resources\GiftCardResource\RelationManagers\Transa
 use AIArmada\FilamentVouchers\Resources\GiftCardResource\Schemas\GiftCardForm;
 use AIArmada\FilamentVouchers\Resources\GiftCardResource\Schemas\GiftCardInfolist;
 use AIArmada\FilamentVouchers\Resources\GiftCardResource\Tables\GiftCardsTable;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
+use AIArmada\Vouchers\GiftCards\Enums\GiftCardStatus;
 use AIArmada\Vouchers\GiftCards\Models\GiftCard;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class GiftCardResource extends Resource
@@ -68,9 +71,25 @@ final class GiftCardResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = self::getModel()::where('status', 'active')->count();
+        $count = (int) self::getEloquentQuery()
+            ->where('status', GiftCardStatus::Active->value)
+            ->count();
 
         return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * @return Builder<GiftCard>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<GiftCard> $query */
+        $query = parent::getEloquentQuery();
+
+        /** @var Builder<GiftCard> $scoped */
+        $scoped = OwnerScopedQueries::scopeVoucherLike($query);
+
+        return $scoped;
     }
 
     public static function getNavigationBadgeColor(): string

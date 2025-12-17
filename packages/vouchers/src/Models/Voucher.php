@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -104,10 +103,10 @@ class Voucher extends Model
 
     public function getTable(): string
     {
-        /** @var string $table */
-        $table = config('vouchers.table_names.vouchers', 'vouchers');
+        $tables = config('vouchers.database.tables', []);
+        $prefix = config('vouchers.database.table_prefix', '');
 
-        return $table;
+        return $tables['vouchers'] ?? $prefix . 'vouchers';
     }
 
     public function usages(): HasMany
@@ -203,16 +202,16 @@ class Voucher extends Model
         return $query->where('campaign_id', $campaign->id);
     }
 
-    public function scopeForOwner(Builder $query, ?EloquentModel $owner, bool $includeGlobal = true): Builder
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
     {
         if (! config('vouchers.owner.enabled', false)) {
             return $query;
         }
 
-        if (! $owner) {
+        if ($owner === null) {
             return $includeGlobal
-                ? $query->whereNull('owner_id')
-                : $query->whereNull('owner_type')->whereNull('owner_id');
+                ? $query->whereNull('owner_type')->whereNull('owner_id')
+                : $query;
         }
 
         return $query->where(function (Builder $builder) use ($owner, $includeGlobal): void {

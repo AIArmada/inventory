@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentVouchers\Widgets;
 
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\GiftCards\Models\GiftCard;
 use AIArmada\Vouchers\GiftCards\Services\GiftCardService;
 use Akaunting\Money\Money;
@@ -60,7 +61,7 @@ final class GiftCardStatsWidget extends StatsOverviewWidget
     {
         /** @var GiftCardService $service */
         $service = app(GiftCardService::class);
-        $stats = $service->getStatistics();
+        $stats = $service->getStatistics(OwnerScopedQueries::owner());
 
         $currency = config('filament-vouchers.default_currency', 'MYR');
 

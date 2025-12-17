@@ -10,12 +10,14 @@ use AIArmada\FilamentInventory\Resources\InventoryLevelResource\Pages\ViewInvent
 use AIArmada\FilamentInventory\Resources\InventoryLevelResource\Schemas\InventoryLevelForm;
 use AIArmada\FilamentInventory\Resources\InventoryLevelResource\Schemas\InventoryLevelInfolist;
 use AIArmada\FilamentInventory\Resources\InventoryLevelResource\Tables\InventoryLevelsTable;
+use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Models\InventoryLevel;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class InventoryLevelResource extends Resource
@@ -31,6 +33,13 @@ final class InventoryLevelResource extends Resource
     protected static ?string $modelLabel = 'Stock Level';
 
     protected static ?string $pluralModelLabel = 'Stock Levels';
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = InventoryLevel::query()->with('location');
+
+        return InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -63,7 +72,7 @@ final class InventoryLevelResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $lowStockCount = self::getModel()::query()
+        $lowStockCount = self::getEloquentQuery()
             ->whereRaw('quantity_on_hand - quantity_reserved <= reorder_point')
             ->where('reorder_point', '>', 0)
             ->count();

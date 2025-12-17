@@ -8,10 +8,14 @@ use AIArmada\Inventory\Enums\BackorderPriority;
 use AIArmada\Inventory\Enums\BackorderStatus;
 use AIArmada\Inventory\Models\InventoryBackorder;
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 final class BackorderService
 {
@@ -28,6 +32,14 @@ final class BackorderService
         ?Carbon $promisedAt = null,
         ?string $notes = null
     ): InventoryBackorder {
+        if ($locationId !== null && InventoryOwnerScope::isEnabled()) {
+            $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query()->whereKey($locationId))->exists();
+
+            if (! $isAllowed) {
+                throw new InvalidArgumentException('Invalid location for current owner');
+            }
+        }
+
         return InventoryBackorder::create([
             'inventoryable_type' => $model->getMorphClass(),
             'inventoryable_id' => $model->getKey(),
@@ -68,12 +80,16 @@ final class BackorderService
      */
     public function getOpenBackorders(Model $model): Collection
     {
-        return InventoryBackorder::query()
+        $query = InventoryBackorder::query()
             ->forModel($model)
             ->open()
             ->byPriority()
             ->orderBy('requested_at')
-            ->get();
+            ;
+
+        $this->applyOwnerScopeToBackorderQuery($query);
+
+        return $query->get();
     }
 
     /**
@@ -83,11 +99,15 @@ final class BackorderService
      */
     public function getAllOpenBackorders(): Collection
     {
-        return InventoryBackorder::query()
+        $query = InventoryBackorder::query()
             ->open()
             ->byPriority()
             ->orderBy('requested_at')
-            ->get();
+            ;
+
+        $this->applyOwnerScopeToBackorderQuery($query);
+
+        return $query->get();
     }
 
     /**
@@ -97,10 +117,14 @@ final class BackorderService
      */
     public function getOverdueBackorders(): Collection
     {
-        return InventoryBackorder::query()
+        $query = InventoryBackorder::query()
             ->overdue()
             ->byPriority()
-            ->get();
+            ;
+
+        $this->applyOwnerScopeToBackorderQuery($query);
+
+        return $query->get();
     }
 
     /**
@@ -110,10 +134,14 @@ final class BackorderService
      */
     public function getBackordersDueWithin(int $days): Collection
     {
-        return InventoryBackorder::query()
+        $query = InventoryBackorder::query()
             ->dueWithin($days)
             ->byPriority()
-            ->get();
+            ;
+
+        $this->applyOwnerScopeToBackorderQuery($query);
+
+        return $query->get();
     }
 
     /**
@@ -130,7 +158,17 @@ final class BackorderService
                 ->byPriority()
                 ->orderBy('requested_at');
 
+            $this->applyOwnerScopeToBackorderQuery($query);
+
             if ($locationId !== null) {
+                if (InventoryOwnerScope::isEnabled()) {
+                    $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query()->whereKey($locationId))->exists();
+
+                    if (! $isAllowed) {
+                        throw new InvalidArgumentException('Invalid location for current owner');
+                    }
+                }
+
                 $query->where(function ($q) use ($locationId): void {
                     $q->where('location_id', $locationId)
                         ->orWhereNull('location_id');
@@ -190,10 +228,14 @@ final class BackorderService
     {
         $cutoff = now()->subDays($daysOld);
 
-        $oldBackorders = InventoryBackorder::query()
+        $oldBackordersQuery = InventoryBackorder::query()
             ->open()
             ->where('requested_at', '<', $cutoff)
-            ->get();
+            ;
+
+        $this->applyOwnerScopeToBackorderQuery($oldBackordersQuery);
+
+        $oldBackorders = $oldBackordersQuery->get();
 
         $expired = 0;
 
@@ -213,7 +255,10 @@ final class BackorderService
      */
     public function getStatistics(): array
     {
-        $openBackorders = InventoryBackorder::query()->open()->get();
+        $openBackordersQuery = InventoryBackorder::query()->open();
+        $this->applyOwnerScopeToBackorderQuery($openBackordersQuery);
+
+        $openBackorders = $openBackordersQuery->get();
 
         $byPriority = [];
         foreach (BackorderPriority::cases() as $priority) {
@@ -237,11 +282,14 @@ final class BackorderService
      */
     public function getFulfillableBackorders(): Collection
     {
-        $backorders = InventoryBackorder::query()
+        $backordersQuery = InventoryBackorder::query()
             ->open()
             ->byPriority()
-            ->orderBy('requested_at')
-            ->get();
+            ->orderBy('requested_at');
+
+        $this->applyOwnerScopeToBackorderQuery($backordersQuery);
+
+        $backorders = $backordersQuery->get();
 
         return $backorders->filter(function ($backorder): bool {
             $query = InventoryLevel::query()
@@ -251,6 +299,8 @@ final class BackorderService
             if ($backorder->location_id !== null) {
                 $query->where('location_id', $backorder->location_id);
             }
+
+            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
 
             // quantity_available is computed as (quantity_on_hand - quantity_reserved)
             $available = (int) $query->sum(DB::raw('quantity_on_hand - quantity_reserved'));
@@ -272,10 +322,34 @@ final class BackorderService
      */
     public function getTotalBackorderedQuantity(Model $model): int
     {
-        return (int) InventoryBackorder::query()
+        $query = InventoryBackorder::query()
             ->forModel($model)
             ->open()
             ->selectRaw('SUM(quantity_requested - quantity_fulfilled - quantity_cancelled) as total')
-            ->value('total');
+            ;
+
+        $this->applyOwnerScopeToBackorderQuery($query);
+
+        return (int) $query->value('total');
+    }
+
+    /**
+     * @param  Builder<InventoryBackorder>  $query
+     */
+    private function applyOwnerScopeToBackorderQuery(Builder $query): void
+    {
+        if (! InventoryOwnerScope::isEnabled()) {
+            return;
+        }
+
+        $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::resolveOwner() === null;
+
+        $query->where(function (Builder $builder) use ($includeNullLocation): void {
+            $builder->whereHas('location', fn (Builder $locationQuery): Builder => InventoryOwnerScope::applyToLocationQuery($locationQuery));
+
+            if ($includeNullLocation) {
+                $builder->orWhereNull('location_id');
+            }
+        });
     }
 }

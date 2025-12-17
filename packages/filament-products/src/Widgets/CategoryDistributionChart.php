@@ -18,6 +18,7 @@ class CategoryDistributionChart extends ChartWidget
     protected function getData(): array
     {
         $categories = Category::query()
+            ->forOwner()
             ->withCount('products')
             ->having('products_count', '>', 0)
             ->orderByDesc('products_count')

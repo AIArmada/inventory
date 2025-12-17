@@ -6,11 +6,13 @@ namespace AIArmada\FilamentVouchers\Resources;
 
 use AIArmada\FilamentVouchers\Resources\VoucherUsageResource\Pages\ListVoucherUsages;
 use AIArmada\FilamentVouchers\Resources\VoucherUsageResource\Tables\VoucherUsagesTable;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Models\VoucherUsage;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class VoucherUsageResource extends Resource
@@ -42,6 +44,23 @@ final class VoucherUsageResource extends Resource
         // attempting to query that non-existent column by limiting searchable
         // attributes to a real DB column.
         return ['id'];
+    }
+
+    /**
+     * Voucher usages do not have owner columns; scope via the related voucher.
+     *
+     * @return Builder<VoucherUsage>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<VoucherUsage> $query */
+        $query = parent::getEloquentQuery();
+
+        if (! OwnerScopedQueries::isEnabled()) {
+            return $query;
+        }
+
+        return $query->whereIn('voucher_id', OwnerScopedQueries::voucherIds());
     }
 
     public static function getNavigationGroup(): string | UnitEnum | null

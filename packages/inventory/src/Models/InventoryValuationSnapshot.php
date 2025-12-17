@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Inventory\Enums\CostingMethod;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -31,8 +32,11 @@ class InventoryValuationSnapshot extends Model
 {
     use HasFactory;
     use HasUuids;
+    use HasOwner;
 
     protected $fillable = [
+        'owner_type',
+        'owner_id',
         'location_id',
         'costing_method',
         'snapshot_date',

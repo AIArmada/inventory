@@ -328,14 +328,14 @@ describe('Voucher Model', function (): void {
 
     describe('table configuration', function (): void {
         it('gets table name from config', function (): void {
-            config(['vouchers.table_names.vouchers' => 'custom_vouchers']);
+            config(['vouchers.database.tables.vouchers' => 'custom_vouchers']);
 
             $voucher = new Voucher;
             expect($voucher->getTable())->toBe('custom_vouchers');
         });
 
         it('uses config value when set', function (): void {
-            config(['vouchers.table_names.vouchers' => 'my_vouchers_table']);
+            config(['vouchers.database.tables.vouchers' => 'my_vouchers_table']);
 
             $voucher = new Voucher;
             expect($voucher->getTable())->toBe('my_vouchers_table');

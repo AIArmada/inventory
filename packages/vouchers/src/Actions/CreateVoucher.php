@@ -31,7 +31,7 @@ final class CreateVoucher
                 'name' => $data['name'] ?? $this->normalizeCode($code),
                 'type' => $data['type'],
                 'value' => $data['value'],
-                'currency' => $data['currency'] ?? config('vouchers.currency', 'MYR'),
+                'currency' => $data['currency'] ?? config('vouchers.default_currency', 'MYR'),
                 'description' => $data['description'] ?? null,
                 'usage_limit' => $data['max_uses'] ?? $data['usage_limit'] ?? null,
                 'usage_limit_per_user' => $data['max_uses_per_user'] ?? $data['usage_limit_per_user'] ?? null,
@@ -50,11 +50,12 @@ final class CreateVoucher
 
     private function generateCode(): string
     {
-        $prefix = config('vouchers.code_prefix', '');
-        $length = config('vouchers.code_length', 8);
+        /** @var string $prefix */
+        $prefix = (string) config('vouchers.code.prefix', '');
+        $length = (int) config('vouchers.code.length', 8);
 
         do {
-            $code = $prefix . Str::upper(Str::random($length));
+            $code = $this->normalizeCode($prefix . Str::random($length));
         } while (VoucherModel::where('code', $code)->exists());
 
         return $code;
@@ -62,6 +63,12 @@ final class CreateVoucher
 
     private function normalizeCode(string $code): string
     {
-        return Str::upper(mb_trim($code));
+        $normalized = mb_trim($code);
+
+        if (config('vouchers.code.auto_uppercase', true)) {
+            return Str::upper($normalized);
+        }
+
+        return $normalized;
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentVouchers\Pages;
 
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Campaigns\Enums\CampaignStatus;
 use AIArmada\Vouchers\Campaigns\Models\Campaign;
 use AIArmada\Vouchers\Campaigns\Models\CampaignVariant;
@@ -51,7 +52,9 @@ final class ABTestDashboard extends Page
     public function mount(): void
     {
         // Default to first active A/B test campaign
-        $this->campaignId = Campaign::where('ab_testing_enabled', true)
+        $campaigns = OwnerScopedQueries::scopeVoucherLike(Campaign::query());
+
+        $this->campaignId = $campaigns->where('ab_testing_enabled', true)
             ->where('status', CampaignStatus::Active->value)
             ->first()?->id;
     }
@@ -62,7 +65,9 @@ final class ABTestDashboard extends Page
             return null;
         }
 
-        return Campaign::with('variants')->find($this->campaignId);
+        $campaigns = OwnerScopedQueries::scopeVoucherLike(Campaign::query());
+
+        return $campaigns->with('variants')->find($this->campaignId);
     }
 
     /**
@@ -145,7 +150,8 @@ final class ABTestDashboard extends Page
                     Select::make('campaign_id')
                         ->label('Campaign')
                         ->options(
-                            Campaign::where('ab_testing_enabled', true)
+                            OwnerScopedQueries::scopeVoucherLike(Campaign::query())
+                                ->where('ab_testing_enabled', true)
                                 ->pluck('name', 'id')
                                 ->toArray()
                         )

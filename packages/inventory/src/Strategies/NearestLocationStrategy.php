@@ -6,6 +6,7 @@ namespace AIArmada\Inventory\Strategies;
 
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
@@ -52,6 +53,8 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
 
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+
         if ($context->excludeLocationIds !== null) {
             $query->whereNotIn('location_id', $context->excludeLocationIds);
         }
@@ -73,8 +76,11 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
 
         $locationIds = $sortedLevels->pluck('location_id')->unique()->values();
 
-        return InventoryLocation::whereIn('id', $locationIds)
-            ->get()
+        $locationsQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLocation::query()->whereIn('id', $locationIds)
+        );
+
+        return $locationsQuery->get()
             ->sortBy(function ($location) use ($locationIds) {
                 return $locationIds->search($location->id);
             })
@@ -88,11 +94,13 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
      */
     public function getLocationsByDistance(float $originX, float $originY, ?float $originZ = null): Collection
     {
-        $locations = InventoryLocation::query()
+        $locationsQuery = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
             ->where('is_active', true)
             ->whereNotNull('coordinate_x')
             ->whereNotNull('coordinate_y')
-            ->get();
+            ;
+
+        $locations = $locationsQuery->get();
 
         return $locations->sortBy(function ($location) use ($originX, $originY, $originZ) {
             return $this->calculateDistance(
@@ -116,6 +124,8 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
             ->where('inventoryable_id', $model->getKey())
             ->whereRaw('(quantity_on_hand - quantity_reserved) > 0')
             ->with('location');
+
+        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
 
         if ($context->excludeLocationIds !== null) {
             $query->whereNotIn('location_id', $context->excludeLocationIds);

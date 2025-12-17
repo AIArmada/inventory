@@ -9,6 +9,7 @@ use AIArmada\Products\Models\Product;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Builder;
 
 class TopSellingProductsWidget extends BaseWidget
 {
@@ -18,14 +19,23 @@ class TopSellingProductsWidget extends BaseWidget
 
     protected static ?string $heading = 'Recent Products';
 
+    /**
+     * @return Builder<Product>
+     */
+    protected function getRecentProductsQuery(): Builder
+    {
+        return Product::query()
+            ->forOwner()
+            ->where('status', ProductStatus::Active)
+            ->latest()
+            ->limit(10);
+    }
+
     public function table(Table $table): Table
     {
         return $table
             ->query(
-                Product::query()
-                    ->where('status', ProductStatus::Active)
-                    ->latest()
-                    ->limit(10)
+                $this->getRecentProductsQuery()
             )
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -42,7 +52,7 @@ class TopSellingProductsWidget extends BaseWidget
 
                 Tables\Columns\TextColumn::make('price')
                     ->label('Price')
-                    ->money('MYR', divideBy: 100)
+                    ->money(fn (Product $record): string => $record->currency, divideBy: 100)
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')

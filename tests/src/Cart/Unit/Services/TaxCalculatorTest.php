@@ -265,4 +265,128 @@ describe('TaxCalculator', function (): void {
             expect($taxGbp->getCurrency()->getCurrency())->toBe('GBP');
         });
     });
+
+    describe('applyToCart', function (): void {
+        beforeEach(function (): void {
+            $this->storage = new \AIArmada\Cart\Testing\InMemoryStorage;
+            $this->cart = new \AIArmada\Cart\Cart($this->storage, 'test-user');
+            $this->cart->add('item-1', 'Product', 10000, 2);
+        });
+
+        it('applies tax condition to cart', function (): void {
+            $calculator = TaxCalculator::withDefaults();
+
+            $condition = $calculator->applyToCart($this->cart, 'MY-SST');
+
+            expect($condition)->toBeInstanceOf(CartCondition::class)
+                ->and($condition->getName())->toBe('Sales & Service Tax (SST)');
+        });
+
+        it('returns null for non-existent rate', function (): void {
+            $calculator = new TaxCalculator;
+
+            $condition = $calculator->applyToCart($this->cart, 'NON-EXISTENT');
+
+            expect($condition)->toBeNull();
+        });
+
+        it('uses custom condition name when provided', function (): void {
+            $calculator = TaxCalculator::withDefaults();
+
+            $condition = $calculator->applyToCart($this->cart, 'MY-SST', 'Custom SST');
+
+            expect($condition->getName())->toBe('Custom SST');
+        });
+    });
+
+    describe('calculateForDisplay', function (): void {
+        beforeEach(function (): void {
+            $this->storage = new \AIArmada\Cart\Testing\InMemoryStorage;
+            $this->cart = new \AIArmada\Cart\Cart($this->storage, 'test-user');
+            $this->cart->add('item-1', 'Product', 10000, 2); // Total: 20000
+        });
+
+        it('calculates tax for display with valid rate', function (): void {
+            $calculator = TaxCalculator::withDefaults();
+
+            $result = $calculator->calculateForDisplay($this->cart, 'MY-SST');
+
+            expect($result)->toHaveKeys(['amount', 'rate', 'name'])
+                ->and($result['rate'])->toBe(8.0)
+                ->and($result['name'])->toBe('Sales & Service Tax (SST)')
+                ->and($result['amount'])->toBe(1600); // 20000 * 0.08
+        });
+
+        it('returns zero for non-existent rate', function (): void {
+            $calculator = new TaxCalculator;
+
+            $result = $calculator->calculateForDisplay($this->cart, 'NON-EXISTENT');
+
+            expect($result['amount'])->toBe(0)
+                ->and($result['rate'])->toBe(0.0)
+                ->and($result['name'])->toBe('No Tax');
+        });
+    });
+
+    describe('applyWithCategories', function (): void {
+        beforeEach(function (): void {
+            $this->storage = new \AIArmada\Cart\Testing\InMemoryStorage;
+            $this->cart = new \AIArmada\Cart\Cart($this->storage, 'test-user');
+            $this->cart->add('item-1', 'Product', 10000, 1);
+        });
+
+        it('applies tax based on category rates', function (): void {
+            $calculator = TaxCalculator::withDefaults();
+
+            $condition = $calculator->applyWithCategories($this->cart, 'Category Tax', 8.0);
+
+            expect($condition)->toBeInstanceOf(CartCondition::class)
+                ->and($condition->getName())->toBe('Category Tax')
+                ->and($condition->getType())->toBe('tax');
+        });
+
+        it('uses custom condition name', function (): void {
+            $calculator = TaxCalculator::withDefaults();
+
+            $condition = $calculator->applyWithCategories($this->cart, 'Custom Cat Tax');
+
+            expect($condition->getName())->toBe('Custom Cat Tax');
+        });
+    });
+
+    describe('registerCategoryRate', function (): void {
+        it('registers category-specific rates', function (): void {
+            $calculator = (new TaxCalculator)
+                ->registerCategoryRate('food', 0.0)
+                ->registerCategoryRate('digital', 8.0)
+                ->registerCategoryRate('standard', 6.0);
+
+            expect($calculator)->toBeInstanceOf(TaxCalculator::class);
+        });
+
+        it('supports fluent interface', function (): void {
+            $result = (new TaxCalculator)
+                ->registerCategoryRate('a', 1.0)
+                ->registerCategoryRate('b', 2.0);
+
+            expect($result)->toBeInstanceOf(TaxCalculator::class);
+        });
+    });
+
+    describe('setDefaultCategory', function (): void {
+        it('sets default tax category', function (): void {
+            $calculator = (new TaxCalculator)
+                ->setDefaultCategory('digital');
+
+            expect($calculator)->toBeInstanceOf(TaxCalculator::class);
+        });
+
+        it('supports fluent interface', function (): void {
+            $result = (new TaxCalculator)
+                ->setDefaultCategory('standard')
+                ->registerCategoryRate('standard', 8.0);
+
+            expect($result)->toBeInstanceOf(TaxCalculator::class);
+        });
+    });
 });

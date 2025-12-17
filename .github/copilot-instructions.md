@@ -270,6 +270,28 @@ public function boot(): void
 - Test standalone: `composer require package/cart`
 - Test integrated: Install multiple, verify auto-features.
 ```
+## Multitenancy
+```
+# Multitenancy Guidelines (Monorepo Contract)
+
+## Single Source of Truth
+- Multi-tenancy primitives live in `commerce-support`.
+
+## Data Model (Required)
+- Tenant-owned tables MUST use `$table->nullableMorphs('owner')`.
+- Tenant-owned models MUST `use HasOwner`.
+- Bind `OwnerResolverInterface` in the container to resolve current owner context.
+
+## Query Rules (Non-negotiable)
+- Every read path MUST be owner-scoped: resources, widgets, services, exports/reports, jobs, commands, health checks.
+- Never trust Filament option lists: validate submitted IDs (e.g. `location_id`, `order_id`, `batch_id`) belong to the current owner scope.
+- If global rows are supported, keep semantics explicit and consistent: `forOwner($owner)` vs `globalOnly()`.
+
+## Verification
+- Add at least one cross-tenant regression test per package.
+- Grep for unscoped entrypoints:
+    - `rg -- "::query\(|->query\(|->getEloquentQuery\(" packages/<pkg>/src`
+```
 ## PHPStan
 ```
 # PHPStan Guidelines
@@ -364,63 +386,51 @@ Example workflow:
 ```
 
 <laravel-boost-guidelines>
-=== .ai/test rules ===
+=== .ai/filament rules ===
 
-# Testing Guidelines
-- **Goal**: ELIMINATE BUGS.
-- **Refs**:
-  - [Overview](https://filamentphp.com/docs/4.x/testing/overview)
-  - [Resources](https://filamentphp.com/docs/4.x/testing/testing-resources)
-  - [Tables](https://filamentphp.com/docs/4.x/testing/testing-tables)
-  - [Schemas](https://filamentphp.com/docs/4.x/testing/testing-schemas)
-  - [Actions](https://filamentphp.com/docs/4.x/testing/testing-actions)
-  - [Notifications](https://filamentphp.com/docs/4.x/testing/testing-notifications)
-- **Exec**:
-- **Single**: `./vendor/bin/pest path/to/Test.php`.
-- **Dir**: `./vendor/bin/pest path/to/dir`.
-- **Full**: `./vendor/bin/pest --parallel ...` (Final only).
-- **Coverage**:
-- Don't run full if `0% files > 10%`.
-- Command: `./vendor/bin/pest --coverage --parallel`.
-- Targets: Core ≥80%, Filament ≥70%, Support ≥80%.
-- **Output**: ALWAYS pipe: `2>&1 | tee /tmp/out.txt`.
+# Filament Guidelines
+- **Ver**: Filament v5 API Mandatory.
+- **Spatie**: MUST use official Filament plugins (Tags, Settings, Media, Fonts).
+- **Actions**: Use built-in `Import`/`Export` actions only.
+- **Verification**: Verify all signatures against v5 docs.
 
 
 === .ai/multitenancy rules ===
 
 # Multitenancy Guidelines
-- **Pkg**: `commerce-support`.
-- **Impl**:
-- Mig: `$table->nullableMorphs('owner')`.
-- Model: `use HasOwner`.
-- Provider: Bind `OwnerResolverInterface`.
-- **Usage**:
-- Owner: `Model::forOwner($owner)->get()`.
-- Global: `Model::globalOnly()->get()`.
 
+## Monorepo Contract
+- **Boundary is mandatory**: Every package that stores tenant-owned data MUST define an explicit tenant boundary and enforce it on **every** read/write path.
+- **Single source of truth**: Multi-tenancy primitives live in `commerce-support`.
+- **No UI trust**: Filament form options are not security. Always validate on the server.
 
-=== .ai/phpstan rules ===
+## Data Model (Required)
+- **Migration**: `$table->nullableMorphs('owner')` for tenant-owned tables.
+- **Model**: `use HasOwner` (from `commerce-support`).
+- **Provider**: Bind `OwnerResolverInterface` to resolve current owner context.
 
-# PHPStan Guidelines
-- **Lvl**: 6.
-- **Scope**: Per package (`packages/pkg/src`).
-- **Rules**:
-- Respect `phpstan.neon`.
-- NO new `ignoreErrors` unless exhausted.
-- Fix root causes over suppression.
+## Query Rules (Non-negotiable)
+- **Reads**: Must be scoped via owner context (e.g., `Model::forOwner($owner)`), including counts, aggregates, exports, widgets, and health checks.
+- **Writes**: Any inbound foreign IDs (e.g., `location_id`, `order_id`, `batch_id`) MUST be validated as belonging to the current owner scope before attach/update.
+- **Global rows**: If a package supports global rows, provide clear semantics:
+	- `Model::forOwner($owner)` (owner-only)
+	- `Model::globalOnly()` (global-only)
+	- Optional: include-global behavior must be explicit and consistent.
 
+## Filament Rules
+- **Resources**: Override `getEloquentQuery()` and apply owner scoping there (not only in filters).
+- **Actions**: Validate IDs again inside `->action()` handlers (defense-in-depth).
+- **Relationship selects**: Scope option queries and validate submitted IDs.
 
-=== .ai/spatie rules ===
+## Non-UI Surfaces
+- Console commands, queued jobs, scheduled tasks, exports, reports, health checks, and webhooks MUST apply the same owner scoping as HTTP/Filament.
 
-# Spatie Guidelines
-- **DTO**: `spatie/laravel-data`.
-- **Logs**: `activitylog` (Business), `auditing` (Compliance).
-- **Filament**: Official plugins MANDATORY.
-- **Webhooks**: `webhook-client` (Idempotent Job).
-- **Media**: `medialibrary`.
-- **Settings**: `laravel-settings`.
-- **Tags**: `laravel-tags`.
-- **States**: `model-states`.
+## Verification (Required)
+- Add at least one cross-tenant regression test per package proving:
+	- Cross-tenant reads return empty/404.
+	- Cross-tenant writes throw/abort.
+- Grep for unscoped entrypoints:
+	- `rg -- "::query\(|->query\(|->getEloquentQuery\(" packages/<pkg>/src`
 
 
 === .ai/development rules ===
@@ -457,51 +467,6 @@ Example workflow:
 - **Break Changes**: Allowed for improvement. No backward compatibility required.
 
 
-=== .ai/filament rules ===
-
-# Filament Guidelines
-- **Ver**: Filament v5 API Mandatory.
-- **Spatie**: MUST use official Filament plugins (Tags, Settings, Media, Fonts).
-- **Actions**: Use built-in `Import`/`Export` actions only.
-- **Verification**: Verify all signatures against v5 docs.
-
-
-=== .ai/config rules ===
-
-# Config Guidelines
-- **Keys**: Keep minimal, remove unused (verify via grep).
-- **Structure**:
-  - Core: DB -> Creds -> Defaults -> Features -> Integrations -> HTTP -> Webhooks -> Cache -> Logging.
-  - Filament: Nav -> Tables -> Features -> Resources.
-- **Rules**:
-  - Use `json_column_type` for JSON/Migration.
-  - Prefer defaults over excessive `env()`.
-  - Comments: Section headers only, inline for non-obvious.
-
-
-=== .ai/packages rules ===
-
-# Packages Guidelines
-- **Indep**: Must run standalone. `suggest` over `require`.
-- **Integ**: Auto-enable via `class_exists()` check in `boot()`.
-- **Code**: All DTOs via `spatie/laravel-data`.
-- **Deletes**: No soft deletes (`SoftDeletes`).
-- **Test**: Verify standalone install and integration.
-
-
-=== .ai/docs rules ===
-
-# Documentation Guidelines
-- **Loc**: `packages/<pkg>/docs/`.
-  - **Files**: `01-overview`, `02-install`, `03-config`, `04-usage`, `99-trouble`.
-  - **Fmt**: Markdown + YAML Frontmatter (`title:`).
-
-  ## Features
-  - **Components**: Use `import Aside from "@components/Aside.astro"`.
-  - **Variants**: `info`, `warning`, `tip`, `danger`.
-  - **Content**: Copy-paste ready code examples. `##` headers. Explains breaking changes.
-
-
 === .ai/model rules ===
 
 # Model Guidelines
@@ -519,6 +484,115 @@ Example workflow:
 - **Cascades**: Handle in Application Logic (Model/Service).
 - **Schema**: No `down()` logic needed.
 - **Rules**: Ensure migrations are safe and idempotent.
+
+
+=== .ai/spatie rules ===
+
+# Spatie Guidelines
+- **DTO**: `spatie/laravel-data`.
+- **Logs**: `activitylog` (Business), `auditing` (Compliance).
+- **Filament**: Official plugins MANDATORY.
+- **Webhooks**: `webhook-client` (Idempotent Job).
+- **Media**: `medialibrary`.
+- **Settings**: `laravel-settings`.
+- **Tags**: `laravel-tags`.
+- **States**: `model-states`.
+
+
+=== .ai/docs rules ===
+
+# Documentation Guidelines
+- **Loc**: `packages/<pkg>/docs/`.
+  - **Files**: `01-overview`, `02-install`, `03-config`, `04-usage`, `99-trouble`.
+  - **Fmt**: Markdown + YAML Frontmatter (`title:`).
+
+  ## Features
+  - **Components**: Use `import Aside from "@components/Aside.astro"`.
+  - **Variants**: `info`, `warning`, `tip`, `danger`.
+  - **Content**: Copy-paste ready code examples. `##` headers. Explains breaking changes.
+
+
+=== .ai/README rules ===
+
+# Commerce Guidelines Index
+
+This folder contains the canonical engineering guidelines for the monorepo.
+
+## Canonical Multi-tenancy Contract
+
+- Source of truth: `multitenancy.blade.php`
+- Applies to **every** package storing tenant-owned data.
+- Scope requirement: **all reads and writes** (UI + non-UI surfaces).
+
+## Guidelines
+
+- Config: `config.blade.php`
+- Database: `database.blade.php`
+- Development: `development.blade.php`
+- Docs: `docs.blade.php`
+- Filament: `filament.blade.php`
+- Models: `model.blade.php`
+- Multitenancy: `multitenancy.blade.php`
+- Packages: `packages.blade.php`
+- PHPStan: `phpstan.blade.php`
+- Spatie: `spatie.blade.php`
+- Testing: `test.blade.php`
+
+
+=== .ai/phpstan rules ===
+
+# PHPStan Guidelines
+- **Lvl**: 6.
+- **Scope**: Per package (`packages/pkg/src`).
+- **Rules**:
+- Respect `phpstan.neon`.
+- NO new `ignoreErrors` unless exhausted.
+- Fix root causes over suppression.
+
+
+=== .ai/packages rules ===
+
+# Packages Guidelines
+- **Indep**: Must run standalone. `suggest` over `require`.
+- **Integ**: Auto-enable via `class_exists()` check in `boot()`.
+- **Code**: All DTOs via `spatie/laravel-data`.
+- **Deletes**: No soft deletes (`SoftDeletes`).
+- **Test**: Verify standalone install and integration.
+
+
+=== .ai/config rules ===
+
+# Config Guidelines
+- **Keys**: Keep minimal, remove unused (verify via grep).
+- **Structure**:
+  - Core: DB -> Creds -> Defaults -> Features -> Integrations -> HTTP -> Webhooks -> Cache -> Logging.
+  - Filament: Nav -> Tables -> Features -> Resources.
+- **Rules**:
+  - Use `json_column_type` for JSON/Migration.
+  - Prefer defaults over excessive `env()`.
+  - Comments: Section headers only, inline for non-obvious.
+
+
+=== .ai/test rules ===
+
+# Testing Guidelines
+- **Goal**: ELIMINATE BUGS.
+- **Refs**:
+  - [Overview](https://filamentphp.com/docs/4.x/testing/overview)
+  - [Resources](https://filamentphp.com/docs/4.x/testing/testing-resources)
+  - [Tables](https://filamentphp.com/docs/4.x/testing/testing-tables)
+  - [Schemas](https://filamentphp.com/docs/4.x/testing/testing-schemas)
+  - [Actions](https://filamentphp.com/docs/4.x/testing/testing-actions)
+  - [Notifications](https://filamentphp.com/docs/4.x/testing/testing-notifications)
+- **Exec**:
+- **Single**: `./vendor/bin/pest path/to/Test.php`.
+- **Dir**: `./vendor/bin/pest path/to/dir`.
+- **Full**: `./vendor/bin/pest --parallel ...` (Final only).
+- **Coverage**:
+- Don't run full if `0% files > 10%`.
+- Command: `./vendor/bin/pest --coverage --parallel`.
+- Targets: Core ≥80%, Filament ≥70%, Support ≥80%.
+- **Output**: ALWAYS pipe: `2>&1 | tee /tmp/out.txt`.
 
 
 === foundation rules ===

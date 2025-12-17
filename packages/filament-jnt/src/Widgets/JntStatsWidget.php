@@ -4,24 +4,29 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentJnt\Widgets;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Jnt\Models\JntOrder;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 final class JntStatsWidget extends BaseWidget
 {
     protected function getStats(): array
     {
-        $totalOrders = JntOrder::count();
-        $deliveredCount = JntOrder::whereNotNull('delivered_at')->count();
-        $inTransitCount = JntOrder::whereNull('delivered_at')
+        $query = $this->ordersQuery();
+
+        $totalOrders = (clone $query)->count();
+        $deliveredCount = (clone $query)->whereNotNull('delivered_at')->count();
+        $inTransitCount = (clone $query)->whereNull('delivered_at')
             ->whereNotNull('tracking_number')
             ->where('has_problem', false)
             ->count();
-        $problemCount = JntOrder::where('has_problem', true)->count();
-        $pendingCount = JntOrder::whereNull('tracking_number')->count();
-        $returningCount = JntOrder::whereIn('last_status_code', ['172', '173'])->count();
+        $problemCount = (clone $query)->where('has_problem', true)->count();
+        $pendingCount = (clone $query)->whereNull('tracking_number')->count();
+        $returningCount = (clone $query)->whereIn('last_status_code', ['172', '173'])->count();
 
         $deliveryRate = $totalOrders > 0
             ? round(($deliveredCount / $totalOrders) * 100, 1)
@@ -63,5 +68,28 @@ final class JntStatsWidget extends BaseWidget
     protected function getColumns(): int
     {
         return 6;
+    }
+
+    /**
+     * @return Builder<JntOrder>
+     */
+    private function ordersQuery(): Builder
+    {
+        $owner = $this->resolveOwner();
+        $includeGlobal = (bool) config('jnt.owner.include_global', true);
+
+        /** @var Builder<JntOrder> $query */
+        $query = JntOrder::query()->forOwner($owner, $includeGlobal);
+
+        return $query;
+    }
+
+    private function resolveOwner(): ?Model
+    {
+        if (! app()->bound(OwnerResolverInterface::class)) {
+            return null;
+        }
+
+        return app(OwnerResolverInterface::class)->resolve();
     }
 }

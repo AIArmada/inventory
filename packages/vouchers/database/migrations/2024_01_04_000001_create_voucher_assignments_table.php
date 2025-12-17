@@ -10,7 +10,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $tableName = config('vouchers.table_names.voucher_assignments', 'voucher_assignments');
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['voucher_assignments'] ?? $prefix.'voucher_assignments';
 
         Schema::create($tableName, function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -30,6 +33,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists(config('vouchers.table_names.voucher_assignments', 'voucher_assignments'));
+        /** @var array<string, string> $tables */
+        $tables = config('vouchers.database.tables', []);
+        $prefix = (string) config('vouchers.database.table_prefix', '');
+        $tableName = $tables['voucher_assignments'] ?? $prefix.'voucher_assignments';
+
+        Schema::dropIfExists($tableName);
     }
 };

@@ -114,12 +114,15 @@ final class AffiliateService
         $identifier = $cart->getIdentifier();
         $instance = $cart->instance();
 
-        /** @var AffiliateAttribution|null $attribution */
-        $attribution = AffiliateAttribution::query()
+        $attributionQuery = AffiliateAttribution::query()
             ->where('affiliate_id', $affiliate->getKey())
             ->where('cart_identifier', $identifier)
-            ->where('cart_instance', $instance)
-            ->first();
+            ->where('cart_instance', $instance);
+
+        $this->applyOwnerScope($attributionQuery);
+
+        /** @var AffiliateAttribution|null $attribution */
+        $attribution = $attributionQuery->first();
 
         $payload = $this->buildAttributionPayload($affiliate, $cart, $context);
 

@@ -8,6 +8,7 @@ use AIArmada\FilamentVouchers\Resources\FraudSignalResource\Pages\ListFraudSigna
 use AIArmada\FilamentVouchers\Resources\FraudSignalResource\Pages\ViewFraudSignal;
 use AIArmada\FilamentVouchers\Resources\FraudSignalResource\Schemas\FraudSignalInfolist;
 use AIArmada\FilamentVouchers\Resources\FraudSignalResource\Tables\FraudSignalsTable;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Fraud\Enums\FraudRiskLevel;
 use AIArmada\Vouchers\Fraud\Models\VoucherFraudSignal;
 use BackedEnum;
@@ -15,6 +16,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class FraudSignalResource extends Resource
@@ -51,11 +53,31 @@ final class FraudSignalResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = self::getModel()::where('reviewed', false)
+        $count = (int) self::getEloquentQuery()->where('reviewed', false)
             ->whereIn('risk_level', [FraudRiskLevel::High->value, FraudRiskLevel::Critical->value])
             ->count();
 
         return $count > 0 ? (string) $count : null;
+    }
+
+    /**
+     * Fraud signals do not have owner columns; scope via the related voucher.
+     *
+     * @return Builder<VoucherFraudSignal>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<VoucherFraudSignal> $query */
+        $query = parent::getEloquentQuery();
+
+        if (! OwnerScopedQueries::isEnabled()) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $builder): void {
+            $builder->whereIn('voucher_id', OwnerScopedQueries::voucherIds())
+                ->orWhereIn('voucher_code', OwnerScopedQueries::voucherCodes());
+        });
     }
 
     public static function getNavigationBadgeColor(): string
