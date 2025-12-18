@@ -105,4 +105,12 @@ class AffiliateRank extends Model
 
         return true;
     }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $rank): void {
+            // Set rank_id to null on affiliates when rank is deleted
+            $rank->affiliates()->update(['rank_id' => null]);
+        });
+    }
 }

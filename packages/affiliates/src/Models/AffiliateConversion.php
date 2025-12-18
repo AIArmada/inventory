@@ -42,7 +42,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read AffiliateAttribution|null $attribution
  * @property-read AffiliatePayout|null $payout
  */
-final class AffiliateConversion extends Model
+class AffiliateConversion extends Model
 {
     use HasOwner;
     use HasUuids;

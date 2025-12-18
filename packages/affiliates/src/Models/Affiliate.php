@@ -63,7 +63,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \AIArmada\Vouchers\Models\Voucher> $vouchers
  * @property-read Model|null $owner
  */
-final class Affiliate extends Model
+class Affiliate extends Model
 {
     use HasOwner;
     use HasUuids;

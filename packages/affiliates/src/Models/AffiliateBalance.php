@@ -21,7 +21,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Affiliate $affiliate
  */
-final class AffiliateBalance extends Model
+class AffiliateBalance extends Model
 {
     use HasUuids;
 

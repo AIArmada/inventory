@@ -25,7 +25,7 @@ use Illuminate\Support\Carbon;
  * @property-read Affiliate $affiliate
  * @property-read AffiliateTrainingModule $module
  */
-final class AffiliateTrainingProgress extends Model
+class AffiliateTrainingProgress extends Model
 {
     use HasUuids;
 

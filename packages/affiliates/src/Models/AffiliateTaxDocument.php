@@ -25,7 +25,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Affiliate $affiliate
  */
-final class AffiliateTaxDocument extends Model
+class AffiliateTaxDocument extends Model
 {
     use HasUuids;
 

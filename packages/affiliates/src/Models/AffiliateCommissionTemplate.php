@@ -9,6 +9,7 @@ use AIArmada\Affiliates\Enums\CommissionType;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
@@ -25,7 +26,7 @@ use Illuminate\Support\Str;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */
-final class AffiliateCommissionTemplate extends Model
+class AffiliateCommissionTemplate extends Model
 {
     use HasUuids;
 
@@ -213,49 +214,51 @@ final class AffiliateCommissionTemplate extends Model
      */
     public function applyToAffiliate(Affiliate $affiliate): void
     {
-        $rules = $this->getCommissionRules();
+        DB::transaction(function () use ($affiliate): void {
+            $rules = $this->getCommissionRules();
 
-        // Find the base commission rule
-        $baseRule = collect($rules)->firstWhere('type', CommissionRuleType::Affiliate->value);
+            // Find the base commission rule
+            $baseRule = collect($rules)->firstWhere('type', CommissionRuleType::Affiliate->value);
 
-        if ($baseRule) {
-            $affiliate->update([
-                'commission_type' => $baseRule['commission_type'],
-                'commission_rate' => $baseRule['rate'],
-            ]);
-        }
+            if ($baseRule) {
+                $affiliate->update([
+                    'commission_type' => $baseRule['commission_type'],
+                    'commission_rate' => $baseRule['rate'],
+                ]);
+            }
 
-        // Create commission rules for the affiliate
-        foreach ($rules as $rule) {
-            AffiliateCommissionRule::updateOrCreate(
-                [
-                    'affiliate_id' => $affiliate->id,
-                    'rule_type' => $rule['type'],
-                ],
-                [
-                    'commission_type' => $rule['commission_type'],
-                    'rate_basis_points' => $rule['rate'],
-                    'conditions' => $rule['conditions'] ?? [],
-                    'is_active' => true,
-                ]
-            );
-        }
+            // Create commission rules for the affiliate
+            foreach ($rules as $rule) {
+                AffiliateCommissionRule::updateOrCreate(
+                    [
+                        'affiliate_id' => $affiliate->id,
+                        'rule_type' => $rule['type'],
+                    ],
+                    [
+                        'commission_type' => $rule['commission_type'],
+                        'rate_basis_points' => $rule['rate'],
+                        'conditions' => $rule['conditions'] ?? [],
+                        'is_active' => true,
+                    ]
+                );
+            }
 
-        // Create volume tiers
-        $volumeTiers = $this->getVolumeTiers();
-        foreach ($volumeTiers as $tier) {
-            AffiliateVolumeTier::updateOrCreate(
-                [
-                    'affiliate_id' => $affiliate->id,
-                    'min_volume_minor' => $tier['min_volume'],
-                ],
-                [
-                    'max_volume_minor' => $tier['max_volume'],
-                    'bonus_rate_basis_points' => $tier['bonus_rate'],
-                    'is_active' => true,
-                ]
-            );
-        }
+            // Create volume tiers
+            $volumeTiers = $this->getVolumeTiers();
+            foreach ($volumeTiers as $tier) {
+                AffiliateVolumeTier::updateOrCreate(
+                    [
+                        'affiliate_id' => $affiliate->id,
+                        'min_volume_minor' => $tier['min_volume'],
+                    ],
+                    [
+                        'max_volume_minor' => $tier['max_volume'],
+                        'bonus_rate_basis_points' => $tier['bonus_rate'],
+                        'is_active' => true,
+                    ]
+                );
+            }
+        });
     }
 
     /**
@@ -263,18 +266,20 @@ final class AffiliateCommissionTemplate extends Model
      */
     public function applyToProgram(AffiliateProgram $program): void
     {
-        $rules = $this->getCommissionRules();
+        DB::transaction(function () use ($program): void {
+            $rules = $this->getCommissionRules();
 
-        // Find the base commission rule
-        $baseRule = collect($rules)->firstWhere('type', CommissionRuleType::Program->value)
-            ?? collect($rules)->first();
+            // Find the base commission rule
+            $baseRule = collect($rules)->firstWhere('type', CommissionRuleType::Program->value)
+                ?? collect($rules)->first();
 
-        if ($baseRule) {
-            $program->update([
-                'commission_type' => $baseRule['commission_type'],
-                'default_commission_rate_basis_points' => $baseRule['rate'],
-            ]);
-        }
+            if ($baseRule) {
+                $program->update([
+                    'commission_type' => $baseRule['commission_type'],
+                    'default_commission_rate_basis_points' => $baseRule['rate'],
+                ]);
+            }
+        });
     }
 
     protected static function booted(): void

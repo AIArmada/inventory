@@ -94,4 +94,12 @@ class AffiliateProgramTier extends Model
     {
         return $this->commission_rate_basis_points / 100;
     }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (self $tier): void {
+            // Set tier_id to null on memberships when tier is deleted
+            $tier->memberships()->update(['tier_id' => null]);
+        });
+    }
 }

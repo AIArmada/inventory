@@ -21,7 +21,7 @@ use Illuminate\Support\Carbon;
  * @property-read AffiliateSupportTicket $ticket
  * @property-read Affiliate|null $affiliate
  */
-final class AffiliateSupportMessage extends Model
+class AffiliateSupportMessage extends Model
 {
     use HasUuids;
 
