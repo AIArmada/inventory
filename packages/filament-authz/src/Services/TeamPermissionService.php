@@ -79,7 +79,7 @@ class TeamPermissionService
             ->where('permissionable_type', $user::class)
             ->where('permissionable_id', $user->getKey())
             ->where('scope_type', PermissionScope::Team)
-            ->where('scope_value', (string) $teamId)
+            ->where('scope_id', (string) $teamId)
             ->active()
             ->with('permission')
             ->get();
@@ -99,7 +99,7 @@ class TeamPermissionService
             ->where('scope_type', PermissionScope::Team)
             ->whereHas('permission', fn ($q) => $q->where('name', $permission))
             ->active()
-            ->pluck('scope_value');
+            ->pluck('scope_id');
     }
 
     /**
@@ -114,7 +114,7 @@ class TeamPermissionService
             ->where('permissionable_type', $user::class)
             ->where('permissionable_id', $user->getKey())
             ->where('scope_type', PermissionScope::Team)
-            ->where('scope_value', (string) $teamId)
+            ->where('scope_id', (string) $teamId)
             ->delete();
     }
 

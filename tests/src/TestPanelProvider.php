@@ -33,6 +33,7 @@ class TestPanelProvider extends PanelProvider
                 'primary' => '#6366f1',
             ])
             ->discoverResources(in: __DIR__ . '/../../packages/filament-chip/src/Resources', for: 'AIArmada\\FilamentChip\\Resources')
+            ->discoverResources(in: __DIR__ . '/../../packages/filament-authz/src/Resources', for: 'AIArmada\\FilamentAuthz\\Resources')
             ->discoverPages(in: __DIR__ . '/../../packages/filament-chip/src/Pages', for: 'AIArmada\\FilamentChip\\Pages')
             ->discoverWidgets(in: __DIR__ . '/../../packages/filament-chip/src/Widgets', for: 'AIArmada\\FilamentChip\\Widgets')
             ->plugins([

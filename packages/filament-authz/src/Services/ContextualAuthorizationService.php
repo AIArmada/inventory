@@ -126,8 +126,9 @@ class ContextualAuthorizationService
             'permissionable_id' => $user->getKey(),
             'permission_id' => $permissionModel->id,
             'scope_type' => $scope,
-            'scope_value' => $scopeValue,
+            'scope_id' => $scopeValue,
             'conditions' => $conditions,
+            'granted_at' => now(),
             'expires_at' => $expiresAt,
             'granted_by' => Auth::id(),
         ]);
@@ -154,7 +155,7 @@ class ContextualAuthorizationService
         }
 
         if ($scopeValue !== null) {
-            $query->where('scope_value', $scopeValue);
+            $query->where('scope_id', $scopeValue);
         }
 
         return $query->delete();
@@ -215,9 +216,12 @@ class ContextualAuthorizationService
     {
         // Check scope match
         $scopeType = $scopedPermission->scope_type;
-        $scopeValue = $scopedPermission->scope_value;
+        $scopeId = $scopedPermission->scope_id;
 
-        $scopeKey = match ($scopeType) {
+        // Convert string scope_type to enum for comparison
+        $scopeEnum = PermissionScope::tryFrom($scopeType);
+
+        $scopeKey = match ($scopeEnum) {
             PermissionScope::Team => 'team_id',
             PermissionScope::Tenant => 'tenant_id',
             PermissionScope::Resource => 'resource_id',
@@ -227,7 +231,7 @@ class ContextualAuthorizationService
         };
 
         if ($scopeKey !== null && isset($context[$scopeKey])) {
-            if ((string) $context[$scopeKey] !== (string) $scopeValue) {
+            if ((string) $context[$scopeKey] !== (string) $scopeId) {
                 return false;
             }
         }

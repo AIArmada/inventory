@@ -199,13 +199,14 @@ class RoleInheritanceService
     public function getInheritedPermissions(Role $role): Collection
     {
         $ancestors = $this->getAncestors($role);
-        $permissions = collect();
+        $permissions = new Collection;
 
         foreach ($ancestors as $ancestor) {
             $permissions = $permissions->merge($ancestor->permissions);
         }
 
-        return $permissions->unique('id');
+        // Return as Eloquent Collection
+        return new Collection($permissions->unique('id')->values()->all());
     }
 
     /**

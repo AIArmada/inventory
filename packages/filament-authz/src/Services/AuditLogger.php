@@ -42,9 +42,10 @@ class AuditLogger
             'subject_id' => $subject?->getKey(),
             'target_type' => $target?->getMorphClass(),
             'target_id' => $target?->getKey(),
-            'old_values' => $oldValues,
-            'new_values' => $newValues,
-            'metadata' => $this->enrichMetadata($metadata),
+            'old_value' => $oldValues,
+            'new_value' => $newValues,
+            'context' => $this->enrichMetadata($metadata),
+            'occurred_at' => now(),
         ];
 
         if ($this->shouldWriteAsync()) {

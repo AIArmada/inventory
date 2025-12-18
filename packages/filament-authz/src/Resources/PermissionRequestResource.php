@@ -7,8 +7,10 @@ namespace AIArmada\FilamentAuthz\Resources;
 use AIArmada\FilamentAuthz\Models\PermissionRequest;
 use AIArmada\FilamentAuthz\Resources\PermissionRequestResource\Pages;
 use BackedEnum;
+use Filament\Actions;
 use Filament\Forms;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -33,7 +35,7 @@ class PermissionRequestResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Request Details')
+                Section::make('Request Details')
                     ->schema([
                         Forms\Components\Select::make('requester_id')
                             ->label('Requester')
@@ -63,7 +65,7 @@ class PermissionRequestResource extends Resource
                             ->helperText('Leave empty for permanent access'),
                     ]),
 
-                Forms\Components\Section::make('Approval Details')
+                Section::make('Approval Details')
                     ->schema([
                         Forms\Components\Select::make('status')
                             ->options([
@@ -165,7 +167,7 @@ class PermissionRequestResource extends Resource
                     ->toggle(),
             ])
             ->actions([
-                Tables\Actions\Action::make('approve')
+                Actions\Action::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check')
                     ->color('success')
@@ -180,7 +182,7 @@ class PermissionRequestResource extends Resource
                     })
                     ->visible(fn (PermissionRequest $record) => $record->isPending()),
 
-                Tables\Actions\Action::make('deny')
+                Actions\Action::make('deny')
                     ->label('Deny')
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
@@ -196,12 +198,12 @@ class PermissionRequestResource extends Resource
                     })
                     ->visible(fn (PermissionRequest $record) => $record->isPending()),
 
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Actions\ViewAction::make(),
+                Actions\EditAction::make(),
             ])
             ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\BulkAction::make('approve_all')
+                Actions\BulkActionGroup::make([
+                    Actions\BulkAction::make('approve_all')
                         ->label('Approve Selected')
                         ->icon('heroicon-o-check')
                         ->color('success')
@@ -214,7 +216,7 @@ class PermissionRequestResource extends Resource
                             }
                         }),
 
-                    Tables\Actions\BulkAction::make('deny_all')
+                    Actions\BulkAction::make('deny_all')
                         ->label('Deny Selected')
                         ->icon('heroicon-o-x-mark')
                         ->color('danger')
@@ -232,7 +234,7 @@ class PermissionRequestResource extends Resource
                             }
                         }),
 
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

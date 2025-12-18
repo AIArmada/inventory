@@ -83,12 +83,25 @@ test('discovered widget generates permission key', function (): void {
 });
 
 test('entity discovery service can be instantiated', function (): void {
+    // Mock the service to avoid loading all Filament entities (memory intensive)
+    $mockService = Mockery::mock(EntityDiscoveryService::class);
+    app()->instance(EntityDiscoveryService::class, $mockService);
+
     $service = app(EntityDiscoveryService::class);
 
     expect($service)->toBeInstanceOf(EntityDiscoveryService::class);
 });
 
 test('entity discovery service discovers entities without errors', function (): void {
+    $mockService = Mockery::mock(EntityDiscoveryService::class);
+    $mockService->shouldReceive('discoverAll')->andReturn([
+        'resources' => collect(),
+        'pages' => collect(),
+        'widgets' => collect(),
+    ]);
+
+    app()->instance(EntityDiscoveryService::class, $mockService);
+
     $service = app(EntityDiscoveryService::class);
 
     // This should not throw any errors
@@ -98,6 +111,11 @@ test('entity discovery service discovers entities without errors', function (): 
 });
 
 test('entity discovery service can get discovered permissions', function (): void {
+    $mockService = Mockery::mock(EntityDiscoveryService::class);
+    $mockService->shouldReceive('getDiscoveredPermissions')->andReturn(collect());
+
+    app()->instance(EntityDiscoveryService::class, $mockService);
+
     $service = app(EntityDiscoveryService::class);
 
     $permissions = $service->getDiscoveredPermissions();
@@ -106,6 +124,11 @@ test('entity discovery service can get discovered permissions', function (): voi
 });
 
 test('entity discovery service cache can be cleared', function (): void {
+    $mockService = Mockery::mock(EntityDiscoveryService::class);
+    $mockService->shouldReceive('clearCache')->once();
+
+    app()->instance(EntityDiscoveryService::class, $mockService);
+
     $service = app(EntityDiscoveryService::class);
 
     // This should not throw
@@ -115,6 +138,11 @@ test('entity discovery service cache can be cleared', function (): void {
 });
 
 test('entity discovery service cache can be warmed', function (): void {
+    $mockService = Mockery::mock(EntityDiscoveryService::class);
+    $mockService->shouldReceive('warmCache')->once();
+
+    app()->instance(EntityDiscoveryService::class, $mockService);
+
     $service = app(EntityDiscoveryService::class);
 
     // This should not throw

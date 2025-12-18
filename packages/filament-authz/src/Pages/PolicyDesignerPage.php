@@ -269,12 +269,17 @@ PHP;
             return;
         }
 
+        // Generate slug from policy name
+        $slug = \Illuminate\Support\Str::slug($this->policyName);
+
         // Create or update the policy
         AccessPolicy::updateOrCreate(
             ['name' => $this->policyName],
             [
+                'slug' => $slug,
                 'description' => $this->policyDescription,
                 'effect' => $this->effect,
+                'target_action' => '*',
                 'priority' => $this->priority,
                 'conditions' => json_encode($this->buildPolicyData()),
                 'is_active' => true,

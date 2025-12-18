@@ -1,0 +1,157 @@
+<?php
+
+declare(strict_types=1);
+
+use AIArmada\Commerce\Tests\FilamentAuthz\Fixtures\AuthzUser;
+use AIArmada\FilamentAuthz\Models\PermissionRequest;
+use AIArmada\FilamentAuthz\Resources\PermissionRequestResource\Pages\CreatePermissionRequest;
+use AIArmada\FilamentAuthz\Resources\PermissionRequestResource\Pages\ListPermissionRequests;
+use Filament\Actions\Testing\TestAction;
+use Filament\Facades\Filament;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Livewire\Livewire;
+
+beforeEach(function (): void {
+    config()->set('filament-authz.enterprise.approvals.enabled', true);
+    config()->set('filament-authz.user_model', AuthzUser::class);
+
+    Schema::dropIfExists('authz_users');
+    Schema::create('authz_users', function (Blueprint $table): void {
+        $table->uuid('id')->primary();
+        $table->string('name');
+        $table->string('email')->unique();
+        $table->string('password');
+        $table->timestamps();
+    });
+
+    Schema::dropIfExists('authz_permission_requests');
+    Schema::create('authz_permission_requests', function (Blueprint $table): void {
+        $table->uuid('id')->primary();
+        $table->foreignUuid('requester_id');
+        $table->foreignUuid('approver_id')->nullable();
+        $table->json('requested_permissions')->nullable();
+        $table->json('requested_roles')->nullable();
+        $table->text('justification')->nullable();
+        $table->string('status')->default('pending');
+        $table->timestamp('approved_at')->nullable();
+        $table->timestamp('denied_at')->nullable();
+        $table->timestamp('expires_at')->nullable();
+        $table->text('approver_note')->nullable();
+        $table->text('denial_reason')->nullable();
+        $table->timestamps();
+
+        $table->index('requester_id');
+        $table->index('approver_id');
+        $table->index('status');
+        $table->index('created_at');
+    });
+
+    Filament::setCurrentPanel('admin');
+
+    $this->actingAs(AuthzUser::create([
+        'name' => 'Approver',
+        'email' => 'approver@example.com',
+        'password' => bcrypt('password'),
+    ]));
+});
+
+test('list page renders and shows permission requests', function (): void {
+    $requester = AuthzUser::create([
+        'name' => 'Requester',
+        'email' => 'requester@example.com',
+        'password' => bcrypt('password'),
+    ]);
+
+    $pending = PermissionRequest::create([
+        'requester_id' => $requester->id,
+        'justification' => 'Need access',
+        'status' => PermissionRequest::STATUS_PENDING,
+    ]);
+
+    Livewire::test(ListPermissionRequests::class)
+        ->assertSuccessful()
+        ->assertTableColumnExists('requester.name')
+        ->assertTableColumnExists('status')
+        ->assertCanSeeTableRecords([$pending]);
+});
+
+test('list page can filter pending only', function (): void {
+    $requester = AuthzUser::create([
+        'name' => 'Requester',
+        'email' => 'requester2@example.com',
+        'password' => bcrypt('password'),
+    ]);
+
+    $pending = PermissionRequest::create([
+        'requester_id' => $requester->id,
+        'justification' => 'Need access',
+        'status' => PermissionRequest::STATUS_PENDING,
+    ]);
+
+    $approved = PermissionRequest::create([
+        'requester_id' => $requester->id,
+        'justification' => 'Already approved',
+        'status' => PermissionRequest::STATUS_APPROVED,
+    ]);
+
+    Livewire::test(ListPermissionRequests::class)
+        ->assertSuccessful()
+        ->assertCanSeeTableRecords([$pending, $approved])
+        ->filterTable('pending_only')
+        ->assertCanSeeTableRecords([$pending])
+        ->assertCanNotSeeTableRecords([$approved]);
+});
+
+test('list page can deny a pending request', function (): void {
+    $requester = AuthzUser::create([
+        'name' => 'Requester',
+        'email' => 'requester3@example.com',
+        'password' => bcrypt('password'),
+    ]);
+
+    $pending = PermissionRequest::create([
+        'requester_id' => $requester->id,
+        'justification' => 'Need access',
+        'status' => PermissionRequest::STATUS_PENDING,
+    ]);
+
+    $approverId = auth()->id();
+
+    Livewire::test(ListPermissionRequests::class)
+        ->assertSuccessful()
+        ->assertActionExists(TestAction::make('deny')->table($pending))
+        ->callAction(TestAction::make('deny')->table($pending), data: [
+            'reason' => 'Not allowed',
+        ])
+        ->assertHasNoFormErrors();
+
+    expect($pending->refresh())
+        ->status->toBe(PermissionRequest::STATUS_DENIED)
+        ->approver_id->toBe($approverId)
+        ->denial_reason->toBe('Not allowed');
+});
+
+test('create page can create a permission request', function (): void {
+    $requester = AuthzUser::create([
+        'name' => 'Requester',
+        'email' => 'requester4@example.com',
+        'password' => bcrypt('password'),
+    ]);
+
+    Livewire::test(CreatePermissionRequest::class)
+        ->assertSuccessful()
+        ->fillForm([
+            'requester_id' => $requester->id,
+            'justification' => 'Need access',
+        ])
+        ->call('create')
+        ->assertHasNoFormErrors();
+
+    $request = PermissionRequest::query()->sole();
+
+    expect($request)
+        ->requester_id->toBe($requester->id)
+        ->justification->toBe('Need access')
+        ->status->toBe(PermissionRequest::STATUS_PENDING);
+});

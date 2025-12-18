@@ -18,7 +18,6 @@ use Filament\Tables\Table;
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -88,9 +87,7 @@ class RoleResource extends Resource
                         return Permission::query()
                             ->when($guard, fn (Builder $query) => $query->where('guard_name', $guard))
                             ->orderBy('name')
-                            ->get()
-                            ->groupBy(fn (Permission $permission): string => Str::headline(explode('.', $permission->name)[0] ?? 'General'))
-                            ->map(fn ($group) => $group->pluck('name', 'id')->toArray())
+                            ->pluck('name', 'id')
                             ->toArray();
                     })
                     ->default(fn (?Role $record) => $record?->permissions()->pluck('id')->toArray())
@@ -101,7 +98,7 @@ class RoleResource extends Resource
 
                         $component->state($record->permissions()->pluck('id')->toArray());
                     })
-                    ->helperText('Toggle permissions grouped by resource. Switching guards filters available permissions.'),
+                    ->helperText('Toggle permissions. Switching guards filters available permissions.'),
             ])->columnSpanFull(),
         ]);
     }

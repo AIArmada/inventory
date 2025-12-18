@@ -5,13 +5,13 @@
          colors="true"
 >
     <testsuites>
-        <testsuite name="FilamentPermissions">
-            <directory>../tests/src/FilamentPermissions</directory>
+        <testsuite name="FilamentAuthz">
+            <directory>../tests/src/FilamentAuthz</directory>
         </testsuite>
     </testsuites>
     <source>
         <include>
-            <directory>../packages/filament-permissions/src</directory>
+            <directory>../packages/filament-authz/src</directory>
         </include>
     </source>
     <php>

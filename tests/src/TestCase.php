@@ -23,6 +23,8 @@ use AIArmada\Shipping\Facades\Shipping;
 use AIArmada\Vouchers\Facades\Voucher;
 use AIArmada\Vouchers\VoucherServiceProvider;
 use BackedEnum;
+use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
+use BladeUI\Icons\BladeIconsServiceProvider;
 use DateInterval;
 use DateTimeInterface;
 use Filament\FilamentServiceProvider;
@@ -85,13 +87,18 @@ abstract class TestCase extends Orchestra
             EventServiceProvider::class,
             SessionServiceProvider::class,
             ViewServiceProvider::class,
+            BladeIconsServiceProvider::class,
+            BladeHeroiconsServiceProvider::class,
             HashServiceProvider::class,
             CacheServiceProvider::class,
             DatabaseServiceProvider::class,
             TranslationServiceProvider::class,
             ValidationServiceProvider::class,
+            LivewireTestingServiceProvider::class,
             LivewireServiceProvider::class,
             \Filament\Support\SupportServiceProvider::class,
+            \Filament\Actions\ActionsServiceProvider::class,
+            \Filament\Schemas\SchemasServiceProvider::class,
             \Filament\Forms\FormsServiceProvider::class,
             \Filament\Tables\TablesServiceProvider::class,
             FilamentServiceProvider::class,

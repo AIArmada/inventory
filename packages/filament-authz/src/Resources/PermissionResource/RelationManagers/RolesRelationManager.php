@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAuthz\Resources\PermissionResource\RelationManagers;
 
+use AIArmada\FilamentAuthz\Support\Concerns\EnsuresLivewireErrorBag;
 use Filament\Actions\AttachAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DetachAction;
@@ -17,6 +18,8 @@ use Spatie\Permission\PermissionRegistrar;
 
 class RolesRelationManager extends RelationManager
 {
+    use EnsuresLivewireErrorBag;
+
     protected static string $relationship = 'roles';
 
     protected static ?string $title = 'Roles';

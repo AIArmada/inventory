@@ -59,6 +59,29 @@ expect()->extend('toHaveValidCartStructure', function () {
 |--------------------------------------------------------------------------
 */
 
+/**
+ * Create a test user with optional roles assigned.
+ *
+ * @param  array<string>  $roles  Role names to assign to the user
+ */
+function createUserWithRoles(array $roles = []): AIArmada\Commerce\Tests\Fixtures\Models\User
+{
+    $user = AIArmada\Commerce\Tests\Fixtures\Models\User::create([
+        'name' => 'Test User',
+        'email' => 'test' . uniqid() . '@example.com',
+        'password' => bcrypt('password'),
+    ]);
+
+    foreach ($roles as $roleName) {
+        $role = Spatie\Permission\Models\Role::firstOrCreate(
+            ['name' => $roleName, 'guard_name' => 'web']
+        );
+        $user->assignRole($role);
+    }
+
+    return $user;
+}
+
 function createSampleCartData(): array
 {
     return [
