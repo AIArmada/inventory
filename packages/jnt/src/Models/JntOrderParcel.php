@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,13 +21,36 @@ use Illuminate\Support\Carbon;
  * @property string|null $width
  * @property string|null $height
  * @property array<string, mixed>|null $metadata
+ * @property string|null $owner_type
+ * @property string|null $owner_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read JntOrder $order
+ *
+ * @method static Builder<static> forOwner(?Model $owner, bool $includeGlobal = true)
  */
 final class JntOrderParcel extends Model
 {
+    use HasOwner;
     use HasUuids;
+
+    protected static function booted(): void
+    {
+        static::creating(function (JntOrderParcel $parcel): void {
+            if ($parcel->owner_type !== null || $parcel->owner_id !== null) {
+                return;
+            }
+
+            $order = JntOrder::query()->find($parcel->order_id);
+
+            if ($order === null) {
+                return;
+            }
+
+            $parcel->owner_type = $order->owner_type;
+            $parcel->owner_id = $order->owner_id;
+        });
+    }
 
     /**
      * @var list<string>
@@ -39,6 +64,8 @@ final class JntOrderParcel extends Model
         'width',
         'height',
         'metadata',
+        'owner_type',
+        'owner_id',
     ];
 
     public function getTable(): string

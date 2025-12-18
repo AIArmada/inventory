@@ -43,12 +43,24 @@ it('scopes Filament JNT resources to the resolved owner (including global)', fun
         'password' => 'secret',
     ]);
 
-    app()->bind(OwnerResolverInterface::class, fn (): OwnerResolverInterface => new TestOwnerResolver($ownerA));
-
     $globalOrder = JntOrder::query()->create([
         'order_id' => 'ORD-GLOBAL',
         'customer_code' => 'CUST',
     ]);
+
+    $globalLog = JntWebhookLog::query()->create([
+        'order_id' => $globalOrder->id,
+        'tracking_number' => 'TRK-G',
+        'processing_status' => JntWebhookLog::STATUS_PENDING,
+    ]);
+
+    $globalEvent = JntTrackingEvent::query()->create([
+        'order_id' => $globalOrder->id,
+        'tracking_number' => 'TRK-G',
+        'scan_type_name' => 'Global',
+    ]);
+
+    app()->bind(OwnerResolverInterface::class, fn (): OwnerResolverInterface => new TestOwnerResolver($ownerA));
 
     $ownerAOrder = JntOrder::query()->create([
         'order_id' => 'ORD-A',
@@ -62,12 +74,6 @@ it('scopes Filament JNT resources to the resolved owner (including global)', fun
     ]);
     $ownerBOrder->assignOwner($ownerB)->save();
 
-    $globalLog = JntWebhookLog::query()->create([
-        'order_id' => $globalOrder->id,
-        'tracking_number' => 'TRK-G',
-        'processing_status' => JntWebhookLog::STATUS_PENDING,
-    ]);
-
     $ownerALog = JntWebhookLog::query()->create([
         'order_id' => $ownerAOrder->id,
         'tracking_number' => 'TRK-A',
@@ -78,12 +84,6 @@ it('scopes Filament JNT resources to the resolved owner (including global)', fun
         'order_id' => $ownerBOrder->id,
         'tracking_number' => 'TRK-B',
         'processing_status' => JntWebhookLog::STATUS_PENDING,
-    ]);
-
-    $globalEvent = JntTrackingEvent::query()->create([
-        'order_id' => $globalOrder->id,
-        'tracking_number' => 'TRK-G',
-        'scan_type_name' => 'Global',
     ]);
 
     $ownerAEvent = JntTrackingEvent::query()->create([
@@ -121,18 +121,10 @@ it('can exclude global records from Filament JNT resources', function (): void {
         'password' => 'secret',
     ]);
 
-    app()->bind(OwnerResolverInterface::class, fn (): OwnerResolverInterface => new TestOwnerResolver($ownerA));
-
     $globalOrder = JntOrder::query()->create([
         'order_id' => 'ORD-GLOBAL',
         'customer_code' => 'CUST',
     ]);
-
-    $ownerAOrder = JntOrder::query()->create([
-        'order_id' => 'ORD-A',
-        'customer_code' => 'CUST',
-    ]);
-    $ownerAOrder->assignOwner($ownerA)->save();
 
     $globalLog = JntWebhookLog::query()->create([
         'order_id' => $globalOrder->id,
@@ -140,16 +132,24 @@ it('can exclude global records from Filament JNT resources', function (): void {
         'processing_status' => JntWebhookLog::STATUS_PENDING,
     ]);
 
-    $ownerALog = JntWebhookLog::query()->create([
-        'order_id' => $ownerAOrder->id,
-        'tracking_number' => 'TRK-A',
-        'processing_status' => JntWebhookLog::STATUS_PENDING,
-    ]);
-
     $globalEvent = JntTrackingEvent::query()->create([
         'order_id' => $globalOrder->id,
         'tracking_number' => 'TRK-G',
         'scan_type_name' => 'Global',
+    ]);
+
+    app()->bind(OwnerResolverInterface::class, fn (): OwnerResolverInterface => new TestOwnerResolver($ownerA));
+
+    $ownerAOrder = JntOrder::query()->create([
+        'order_id' => 'ORD-A',
+        'customer_code' => 'CUST',
+    ]);
+    $ownerAOrder->assignOwner($ownerA)->save();
+
+    $ownerALog = JntWebhookLog::query()->create([
+        'order_id' => $ownerAOrder->id,
+        'tracking_number' => 'TRK-A',
+        'processing_status' => JntWebhookLog::STATUS_PENDING,
     ]);
 
     $ownerAEvent = JntTrackingEvent::query()->create([

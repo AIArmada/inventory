@@ -45,6 +45,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $last_status_code
  * @property string|null $last_status
  * @property bool $has_problem
+ * @property Carbon|null $cancelled_at
+ * @property string|null $cancellation_reason
  * @property string|null $remark
  * @property array<string, mixed>|null $sender
  * @property array<string, mixed>|null $receiver
@@ -104,6 +106,8 @@ final class JntOrder extends Model
         'last_status_code',
         'last_status',
         'has_problem',
+        'cancelled_at',
+        'cancellation_reason',
         'remark',
         'sender',
         'receiver',
@@ -140,9 +144,13 @@ final class JntOrder extends Model
         $owner ??= $this->resolveOwner();
 
         if ($owner === null) {
-            return $includeGlobal
-                ? $query->whereNull('owner_type')->whereNull('owner_id')
-                : $query;
+            // No owner context: never return tenant-owned rows.
+            if ($includeGlobal) {
+                return $query->whereNull('owner_type')->whereNull('owner_id');
+            }
+
+            // Explicitly exclude all rows when global is disabled.
+            return $query->whereRaw('1 = 0');
         }
 
         if ($includeGlobal) {
@@ -229,6 +237,26 @@ final class JntOrder extends Model
      */
     protected static function booted(): void
     {
+        self::creating(function (JntOrder $order): void {
+            if (! config('jnt.owner.enabled', false)) {
+                return;
+            }
+
+            if (! config('jnt.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            if ($order->owner_type !== null || $order->owner_id !== null) {
+                return;
+            }
+
+            $owner = $order->resolveOwner();
+
+            if ($owner !== null) {
+                $order->assignOwner($owner);
+            }
+        });
+
         self::deleting(function (JntOrder $order): void {
             // Application-level cascade delete
             $order->items()->delete();
@@ -261,6 +289,7 @@ final class JntOrder extends Model
             'last_synced_at' => 'datetime',
             'last_tracked_at' => 'datetime',
             'delivered_at' => 'datetime',
+            'cancelled_at' => 'datetime',
             'sender' => 'array',
             'receiver' => 'array',
             'return_info' => 'array',

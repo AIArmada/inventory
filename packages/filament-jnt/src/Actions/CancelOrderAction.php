@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentJnt\Actions;
 
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Jnt\Enums\CancellationReason;
 use AIArmada\Jnt\Models\JntOrder;
 use AIArmada\Jnt\Services\JntExpressService;
@@ -12,6 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 final class CancelOrderAction
@@ -23,7 +25,7 @@ final class CancelOrderAction
             ->icon(Heroicon::XCircle)
             ->color('danger')
             ->requiresConfirmation()
-            ->authorize(fn (): bool => auth()->check())
+            ->authorize(fn (): bool => Auth::check())
             ->modalHeading('Cancel J&T Order')
             ->modalDescription('This will cancel the order with J&T Express. This action cannot be undone.')
             ->modalSubmitActionLabel('Cancel Order')
@@ -41,7 +43,7 @@ final class CancelOrderAction
                     ->visible(fn (callable $get): bool => $get('reason') === CancellationReason::OTHER->value),
             ])
             ->action(function (JntOrder $record, array $data): void {
-                if (auth()->user() === null) {
+                if (Auth::user() === null) {
                     Notification::make()
                         ->title('Authentication Required')
                         ->body('Please sign in to cancel orders.')
@@ -51,10 +53,21 @@ final class CancelOrderAction
                     return;
                 }
 
+                if (! self::recordIsAccessible($record)) {
+                    Notification::make()
+                        ->title('Not Authorized')
+                        ->body('You do not have access to this shipping order.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
                 try {
                     $jntService = app(JntExpressService::class);
 
-                    $reason = CancellationReason::tryFrom($data['reason']) ?? $data['reason'];
+                    $reasonValue = (string) ($data['reason'] ?? '');
+                    $reason = CancellationReason::tryFrom($reasonValue) ?? $reasonValue;
 
                     if ($reason === CancellationReason::OTHER && ! empty($data['custom_reason'])) {
                         $reasonString = $data['custom_reason'];
@@ -90,6 +103,26 @@ final class CancelOrderAction
                 }
             })
             ->visible(fn (JntOrder $record): bool => self::canCancel($record));
+    }
+
+    private static function recordIsAccessible(JntOrder $record): bool
+    {
+        if (! config('jnt.owner.enabled', false)) {
+            return true;
+        }
+
+        $owner = null;
+        if (app()->bound(OwnerResolverInterface::class)) {
+            $owner = app(OwnerResolverInterface::class)->resolve();
+        }
+
+        /** @var bool $includeGlobal */
+        $includeGlobal = (bool) config('jnt.owner.include_global', true);
+
+        return JntOrder::query()
+            ->forOwner($owner, $includeGlobal)
+            ->whereKey($record->getKey())
+            ->exists();
     }
 
     /**

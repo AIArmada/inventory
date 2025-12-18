@@ -100,12 +100,17 @@ class JntTrackingService
         foreach ($trackingData->details->toCollection() as $detail) {
             $scanTime = Carbon::parse($detail->scanTime);
 
+            $ownerType = $order->owner_type;
+            $ownerId = $order->owner_id;
+
             JntTrackingEvent::firstOrCreate(
                 [
                     'order_id' => $order->id,
                     'tracking_number' => $trackingNumber,
                     'scan_type_code' => $detail->scanTypeCode,
                     'scan_time' => $scanTime,
+                    'owner_type' => $ownerType,
+                    'owner_id' => $ownerId,
                 ],
                 [
                     'order_reference' => $order->order_id,
@@ -142,6 +147,8 @@ class JntTrackingService
                     'sign_url' => $detail->signUrl,
                     'electronic_signature_pic_url' => $detail->electronicSignaturePicUrl,
                     'payload' => $detail->toApiArray(),
+                    'owner_type' => $ownerType,
+                    'owner_id' => $ownerId,
                 ]
             );
         }
@@ -212,7 +219,13 @@ class JntTrackingService
      */
     public function getOrdersNeedingTrackingUpdate(int $limit = 100): Collection
     {
-        return JntOrder::query()
+        /** @var bool $includeGlobal */
+        $includeGlobal = (bool) config('jnt.owner.include_global', true);
+
+        /** @var \Illuminate\Database\Eloquent\Builder<JntOrder> $query */
+        $query = JntOrder::query()->forOwner(owner: null, includeGlobal: $includeGlobal);
+
+        return $query
             ->whereNotNull('tracking_number')
             ->whereNull('delivered_at')
             ->where(function ($query): void {

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,13 +22,40 @@ use Illuminate\Support\Carbon;
  * @property string $processing_status
  * @property string|null $processing_error
  * @property Carbon|null $processed_at
+ * @property string|null $owner_type
+ * @property string|null $owner_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read JntOrder|null $order
+ *
+ * @method static Builder<static> forOwner(?Model $owner, bool $includeGlobal = true)
  */
 final class JntWebhookLog extends Model
 {
+    use HasOwner;
     use HasUuids;
+
+    protected static function booted(): void
+    {
+        static::creating(function (JntWebhookLog $log): void {
+            if ($log->owner_type !== null || $log->owner_id !== null) {
+                return;
+            }
+
+            if ($log->order_id === null) {
+                return;
+            }
+
+            $order = JntOrder::query()->find($log->order_id);
+
+            if ($order === null) {
+                return;
+            }
+
+            $log->owner_type = $order->owner_type;
+            $log->owner_id = $order->owner_id;
+        });
+    }
 
     public const STATUS_PENDING = 'pending';
 
@@ -47,6 +76,8 @@ final class JntWebhookLog extends Model
         'processing_status',
         'processing_error',
         'processed_at',
+        'owner_type',
+        'owner_id',
     ];
 
     public function getTable(): string

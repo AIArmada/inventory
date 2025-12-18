@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Jnt\Enums\ScanTypeCode;
 use AIArmada\Jnt\Enums\TrackingStatus;
 use AIArmada\Jnt\Services\JntStatusMapper;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,13 +54,40 @@ use Illuminate\Support\Carbon;
  * @property string|null $sign_url
  * @property string|null $electronic_signature_pic_url
  * @property array<string, mixed>|null $payload
+ * @property string|null $owner_type
+ * @property string|null $owner_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read JntOrder|null $order
+ *
+ * @method static Builder<static> forOwner(?Model $owner, bool $includeGlobal = true)
  */
 final class JntTrackingEvent extends Model
 {
+    use HasOwner;
     use HasUuids;
+
+    protected static function booted(): void
+    {
+        static::creating(function (JntTrackingEvent $event): void {
+            if ($event->owner_type !== null || $event->owner_id !== null) {
+                return;
+            }
+
+            if ($event->order_id === null) {
+                return;
+            }
+
+            $order = JntOrder::query()->find($event->order_id);
+
+            if ($order === null) {
+                return;
+            }
+
+            $event->owner_type = $order->owner_type;
+            $event->owner_id = $order->owner_id;
+        });
+    }
 
     /**
      * @var list<string>
@@ -102,6 +131,8 @@ final class JntTrackingEvent extends Model
         'sign_url',
         'electronic_signature_pic_url',
         'payload',
+        'owner_type',
+        'owner_id',
     ];
 
     public function getTable(): string

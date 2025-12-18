@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,13 +22,36 @@ use Illuminate\Support\Carbon;
  * @property string $unit_price
  * @property string $currency
  * @property array<string, mixed>|null $metadata
+ * @property string|null $owner_type
+ * @property string|null $owner_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read JntOrder $order
+ *
+ * @method static Builder<static> forOwner(?Model $owner, bool $includeGlobal = true)
  */
 final class JntOrderItem extends Model
 {
+    use HasOwner;
     use HasUuids;
+
+    protected static function booted(): void
+    {
+        static::creating(function (JntOrderItem $item): void {
+            if ($item->owner_type !== null || $item->owner_id !== null) {
+                return;
+            }
+
+            $order = JntOrder::query()->find($item->order_id);
+
+            if ($order === null) {
+                return;
+            }
+
+            $item->owner_type = $order->owner_type;
+            $item->owner_id = $order->owner_id;
+        });
+    }
 
     /**
      * @var list<string>
@@ -41,6 +66,8 @@ final class JntOrderItem extends Model
         'unit_price',
         'currency',
         'metadata',
+        'owner_type',
+        'owner_id',
     ];
 
     public function getTable(): string
