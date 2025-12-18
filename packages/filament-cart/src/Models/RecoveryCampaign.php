@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCart\Models;
 
+use AIArmada\FilamentCart\Models\Concerns\HasFilamentCartOwner;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use RuntimeException;
 
 /**
  * @property string $id
@@ -51,6 +53,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class RecoveryCampaign extends Model
 {
+    use HasFilamentCartOwner;
     use HasUuids;
 
     protected $fillable = [
@@ -168,6 +171,39 @@ class RecoveryCampaign extends Model
 
     protected static function booted(): void
     {
+        static::saving(function (RecoveryCampaign $campaign): void {
+            if (! self::ownerScopingEnabled()) {
+                return;
+            }
+
+            $owner = self::resolveCurrentOwner();
+
+            if ($owner === null) {
+                throw new RuntimeException('Owner scoping is enabled but no owner was resolved while saving a recovery campaign.');
+            }
+
+            foreach (['control_template_id', 'variant_template_id'] as $column) {
+                /** @var string|null $templateId */
+                $templateId = $campaign->getAttribute($column);
+
+                if ($templateId === null || $templateId === '') {
+                    continue;
+                }
+
+                $exists = RecoveryTemplate::query()
+                    ->forOwner($owner, includeGlobal: true)
+                    ->whereKey($templateId)
+                    ->exists();
+
+                if (! $exists) {
+                    throw new RuntimeException(sprintf(
+                        'RecoveryCampaign.%s must reference a template within the current owner scope.',
+                        $column
+                    ));
+                }
+            }
+        });
+
         static::deleting(function (RecoveryCampaign $campaign): void {
             // Cancel scheduled attempts
             $campaign->attempts()

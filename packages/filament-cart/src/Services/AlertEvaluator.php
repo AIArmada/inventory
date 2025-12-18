@@ -56,7 +56,7 @@ class AlertEvaluator
      */
     public function getMatchingRules(string $eventType, array $eventData): Collection
     {
-        return AlertRule::query()
+        return AlertRule::query()->forOwner()
             ->where('event_type', $eventType)
             ->where('is_active', true)
             ->orderBy('priority', 'desc')

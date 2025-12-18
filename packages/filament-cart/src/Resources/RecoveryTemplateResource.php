@@ -28,6 +28,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class RecoveryTemplateResource extends Resource
@@ -218,6 +219,17 @@ final class RecoveryTemplateResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    /**
+     * @return Builder<RecoveryTemplate>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<RecoveryTemplate> $query */
+        $query = parent::getEloquentQuery();
+
+        return $query->forOwner();
     }
 
     public static function getRelations(): array

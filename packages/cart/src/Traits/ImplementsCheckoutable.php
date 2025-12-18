@@ -155,7 +155,7 @@ trait ImplementsCheckoutable
         // Add condition summaries
         $conditions = $this->getConditions();
         if ($conditions->isNotEmpty()) {
-            $metadata['conditions'] = $conditions->map(fn($c) => [
+            $metadata['conditions'] = $conditions->map(fn ($c) => [
                 'name' => $c->getName(),
                 'type' => $c->getType(),
                 'value' => $c->getValue(),

@@ -50,7 +50,7 @@ class RecoveryScheduler
      */
     public function processScheduledAttempts(): array
     {
-        $dueAttempts = RecoveryAttempt::query()
+        $dueAttempts = RecoveryAttempt::query()->forOwner()
             ->where('status', 'scheduled')
             ->where('scheduled_for', '<=', now())
             ->orderBy('scheduled_for')
@@ -90,7 +90,7 @@ class RecoveryScheduler
         }
 
         // Check if max attempts reached
-        $attemptCount = RecoveryAttempt::query()
+        $attemptCount = RecoveryAttempt::query()->forOwner()
             ->where('campaign_id', $campaign->id)
             ->where('cart_id', $previousAttempt->cart_id)
             ->count();
@@ -112,7 +112,7 @@ class RecoveryScheduler
      */
     public function cancelAttemptsForCart(string $cartId): int
     {
-        return RecoveryAttempt::query()
+        return RecoveryAttempt::query()->forOwner()
             ->where('cart_id', $cartId)
             ->where('status', 'scheduled')
             ->update(['status' => 'cancelled']);
@@ -127,10 +127,14 @@ class RecoveryScheduler
     {
         $cartTable = (new Cart)->getTable();
 
-        $query = Cart::query()
+        $query = Cart::query()->forOwner()
             ->whereNotNull('checkout_abandoned_at')
             ->whereNull('recovered_at')
             ->where('items_count', '>', 0);
+
+        if (RecoveryCampaign::ownerScopingEnabled() && $campaign->owner_type !== null && $campaign->owner_id !== null) {
+            $query->where('owner_type', $campaign->owner_type)->where('owner_id', $campaign->owner_id);
+        }
 
         // Apply trigger delay
         $abandonedBefore = now()->subMinutes($campaign->trigger_delay_minutes);

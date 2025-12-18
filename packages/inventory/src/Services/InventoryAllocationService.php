@@ -172,7 +172,8 @@ final class InventoryAllocationService
                 ->where('inventoryable_id', $model->getKey())
                 ->forCart($cartId)
                 ->with('location')
-                ->lockForUpdate();
+                ->lockForUpdate()
+                ;
 
             $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
 
@@ -203,7 +204,8 @@ final class InventoryAllocationService
                 ->forCart($cartId)
                 ->with('level')
                 ->with('location')
-                ->lockForUpdate();
+                ->lockForUpdate()
+                ;
 
             $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
 
@@ -235,7 +237,8 @@ final class InventoryAllocationService
                 ->forCart($cartId)
                 ->with(['level', 'inventoryable'])
                 ->with('location')
-                ->lockForUpdate();
+                ->lockForUpdate()
+                ;
 
             $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
 

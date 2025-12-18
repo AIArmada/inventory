@@ -93,7 +93,7 @@ final class CartsTable
             ->filters([
                 SelectFilter::make('instance')
                     ->options(
-                        fn () => Cart::query()
+                        fn () => Cart::query()->forOwner()
                             ->select('instance')
                             ->distinct()
                             ->orderBy('instance')
@@ -104,7 +104,7 @@ final class CartsTable
 
                 SelectFilter::make('currency')
                     ->options(
-                        fn () => Cart::query()
+                        fn () => Cart::query()->forOwner()
                             ->select('currency')
                             ->distinct()
                             ->orderBy('currency')

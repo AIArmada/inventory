@@ -21,8 +21,7 @@ final class CartQuery
     public function __construct(
         private readonly CartManagerInterface $cartManager,
         private readonly CartQueryHandler $queryHandler
-    ) {
-    }
+    ) {}
 
     /**
      * Get the query SDL.
@@ -175,7 +174,7 @@ GRAPHQL;
             'id' => $cart->getId(),
             'identifier' => $cart->getIdentifier(),
             'instance' => $cart->instance(),
-            'items' => $cart->getItems()->map(fn($item) => [
+            'items' => $cart->getItems()->map(fn ($item) => [
                 'id' => $item->id,
                 'name' => $item->name,
                 'price' => [
@@ -194,7 +193,7 @@ GRAPHQL;
             ])->values()->toArray(),
             'itemCount' => $cart->countItems(),
             'totalQuantity' => $cart->getTotalQuantity(),
-            'conditions' => $cart->getConditions()->map(fn($condition) => [
+            'conditions' => $cart->getConditions()->map(fn ($condition) => [
                 'name' => $condition->getName(),
                 'type' => $condition->getType(),
                 'value' => $condition->getValue(),

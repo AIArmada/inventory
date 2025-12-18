@@ -24,6 +24,7 @@ class CartAnalyticsService
     public function getDashboardMetrics(Carbon $from, Carbon $to): DashboardMetrics
     {
         $current = CartDailyMetrics::query()
+            ->forOwner()
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->whereNull('segment')
             ->selectRaw('
@@ -44,6 +45,7 @@ class CartAnalyticsService
         $previousTo = $from->copy()->subDay();
 
         $previous = CartDailyMetrics::query()
+            ->forOwner()
             ->whereBetween('date', [$previousFrom->toDateString(), $previousTo->toDateString()])
             ->whereNull('segment')
             ->selectRaw('
@@ -108,6 +110,7 @@ class CartAnalyticsService
     public function getConversionFunnel(Carbon $from, Carbon $to): ConversionFunnel
     {
         $metrics = CartDailyMetrics::query()
+            ->forOwner()
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->whereNull('segment')
             ->selectRaw('
@@ -132,6 +135,7 @@ class CartAnalyticsService
     public function getRecoveryMetrics(Carbon $from, Carbon $to): RecoveryMetrics
     {
         $metrics = CartDailyMetrics::query()
+            ->forOwner()
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->whereNull('segment')
             ->selectRaw('
@@ -148,7 +152,7 @@ class CartAnalyticsService
             ? "json_extract(metadata, '$.last_recovery_strategy')"
             : "JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.last_recovery_strategy'))";
 
-        $strategyBreakdown = Cart::query()
+        $strategyBreakdown = Cart::query()->forOwner()
             ->whereBetween('recovered_at', [$from, $to])
             ->whereNotNull('recovered_at')
             ->selectRaw("
@@ -192,6 +196,7 @@ class CartAnalyticsService
         };
 
         return CartDailyMetrics::query()
+            ->forOwner()
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->whereNull('segment')
             ->selectRaw("
@@ -222,7 +227,7 @@ class CartAnalyticsService
             ? "CAST(strftime('%H', checkout_abandoned_at) AS INTEGER)"
             : 'HOUR(checkout_abandoned_at)';
 
-        $byHour = Cart::query()
+        $byHour = Cart::query()->forOwner()
             ->whereBetween('checkout_abandoned_at', [$from, $to])
             ->selectRaw("{$hourExpression} as hour, COUNT(*) as count")
             ->groupBy('hour')
@@ -240,7 +245,7 @@ class CartAnalyticsService
             ? "strftime('%w', checkout_abandoned_at)" // 0=Sunday
             : 'DAYOFWEEK(checkout_abandoned_at) - 1'; // 1=Sunday -> 0
 
-        $byDayOfWeek = Cart::query()
+        $byDayOfWeek = Cart::query()->forOwner()
             ->whereBetween('checkout_abandoned_at', [$from, $to])
             ->selectRaw("{$dayExpression} as day, COUNT(*) as count")
             ->groupBy('day')
@@ -254,7 +259,7 @@ class CartAnalyticsService
         ksort($byDayOfWeek);
 
         // By cart value range
-        $byCartValueRange = Cart::query()
+        $byCartValueRange = Cart::query()->forOwner()
             ->whereBetween('checkout_abandoned_at', [$from, $to])
             ->selectRaw("
                 CASE
@@ -271,7 +276,7 @@ class CartAnalyticsService
             ->toArray();
 
         // By items count
-        $byItemsCount = Cart::query()
+        $byItemsCount = Cart::query()->forOwner()
             ->whereBetween('checkout_abandoned_at', [$from, $to])
             ->selectRaw("
                 CASE
@@ -291,7 +296,7 @@ class CartAnalyticsService
             ? "COALESCE(json_extract(metadata, '$.last_step'), 'Unknown')"
             : "COALESCE(JSON_UNQUOTE(JSON_EXTRACT(metadata, '$.last_step')), 'Unknown')";
 
-        $commonExitPoints = Cart::query()
+        $commonExitPoints = Cart::query()->forOwner()
             ->whereBetween('checkout_abandoned_at', [$from, $to])
             ->selectRaw("
                 {$exitPointExpression} as exit_point,
@@ -323,6 +328,7 @@ class CartAnalyticsService
     public function getSegmentComparison(Carbon $from, Carbon $to): Collection
     {
         return CartDailyMetrics::query()
+            ->forOwner()
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->whereNotNull('segment')
             ->selectRaw('

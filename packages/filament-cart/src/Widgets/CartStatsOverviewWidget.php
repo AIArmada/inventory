@@ -77,7 +77,7 @@ final class CartStatsOverviewWidget extends BaseWidget
         $yesterday = now()->subDay();
 
         // Use raw queries for performance
-        $base = Cart::query();
+        $base = Cart::query()->forOwner();
 
         return [
             'active_carts' => (clone $base)
@@ -157,7 +157,7 @@ final class CartStatsOverviewWidget extends BaseWidget
 
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $count = Cart::query()
+            $count = Cart::query()->forOwner()
                 ->whereNotNull('items')
                 ->where('items', '!=', '[]')
                 ->whereDate('updated_at', $date->toDateString())
@@ -180,7 +180,7 @@ final class CartStatsOverviewWidget extends BaseWidget
 
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
-            $value = (int) Cart::query()
+            $value = (int) Cart::query()->forOwner()
                 ->whereNotNull('items')
                 ->where('items', '!=', '[]')
                 ->whereDate('updated_at', $date->toDateString())

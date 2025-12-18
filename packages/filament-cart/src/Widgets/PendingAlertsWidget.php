@@ -24,7 +24,7 @@ class PendingAlertsWidget extends BaseWidget
     {
         return $table
             ->query(
-                AlertLog::query()
+                AlertLog::query()->forOwner()
                     ->where('is_read', false)
                     ->orderByRaw("CASE severity WHEN 'critical' THEN 1 WHEN 'warning' THEN 2 ELSE 3 END")
                     ->orderByDesc('created_at')

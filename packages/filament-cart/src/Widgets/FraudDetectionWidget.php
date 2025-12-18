@@ -108,7 +108,7 @@ final class FraudDetectionWidget extends BaseWidget
      */
     protected function getTableQuery(): Builder
     {
-        return Cart::query()
+        return Cart::query()->forOwner()
             ->whereNotNull('fraud_risk_level')
             ->whereIn('fraud_risk_level', ['high', 'medium'])
             ->where('updated_at', '>=', now()->subDays(7));

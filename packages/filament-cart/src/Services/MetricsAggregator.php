@@ -24,7 +24,7 @@ class MetricsAggregator
 
         $metrics = $this->calculateMetricsForPeriod($startOfDay, $endOfDay, $segment);
 
-        return CartDailyMetrics::updateOrCreate(
+        return CartDailyMetrics::query()->forOwner()->updateOrCreate(
             [
                 'date' => $date->toDateString(),
                 'segment' => $segment,
@@ -41,6 +41,7 @@ class MetricsAggregator
     public function aggregateTotals(Carbon $from, Carbon $to): array
     {
         return CartDailyMetrics::query()
+            ->forOwner()
             ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
             ->whereNull('segment')
             ->selectRaw('
@@ -84,7 +85,7 @@ class MetricsAggregator
      */
     private function calculateMetricsForPeriod(Carbon $start, Carbon $end, ?string $segment = null): array
     {
-        $baseQuery = Cart::query()
+        $baseQuery = Cart::query()->forOwner()
             ->whereBetween('created_at', [$start, $end]);
 
         if ($segment !== null) {
@@ -103,36 +104,36 @@ class MetricsAggregator
         $cartsEmpty = $cartsCreated - $cartsWithItems;
 
         // Active carts (updated in period with items)
-        $cartsActive = Cart::query()
+        $cartsActive = Cart::query()->forOwner()
             ->whereBetween('updated_at', [$start, $end])
             ->whereNotNull('items')
             ->where('items', '!=', '[]')
             ->count();
 
         // Checkout funnel
-        $checkoutsStarted = Cart::query()
+        $checkoutsStarted = Cart::query()->forOwner()
             ->whereBetween('checkout_started_at', [$start, $end])
             ->count();
 
-        $checkoutsCompleted = Cart::query()
+        $checkoutsCompleted = Cart::query()->forOwner()
             ->whereBetween('checkout_completed_at', [$start, $end])
             ->count();
 
-        $checkoutsAbandoned = Cart::query()
+        $checkoutsAbandoned = Cart::query()->forOwner()
             ->whereBetween('checkout_abandoned_at', [$start, $end])
             ->count();
 
         // Recovery metrics
-        $cartsRecovered = Cart::query()
+        $cartsRecovered = Cart::query()->forOwner()
             ->whereBetween('recovered_at', [$start, $end])
             ->count();
 
-        $recoveredRevenue = (int) Cart::query()
+        $recoveredRevenue = (int) Cart::query()->forOwner()
             ->whereBetween('recovered_at', [$start, $end])
             ->sum('subtotal');
 
         // Value metrics
-        $totalCartValue = (int) Cart::query()
+        $totalCartValue = (int) Cart::query()->forOwner()
             ->whereBetween('updated_at', [$start, $end])
             ->whereNotNull('items')
             ->where('items', '!=', '[]')
@@ -140,35 +141,35 @@ class MetricsAggregator
 
         $avgCartValue = $cartsWithItems > 0 ? (int) ($totalCartValue / $cartsWithItems) : 0;
 
-        $totalItems = (int) Cart::query()
+        $totalItems = (int) Cart::query()->forOwner()
             ->whereBetween('updated_at', [$start, $end])
             ->sum('items_count');
 
         $avgItemsPerCart = $cartsWithItems > 0 ? $totalItems / $cartsWithItems : 0;
 
         // Fraud metrics
-        $fraudHigh = Cart::query()
+        $fraudHigh = Cart::query()->forOwner()
             ->whereBetween('updated_at', [$start, $end])
             ->where('fraud_risk_level', 'high')
             ->count();
 
-        $fraudMedium = Cart::query()
+        $fraudMedium = Cart::query()->forOwner()
             ->whereBetween('updated_at', [$start, $end])
             ->where('fraud_risk_level', 'medium')
             ->count();
 
-        $cartsBlocked = Cart::query()
+        $cartsBlocked = Cart::query()->forOwner()
             ->whereBetween('updated_at', [$start, $end])
             ->whereRaw("JSON_EXTRACT(metadata, '$.blocked') = true")
             ->count();
 
         // Collaborative metrics
-        $collaborativeCarts = Cart::query()
+        $collaborativeCarts = Cart::query()->forOwner()
             ->whereBetween('updated_at', [$start, $end])
             ->where('is_collaborative', true)
             ->count();
 
-        $totalCollaborators = (int) Cart::query()
+        $totalCollaborators = (int) Cart::query()->forOwner()
             ->whereBetween('updated_at', [$start, $end])
             ->where('is_collaborative', true)
             ->sum('collaborator_count');

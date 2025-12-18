@@ -109,7 +109,7 @@ final class CollaborativeCartsWidget extends BaseWidget
      */
     protected function getTableQuery(): Builder
     {
-        return Cart::query()
+        return Cart::query()->forOwner()
             ->where('is_collaborative', true)
             ->where('collaborator_count', '>', 0)
             ->where('updated_at', '>=', now()->subDays(30));

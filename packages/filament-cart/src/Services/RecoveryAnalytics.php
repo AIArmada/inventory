@@ -22,7 +22,7 @@ class RecoveryAnalytics
     public function getCampaignMetrics(RecoveryCampaign $campaign): CampaignMetrics
     {
         // By channel
-        $byChannel = RecoveryAttempt::query()
+        $byChannel = RecoveryAttempt::query()->forOwner()
             ->where('campaign_id', $campaign->id)
             ->selectRaw('
                 channel,
@@ -44,7 +44,7 @@ class RecoveryAnalytics
             ->toArray();
 
         // By attempt number
-        $byAttemptNumber = RecoveryAttempt::query()
+        $byAttemptNumber = RecoveryAttempt::query()->forOwner()
             ->where('campaign_id', $campaign->id)
             ->selectRaw('
                 attempt_number,
@@ -90,7 +90,7 @@ class RecoveryAnalytics
             ];
         }
 
-        $control = RecoveryAttempt::query()
+        $control = RecoveryAttempt::query()->forOwner()
             ->where('campaign_id', $campaign->id)
             ->where('is_control', true)
             ->selectRaw('
@@ -102,7 +102,7 @@ class RecoveryAnalytics
             ')
             ->first();
 
-        $variant = RecoveryAttempt::query()
+        $variant = RecoveryAttempt::query()->forOwner()
             ->where('campaign_id', $campaign->id)
             ->where('is_variant', true)
             ->selectRaw('
@@ -168,7 +168,7 @@ class RecoveryAnalytics
      */
     public function getStrategyComparison(Carbon $from, Carbon $to): Collection
     {
-        return RecoveryCampaign::query()
+        return RecoveryCampaign::query()->forOwner()
             ->whereBetween('created_at', [$from, $to])
             ->where('total_sent', '>', 0)
             ->selectRaw('
@@ -246,7 +246,7 @@ class RecoveryAnalytics
         $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
         $hourExpression = $driver === 'sqlite' ? "strftime('%H', sent_at)" : 'HOUR(sent_at)';
 
-        $byHour = RecoveryAttempt::query()
+        $byHour = RecoveryAttempt::query()->forOwner()
             ->where('campaign_id', $campaign->id)
             ->whereNotNull('sent_at')
             ->selectRaw("
@@ -316,7 +316,7 @@ class RecoveryAnalytics
     private function analyzeDiscountPerformance(RecoveryCampaign $campaign): ?RecoveryInsight
     {
         // Compare campaigns with different discount levels
-        $byDiscount = RecoveryCampaign::query()
+        $byDiscount = RecoveryCampaign::query()->forOwner()
             ->where('offer_discount', true)
             ->where('total_sent', '>=', 100)
             ->selectRaw('
@@ -353,7 +353,7 @@ class RecoveryAnalytics
     private function analyzeTargetingPerformance(RecoveryCampaign $campaign): ?RecoveryInsight
     {
         // Analyze by cart value range
-        $byValue = RecoveryAttempt::query()
+        $byValue = RecoveryAttempt::query()->forOwner()
             ->where('campaign_id', $campaign->id)
             ->selectRaw("
                 CASE

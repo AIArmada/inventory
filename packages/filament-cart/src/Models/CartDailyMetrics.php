@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCart\Models;
 
+use AIArmada\FilamentCart\Models\Concerns\HasFilamentCartOwner;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -36,6 +37,7 @@ use Illuminate\Support\Carbon;
  */
 class CartDailyMetrics extends Model
 {
+    use HasFilamentCartOwner;
     use HasUuids;
 
     protected $fillable = [

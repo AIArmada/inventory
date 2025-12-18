@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCart\Models;
 
+use AIArmada\FilamentCart\Models\Concerns\HasFilamentCartOwner;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -33,6 +34,7 @@ use Illuminate\Support\Carbon;
  */
 class AlertRule extends Model
 {
+    use HasFilamentCartOwner;
     use HasUuids;
 
     protected $fillable = [
@@ -67,7 +69,13 @@ class AlertRule extends Model
      */
     public function logs(): HasMany
     {
-        return $this->hasMany(AlertLog::class, 'alert_rule_id');
+        $relation = $this->hasMany(AlertLog::class, 'alert_rule_id');
+
+        if (self::ownerScopingEnabled() && $this->owner_type !== null && $this->owner_id !== null) {
+            $relation->where('owner_type', $this->owner_type)->where('owner_id', $this->owner_id);
+        }
+
+        return $relation;
     }
 
     /**

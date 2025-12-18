@@ -38,7 +38,7 @@ class ProcessAlertsCommand extends Command
         }
 
         // Get rules to process
-        $query = AlertRule::query()->where('is_active', true);
+        $query = AlertRule::query()->forOwner()->where('is_active', true);
 
         if ($ruleId) {
             $query->where('id', $ruleId);

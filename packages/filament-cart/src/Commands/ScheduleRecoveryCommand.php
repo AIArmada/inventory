@@ -25,7 +25,7 @@ class ScheduleRecoveryCommand extends Command
             $this->warn('Running in dry-run mode. No changes will be made.');
         }
 
-        $query = RecoveryCampaign::query()
+        $query = RecoveryCampaign::query()->forOwner()
             ->where('status', 'active')
             ->where(function ($q): void {
                 $q->whereNull('starts_at')

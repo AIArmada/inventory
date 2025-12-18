@@ -19,7 +19,7 @@ class RecoveryFunnelWidget extends Widget
     public function getData(): array
     {
         // Get totals from campaigns
-        $totals = RecoveryCampaign::query()
+        $totals = RecoveryCampaign::query()->forOwner()
             ->selectRaw('
                 SUM(total_targeted) as targeted,
                 SUM(total_sent) as sent,

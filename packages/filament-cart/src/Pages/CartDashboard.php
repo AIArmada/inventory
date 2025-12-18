@@ -105,7 +105,7 @@ class CartDashboard extends Page
             return 0;
         }
 
-        return \AIArmada\FilamentCart\Models\Cart::query()
+        return \AIArmada\FilamentCart\Models\Cart::query()->forOwner()
             ->whereNotNull('checkout_abandoned_at')
             ->whereNull('recovered_at')
             ->where('checkout_abandoned_at', '>=', now()->subDay())
@@ -118,7 +118,7 @@ class CartDashboard extends Page
             return 0;
         }
 
-        return \AIArmada\FilamentCart\Models\Cart::query()
+        return \AIArmada\FilamentCart\Models\Cart::query()->forOwner()
             ->whereIn('fraud_risk_level', ['high', 'medium'])
             ->where('updated_at', '>=', now()->subDay())
             ->count();

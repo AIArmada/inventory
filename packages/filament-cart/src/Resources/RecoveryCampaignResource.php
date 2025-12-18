@@ -29,6 +29,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 final class RecoveryCampaignResource extends Resource
@@ -162,12 +163,12 @@ final class RecoveryCampaignResource extends Resource
                             ->visible(fn ($get) => $get('ab_testing_enabled')),
                         Select::make('control_template_id')
                             ->label('Control Template')
-                            ->options(fn () => RecoveryTemplate::query()->pluck('name', 'id'))
+                            ->options(fn () => RecoveryTemplate::query()->forOwner()->pluck('name', 'id'))
                             ->searchable()
                             ->visible(fn ($get) => $get('ab_testing_enabled')),
                         Select::make('variant_template_id')
                             ->label('Variant Template')
-                            ->options(fn () => RecoveryTemplate::query()->pluck('name', 'id'))
+                            ->options(fn () => RecoveryTemplate::query()->forOwner()->pluck('name', 'id'))
                             ->searchable()
                             ->visible(fn ($get) => $get('ab_testing_enabled')),
                     ])
@@ -255,6 +256,17 @@ final class RecoveryCampaignResource extends Resource
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    /**
+     * @return Builder<RecoveryCampaign>
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        /** @var Builder<RecoveryCampaign> $query */
+        $query = parent::getEloquentQuery();
+
+        return $query->forOwner();
     }
 
     public static function getRelations(): array

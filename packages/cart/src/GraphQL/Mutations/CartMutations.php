@@ -24,8 +24,7 @@ final class CartMutations
     public function __construct(
         private readonly CartManagerInterface $cartManager,
         private readonly CartCommandBus $commandBus
-    ) {
-    }
+    ) {}
 
     /**
      * Get the mutations SDL.
@@ -156,7 +155,7 @@ GRAPHQL;
                         'code' => 'ADD_ITEM_FAILED',
                         'message' => $e->getMessage(),
                         'field' => null,
-                    ]
+                    ],
                 ],
             ];
         }
@@ -201,7 +200,7 @@ GRAPHQL;
                         'code' => 'UPDATE_ITEM_FAILED',
                         'message' => $e->getMessage(),
                         'field' => null,
-                    ]
+                    ],
                 ],
             ];
         }
@@ -243,7 +242,7 @@ GRAPHQL;
                         'code' => 'REMOVE_ITEM_FAILED',
                         'message' => $e->getMessage(),
                         'field' => null,
-                    ]
+                    ],
                 ],
             ];
         }
@@ -291,7 +290,7 @@ GRAPHQL;
                         'code' => 'APPLY_CONDITION_FAILED',
                         'message' => $e->getMessage(),
                         'field' => null,
-                    ]
+                    ],
                 ],
             ];
         }
@@ -327,7 +326,7 @@ GRAPHQL;
                         'code' => 'REMOVE_CONDITION_FAILED',
                         'message' => $e->getMessage(),
                         'field' => null,
-                    ]
+                    ],
                 ],
             ];
         }
@@ -368,7 +367,7 @@ GRAPHQL;
                         'code' => 'CLEAR_CART_FAILED',
                         'message' => $e->getMessage(),
                         'field' => null,
-                    ]
+                    ],
                 ],
             ];
         }
@@ -418,7 +417,7 @@ GRAPHQL;
                         'code' => 'CHECKOUT_FAILED',
                         'message' => $e->getMessage(),
                         'field' => null,
-                    ]
+                    ],
                 ],
             ];
         }
@@ -437,7 +436,7 @@ GRAPHQL;
             'id' => $cart->getId(),
             'identifier' => $cart->getIdentifier(),
             'instance' => $cart->instance(),
-            'items' => $cart->getItems()->map(fn($item) => [
+            'items' => $cart->getItems()->map(fn ($item) => [
                 'id' => $item->id,
                 'name' => $item->name,
                 'price' => [

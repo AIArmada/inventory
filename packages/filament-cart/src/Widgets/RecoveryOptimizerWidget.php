@@ -112,7 +112,7 @@ final class RecoveryOptimizerWidget extends BaseWidget
      */
     protected function getTableQuery(): Builder
     {
-        return Cart::query()
+        return Cart::query()->forOwner()
             ->whereNotNull('checkout_abandoned_at')
             ->whereNull('recovered_at')
             ->where('recovery_attempts', '<', 3)

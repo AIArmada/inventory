@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCart\Models;
 
+use AIArmada\FilamentCart\Models\Concerns\HasFilamentCartOwner;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use RuntimeException;
 
 /**
  * @property string $id
@@ -46,6 +48,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class RecoveryAttempt extends Model
 {
+    use HasFilamentCartOwner;
     use HasUuids;
 
     protected $fillable = [
@@ -138,6 +141,54 @@ class RecoveryAttempt extends Model
     public function isFailed(): bool
     {
         return in_array($this->status, ['failed', 'bounced']);
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (RecoveryAttempt $attempt): void {
+            if (! self::ownerScopingEnabled()) {
+                return;
+            }
+
+            $owner = self::resolveCurrentOwner();
+
+            if ($owner === null) {
+                throw new RuntimeException('Owner scoping is enabled but no owner was resolved while saving a recovery attempt.');
+            }
+
+            if ($attempt->campaign_id !== '' && $attempt->campaign_id !== null) {
+                $exists = RecoveryCampaign::query()
+                    ->forOwner($owner, includeGlobal: false)
+                    ->whereKey($attempt->campaign_id)
+                    ->exists();
+
+                if (! $exists) {
+                    throw new RuntimeException('Invalid campaign_id: does not belong to the current owner scope.');
+                }
+            }
+
+            if ($attempt->template_id !== '' && $attempt->template_id !== null) {
+                $exists = RecoveryTemplate::query()
+                    ->forOwner($owner, includeGlobal: true)
+                    ->whereKey($attempt->template_id)
+                    ->exists();
+
+                if (! $exists) {
+                    throw new RuntimeException('Invalid template_id: does not belong to the current owner scope.');
+                }
+            }
+
+            if ($attempt->cart_id !== '' && $attempt->cart_id !== null) {
+                $exists = Cart::query()
+                    ->forOwner($owner, includeGlobal: false)
+                    ->whereKey($attempt->cart_id)
+                    ->exists();
+
+                if (! $exists) {
+                    throw new RuntimeException('Invalid cart_id: does not belong to the current owner scope.');
+                }
+            }
+        });
     }
 
     public function markAsSent(?string $messageId = null): void

@@ -19,11 +19,11 @@ class CampaignPerformanceWidget extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $activeCampaigns = RecoveryCampaign::query()
+        $activeCampaigns = RecoveryCampaign::query()->forOwner()
             ->where('status', 'active')
             ->count();
 
-        $totals = RecoveryCampaign::query()
+        $totals = RecoveryCampaign::query()->forOwner()
             ->selectRaw('
                 SUM(total_sent) as total_sent,
                 SUM(total_opened) as total_opened,

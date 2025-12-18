@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCart\Models;
 
+use AIArmada\FilamentCart\Models\Concerns\HasFilamentCartOwner;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use RuntimeException;
 
 /**
  * @property string $id
@@ -32,6 +34,7 @@ use Illuminate\Support\Carbon;
  */
 class AlertLog extends Model
 {
+    use HasFilamentCartOwner;
     use HasUuids;
 
     protected $fillable = [
@@ -66,6 +69,43 @@ class AlertLog extends Model
     public function alertRule(): BelongsTo
     {
         return $this->belongsTo(AlertRule::class, 'alert_rule_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (AlertLog $log): void {
+            if (! self::ownerScopingEnabled()) {
+                return;
+            }
+
+            $owner = self::resolveCurrentOwner();
+
+            if ($owner === null) {
+                throw new RuntimeException('Owner scoping is enabled but no owner was resolved while saving an alert log.');
+            }
+
+            if ($log->alert_rule_id !== '' && $log->alert_rule_id !== null) {
+                $exists = AlertRule::query()
+                    ->forOwner($owner, includeGlobal: false)
+                    ->whereKey($log->alert_rule_id)
+                    ->exists();
+
+                if (! $exists) {
+                    throw new RuntimeException('Invalid alert_rule_id: does not belong to the current owner scope.');
+                }
+            }
+
+            if ($log->cart_id !== '' && $log->cart_id !== null) {
+                $exists = Cart::query()
+                    ->forOwner($owner, includeGlobal: false)
+                    ->whereKey($log->cart_id)
+                    ->exists();
+
+                if (! $exists) {
+                    throw new RuntimeException('Invalid cart_id: does not belong to the current owner scope.');
+                }
+            }
+        });
     }
 
     /**

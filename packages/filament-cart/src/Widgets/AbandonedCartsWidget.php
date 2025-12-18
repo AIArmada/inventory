@@ -94,7 +94,7 @@ final class AbandonedCartsWidget extends BaseWidget
      */
     protected function getTableQuery(): Builder
     {
-        return Cart::query()
+        return Cart::query()->forOwner()
             ->whereNotNull('checkout_abandoned_at')
             ->whereNull('recovered_at')
             ->where('checkout_abandoned_at', '>=', now()->subDays(7));
