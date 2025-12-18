@@ -8,44 +8,44 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-describe('PolicyDesignerPage', function () {
-    it('has navigation icon', function () {
+describe('PolicyDesignerPage', function (): void {
+    it('has navigation icon', function (): void {
         expect(PolicyDesignerPage::getNavigationIcon())->toBe('heroicon-o-paint-brush');
     });
 
-    it('has navigation label', function () {
+    it('has navigation label', function (): void {
         expect(PolicyDesignerPage::getNavigationLabel())->toBe('Policy Designer');
     });
 
-    it('has navigation sort', function () {
+    it('has navigation sort', function (): void {
         expect(PolicyDesignerPage::getNavigationSort())->toBe(50);
     });
 
-    it('gets navigation group from config', function () {
+    it('gets navigation group from config', function (): void {
         config(['filament-authz.navigation.group' => 'Test Group']);
         expect(PolicyDesignerPage::getNavigationGroup())->toBe('Test Group');
     });
 
-    it('can access when access_policies feature is enabled', function () {
+    it('can access when access_policies feature is enabled', function (): void {
         config(['filament-authz.features.access_policies' => true]);
         expect(PolicyDesignerPage::canAccess())->toBeTrue();
     });
 
-    it('cannot access when access_policies feature is disabled', function () {
+    it('cannot access when access_policies feature is disabled', function (): void {
         config(['filament-authz.features.access_policies' => false]);
         expect(PolicyDesignerPage::canAccess())->toBeFalse();
     });
 });
 
-describe('PolicyDesignerPage::mount', function () {
-    it('initializes with one condition', function () {
+describe('PolicyDesignerPage::mount', function (): void {
+    it('initializes with one condition', function (): void {
         $page = new PolicyDesignerPage();
         $page->mount();
 
         expect($page->conditions)->toHaveCount(1);
     });
 
-    it('initializes default values', function () {
+    it('initializes default values', function (): void {
         $page = new PolicyDesignerPage();
         $page->mount();
 
@@ -55,8 +55,8 @@ describe('PolicyDesignerPage::mount', function () {
     });
 });
 
-describe('PolicyDesignerPage::addCondition', function () {
-    it('adds a new condition', function () {
+describe('PolicyDesignerPage::addCondition', function (): void {
+    it('adds a new condition', function (): void {
         $page = new PolicyDesignerPage();
         $page->conditions = [];
 
@@ -66,7 +66,7 @@ describe('PolicyDesignerPage::addCondition', function () {
         expect($page->conditions[0])->toHaveKeys(['id', 'type', 'field', 'operator', 'value']);
     });
 
-    it('adds conditions with unique ids', function () {
+    it('adds conditions with unique ids', function (): void {
         $page = new PolicyDesignerPage();
         $page->conditions = [];
 
@@ -77,7 +77,7 @@ describe('PolicyDesignerPage::addCondition', function () {
         expect($page->conditions[0]['id'])->not->toBe($page->conditions[1]['id']);
     });
 
-    it('sets default condition type to role', function () {
+    it('sets default condition type to role', function (): void {
         $page = new PolicyDesignerPage();
         $page->conditions = [];
 
@@ -89,8 +89,8 @@ describe('PolicyDesignerPage::addCondition', function () {
     });
 });
 
-describe('PolicyDesignerPage::removeCondition', function () {
-    it('removes condition at specified index', function () {
+describe('PolicyDesignerPage::removeCondition', function (): void {
+    it('removes condition at specified index', function (): void {
         $page = new PolicyDesignerPage();
         $page->conditions = [
             ['id' => '1', 'type' => 'role', 'field' => 'role', 'operator' => 'equals', 'value' => 'admin'],
@@ -103,7 +103,7 @@ describe('PolicyDesignerPage::removeCondition', function () {
         expect($page->conditions[0]['id'])->toBe('2');
     });
 
-    it('reindexes array after removal', function () {
+    it('reindexes array after removal', function (): void {
         $page = new PolicyDesignerPage();
         $page->conditions = [
             ['id' => '1', 'type' => 'role', 'field' => 'role', 'operator' => 'equals', 'value' => 'admin'],
@@ -118,8 +118,8 @@ describe('PolicyDesignerPage::removeCondition', function () {
     });
 });
 
-describe('PolicyDesignerPage::updateConditionType', function () {
-    it('updates condition type and related fields', function () {
+describe('PolicyDesignerPage::updateConditionType', function (): void {
+    it('updates condition type and related fields', function (): void {
         $page = new PolicyDesignerPage();
         $page->conditions = [
             ['id' => '1', 'type' => 'role', 'field' => 'role', 'operator' => 'equals', 'value' => 'admin'],
@@ -133,7 +133,7 @@ describe('PolicyDesignerPage::updateConditionType', function () {
         expect($page->conditions[0]['value'])->toBe('');
     });
 
-    it('updates to team condition type', function () {
+    it('updates to team condition type', function (): void {
         $page = new PolicyDesignerPage();
         $page->conditions = [
             ['id' => '1', 'type' => 'role', 'field' => 'role', 'operator' => 'equals', 'value' => 'admin'],
@@ -145,7 +145,7 @@ describe('PolicyDesignerPage::updateConditionType', function () {
         expect($page->conditions[0]['field'])->toBe('team_id');
     });
 
-    it('updates to time condition type', function () {
+    it('updates to time condition type', function (): void {
         $page = new PolicyDesignerPage();
         $page->conditions = [
             ['id' => '1', 'type' => 'role', 'field' => 'role', 'operator' => 'equals', 'value' => 'admin'],
@@ -158,7 +158,7 @@ describe('PolicyDesignerPage::updateConditionType', function () {
         expect($page->conditions[0]['operator'])->toBe('between');
     });
 
-    it('does not update for unknown type', function () {
+    it('does not update for unknown type', function (): void {
         $page = new PolicyDesignerPage();
         $page->conditions = [
             ['id' => '1', 'type' => 'role', 'field' => 'role', 'operator' => 'equals', 'value' => 'admin'],
@@ -170,8 +170,8 @@ describe('PolicyDesignerPage::updateConditionType', function () {
     });
 });
 
-describe('PolicyDesignerPage::getConditionTemplates', function () {
-    it('returns condition templates array', function () {
+describe('PolicyDesignerPage::getConditionTemplates', function (): void {
+    it('returns condition templates array', function (): void {
         $page = new PolicyDesignerPage();
         $templates = $page->getConditionTemplates();
 
@@ -179,7 +179,7 @@ describe('PolicyDesignerPage::getConditionTemplates', function () {
         expect($templates)->toHaveKeys(['role', 'permission', 'team', 'time', 'ip', 'resource_type', 'ownership', 'attribute', 'department', 'clearance']);
     });
 
-    it('each template has required keys', function () {
+    it('each template has required keys', function (): void {
         $page = new PolicyDesignerPage();
         $templates = $page->getConditionTemplates();
 
@@ -189,8 +189,8 @@ describe('PolicyDesignerPage::getConditionTemplates', function () {
     });
 });
 
-describe('PolicyDesignerPage::getOperatorOptions', function () {
-    it('returns operator options array', function () {
+describe('PolicyDesignerPage::getOperatorOptions', function (): void {
+    it('returns operator options array', function (): void {
         $page = new PolicyDesignerPage();
         $options = $page->getOperatorOptions();
 
@@ -199,8 +199,8 @@ describe('PolicyDesignerPage::getOperatorOptions', function () {
     });
 });
 
-describe('PolicyDesignerPage::getPreviewJson', function () {
-    it('returns valid json', function () {
+describe('PolicyDesignerPage::getPreviewJson', function (): void {
+    it('returns valid json', function (): void {
         $page = new PolicyDesignerPage();
         $page->policyName = 'Test Policy';
         $page->policyDescription = 'Test description';
@@ -215,7 +215,7 @@ describe('PolicyDesignerPage::getPreviewJson', function () {
         expect(json_decode($json, true))->toBeArray();
     });
 
-    it('contains policy data', function () {
+    it('contains policy data', function (): void {
         $page = new PolicyDesignerPage();
         $page->policyName = 'Admin Policy';
         $page->policyDescription = 'Admin access';
@@ -237,8 +237,8 @@ describe('PolicyDesignerPage::getPreviewJson', function () {
     });
 });
 
-describe('PolicyDesignerPage::getPreviewCode', function () {
-    it('returns php code string', function () {
+describe('PolicyDesignerPage::getPreviewCode', function (): void {
+    it('returns php code string', function (): void {
         $page = new PolicyDesignerPage();
         $page->policyName = 'Admin Policy';
         $page->conditions = [];
@@ -251,7 +251,7 @@ describe('PolicyDesignerPage::getPreviewCode', function () {
         expect($code)->toContain('class AdminPolicy');
     });
 
-    it('generates class name from policy name', function () {
+    it('generates class name from policy name', function (): void {
         $page = new PolicyDesignerPage();
         $page->policyName = 'Super Admin Access';
         $page->conditions = [];
@@ -261,7 +261,7 @@ describe('PolicyDesignerPage::getPreviewCode', function () {
         expect($code)->toContain('class SuperAdminAccess');
     });
 
-    it('uses default class name when policy name is null', function () {
+    it('uses default class name when policy name is null', function (): void {
         $page = new PolicyDesignerPage();
         $page->policyName = null;
         $page->conditions = [];
@@ -272,8 +272,8 @@ describe('PolicyDesignerPage::getPreviewCode', function () {
     });
 });
 
-describe('PolicyDesignerPage::savePolicy', function () {
-    it('does not save without policy name', function () {
+describe('PolicyDesignerPage::savePolicy', function (): void {
+    it('does not save without policy name', function (): void {
         $page = new PolicyDesignerPage();
         $page->policyName = null;
 
@@ -282,7 +282,7 @@ describe('PolicyDesignerPage::savePolicy', function () {
         expect(AccessPolicy::count())->toBe(0);
     });
 
-    it('creates new policy', function () {
+    it('creates new policy', function (): void {
         $page = new PolicyDesignerPage();
         $page->policyName = 'Test Policy';
         $page->policyDescription = 'Test description';
@@ -301,7 +301,7 @@ describe('PolicyDesignerPage::savePolicy', function () {
         expect($policy->is_active)->toBeTrue();
     });
 
-    it('updates existing policy', function () {
+    it('updates existing policy', function (): void {
         AccessPolicy::create([
             'name' => 'Existing Policy',
             'slug' => 'existing-policy',
@@ -331,8 +331,8 @@ describe('PolicyDesignerPage::savePolicy', function () {
     });
 });
 
-describe('PolicyDesignerPage::testPolicy', function () {
-    it('does not throw exception', function () {
+describe('PolicyDesignerPage::testPolicy', function (): void {
+    it('does not throw exception', function (): void {
         $page = new PolicyDesignerPage();
 
         expect(fn () => $page->testPolicy())->not->toThrow(Exception::class);

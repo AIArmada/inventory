@@ -7,9 +7,9 @@ use AIArmada\FilamentAuthz\Services\GeneratedPolicy;
 use AIArmada\FilamentAuthz\Services\PolicyGeneratorService;
 use AIArmada\FilamentAuthz\ValueObjects\DiscoveredResource;
 
-describe('GeneratePoliciesCommand', function () {
-    it('is registered as artisan command', function () {
-        $this->mock(EntityDiscoveryService::class, function ($mock) {
+describe('GeneratePoliciesCommand', function (): void {
+    it('is registered as artisan command', function (): void {
+        $this->mock(EntityDiscoveryService::class, function ($mock): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect());
@@ -20,9 +20,9 @@ describe('GeneratePoliciesCommand', function () {
     });
 });
 
-describe('GeneratePoliciesCommand with no resources', function () {
-    it('shows warning when no resources found', function () {
-        $this->mock(EntityDiscoveryService::class, function ($mock) {
+describe('GeneratePoliciesCommand with no resources', function (): void {
+    it('shows warning when no resources found', function (): void {
+        $this->mock(EntityDiscoveryService::class, function ($mock): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect());
@@ -34,8 +34,8 @@ describe('GeneratePoliciesCommand with no resources', function () {
     });
 });
 
-describe('GeneratePoliciesCommand::dry-run', function () {
-    it('shows what would be generated without writing', function () {
+describe('GeneratePoliciesCommand::dry-run', function (): void {
+    it('shows what would be generated without writing', function (): void {
         $resource = new DiscoveredResource(
             fqcn: 'App\\Filament\\Resources\\UserResource',
             model: 'App\\Models\\User',
@@ -44,7 +44,7 @@ describe('GeneratePoliciesCommand::dry-run', function () {
             panel: 'admin'
         );
 
-        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource) {
+        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect([$resource]));
@@ -55,7 +55,7 @@ describe('GeneratePoliciesCommand::dry-run', function () {
             content: '<?php // Policy content'
         );
 
-        $this->mock(PolicyGeneratorService::class, function ($mock) use ($mockPolicy) {
+        $this->mock(PolicyGeneratorService::class, function ($mock) use ($mockPolicy): void {
             $mock->shouldReceive('generate')
                 ->once()
                 ->andReturn($mockPolicy);
@@ -68,9 +68,9 @@ describe('GeneratePoliciesCommand::dry-run', function () {
     });
 });
 
-describe('GeneratePoliciesCommand::type option', function () {
-    it('accepts basic policy type', function () {
-        $this->mock(EntityDiscoveryService::class, function ($mock) {
+describe('GeneratePoliciesCommand::type option', function (): void {
+    it('accepts basic policy type', function (): void {
+        $this->mock(EntityDiscoveryService::class, function ($mock): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect());
@@ -80,8 +80,8 @@ describe('GeneratePoliciesCommand::type option', function () {
             ->assertSuccessful();
     });
 
-    it('accepts hierarchical policy type', function () {
-        $this->mock(EntityDiscoveryService::class, function ($mock) {
+    it('accepts hierarchical policy type', function (): void {
+        $this->mock(EntityDiscoveryService::class, function ($mock): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect());
@@ -91,8 +91,8 @@ describe('GeneratePoliciesCommand::type option', function () {
             ->assertSuccessful();
     });
 
-    it('accepts contextual policy type', function () {
-        $this->mock(EntityDiscoveryService::class, function ($mock) {
+    it('accepts contextual policy type', function (): void {
+        $this->mock(EntityDiscoveryService::class, function ($mock): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect());
@@ -102,8 +102,8 @@ describe('GeneratePoliciesCommand::type option', function () {
             ->assertSuccessful();
     });
 
-    it('accepts temporal policy type', function () {
-        $this->mock(EntityDiscoveryService::class, function ($mock) {
+    it('accepts temporal policy type', function (): void {
+        $this->mock(EntityDiscoveryService::class, function ($mock): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect());
@@ -113,8 +113,8 @@ describe('GeneratePoliciesCommand::type option', function () {
             ->assertSuccessful();
     });
 
-    it('accepts abac policy type', function () {
-        $this->mock(EntityDiscoveryService::class, function ($mock) {
+    it('accepts abac policy type', function (): void {
+        $this->mock(EntityDiscoveryService::class, function ($mock): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect());
@@ -124,8 +124,8 @@ describe('GeneratePoliciesCommand::type option', function () {
             ->assertSuccessful();
     });
 
-    it('accepts composite policy type', function () {
-        $this->mock(EntityDiscoveryService::class, function ($mock) {
+    it('accepts composite policy type', function (): void {
+        $this->mock(EntityDiscoveryService::class, function ($mock): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect());
@@ -136,8 +136,8 @@ describe('GeneratePoliciesCommand::type option', function () {
     });
 });
 
-describe('GeneratePoliciesCommand::resource filter', function () {
-    it('filters by specific resource', function () {
+describe('GeneratePoliciesCommand::resource filter', function (): void {
+    it('filters by specific resource', function (): void {
         $resource1 = new DiscoveredResource(
             fqcn: 'App\\Filament\\Resources\\UserResource',
             model: 'App\\Models\\User',
@@ -154,7 +154,7 @@ describe('GeneratePoliciesCommand::resource filter', function () {
             panel: 'admin'
         );
 
-        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource1, $resource2) {
+        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource1, $resource2): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect([$resource1, $resource2]));
@@ -165,8 +165,8 @@ describe('GeneratePoliciesCommand::resource filter', function () {
     });
 });
 
-describe('GeneratePoliciesCommand::model filter', function () {
-    it('filters by specific model', function () {
+describe('GeneratePoliciesCommand::model filter', function (): void {
+    it('filters by specific model', function (): void {
         $resource1 = new DiscoveredResource(
             fqcn: 'App\\Filament\\Resources\\UserResource',
             model: 'App\\Models\\User',
@@ -183,7 +183,7 @@ describe('GeneratePoliciesCommand::model filter', function () {
             panel: 'admin'
         );
 
-        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource1, $resource2) {
+        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource1, $resource2): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect([$resource1, $resource2]));
@@ -194,9 +194,9 @@ describe('GeneratePoliciesCommand::model filter', function () {
     });
 });
 
-describe('GeneratePoliciesCommand::panel option', function () {
-    it('passes panel to discovery service', function () {
-        $this->mock(EntityDiscoveryService::class, function ($mock) {
+describe('GeneratePoliciesCommand::panel option', function (): void {
+    it('passes panel to discovery service', function (): void {
+        $this->mock(EntityDiscoveryService::class, function ($mock): void {
             $mock->shouldReceive('discoverResources')
                 ->with(['panels' => ['admin']])
                 ->once()
@@ -208,8 +208,8 @@ describe('GeneratePoliciesCommand::panel option', function () {
     });
 });
 
-describe('GeneratePoliciesCommand::namespace option', function () {
-    it('passes custom namespace to generator', function () {
+describe('GeneratePoliciesCommand::namespace option', function (): void {
+    it('passes custom namespace to generator', function (): void {
         $resource = new DiscoveredResource(
             fqcn: 'App\\Filament\\Resources\\UserResource',
             model: 'App\\Models\\User',
@@ -223,13 +223,13 @@ describe('GeneratePoliciesCommand::namespace option', function () {
             content: '<?php // Policy content'
         );
 
-        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource) {
+        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect([$resource]));
         });
 
-        $this->mock(PolicyGeneratorService::class, function ($mock) use ($mockPolicy) {
+        $this->mock(PolicyGeneratorService::class, function ($mock) use ($mockPolicy): void {
             $mock->shouldReceive('generate')
                 ->once()
                 ->andReturn($mockPolicy);
@@ -240,8 +240,8 @@ describe('GeneratePoliciesCommand::namespace option', function () {
     });
 });
 
-describe('GeneratePoliciesCommand::force option', function () {
-    it('overwrites existing policies with force', function () {
+describe('GeneratePoliciesCommand::force option', function (): void {
+    it('overwrites existing policies with force', function (): void {
         $resource = new DiscoveredResource(
             fqcn: 'App\\Filament\\Resources\\UserResource',
             model: 'App\\Models\\User',
@@ -258,13 +258,13 @@ describe('GeneratePoliciesCommand::force option', function () {
             content: '<?php // New content'
         );
 
-        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource) {
+        $this->mock(EntityDiscoveryService::class, function ($mock) use ($resource): void {
             $mock->shouldReceive('discoverResources')
                 ->once()
                 ->andReturn(collect([$resource]));
         });
 
-        $this->mock(PolicyGeneratorService::class, function ($mock) use ($mockPolicy) {
+        $this->mock(PolicyGeneratorService::class, function ($mock) use ($mockPolicy): void {
             $mock->shouldReceive('generate')
                 ->once()
                 ->andReturn($mockPolicy);

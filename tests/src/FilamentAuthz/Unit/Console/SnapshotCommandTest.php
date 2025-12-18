@@ -7,16 +7,16 @@ use AIArmada\FilamentAuthz\Services\PermissionVersioningService;
 use AIArmada\FilamentAuthz\Services\RollbackResult;
 use Illuminate\Console\Command;
 
-describe('SnapshotCommand', function () {
-    it('is registered as artisan command', function () {
+describe('SnapshotCommand', function (): void {
+    it('is registered as artisan command', function (): void {
         $this->artisan('authz:snapshot', ['action' => 'list'])
             ->assertSuccessful();
     });
 });
 
-describe('SnapshotCommand::list action', function () {
-    it('shows message when no snapshots exist', function () {
-        $this->mock(PermissionVersioningService::class, function ($mock) {
+describe('SnapshotCommand::list action', function (): void {
+    it('shows message when no snapshots exist', function (): void {
+        $this->mock(PermissionVersioningService::class, function ($mock): void {
             $mock->shouldReceive('listSnapshots')
                 ->once()
                 ->andReturn(collect());
@@ -27,7 +27,7 @@ describe('SnapshotCommand::list action', function () {
             ->assertSuccessful();
     });
 
-    it('displays snapshots in table format', function () {
+    it('displays snapshots in table format', function (): void {
         $snapshot = PermissionSnapshot::create([
             'name' => 'test_snapshot',
             'description' => 'Test description',
@@ -35,7 +35,7 @@ describe('SnapshotCommand::list action', function () {
             'hash' => md5('test_snapshot'),
         ]);
 
-        $this->mock(PermissionVersioningService::class, function ($mock) use ($snapshot) {
+        $this->mock(PermissionVersioningService::class, function ($mock) use ($snapshot): void {
             $mock->shouldReceive('listSnapshots')
                 ->once()
                 ->andReturn(collect([$snapshot]));
@@ -46,15 +46,15 @@ describe('SnapshotCommand::list action', function () {
     });
 });
 
-describe('SnapshotCommand::create action', function () {
-    it('creates snapshot with auto-generated name', function () {
+describe('SnapshotCommand::create action', function (): void {
+    it('creates snapshot with auto-generated name', function (): void {
         $snapshot = PermissionSnapshot::create([
             'name' => 'snapshot_2024-01-01_00-00-00',
             'state' => ['roles' => [], 'permissions' => []],
             'hash' => md5('snapshot_2024-01-01_00-00-00'),
         ]);
 
-        $this->mock(PermissionVersioningService::class, function ($mock) use ($snapshot) {
+        $this->mock(PermissionVersioningService::class, function ($mock) use ($snapshot): void {
             $mock->shouldReceive('createSnapshot')
                 ->once()
                 ->andReturn($snapshot);
@@ -65,14 +65,14 @@ describe('SnapshotCommand::create action', function () {
             ->assertSuccessful();
     });
 
-    it('creates snapshot with custom name', function () {
+    it('creates snapshot with custom name', function (): void {
         $snapshot = PermissionSnapshot::create([
             'name' => 'my_custom_snapshot',
             'state' => ['roles' => [], 'permissions' => []],
             'hash' => md5('my_custom_snapshot'),
         ]);
 
-        $this->mock(PermissionVersioningService::class, function ($mock) use ($snapshot) {
+        $this->mock(PermissionVersioningService::class, function ($mock) use ($snapshot): void {
             $mock->shouldReceive('createSnapshot')
                 ->with('my_custom_snapshot', null)
                 ->once()
@@ -84,7 +84,7 @@ describe('SnapshotCommand::create action', function () {
             ->assertSuccessful();
     });
 
-    it('creates snapshot with description', function () {
+    it('creates snapshot with description', function (): void {
         $snapshot = PermissionSnapshot::create([
             'name' => 'my_snapshot',
             'description' => 'My description',
@@ -92,7 +92,7 @@ describe('SnapshotCommand::create action', function () {
             'hash' => md5('my_snapshot'),
         ]);
 
-        $this->mock(PermissionVersioningService::class, function ($mock) use ($snapshot) {
+        $this->mock(PermissionVersioningService::class, function ($mock) use ($snapshot): void {
             $mock->shouldReceive('createSnapshot')
                 ->with('my_snapshot', 'My description')
                 ->once()
@@ -109,20 +109,20 @@ describe('SnapshotCommand::create action', function () {
     });
 });
 
-describe('SnapshotCommand::compare action', function () {
-    it('requires both from and to options', function () {
+describe('SnapshotCommand::compare action', function (): void {
+    it('requires both from and to options', function (): void {
         $this->artisan('authz:snapshot', ['action' => 'compare'])
             ->expectsOutput('Both --from and --to snapshot IDs are required.')
             ->assertExitCode(Command::FAILURE);
     });
 
-    it('requires to option when from is provided', function () {
+    it('requires to option when from is provided', function (): void {
         $this->artisan('authz:snapshot', ['action' => 'compare', '--from' => 'id-1'])
             ->expectsOutput('Both --from and --to snapshot IDs are required.')
             ->assertExitCode(Command::FAILURE);
     });
 
-    it('fails when snapshots not found', function () {
+    it('fails when snapshots not found', function (): void {
         $this->artisan('authz:snapshot', [
             'action' => 'compare',
             '--from' => 'nonexistent-1',
@@ -132,7 +132,7 @@ describe('SnapshotCommand::compare action', function () {
             ->assertExitCode(Command::FAILURE);
     });
 
-    it('shows comparison results', function () {
+    it('shows comparison results', function (): void {
         $from = PermissionSnapshot::create([
             'name' => 'from_snapshot',
             'state' => ['roles' => ['admin'], 'permissions' => ['view']],
@@ -145,7 +145,7 @@ describe('SnapshotCommand::compare action', function () {
             'hash' => md5('to_snapshot'),
         ]);
 
-        $this->mock(PermissionVersioningService::class, function ($mock) {
+        $this->mock(PermissionVersioningService::class, function ($mock): void {
             $mock->shouldReceive('compare')
                 ->once()
                 ->andReturn([
@@ -163,14 +163,14 @@ describe('SnapshotCommand::compare action', function () {
     });
 });
 
-describe('SnapshotCommand::rollback action', function () {
-    it('requires snapshot option', function () {
+describe('SnapshotCommand::rollback action', function (): void {
+    it('requires snapshot option', function (): void {
         $this->artisan('authz:snapshot', ['action' => 'rollback'])
             ->expectsOutput('--snapshot ID is required for rollback.')
             ->assertExitCode(Command::FAILURE);
     });
 
-    it('fails when snapshot not found', function () {
+    it('fails when snapshot not found', function (): void {
         $this->artisan('authz:snapshot', [
             'action' => 'rollback',
             '--snapshot' => 'nonexistent-id',
@@ -179,14 +179,14 @@ describe('SnapshotCommand::rollback action', function () {
             ->assertExitCode(Command::FAILURE);
     });
 
-    it('shows dry run preview', function () {
+    it('shows dry run preview', function (): void {
         $snapshot = PermissionSnapshot::create([
             'name' => 'rollback_snapshot',
             'state' => ['roles' => ['admin'], 'permissions' => ['view']],
             'hash' => md5('rollback_snapshot'),
         ]);
 
-        $this->mock(PermissionVersioningService::class, function ($mock) {
+        $this->mock(PermissionVersioningService::class, function ($mock): void {
             $mock->shouldReceive('previewRollback')
                 ->once()
                 ->andReturn([
@@ -203,7 +203,7 @@ describe('SnapshotCommand::rollback action', function () {
             ->assertSuccessful();
     });
 
-    it('performs rollback with force option', function () {
+    it('performs rollback with force option', function (): void {
         $snapshot = PermissionSnapshot::create([
             'name' => 'rollback_snapshot',
             'state' => ['roles' => ['admin'], 'permissions' => ['view']],
@@ -216,7 +216,7 @@ describe('SnapshotCommand::rollback action', function () {
             isDryRun: false
         );
 
-        $this->mock(PermissionVersioningService::class, function ($mock) use ($result) {
+        $this->mock(PermissionVersioningService::class, function ($mock) use ($result): void {
             $mock->shouldReceive('rollback')
                 ->once()
                 ->andReturn($result);
@@ -231,7 +231,7 @@ describe('SnapshotCommand::rollback action', function () {
             ->assertSuccessful();
     });
 
-    it('prompts for confirmation without force', function () {
+    it('prompts for confirmation without force', function (): void {
         $snapshot = PermissionSnapshot::create([
             'name' => 'rollback_snapshot',
             'state' => ['roles' => [], 'permissions' => []],
@@ -250,7 +250,7 @@ describe('SnapshotCommand::rollback action', function () {
             ->assertSuccessful();
     });
 
-    it('handles failed rollback', function () {
+    it('handles failed rollback', function (): void {
         $snapshot = PermissionSnapshot::create([
             'name' => 'rollback_snapshot',
             'state' => ['roles' => [], 'permissions' => []],
@@ -263,7 +263,7 @@ describe('SnapshotCommand::rollback action', function () {
             isDryRun: false
         );
 
-        $this->mock(PermissionVersioningService::class, function ($mock) use ($result) {
+        $this->mock(PermissionVersioningService::class, function ($mock) use ($result): void {
             $mock->shouldReceive('rollback')
                 ->once()
                 ->andReturn($result);
@@ -279,8 +279,8 @@ describe('SnapshotCommand::rollback action', function () {
     });
 });
 
-describe('SnapshotCommand::invalid action', function () {
-    it('shows error for unknown action', function () {
+describe('SnapshotCommand::invalid action', function (): void {
+    it('shows error for unknown action', function (): void {
         $this->artisan('authz:snapshot', ['action' => 'unknown'])
             ->expectsOutput('Unknown action: unknown')
             ->expectsOutput('Available actions: create, list, compare, rollback')

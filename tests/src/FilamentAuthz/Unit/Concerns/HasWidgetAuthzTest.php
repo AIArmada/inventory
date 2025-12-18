@@ -16,7 +16,7 @@ function createHasWidgetAuthzTestUser(array $attributes = []): User
     ], $attributes));
 }
 
-beforeEach(function () {
+beforeEach(function (): void {
     // Reset static properties between tests
     $reflection = new ReflectionClass(TestWidgetWithAuthz::class);
 
@@ -55,29 +55,29 @@ class TestWidgetWithAuthz extends Widget
     }
 }
 
-describe('HasWidgetAuthz::getWidgetPermissionKey', function () {
-    it('returns custom permission key when set', function () {
+describe('HasWidgetAuthz::getWidgetPermissionKey', function (): void {
+    it('returns custom permission key when set', function (): void {
         TestWidgetWithAuthz::setWidgetPermissionKey('custom.widget.key');
 
         expect(TestWidgetWithAuthz::getWidgetPermissionKey())->toBe('custom.widget.key');
     });
 
-    it('generates permission key from class name when not set', function () {
+    it('generates permission key from class name when not set', function (): void {
         // beforeEach already resets widgetPermissionKey to null
         expect(TestWidgetWithAuthz::getWidgetPermissionKey())->toBe('widget.test_widget_with_authz');
     });
 });
 
-describe('HasWidgetAuthz::setWidgetPermissionKey', function () {
-    it('sets the widget permission key', function () {
+describe('HasWidgetAuthz::setWidgetPermissionKey', function (): void {
+    it('sets the widget permission key', function (): void {
         TestWidgetWithAuthz::setWidgetPermissionKey('my.custom.widget.key');
 
         expect(TestWidgetWithAuthz::getWidgetPermissionKey())->toBe('my.custom.widget.key');
     });
 });
 
-describe('HasWidgetAuthz::requireWidgetPermissions', function () {
-    it('sets required permissions', function () {
+describe('HasWidgetAuthz::requireWidgetPermissions', function (): void {
+    it('sets required permissions', function (): void {
         TestWidgetWithAuthz::requireWidgetPermissions(['perm1', 'perm2']);
 
         // Verify through behavior
@@ -85,8 +85,8 @@ describe('HasWidgetAuthz::requireWidgetPermissions', function () {
     });
 });
 
-describe('HasWidgetAuthz::requireWidgetRoles', function () {
-    it('sets required roles', function () {
+describe('HasWidgetAuthz::requireWidgetRoles', function (): void {
+    it('sets required roles', function (): void {
         TestWidgetWithAuthz::requireWidgetRoles(['admin', 'editor']);
 
         // Verify through behavior
@@ -94,15 +94,15 @@ describe('HasWidgetAuthz::requireWidgetRoles', function () {
     });
 });
 
-describe('HasWidgetAuthz::scopeWidgetToTeam', function () {
-    it('sets widget team scope', function () {
+describe('HasWidgetAuthz::scopeWidgetToTeam', function (): void {
+    it('sets widget team scope', function (): void {
         TestWidgetWithAuthz::scopeWidgetToTeam('team_id');
 
         // Verify method call succeeded
         expect(true)->toBeTrue();
     });
 
-    it('uses default team_id key', function () {
+    it('uses default team_id key', function (): void {
         TestWidgetWithAuthz::scopeWidgetToTeam();
 
         // Verify method call succeeded with default
@@ -110,8 +110,8 @@ describe('HasWidgetAuthz::scopeWidgetToTeam', function () {
     });
 });
 
-describe('HasWidgetAuthz::showPlaceholderWhenUnauthorized', function () {
-    it('sets hideWhenUnauthorized to false', function () {
+describe('HasWidgetAuthz::showPlaceholderWhenUnauthorized', function (): void {
+    it('sets hideWhenUnauthorized to false', function (): void {
         TestWidgetWithAuthz::showPlaceholderWhenUnauthorized();
 
         // Method call succeeds - behavior verified
@@ -119,24 +119,24 @@ describe('HasWidgetAuthz::showPlaceholderWhenUnauthorized', function () {
     });
 });
 
-describe('HasWidgetAuthz::canView', function () {
-    it('returns false when user is not authenticated', function () {
+describe('HasWidgetAuthz::canView', function (): void {
+    it('returns false when user is not authenticated', function (): void {
         Filament::shouldReceive('auth->user')->andReturn(null);
 
         expect(TestWidgetWithAuthz::canView())->toBeFalse();
     });
 });
 
-describe('HasWidgetAuthz::isSuperAdmin', function () {
-    it('returns false when user does not have hasRole method', function () {
+describe('HasWidgetAuthz::isSuperAdmin', function (): void {
+    it('returns false when user does not have hasRole method', function (): void {
         $user = new stdClass();
 
         expect(TestWidgetWithAuthz::publicIsSuperAdmin($user))->toBeFalse();
     });
 });
 
-describe('HasWidgetAuthz::getCurrentTeamId', function () {
-    it('returns null when no tenant', function () {
+describe('HasWidgetAuthz::getCurrentTeamId', function (): void {
+    it('returns null when no tenant', function (): void {
         Filament::shouldReceive('getTenant')->andReturn(null);
 
         expect(TestWidgetWithAuthz::publicGetCurrentTeamId())->toBeNull();

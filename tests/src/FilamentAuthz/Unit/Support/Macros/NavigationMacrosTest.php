@@ -18,12 +18,12 @@ function createNavigationMacrosTestUser(array $attributes = []): User
     ], $attributes));
 }
 
-beforeEach(function () {
+beforeEach(function (): void {
     NavigationMacros::register();
 });
 
-describe('NavigationMacros::register', function () {
-    it('registers navigation item macros', function () {
+describe('NavigationMacros::register', function (): void {
+    it('registers navigation item macros', function (): void {
         expect(NavigationItem::hasMacro('visibleForPermission'))->toBeTrue();
         expect(NavigationItem::hasMacro('visibleForRole'))->toBeTrue();
         expect(NavigationItem::hasMacro('visibleForAnyPermission'))->toBeTrue();
@@ -31,15 +31,15 @@ describe('NavigationMacros::register', function () {
     });
 });
 
-describe('NavigationItem::visibleForPermission', function () {
-    it('returns navigation item instance for chaining', function () {
+describe('NavigationItem::visibleForPermission', function (): void {
+    it('returns navigation item instance for chaining', function (): void {
         $item = NavigationItem::make('Test');
         $result = $item->visibleForPermission('test.permission');
 
         expect($result)->toBeInstanceOf(NavigationItem::class);
     });
 
-    it('hides item when user is null', function () {
+    it('hides item when user is null', function (): void {
         Auth::shouldReceive('user')->andReturn(null);
 
         $item = NavigationItem::make('Test')->visibleForPermission('test.permission');
@@ -47,11 +47,11 @@ describe('NavigationItem::visibleForPermission', function () {
         expect($item)->toBeInstanceOf(NavigationItem::class);
     });
 
-    it('uses aggregator for permission check', function () {
+    it('uses aggregator for permission check', function (): void {
         $user = createNavigationMacrosTestUser();
         Auth::shouldReceive('user')->andReturn($user);
 
-        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user) {
+        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user): void {
             $mock->shouldReceive('userHasPermission')
                 ->with($user, 'test.permission')
                 ->andReturn(true);
@@ -63,36 +63,36 @@ describe('NavigationItem::visibleForPermission', function () {
     });
 });
 
-describe('NavigationItem::visibleForRole', function () {
-    it('returns navigation item instance for chaining', function () {
+describe('NavigationItem::visibleForRole', function (): void {
+    it('returns navigation item instance for chaining', function (): void {
         $item = NavigationItem::make('Test');
         $result = $item->visibleForRole('admin');
 
         expect($result)->toBeInstanceOf(NavigationItem::class);
     });
 
-    it('accepts string role', function () {
+    it('accepts string role', function (): void {
         $item = NavigationItem::make('Test')->visibleForRole('admin');
 
         expect($item)->toBeInstanceOf(NavigationItem::class);
     });
 
-    it('accepts array of roles', function () {
+    it('accepts array of roles', function (): void {
         $item = NavigationItem::make('Test')->visibleForRole(['admin', 'editor']);
 
         expect($item)->toBeInstanceOf(NavigationItem::class);
     });
 });
 
-describe('NavigationItem::visibleForAnyPermission', function () {
-    it('returns navigation item instance for chaining', function () {
+describe('NavigationItem::visibleForAnyPermission', function (): void {
+    it('returns navigation item instance for chaining', function (): void {
         $item = NavigationItem::make('Test');
         $result = $item->visibleForAnyPermission(['perm1', 'perm2']);
 
         expect($result)->toBeInstanceOf(NavigationItem::class);
     });
 
-    it('hides item when user is null', function () {
+    it('hides item when user is null', function (): void {
         Auth::shouldReceive('user')->andReturn(null);
 
         $item = NavigationItem::make('Test')->visibleForAnyPermission(['perm1', 'perm2']);
@@ -100,11 +100,11 @@ describe('NavigationItem::visibleForAnyPermission', function () {
         expect($item)->toBeInstanceOf(NavigationItem::class);
     });
 
-    it('uses aggregator for any permission check', function () {
+    it('uses aggregator for any permission check', function (): void {
         $user = createNavigationMacrosTestUser();
         Auth::shouldReceive('user')->andReturn($user);
 
-        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user) {
+        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user): void {
             $mock->shouldReceive('userHasAnyPermission')
                 ->with($user, ['perm1', 'perm2'])
                 ->andReturn(true);
@@ -116,15 +116,15 @@ describe('NavigationItem::visibleForAnyPermission', function () {
     });
 });
 
-describe('NavigationItem::visibleForAllPermissions', function () {
-    it('returns navigation item instance for chaining', function () {
+describe('NavigationItem::visibleForAllPermissions', function (): void {
+    it('returns navigation item instance for chaining', function (): void {
         $item = NavigationItem::make('Test');
         $result = $item->visibleForAllPermissions(['perm1', 'perm2']);
 
         expect($result)->toBeInstanceOf(NavigationItem::class);
     });
 
-    it('hides item when user is null', function () {
+    it('hides item when user is null', function (): void {
         Auth::shouldReceive('user')->andReturn(null);
 
         $item = NavigationItem::make('Test')->visibleForAllPermissions(['perm1', 'perm2']);
@@ -132,11 +132,11 @@ describe('NavigationItem::visibleForAllPermissions', function () {
         expect($item)->toBeInstanceOf(NavigationItem::class);
     });
 
-    it('uses aggregator for all permissions check', function () {
+    it('uses aggregator for all permissions check', function (): void {
         $user = createNavigationMacrosTestUser();
         Auth::shouldReceive('user')->andReturn($user);
 
-        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user) {
+        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user): void {
             $mock->shouldReceive('userHasAllPermissions')
                 ->with($user, ['perm1', 'perm2'])
                 ->andReturn(true);

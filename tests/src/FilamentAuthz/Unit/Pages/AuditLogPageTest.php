@@ -11,32 +11,32 @@ use Illuminate\Support\Collection;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     // Clean up any existing logs
     PermissionAuditLog::query()->delete();
 });
 
-describe('AuditLogPage', function () {
-    it('has navigation icon', function () {
+describe('AuditLogPage', function (): void {
+    it('has navigation icon', function (): void {
         expect(AuditLogPage::getNavigationIcon())->toBe('heroicon-o-clipboard-document-list');
     });
 
-    it('has navigation label', function () {
+    it('has navigation label', function (): void {
         expect(AuditLogPage::getNavigationLabel())->toBe('Audit Log');
     });
 
-    it('has navigation sort', function () {
+    it('has navigation sort', function (): void {
         expect(AuditLogPage::getNavigationSort())->toBe(12);
     });
 
-    it('gets navigation group from config', function () {
+    it('gets navigation group from config', function (): void {
         config(['filament-authz.navigation.group' => 'Test Group']);
         expect(AuditLogPage::getNavigationGroup())->toBe('Test Group');
     });
 });
 
-describe('AuditLogPage::mount', function () {
-    it('sets default date range to last 7 days', function () {
+describe('AuditLogPage::mount', function (): void {
+    it('sets default date range to last 7 days', function (): void {
         $page = new AuditLogPage();
         $page->mount();
 
@@ -44,7 +44,7 @@ describe('AuditLogPage::mount', function () {
         expect($page->endDate)->toBe(now()->toDateString());
     });
 
-    it('initializes logs collection', function () {
+    it('initializes logs collection', function (): void {
         $page = new AuditLogPage();
         $page->mount();
 
@@ -52,8 +52,8 @@ describe('AuditLogPage::mount', function () {
     });
 });
 
-describe('AuditLogPage::loadLogs', function () {
-    it('loads logs within date range', function () {
+describe('AuditLogPage::loadLogs', function (): void {
+    it('loads logs within date range', function (): void {
         // Create log within range
         PermissionAuditLog::create([
             'event_type' => AuditEventType::PermissionGranted->value,
@@ -74,7 +74,7 @@ describe('AuditLogPage::loadLogs', function () {
         expect($page->logs)->toHaveCount(1);
     });
 
-    it('filters by event type', function () {
+    it('filters by event type', function (): void {
         PermissionAuditLog::create([
             'event_type' => AuditEventType::PermissionGranted->value,
             'severity' => AuditSeverity::Low->value,
@@ -107,7 +107,7 @@ describe('AuditLogPage::loadLogs', function () {
         expect($page->logs->first()->event_type)->toBe(AuditEventType::PermissionGranted->value);
     });
 
-    it('filters by severity', function () {
+    it('filters by severity', function (): void {
         PermissionAuditLog::create([
             'event_type' => AuditEventType::PermissionGranted->value,
             'severity' => AuditSeverity::Low->value,
@@ -141,8 +141,8 @@ describe('AuditLogPage::loadLogs', function () {
     });
 });
 
-describe('AuditLogPage::filterByEventType', function () {
-    it('sets event type filter and reloads', function () {
+describe('AuditLogPage::filterByEventType', function (): void {
+    it('sets event type filter and reloads', function (): void {
         $page = new AuditLogPage();
         $page->startDate = now()->subDay()->toDateString();
         $page->endDate = now()->toDateString();
@@ -153,8 +153,8 @@ describe('AuditLogPage::filterByEventType', function () {
     });
 });
 
-describe('AuditLogPage::filterBySeverity', function () {
-    it('sets severity filter and reloads', function () {
+describe('AuditLogPage::filterBySeverity', function (): void {
+    it('sets severity filter and reloads', function (): void {
         $page = new AuditLogPage();
         $page->startDate = now()->subDay()->toDateString();
         $page->endDate = now()->toDateString();
@@ -165,8 +165,8 @@ describe('AuditLogPage::filterBySeverity', function () {
     });
 });
 
-describe('AuditLogPage::clearFilters', function () {
-    it('clears all filters', function () {
+describe('AuditLogPage::clearFilters', function (): void {
+    it('clears all filters', function (): void {
         $page = new AuditLogPage();
         $page->startDate = now()->subDay()->toDateString();
         $page->endDate = now()->toDateString();
@@ -180,8 +180,8 @@ describe('AuditLogPage::clearFilters', function () {
     });
 });
 
-describe('AuditLogPage::getEventTypeOptions', function () {
-    it('returns event type options array', function () {
+describe('AuditLogPage::getEventTypeOptions', function (): void {
+    it('returns event type options array', function (): void {
         $page = new AuditLogPage();
         $options = $page->getEventTypeOptions();
 
@@ -191,8 +191,8 @@ describe('AuditLogPage::getEventTypeOptions', function () {
     });
 });
 
-describe('AuditLogPage::getStatistics', function () {
-    it('returns statistics array with correct structure', function () {
+describe('AuditLogPage::getStatistics', function (): void {
+    it('returns statistics array with correct structure', function (): void {
         $page = new AuditLogPage();
         $page->logs = collect();
 
@@ -204,7 +204,7 @@ describe('AuditLogPage::getStatistics', function () {
         expect($stats['by_category'])->toBeArray();
     });
 
-    it('calculates statistics from logs', function () {
+    it('calculates statistics from logs', function (): void {
         $log1 = PermissionAuditLog::create([
             'event_type' => AuditEventType::PermissionGranted->value,
             'severity' => AuditSeverity::Low->value,

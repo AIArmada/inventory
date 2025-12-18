@@ -16,7 +16,7 @@ function createHasPageAuthzTestUser(array $attributes = []): User
     ], $attributes));
 }
 
-beforeEach(function () {
+beforeEach(function (): void {
     // Reset static properties between tests
     $reflection = new ReflectionClass(TestPageWithAuthz::class);
 
@@ -61,29 +61,29 @@ class TestPageWithAuthz extends Page
     }
 }
 
-describe('HasPageAuthz::getPagePermissionKey', function () {
-    it('returns custom permission key when set', function () {
+describe('HasPageAuthz::getPagePermissionKey', function (): void {
+    it('returns custom permission key when set', function (): void {
         TestPageWithAuthz::setPagePermissionKey('custom.permission.key');
 
         expect(TestPageWithAuthz::getPagePermissionKey())->toBe('custom.permission.key');
     });
 
-    it('generates permission key from slug when not set', function () {
+    it('generates permission key from slug when not set', function (): void {
         // beforeEach already resets pagePermissionKey to null
         expect(TestPageWithAuthz::getPagePermissionKey())->toBe('page.test-page');
     });
 });
 
-describe('HasPageAuthz::setPagePermissionKey', function () {
-    it('sets the page permission key', function () {
+describe('HasPageAuthz::setPagePermissionKey', function (): void {
+    it('sets the page permission key', function (): void {
         TestPageWithAuthz::setPagePermissionKey('my.custom.key');
 
         expect(TestPageWithAuthz::getPagePermissionKey())->toBe('my.custom.key');
     });
 });
 
-describe('HasPageAuthz::requirePermissions', function () {
-    it('sets required permissions', function () {
+describe('HasPageAuthz::requirePermissions', function (): void {
+    it('sets required permissions', function (): void {
         TestPageWithAuthz::requirePermissions(['perm1', 'perm2']);
 
         // Verify through behavior by attempting access
@@ -91,8 +91,8 @@ describe('HasPageAuthz::requirePermissions', function () {
     });
 });
 
-describe('HasPageAuthz::requireRoles', function () {
-    it('sets required roles', function () {
+describe('HasPageAuthz::requireRoles', function (): void {
+    it('sets required roles', function (): void {
         TestPageWithAuthz::requireRoles(['admin', 'editor']);
 
         // Verify through behavior by attempting access
@@ -100,15 +100,15 @@ describe('HasPageAuthz::requireRoles', function () {
     });
 });
 
-describe('HasPageAuthz::scopeToTeam', function () {
-    it('sets team permission scope', function () {
+describe('HasPageAuthz::scopeToTeam', function (): void {
+    it('sets team permission scope', function (): void {
         TestPageWithAuthz::scopeToTeam('team_id');
 
         // Verify method call succeeded
         expect(true)->toBeTrue();
     });
 
-    it('uses default team_id key', function () {
+    it('uses default team_id key', function (): void {
         TestPageWithAuthz::scopeToTeam();
 
         // Verify method call succeeded with default
@@ -116,32 +116,32 @@ describe('HasPageAuthz::scopeToTeam', function () {
     });
 });
 
-describe('HasPageAuthz::canAccess', function () {
-    it('returns false when user is not authenticated', function () {
+describe('HasPageAuthz::canAccess', function (): void {
+    it('returns false when user is not authenticated', function (): void {
         Filament::shouldReceive('auth->user')->andReturn(null);
 
         expect(TestPageWithAuthz::canAccess())->toBeFalse();
     });
 });
 
-describe('HasPageAuthz::isSuperAdmin', function () {
-    it('returns false when user does not have hasRole method', function () {
+describe('HasPageAuthz::isSuperAdmin', function (): void {
+    it('returns false when user does not have hasRole method', function (): void {
         $user = new stdClass();
 
         expect(TestPageWithAuthz::publicIsSuperAdmin($user))->toBeFalse();
     });
 });
 
-describe('HasPageAuthz::getTeamFromContext', function () {
-    it('returns null when no tenant', function () {
+describe('HasPageAuthz::getTeamFromContext', function (): void {
+    it('returns null when no tenant', function (): void {
         Filament::shouldReceive('getTenant')->andReturn(null);
 
         expect(TestPageWithAuthz::publicGetTeamFromContext())->toBeNull();
     });
 });
 
-describe('HasPageAuthz::getTitleWithPermissionDebug', function () {
-    it('shows permission key in local environment', function () {
+describe('HasPageAuthz::getTitleWithPermissionDebug', function (): void {
+    it('shows permission key in local environment', function (): void {
         config(['app.env' => 'local']);
         $this->app['env'] = 'local';
 

@@ -20,33 +20,33 @@ function createFormMacrosTestUser(array $attributes = []): User
     ], $attributes));
 }
 
-beforeEach(function () {
+beforeEach(function (): void {
     FormMacros::register();
 });
 
-describe('FormMacros::register', function () {
-    it('registers field macros', function () {
+describe('FormMacros::register', function (): void {
+    it('registers field macros', function (): void {
         expect(Field::hasMacro('visibleForPermission'))->toBeTrue();
         expect(Field::hasMacro('visibleForRole'))->toBeTrue();
         expect(Field::hasMacro('disabledWithoutPermission'))->toBeTrue();
     });
 
-    it('registers section macros', function () {
+    it('registers section macros', function (): void {
         expect(Section::hasMacro('visibleForPermission'))->toBeTrue();
         expect(Section::hasMacro('visibleForRole'))->toBeTrue();
         expect(Section::hasMacro('collapsedWithoutPermission'))->toBeTrue();
     });
 });
 
-describe('Field::visibleForPermission', function () {
-    it('returns field instance for chaining', function () {
+describe('Field::visibleForPermission', function (): void {
+    it('returns field instance for chaining', function (): void {
         $field = TextInput::make('test');
         $result = $field->visibleForPermission('test.permission');
 
         expect($result)->toBeInstanceOf(Field::class);
     });
 
-    it('hides field when user is null', function () {
+    it('hides field when user is null', function (): void {
         Auth::shouldReceive('user')->andReturn(null);
 
         $field = TextInput::make('test')->visibleForPermission('test.permission');
@@ -54,11 +54,11 @@ describe('Field::visibleForPermission', function () {
         expect($field)->toBeInstanceOf(Field::class);
     });
 
-    it('uses aggregator for permission check', function () {
+    it('uses aggregator for permission check', function (): void {
         $user = createFormMacrosTestUser();
         Auth::shouldReceive('user')->andReturn($user);
 
-        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user) {
+        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user): void {
             $mock->shouldReceive('userHasPermission')
                 ->with($user, 'test.permission')
                 ->andReturn(true);
@@ -70,36 +70,36 @@ describe('Field::visibleForPermission', function () {
     });
 });
 
-describe('Field::visibleForRole', function () {
-    it('returns field instance for chaining', function () {
+describe('Field::visibleForRole', function (): void {
+    it('returns field instance for chaining', function (): void {
         $field = TextInput::make('test');
         $result = $field->visibleForRole('admin');
 
         expect($result)->toBeInstanceOf(Field::class);
     });
 
-    it('accepts string role', function () {
+    it('accepts string role', function (): void {
         $field = TextInput::make('test')->visibleForRole('admin');
 
         expect($field)->toBeInstanceOf(Field::class);
     });
 
-    it('accepts array of roles', function () {
+    it('accepts array of roles', function (): void {
         $field = TextInput::make('test')->visibleForRole(['admin', 'editor']);
 
         expect($field)->toBeInstanceOf(Field::class);
     });
 });
 
-describe('Field::disabledWithoutPermission', function () {
-    it('returns field instance for chaining', function () {
+describe('Field::disabledWithoutPermission', function (): void {
+    it('returns field instance for chaining', function (): void {
         $field = TextInput::make('test');
         $result = $field->disabledWithoutPermission('test.permission');
 
         expect($result)->toBeInstanceOf(Field::class);
     });
 
-    it('disables field when user is null', function () {
+    it('disables field when user is null', function (): void {
         Auth::shouldReceive('user')->andReturn(null);
 
         $field = TextInput::make('test')->disabledWithoutPermission('test.permission');
@@ -107,11 +107,11 @@ describe('Field::disabledWithoutPermission', function () {
         expect($field)->toBeInstanceOf(Field::class);
     });
 
-    it('enables field when user has permission', function () {
+    it('enables field when user has permission', function (): void {
         $user = createFormMacrosTestUser();
         Auth::shouldReceive('user')->andReturn($user);
 
-        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user) {
+        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user): void {
             $mock->shouldReceive('userHasPermission')
                 ->with($user, 'test.permission')
                 ->andReturn(true);
@@ -122,11 +122,11 @@ describe('Field::disabledWithoutPermission', function () {
         expect($field)->toBeInstanceOf(Field::class);
     });
 
-    it('disables field when user lacks permission', function () {
+    it('disables field when user lacks permission', function (): void {
         $user = createFormMacrosTestUser();
         Auth::shouldReceive('user')->andReturn($user);
 
-        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user) {
+        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user): void {
             $mock->shouldReceive('userHasPermission')
                 ->with($user, 'test.permission')
                 ->andReturn(false);
@@ -138,15 +138,15 @@ describe('Field::disabledWithoutPermission', function () {
     });
 });
 
-describe('Section::visibleForPermission', function () {
-    it('returns section instance for chaining', function () {
+describe('Section::visibleForPermission', function (): void {
+    it('returns section instance for chaining', function (): void {
         $section = Section::make('Test Section');
         $result = $section->visibleForPermission('test.permission');
 
         expect($result)->toBeInstanceOf(Section::class);
     });
 
-    it('hides section when user is null', function () {
+    it('hides section when user is null', function (): void {
         Auth::shouldReceive('user')->andReturn(null);
 
         $section = Section::make('Test Section')->visibleForPermission('test.permission');
@@ -154,11 +154,11 @@ describe('Section::visibleForPermission', function () {
         expect($section)->toBeInstanceOf(Section::class);
     });
 
-    it('uses aggregator for permission check', function () {
+    it('uses aggregator for permission check', function (): void {
         $user = createFormMacrosTestUser();
         Auth::shouldReceive('user')->andReturn($user);
 
-        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user) {
+        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user): void {
             $mock->shouldReceive('userHasPermission')
                 ->with($user, 'test.permission')
                 ->andReturn(true);
@@ -170,36 +170,36 @@ describe('Section::visibleForPermission', function () {
     });
 });
 
-describe('Section::visibleForRole', function () {
-    it('returns section instance for chaining', function () {
+describe('Section::visibleForRole', function (): void {
+    it('returns section instance for chaining', function (): void {
         $section = Section::make('Test Section');
         $result = $section->visibleForRole('admin');
 
         expect($result)->toBeInstanceOf(Section::class);
     });
 
-    it('accepts string role', function () {
+    it('accepts string role', function (): void {
         $section = Section::make('Test Section')->visibleForRole('admin');
 
         expect($section)->toBeInstanceOf(Section::class);
     });
 
-    it('accepts array of roles', function () {
+    it('accepts array of roles', function (): void {
         $section = Section::make('Test Section')->visibleForRole(['admin', 'editor']);
 
         expect($section)->toBeInstanceOf(Section::class);
     });
 });
 
-describe('Section::collapsedWithoutPermission', function () {
-    it('returns section instance for chaining', function () {
+describe('Section::collapsedWithoutPermission', function (): void {
+    it('returns section instance for chaining', function (): void {
         $section = Section::make('Test Section');
         $result = $section->collapsedWithoutPermission('test.permission');
 
         expect($result)->toBeInstanceOf(Section::class);
     });
 
-    it('collapses section when user is null', function () {
+    it('collapses section when user is null', function (): void {
         Auth::shouldReceive('user')->andReturn(null);
 
         $section = Section::make('Test Section')->collapsedWithoutPermission('test.permission');
@@ -207,11 +207,11 @@ describe('Section::collapsedWithoutPermission', function () {
         expect($section)->toBeInstanceOf(Section::class);
     });
 
-    it('expands section when user has permission', function () {
+    it('expands section when user has permission', function (): void {
         $user = createFormMacrosTestUser();
         Auth::shouldReceive('user')->andReturn($user);
 
-        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user) {
+        $this->mock(PermissionAggregator::class, function (MockInterface $mock) use ($user): void {
             $mock->shouldReceive('userHasPermission')
                 ->with($user, 'test.permission')
                 ->andReturn(true);
