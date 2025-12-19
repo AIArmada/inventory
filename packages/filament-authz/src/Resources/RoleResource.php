@@ -85,7 +85,7 @@ class RoleResource extends Resource
                         $guard = $get('guard_name');
 
                         return Permission::query()
-                            ->when($guard, fn (Builder $query) => $query->where('guard_name', $guard))
+                            ->when($guard, fn (Builder $query): Builder => $query->where('guard_name', $guard))
                             ->orderBy('name')
                             ->pluck('name', 'id')
                             ->toArray();

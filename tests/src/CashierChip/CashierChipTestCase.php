@@ -19,6 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Session\SessionServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Spatie\Permission\PermissionServiceProvider;
 
 abstract class CashierChipTestCase extends Orchestra
 {
@@ -64,6 +65,7 @@ abstract class CashierChipTestCase extends Orchestra
             SessionServiceProvider::class,
             CacheServiceProvider::class,
             DatabaseServiceProvider::class,
+            PermissionServiceProvider::class,
             ChipServiceProvider::class,
             CashierChipServiceProvider::class,
         ];

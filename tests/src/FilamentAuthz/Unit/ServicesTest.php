@@ -26,15 +26,6 @@ describe('PermissionBuilder', function (): void {
             ->toHaveKey('orders.delete');
     });
 
-    it('builds soft delete permissions', function (): void {
-        $permissions = PermissionBuilder::for('orders')
-            ->softDeletes()
-            ->build();
-
-        expect($permissions)->toHaveKey('orders.restore')
-            ->toHaveKey('orders.forceDelete');
-    });
-
     it('builds full crud permissions', function (): void {
         $permissions = PermissionBuilder::for('orders')
             ->fullCrud()
@@ -42,8 +33,8 @@ describe('PermissionBuilder', function (): void {
 
         expect($permissions)->toHaveKey('orders.viewAny')
             ->toHaveKey('orders.delete')
-            ->toHaveKey('orders.restore')
-            ->toHaveKey('orders.forceDelete');
+            ->not()->toHaveKey('orders.restore')
+            ->not()->toHaveKey('orders.forceDelete');
     });
 
     it('adds custom abilities', function (): void {

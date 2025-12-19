@@ -5,13 +5,30 @@ declare(strict_types=1);
 namespace AIArmada\Tax\Tests\Unit\Models;
 
 use AIArmada\Commerce\Tests\Tax\TaxTestCase;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Tax\Models\TaxRate;
 use AIArmada\Tax\Models\TaxZone;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class TaxZoneTest extends TaxTestCase
 {
     use RefreshDatabase;
+
+    private function bindTaxOwnerForScoping(?Model $owner): void
+    {
+        app()->bind(OwnerResolverInterface::class, fn () => new class($owner) implements OwnerResolverInterface
+        {
+            public function __construct(private ?Model $owner) {}
+
+            public function resolve(): ?Model
+            {
+                return $this->owner;
+            }
+        });
+    }
 
     public function test_can_create_tax_zone(): void
     {
@@ -309,6 +326,25 @@ class TaxZoneTest extends TaxTestCase
     {
         config(['tax.features.owner.enabled' => true]);
 
+        $owner = new class extends Model
+        {
+            protected $table = 'users';
+
+            public $id = 1;
+
+            public function getMorphClass(): string
+            {
+                return 'App\\Models\\Store';
+            }
+
+            public function getKey(): mixed
+            {
+                return '123';
+            }
+        };
+
+        $this->bindTaxOwnerForScoping(null);
+
         TaxZone::create([
             'name' => 'Global Zone',
             'code' => 'GLOBAL',
@@ -317,11 +353,11 @@ class TaxZoneTest extends TaxTestCase
             'is_active' => true,
         ]);
 
+        $this->bindTaxOwnerForScoping($owner);
+
         TaxZone::create([
             'name' => 'Owned Zone',
             'code' => 'OWNED',
-            'owner_type' => 'App\\Models\\Store',
-            'owner_id' => '123',
             'is_active' => true,
         ]);
 
@@ -372,6 +408,8 @@ class TaxZoneTest extends TaxTestCase
             }
         };
 
+        $this->bindTaxOwnerForScoping(null);
+
         TaxZone::create([
             'name' => 'Global Zone',
             'code' => 'GLOBAL',
@@ -380,20 +418,30 @@ class TaxZoneTest extends TaxTestCase
             'is_active' => true,
         ]);
 
+        $this->bindTaxOwnerForScoping($owner);
+
         TaxZone::create([
             'name' => 'Owned Zone',
             'code' => 'OWNED',
-            'owner_type' => 'App\\Models\\Store',
-            'owner_id' => '123',
             'is_active' => true,
         ]);
 
-        TaxZone::create([
+        DB::table((new TaxZone)->getTable())->insert([
+            'id' => (string) Str::uuid(),
+            'owner_type' => $owner->getMorphClass(),
+            'owner_id' => '456',
             'name' => 'Other Owner Zone',
             'code' => 'OTHER',
-            'owner_type' => 'App\\Models\\Store',
-            'owner_id' => '456',
+            'description' => null,
+            'type' => 'country',
+            'countries' => null,
+            'states' => null,
+            'postcodes' => null,
+            'priority' => 0,
+            'is_default' => false,
             'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $zones = TaxZone::forOwner($owner, includeGlobal: true)->get();
@@ -425,6 +473,8 @@ class TaxZoneTest extends TaxTestCase
             }
         };
 
+        $this->bindTaxOwnerForScoping(null);
+
         TaxZone::create([
             'name' => 'Global Zone',
             'code' => 'GLOBAL',
@@ -433,11 +483,11 @@ class TaxZoneTest extends TaxTestCase
             'is_active' => true,
         ]);
 
+        $this->bindTaxOwnerForScoping($owner);
+
         TaxZone::create([
             'name' => 'Owned Zone',
             'code' => 'OWNED',
-            'owner_type' => 'App\\Models\\Store',
-            'owner_id' => '123',
             'is_active' => true,
         ]);
 

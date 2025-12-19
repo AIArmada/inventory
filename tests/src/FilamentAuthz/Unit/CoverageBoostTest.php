@@ -472,20 +472,13 @@ describe('PermissionBuilder Coverage', function (): void {
         expect($result)->toHaveKey('user.create');
     });
 
-    it('builds with soft deletes', function (): void {
-        $builder = PermissionBuilder::for('user')->softDeletes();
-        $result = $builder->build();
-
-        expect($result)->toHaveKey('user.restore');
-        expect($result)->toHaveKey('user.forceDelete');
-    });
-
     it('builds full crud', function (): void {
         $builder = PermissionBuilder::for('user')->fullCrud();
         $result = $builder->build();
 
         expect($result)->toHaveKey('user.viewAny');
-        expect($result)->toHaveKey('user.restore');
+        expect($result)->toHaveKey('user.delete');
+        expect($result)->not()->toHaveKey('user.restore');
     });
 
     it('adds specific ability', function (): void {

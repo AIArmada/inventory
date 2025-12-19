@@ -6,7 +6,6 @@ namespace AIArmada\FilamentAuthz\Services\Discovery;
 
 use AIArmada\FilamentAuthz\ValueObjects\DiscoveredResource;
 use Filament\Resources\Resource;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use ReflectionClass;
@@ -189,7 +188,6 @@ class ResourceTransformer
             'hasRelations' => false,
             'hasBulkActions' => false,
             'hasCustomActions' => false,
-            'hasSoftDeletes' => false,
             'isGlobalSearch' => false,
         ];
 
@@ -203,15 +201,6 @@ class ResourceTransformer
                 $this->detectTableActions($resourceClass),
                 fn ($action) => $this->isCustomAction($action)
             )) > 0;
-
-            // Check for soft deletes
-            $model = $resource::getModel();
-            if (class_exists($model)) {
-                $metadata['hasSoftDeletes'] = in_array(
-                    SoftDeletes::class,
-                    class_uses_recursive($model)
-                );
-            }
 
             // Check for global search
             $metadata['isGlobalSearch'] = method_exists($resource, 'getGloballySearchableAttributes')

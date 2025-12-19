@@ -114,13 +114,22 @@ Search for:
 
 🧭 1F. MULTI-TENANCY (MONOREPO-WIDE, NON-NEGOTIABLE)
 Enforce the `.ai/multitenancy` contract across ALL packages that store tenant-owned data:
+- **Column semantics**: `owner_type/owner_id` is reserved for tenant boundary owner (rename any other uses).
 - **Data model**: tenant-owned tables use `$table->nullableMorphs('owner')` and models use `HasOwner`.
-- **Reads**: every query surface is scoped (Resources, Widgets, Services, Exports, Reports, Commands, Jobs, Health checks).
+- **Enforcement**: prefer commerce-support's default-on owner global scope; any cross-tenant/system behavior MUST use explicit, greppable opt-out (e.g. `->withoutOwnerScope()`).
+- **Reads**: every query surface is owner-enforced (Resources, Widgets, Services, Exports, Reports, Commands, Jobs, Health checks); do not rely solely on `$tenantOwnershipRelationshipName`/UI filters.
 - **Writes**: validate ANY inbound foreign IDs belong to the current owner scope (defense-in-depth; never trust Filament option lists).
+- **Query builder**: DB::table/join reporting paths must be owner-scoped too (Eloquent scopes don’t apply).
+- **Route binding**: downloads/route model binding must not resolve cross-tenant rows.
+- **Non-request code**: jobs/commands must set/iterate owner context explicitly.
 - **Global rows**: semantics must be explicit (owner-only vs global-only, and any include-global behavior).
 
 Minimum verification sweep per package:
-- Search: `rg -- "::query\(|->query\(|->getEloquentQuery\(" packages/<pkg>/src`
+- Search: `rg -n -- "::query\(|->query\(|getEloquentQuery\(" packages/<pkg>/src`
+- Search: `rg -n -- "count\(|sum\(|avg\(|exists\(" packages/<pkg>/src`
+- Search: `rg -n -- "DB::table\(" packages/<pkg>/src`
+- Search: `rg -n -- "Route::.*\{.*\}" packages/<pkg>/routes`
+- Search: `rg -n -- "withoutOwnerScope\(|withoutGlobalScope\(.*Owner" packages/<pkg>/src`
 - Add/require a cross-tenant regression test proving cross-tenant reads/writes are blocked.
 
 📚 1F. CONSISTENCY & MAINTAINABILITY

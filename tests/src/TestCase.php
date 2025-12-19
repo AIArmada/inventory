@@ -911,6 +911,7 @@ abstract class TestCase extends Orchestra
         Schema::create('order_items', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('order_id');
+            $table->nullableUuidMorphs('owner');
             $table->nullableUuidMorphs('purchasable');
             $table->string('name');
             $table->string('sku')->nullable();
@@ -928,6 +929,7 @@ abstract class TestCase extends Orchestra
         Schema::create('order_addresses', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('order_id');
+            $table->nullableUuidMorphs('owner');
             $table->string('type')->default('shipping');
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
@@ -947,6 +949,7 @@ abstract class TestCase extends Orchestra
         Schema::create('order_payments', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('order_id');
+            $table->nullableUuidMorphs('owner');
             $table->string('gateway', 50);
             $table->string('transaction_id')->nullable();
             $table->integer('amount')->default(0);
@@ -961,6 +964,7 @@ abstract class TestCase extends Orchestra
         Schema::create('order_refunds', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('order_id');
+            $table->nullableUuidMorphs('owner');
             $table->uuid('payment_id')->nullable();
             $table->string('gateway', 50);
             $table->string('transaction_id')->nullable();
@@ -977,6 +981,7 @@ abstract class TestCase extends Orchestra
         Schema::create('order_notes', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('order_id');
+            $table->nullableUuidMorphs('owner');
             $table->foreignUuid('user_id')->nullable();
             $table->text('content');
             $table->boolean('is_customer_visible')->default(false);
@@ -1014,6 +1019,7 @@ abstract class TestCase extends Orchestra
         Schema::create('prices', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('price_list_id');
+            $table->nullableMorphs('owner');
             $table->uuidMorphs('priceable');
             $table->integer('amount')->default(0);
             $table->integer('compare_amount')->nullable();
@@ -1088,7 +1094,6 @@ abstract class TestCase extends Orchestra
             $table->boolean('is_default')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            $table->softDeletes();
         });
 
         Schema::create('tax_classes', function (Blueprint $table): void {
@@ -1101,24 +1106,26 @@ abstract class TestCase extends Orchestra
             $table->boolean('is_default')->default(false);
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            $table->softDeletes();
         });
 
         Schema::create('tax_rates', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('zone_id');
+            $table->nullableUuidMorphs('owner');
             $table->string('tax_class')->default('standard');
             $table->string('name');
             $table->integer('rate')->default(0);
             $table->integer('priority')->default(0);
             $table->boolean('is_compound')->default(false);
+            $table->boolean('is_shipping')->default(true);
+            $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            $table->softDeletes();
         });
 
         Schema::create('tax_exemptions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
             $table->uuidMorphs('exemptable');
             $table->foreignUuid('tax_zone_id')->nullable();
             $table->string('reason');
@@ -1131,7 +1138,6 @@ abstract class TestCase extends Orchestra
             $table->timestamp('starts_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
-            $table->softDeletes();
         });
     }
 }

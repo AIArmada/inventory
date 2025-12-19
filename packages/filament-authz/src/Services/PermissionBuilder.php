@@ -43,13 +43,6 @@ class PermissionBuilder
         return $this->abilities(['viewAny', 'view', 'create', 'update', 'delete']);
     }
 
-    public function softDeletes(): self
-    {
-        // Soft deletes have been removed from the system.
-        // This method is kept for backward compatibility but adds no permissions.
-        return $this;
-    }
-
     /**
      * Add full CRUD.
      */

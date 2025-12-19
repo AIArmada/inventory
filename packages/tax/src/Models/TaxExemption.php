@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\Tax\Models;
 
+use AIArmada\CommerceSupport\Traits\HasOwner;
+use AIArmada\Tax\Support\TaxOwnerScope;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +18,8 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * Represents a tax exemption for a customer or entity.
  *
  * @property string $id
+ * @property string|null $owner_type
+ * @property string|null $owner_id
  * @property string|null $exemptable_id
  * @property string|null $exemptable_type
  * @property string|null $tax_zone_id
@@ -32,10 +37,13 @@ use Spatie\Activitylog\Traits\LogsActivity;
  */
 class TaxExemption extends Model
 {
+    use HasOwner;
     use HasUuids;
     use LogsActivity;
 
     protected $fillable = [
+        'owner_type',
+        'owner_id',
         'exemptable_id',
         'exemptable_type',
         'tax_zone_id',
@@ -65,6 +73,33 @@ class TaxExemption extends Model
     protected $attributes = [
         'status' => 'pending',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $exemption): void {
+            if (! TaxOwnerScope::isEnabled()) {
+                return;
+            }
+
+            $owner = TaxOwnerScope::resolveOwner();
+
+            if ($owner === null) {
+                if ($exemption->owner_type !== null || $exemption->owner_id !== null) {
+                    throw new AuthorizationException('Cannot write owned tax exemptions without an owner context.');
+                }
+
+                return;
+            }
+
+            if ($exemption->owner_type === null && $exemption->owner_id === null) {
+                $exemption->assignOwner($owner);
+            }
+
+            if (! $exemption->belongsToOwner($owner)) {
+                throw new AuthorizationException('Cannot write tax exemptions outside the current owner scope.');
+            }
+        });
+    }
 
     public function getTable(): string
     {

@@ -59,7 +59,7 @@ describe('ResourceTransformer → base permissions', function (): void {
         $transformer = test()->transformer;
         $result = $transformer->transform($resourceClass);
 
-        $expectedPermissions = ['viewAny', 'view', 'create', 'update', 'delete', 'restore', 'forceDelete'];
+        $expectedPermissions = ['viewAny', 'view', 'create', 'update', 'delete'];
 
         foreach ($expectedPermissions as $permission) {
             expect($result->permissions)->toContain($permission);
@@ -78,7 +78,6 @@ describe('ResourceTransformer → metadata extraction', function (): void {
             ->and($result->metadata)->toHaveKey('hasRelations')
             ->and($result->metadata)->toHaveKey('hasBulkActions')
             ->and($result->metadata)->toHaveKey('hasCustomActions')
-            ->and($result->metadata)->toHaveKey('hasSoftDeletes')
             ->and($result->metadata)->toHaveKey('isGlobalSearch');
     });
 });
@@ -107,8 +106,6 @@ describe('ResourceTransformer → custom action detection', function (): void {
         expect($method->invoke($transformer, 'view'))->toBeFalse()
             ->and($method->invoke($transformer, 'edit'))->toBeFalse()
             ->and($method->invoke($transformer, 'delete'))->toBeFalse()
-            ->and($method->invoke($transformer, 'restore'))->toBeFalse()
-            ->and($method->invoke($transformer, 'forceDelete'))->toBeFalse()
             ->and($method->invoke($transformer, 'replicate'))->toBeFalse();
     });
 });

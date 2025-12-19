@@ -52,7 +52,12 @@ The codebase is in **BETA**. Backward compatibility is **NOT** required. Breakin
 
 🧭 MULTI-TENANCY (MONOREPO-WIDE, NON-NEGOTIABLE)
 - **Single source of truth**: Multi-tenancy primitives live in `commerce-support`.
-- **No UI trust**: Filament option lists are not security. Always validate submitted IDs server-side.
+- **Column semantics**: `owner_type/owner_id` is reserved for the tenant boundary owner (rename any non-tenant uses).
+- **Default-on enforcement**: prefer commerce-support's owner global scope; cross-tenant/system code MUST use explicit opt-out (e.g. `->withoutOwnerScope()`).
+- **No UI trust**: Filament option lists are not security. Don’t rely solely on `$tenantOwnershipRelationshipName`/UI filters; always validate submitted IDs server-side.
+- **DB::table paths**: Eloquent scopes don’t apply—query-builder reads must be owner-scoped too.
+- **Routes**: route-model binding/download routes must not resolve cross-tenant rows.
+- **Jobs/commands**: owner context must be passed/iterated explicitly (don’t rely on web auth).
 
 ### Required Regression Tests (Per Package)
 - Cross-tenant reads return empty/404.
@@ -61,7 +66,11 @@ The codebase is in **BETA**. Backward compatibility is **NOT** required. Breakin
 
 ### Mandatory Verification Sweep
 ```bash
-rg -- "::query\(|->query\(|->getEloquentQuery\(" packages/<pkg>/src
+rg -n -- "::query\(|->query\(|getEloquentQuery\(" packages/<pkg>/src
+rg -n -- "count\(|sum\(|avg\(|exists\(" packages/<pkg>/src
+rg -n -- "DB::table\(" packages/<pkg>/src
+rg -n -- "Route::.*\{.*\}" packages/<pkg>/routes
+rg -n -- "withoutOwnerScope\(|withoutGlobalScope\(.*Owner" packages/<pkg>/src
 ```
 
 🔥🔥🔥 SECTION 1 — TESTING PHILOSOPHY

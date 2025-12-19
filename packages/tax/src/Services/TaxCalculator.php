@@ -9,6 +9,7 @@ use AIArmada\Tax\Exceptions\TaxZoneNotFoundException;
 use AIArmada\Tax\Models\TaxExemption;
 use AIArmada\Tax\Models\TaxRate;
 use AIArmada\Tax\Models\TaxZone;
+use AIArmada\Tax\Support\TaxOwnerScope;
 use AIArmada\Tax\Settings\TaxSettings;
 use AIArmada\Tax\Settings\TaxZoneSettings;
 use Throwable;
@@ -86,7 +87,9 @@ class TaxCalculator
     {
         // If zone ID provided, use it
         if ($zoneId) {
-            $zone = TaxZone::find($zoneId);
+            $zone = TaxOwnerScope::applyToOwnedQuery(TaxZone::query())
+                ->whereKey($zoneId)
+                ->first();
             if ($zone) {
                 return $zone;
             }
@@ -111,14 +114,19 @@ class TaxCalculator
         }
 
         // Use default zone
-        $defaultZone = TaxZone::default()->active()->first();
+        $defaultZone = TaxOwnerScope::applyToOwnedQuery(TaxZone::query())
+            ->default()
+            ->active()
+            ->first();
         if ($defaultZone) {
             return $defaultZone;
         }
 
         $fallbackZoneId = $this->getFallbackZoneId();
         if ($fallbackZoneId) {
-            $fallbackZone = TaxZone::find($fallbackZoneId);
+            $fallbackZone = TaxOwnerScope::applyToOwnedQuery(TaxZone::query())
+                ->whereKey($fallbackZoneId)
+                ->first();
             if ($fallbackZone) {
                 return $fallbackZone;
             }
@@ -137,7 +145,7 @@ class TaxCalculator
      */
     protected function findZoneByAddress(string $country, ?string $state, ?string $postcode): ?TaxZone
     {
-        return TaxZone::forAddress($country, $state, $postcode)
+        return TaxOwnerScope::applyToOwnedQuery(TaxZone::forAddress($country, $state, $postcode))
             ->get()
             ->first(fn (TaxZone $zone) => $zone->matchesAddress($country, $state, $postcode));
     }
@@ -147,7 +155,7 @@ class TaxCalculator
      */
     protected function getRate(string $taxClass, TaxZone $zone): TaxRate
     {
-        $rate = TaxRate::query()
+        $rate = TaxOwnerScope::applyToOwnedQuery(TaxRate::query())
             ->where('zone_id', $zone->id)
             ->where('tax_class', $taxClass)
             ->active()
@@ -175,7 +183,7 @@ class TaxCalculator
 
         $zoneId = $context['zone_id'] ?? null;
 
-        $query = TaxExemption::query()
+        $query = TaxOwnerScope::applyToOwnedQuery(TaxExemption::query())
             ->where('exemptable_id', $customerId)
             ->active()
             ->forZone($zoneId);
@@ -207,7 +215,9 @@ class TaxCalculator
      */
     protected function createZeroResult(?string $zoneId, array $context): TaxResultData
     {
-        $zone = $zoneId ? TaxZone::find($zoneId) : null;
+        $zone = $zoneId
+            ? TaxOwnerScope::applyToOwnedQuery(TaxZone::query())->whereKey($zoneId)->first()
+            : null;
         $zone = $zone ?? $this->resolveZone($zoneId, $context);
         $rate = TaxRate::zeroRate('zero', $zone);
 

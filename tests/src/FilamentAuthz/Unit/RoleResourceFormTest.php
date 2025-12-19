@@ -72,12 +72,12 @@ function filamentAuthz_reflectProtectedProperty(object $object, string $property
     return $prop->getValue($object);
 }
 
-test('role resource form permission options are grouped and guard-filtered', function (): void {
+test('role resource form permission options are guard-filtered', function (): void {
     config()->set('filament-authz.guards', ['web', 'api']);
 
     $webOrdersView = Permission::create(['name' => 'orders.view', 'guard_name' => 'web']);
     $webOrdersUpdate = Permission::create(['name' => 'orders.update', 'guard_name' => 'web']);
-    Permission::create(['name' => 'products.view', 'guard_name' => 'api']);
+    $apiProductsView = Permission::create(['name' => 'products.view', 'guard_name' => 'api']);
 
     $schema = filamentAuthz_makeRoleResourceSchema();
     $schema = RoleResource::form($schema);
@@ -93,11 +93,11 @@ test('role resource form permission options are grouped and guard-filtered', fun
     /** @var Closure $options */
     $options = filamentAuthz_reflectProtectedProperty($permissions, 'options');
 
-    $grouped = $options(fn (string $key): mixed => $key === 'guard_name' ? 'web' : null);
+    $optionsForWeb = $options(fn (string $key): mixed => $key === 'guard_name' ? 'web' : null);
 
-    expect($grouped)->toHaveKey('Orders');
-    expect($grouped['Orders'])->toHaveKey((string) $webOrdersView->id);
-    expect($grouped['Orders'])->toHaveKey((string) $webOrdersUpdate->id);
+    expect($optionsForWeb)->toHaveKey((string) $webOrdersView->id);
+    expect($optionsForWeb)->toHaveKey((string) $webOrdersUpdate->id);
+    expect($optionsForWeb)->not()->toHaveKey((string) $apiProductsView->id);
 });
 
 test('role resource permissions checkbox list hydrates state from record', function (): void {

@@ -48,20 +48,4 @@ class {{ class }}
     {
         return $user->can('{{ modelVariable }}.delete');
     }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore({{ user }} $user, {{ model }} ${{ modelVariable }}): bool
-    {
-        return $user->can('{{ modelVariable }}.restore');
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
-    public function forceDelete({{ user }} $user, {{ model }} ${{ modelVariable }}): bool
-    {
-        return $user->can('{{ modelVariable }}.forceDelete');
-    }
 }

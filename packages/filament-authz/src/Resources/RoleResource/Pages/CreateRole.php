@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace AIArmada\FilamentAuthz\Resources\RoleResource\Pages;
 
 use AIArmada\FilamentAuthz\Resources\RoleResource;
+use AIArmada\FilamentAuthz\Support\Concerns\EnsuresLivewireErrorBag;
 use Filament\Resources\Pages\CreateRecord;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
 class CreateRole extends CreateRecord
 {
+    use EnsuresLivewireErrorBag;
+
     /**
      * @var list<string>
      */
@@ -28,7 +32,15 @@ class CreateRole extends CreateRecord
     protected function afterCreate(): void
     {
         if ($this->permissionIds !== []) {
-            $this->record->syncPermissions($this->permissionIds);
+            /** @var class-string<Permission> $permissionModel */
+            $permissionModel = config('permission.models.permission', Permission::class);
+
+            $permissions = $permissionModel::query()
+                ->where('guard_name', $this->record->guard_name)
+                ->whereIn('id', $this->permissionIds)
+                ->get();
+
+            $this->record->syncPermissions($permissions);
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

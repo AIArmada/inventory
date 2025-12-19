@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace AIArmada\FilamentAuthz\Resources\RoleResource\Pages;
 
 use AIArmada\FilamentAuthz\Resources\RoleResource;
+use AIArmada\FilamentAuthz\Support\Concerns\EnsuresLivewireErrorBag;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -15,6 +17,8 @@ use Spatie\Permission\PermissionRegistrar;
  */
 class EditRole extends EditRecord
 {
+    use EnsuresLivewireErrorBag;
+
     /**
      * @var list<string>
      */
@@ -40,8 +44,15 @@ class EditRole extends EditRecord
     protected function afterSave(): void
     {
         if ($this->permissionIds !== []) {
-            // @phpstan-ignore method.nonObject (Record is guaranteed to be Role in afterSave)
-            $this->record->syncPermissions($this->permissionIds);
+            /** @var class-string<Permission> $permissionModel */
+            $permissionModel = config('permission.models.permission', Permission::class);
+
+            $permissions = $permissionModel::query()
+                ->where('guard_name', $this->record->guard_name)
+                ->whereIn('id', $this->permissionIds)
+                ->get();
+
+            $this->record->syncPermissions($permissions);
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AIArmada\FilamentAuthz\Services\PermissionRegistry;
 use AIArmada\FilamentAuthz\Services\PermissionBuilder;
 
 afterEach(function (): void {
@@ -28,14 +29,6 @@ describe('PermissionBuilder', function (): void {
                 ->and($names)->toContain('posts.create')
                 ->and($names)->toContain('posts.update')
                 ->and($names)->toContain('posts.delete');
-        });
-    });
-
-    describe('softDeletes', function (): void {
-        it('is kept for backward compatibility but adds no permissions', function (): void {
-            $builder = PermissionBuilder::for('posts')->softDeletes();
-
-            expect($builder->getNames())->toBeEmpty();
         });
     });
 

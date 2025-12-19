@@ -215,7 +215,6 @@ describe('ResourceTransformer', function (): void {
             expect($result)->toHaveKey('hasRelations');
             expect($result)->toHaveKey('hasBulkActions');
             expect($result)->toHaveKey('hasCustomActions');
-            expect($result)->toHaveKey('hasSoftDeletes');
             expect($result)->toHaveKey('isGlobalSearch');
         });
 
@@ -229,7 +228,6 @@ describe('ResourceTransformer', function (): void {
             expect($result['hasRelations'])->toBeFalse();
             expect($result['hasBulkActions'])->toBeFalse();
             expect($result['hasCustomActions'])->toBeFalse();
-            expect($result['hasSoftDeletes'])->toBeFalse();
             expect($result['isGlobalSearch'])->toBeFalse();
         });
     });

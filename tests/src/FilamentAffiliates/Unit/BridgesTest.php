@@ -23,6 +23,7 @@ beforeEach(function (): void {
     Schema::dropIfExists('cart_snapshots');
     Schema::create('cart_snapshots', function (Blueprint $table): void {
         $table->uuid('id')->primary();
+        $table->string('owner_key')->default('global');
         $table->string('identifier');
         $table->string('instance')->default('default');
         $table->json('items')->nullable();

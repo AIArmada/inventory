@@ -11,13 +11,28 @@ use AIArmada\Chip\Events\PurchasePaymentFailure;
 use AIArmada\Chip\Models\Webhook;
 use AIArmada\Chip\Webhooks\ProcessChipWebhook;
 use AIArmada\Chip\Webhooks\WebhookMonitor;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
 use Spatie\WebhookClient\Models\WebhookCall;
 
 describe('ProcessChipWebhook', function (): void {
     beforeEach(function (): void {
         Event::fake();
+
+        if (! Schema::hasTable('webhook_calls')) {
+            Schema::create('webhook_calls', function (Blueprint $table): void {
+                $table->bigIncrements('id');
+                $table->string('name');
+                $table->string('url')->nullable();
+                $table->json('headers')->nullable();
+                $table->json('payload')->nullable();
+                $table->text('exception')->nullable();
+                $table->timestamp('processed_at')->nullable();
+                $table->timestamps();
+            });
+        }
     });
 
     it('can be instantiated', function (): void {
