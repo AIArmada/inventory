@@ -188,3 +188,25 @@ jobs:
 
       - name: Run tests (Pest)
         run: vendor/bin/pest --colors=always --parallel --shard=${{ matrix.shard }}/4
+
+  ci:
+    name: CI
+    needs: [changes, rector, pint, phpstan, tests]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize job results
+        run: |
+          echo "rector:  ${{ needs.rector.result }}"
+          echo "pint:    ${{ needs.pint.result }}"
+          echo "phpstan: ${{ needs.phpstan.result }}"
+          echo "tests:   ${{ needs.tests.result }}"
+
+      - name: Enforce required checks
+        run: |
+          results=("${{ needs.rector.result }}" "${{ needs.pint.result }}" "${{ needs.phpstan.result }}" "${{ needs.tests.result }}")
+          for r in "${results[@]}"; do
+            if [[ "$r" == "failure" || "$r" == "cancelled" ]]; then
+              exit 1
+            fi
+          done
