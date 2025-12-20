@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use InvalidArgumentException;
 
 /**
@@ -25,9 +24,9 @@ use InvalidArgumentException;
  * @property string $status
  * @property string|null $failure_reason
  * @property array|null $metadata
- * @property Carbon|null $paid_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property \Carbon\CarbonInterface|null $paid_at
+ * @property \Carbon\CarbonInterface $created_at
+ * @property \Carbon\CarbonInterface $updated_at
  * @property-read Order $order
  */
 class OrderPayment extends Model

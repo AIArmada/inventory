@@ -12,7 +12,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -35,12 +34,12 @@ use Illuminate\Support\Carbon;
  * @property string|null $owner_type
  * @property string|null $owner_id
  * @property array<string, mixed>|null $metadata
- * @property Carbon|null $first_seen_at
- * @property Carbon|null $last_seen_at
- * @property Carbon|null $last_cookie_seen_at
- * @property Carbon|null $expires_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property \Carbon\CarbonInterface|null $first_seen_at
+ * @property \Carbon\CarbonInterface|null $last_seen_at
+ * @property \Carbon\CarbonInterface|null $last_cookie_seen_at
+ * @property \Carbon\CarbonInterface|null $expires_at
+ * @property \Carbon\CarbonInterface|null $created_at
+ * @property \Carbon\CarbonInterface|null $updated_at
  * @property-read Affiliate $affiliate
  * @property-read Collection<int, AffiliateConversion> $conversions
  * @property-read Collection<int, AffiliateTouchpoint> $touchpoints

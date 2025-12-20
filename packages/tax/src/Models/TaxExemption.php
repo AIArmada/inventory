@@ -28,10 +28,10 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property string|null $document_path
  * @property string $status
  * @property string|null $rejection_reason
- * @property \Illuminate\Support\Carbon|null $verified_at
+ * @property \Carbon\CarbonInterface|null $verified_at
  * @property string|null $verified_by
- * @property \Illuminate\Support\Carbon|null $starts_at
- * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Carbon\CarbonInterface|null $starts_at
+ * @property \Carbon\CarbonInterface|null $expires_at
  * @property-read TaxZone|null $taxZone
  * @property-read Model|null $exemptable
  */

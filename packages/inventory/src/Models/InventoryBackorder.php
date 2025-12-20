@@ -30,14 +30,14 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int $quantity_cancelled
  * @property BackorderStatus $status
  * @property BackorderPriority $priority
- * @property \Illuminate\Support\Carbon $requested_at
- * @property \Illuminate\Support\Carbon|null $promised_at
- * @property \Illuminate\Support\Carbon|null $fulfilled_at
- * @property \Illuminate\Support\Carbon|null $cancelled_at
+ * @property \Carbon\CarbonInterface|null $requested_at
+ * @property \Carbon\CarbonInterface|null $promised_at
+ * @property \Carbon\CarbonInterface|null $fulfilled_at
+ * @property \Carbon\CarbonInterface|null $cancelled_at
  * @property string|null $notes
  * @property array<string, mixed>|null $metadata
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Carbon\CarbonInterface|null $created_at
+ * @property \Carbon\CarbonInterface|null $updated_at
  * @property-read Model $inventoryable
  * @property-read InventoryLocation|null $location
  */

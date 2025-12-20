@@ -7,7 +7,7 @@ namespace AIArmada\FilamentCart\Services;
 use AIArmada\FilamentCart\Models\Cart;
 use AIArmada\FilamentCart\Models\RecoveryAttempt;
 use AIArmada\FilamentCart\Models\RecoveryCampaign;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Throwable;
@@ -194,7 +194,7 @@ class RecoveryScheduler
     private function createAttempt(
         RecoveryCampaign $campaign,
         Cart $cart,
-        Carbon $scheduledFor,
+        CarbonInterface $scheduledFor,
         int $attemptNumber,
     ): ?RecoveryAttempt {
         $email = $cart->email ?? ($cart->metadata['email'] ?? null);

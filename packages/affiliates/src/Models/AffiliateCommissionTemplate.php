@@ -23,8 +23,8 @@ use Illuminate\Support\Str;
  * @property bool $is_active
  * @property array<string, mixed> $rules
  * @property array<string, mixed>|null $metadata
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Carbon\CarbonInterface|null $created_at
+ * @property \Carbon\CarbonInterface|null $updated_at
  */
 class AffiliateCommissionTemplate extends Model
 {

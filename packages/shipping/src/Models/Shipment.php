@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -34,13 +33,13 @@ use Illuminate\Support\Str;
  * @property int|null $cod_amount
  * @property string|null $label_url
  * @property string|null $label_format
- * @property Carbon|null $shipped_at
- * @property Carbon|null $estimated_delivery_at
- * @property Carbon|null $delivered_at
- * @property Carbon|null $last_tracking_sync
+ * @property \Carbon\CarbonInterface|null $shipped_at
+ * @property \Carbon\CarbonInterface|null $estimated_delivery_at
+ * @property \Carbon\CarbonInterface|null $delivered_at
+ * @property \Carbon\CarbonInterface|null $last_tracking_sync
  * @property array|null $metadata
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property \Carbon\CarbonInterface $created_at
+ * @property \Carbon\CarbonInterface $updated_at
  * @property-read Collection<int, ShipmentItem> $items
  * @property-read Collection<int, ShipmentEvent> $events
  * @property-read Collection<int, ShipmentLabel> $labels

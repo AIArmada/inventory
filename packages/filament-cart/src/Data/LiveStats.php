@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCart\Data;
 
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
 
 /**
@@ -21,7 +21,7 @@ class LiveStats extends Data
         public int $total_value_cents,
         public int $high_value_carts,
         public int $fraud_signals,
-        public Carbon $updated_at,
+        public CarbonInterface $updated_at,
     ) {}
 
     /**

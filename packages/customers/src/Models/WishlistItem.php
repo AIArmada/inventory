@@ -10,19 +10,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
  * @property string $wishlist_id
  * @property string $product_type
  * @property string $product_id
- * @property Carbon|null $added_at
+ * @property \Carbon\CarbonInterface|null $added_at
  * @property bool $notified_on_sale
  * @property bool $notified_in_stock
  * @property array<string, mixed>|null $metadata
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property \Carbon\CarbonInterface|null $created_at
+ * @property \Carbon\CarbonInterface|null $updated_at
  * @property-read Wishlist $wishlist
  * @property-read Model|null $product
  */

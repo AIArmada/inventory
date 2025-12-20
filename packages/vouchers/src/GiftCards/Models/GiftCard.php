@@ -15,7 +15,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use RuntimeException;
@@ -29,9 +28,9 @@ use RuntimeException;
  * @property int $initial_balance Balance in cents
  * @property int $current_balance Balance in cents
  * @property GiftCardStatus $status
- * @property Carbon|null $activated_at
- * @property Carbon|null $expires_at
- * @property Carbon|null $last_used_at
+ * @property \Carbon\CarbonInterface|null $activated_at
+ * @property \Carbon\CarbonInterface|null $expires_at
+ * @property \Carbon\CarbonInterface|null $last_used_at
  * @property string|null $purchaser_type
  * @property string|null $purchaser_id
  * @property string|null $recipient_type
@@ -39,8 +38,8 @@ use RuntimeException;
  * @property string|null $owner_type
  * @property string|null $owner_id
  * @property array<string, mixed>|null $metadata
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property \Carbon\CarbonInterface|null $created_at
+ * @property \Carbon\CarbonInterface|null $updated_at
  * @property-read Collection<int, GiftCardTransaction> $transactions
  * @property-read int|null $used_balance
  * @property-read float $balance_utilization

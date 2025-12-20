@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -26,9 +25,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $owner_type
  * @property string|null $owner_id
  * @property DocStatus $status
- * @property Carbon $issue_date
- * @property Carbon|null $due_date
- * @property Carbon|null $paid_at
+ * @property \Carbon\CarbonInterface $issue_date
+ * @property \Carbon\CarbonInterface|null $due_date
+ * @property \Carbon\CarbonInterface|null $paid_at
  * @property string $subtotal
  * @property string $tax_amount
  * @property string $discount_amount
@@ -41,8 +40,8 @@ use Illuminate\Support\Carbon;
  * @property array<int, array<string, mixed>>|null $items
  * @property array<string, mixed>|null $metadata
  * @property string|null $pdf_path
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property \Carbon\CarbonInterface $created_at
+ * @property \Carbon\CarbonInterface $updated_at
  * @property-read DocTemplate|null $template
  * @property-read Collection<int, DocStatusHistory> $statusHistories
  * @property-read Collection<int, DocPayment> $payments

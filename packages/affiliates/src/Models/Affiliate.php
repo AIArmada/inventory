@@ -42,9 +42,9 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property string|null $owner_type
  * @property string|null $owner_id
  * @property array<string, mixed>|null $metadata
- * @property \Illuminate\Support\Carbon|null $activated_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Carbon\CarbonInterface|null $activated_at
+ * @property \Carbon\CarbonInterface|null $created_at
+ * @property \Carbon\CarbonInterface|null $updated_at
  * @property-read string|null $email Alias for contact_email
  * @property-read int $commission_rate_basis_points Alias for commission_rate
  * @property-read Affiliate|null $parent

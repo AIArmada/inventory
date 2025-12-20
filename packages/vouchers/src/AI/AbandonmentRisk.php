@@ -6,7 +6,7 @@ namespace AIArmada\Vouchers\AI;
 
 use AIArmada\Vouchers\AI\Enums\AbandonmentRiskLevel;
 use AIArmada\Vouchers\AI\Enums\InterventionType;
-use Carbon\Carbon;
+use Carbon\CarbonInterface;
 
 /**
  * Value object representing abandonment risk assessment.
@@ -14,7 +14,7 @@ use Carbon\Carbon;
  * @property-read float $riskScore Risk score (0.0 to 1.0)
  * @property-read AbandonmentRiskLevel $riskLevel Categorized risk level
  * @property-read array<string, mixed> $riskFactors Contributing risk factors
- * @property-read Carbon|null $predictedAbandonmentTime When abandonment is likely
+ * @property-read CarbonInterface|null $predictedAbandonmentTime When abandonment is likely
  * @property-read InterventionType $suggestedIntervention Recommended action
  */
 final readonly class AbandonmentRisk
@@ -26,7 +26,7 @@ final readonly class AbandonmentRisk
         public float $riskScore,
         public AbandonmentRiskLevel $riskLevel,
         public array $riskFactors = [],
-        public ?Carbon $predictedAbandonmentTime = null,
+        public ?CarbonInterface $predictedAbandonmentTime = null,
         public InterventionType $suggestedIntervention = InterventionType::None,
     ) {}
 

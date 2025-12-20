@@ -8,10 +8,10 @@ use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliateDailyStat;
 use AIArmada\Affiliates\Services\NetworkService;
+use Carbon\CarbonInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Carbon;
 
 final class DashboardController extends Controller
 {
@@ -146,7 +146,7 @@ final class DashboardController extends Controller
         ])->all();
     }
 
-    private function getDetailedStats(Affiliate $affiliate, ?Carbon $startDate): array
+    private function getDetailedStats(Affiliate $affiliate, ?CarbonInterface $startDate): array
     {
         $query = $affiliate->conversions();
 

@@ -32,10 +32,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $owner_type
  * @property string|null $owner_id
  * @property array<string, mixed>|null $metadata
- * @property \Illuminate\Support\Carbon|null $occurred_at
- * @property \Illuminate\Support\Carbon|null $approved_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Carbon\CarbonInterface|null $occurred_at
+ * @property \Carbon\CarbonInterface|null $approved_at
+ * @property \Carbon\CarbonInterface|null $created_at
+ * @property \Carbon\CarbonInterface|null $updated_at
  * @property-read string|null $order_id Alias for order_reference
  * @property-read string $currency Alias for commission_currency
  * @property-read Affiliate $affiliate

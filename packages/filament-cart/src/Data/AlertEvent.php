@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCart\Data;
 
-use Illuminate\Support\Carbon;
+use Carbon\CarbonInterface;
 use Spatie\LaravelData\Data;
 
 /**
@@ -21,7 +21,7 @@ class AlertEvent extends Data
         public ?string $session_id,
         /** @var array<string, mixed> */
         public array $data,
-        public Carbon $occurred_at,
+        public CarbonInterface $occurred_at,
     ) {}
 
     /**

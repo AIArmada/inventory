@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -36,16 +35,16 @@ use Illuminate\Support\Carbon;
  * @property string|null $offer_value
  * @property string|null $cod_value
  * @property string|null $insurance_value
- * @property Carbon|null $pickup_start_at
- * @property Carbon|null $pickup_end_at
- * @property Carbon|null $ordered_at
- * @property Carbon|null $last_synced_at
- * @property Carbon|null $last_tracked_at
- * @property Carbon|null $delivered_at
+ * @property \Carbon\CarbonInterface|null $pickup_start_at
+ * @property \Carbon\CarbonInterface|null $pickup_end_at
+ * @property \Carbon\CarbonInterface|null $ordered_at
+ * @property \Carbon\CarbonInterface|null $last_synced_at
+ * @property \Carbon\CarbonInterface|null $last_tracked_at
+ * @property \Carbon\CarbonInterface|null $delivered_at
  * @property string|null $last_status_code
  * @property string|null $last_status
  * @property bool $has_problem
- * @property Carbon|null $cancelled_at
+ * @property \Carbon\CarbonInterface|null $cancelled_at
  * @property string|null $cancellation_reason
  * @property string|null $remark
  * @property array<string, mixed>|null $sender
@@ -58,8 +57,8 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $metadata
  * @property string|null $owner_type
  * @property string|null $owner_id
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property \Carbon\CarbonInterface|null $created_at
+ * @property \Carbon\CarbonInterface|null $updated_at
  * @property-read Collection<int, JntOrderItem> $items
  * @property-read Collection<int, JntOrderParcel> $parcels
  * @property-read Collection<int, JntTrackingEvent> $trackingEvents

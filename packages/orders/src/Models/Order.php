@@ -17,7 +17,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use OwenIt\Auditing\Contracts\Auditable;
 use Spatie\ModelStates\HasStates;
@@ -39,13 +38,13 @@ use Spatie\ModelStates\HasStates;
  * @property string|null $notes
  * @property string|null $internal_notes
  * @property array|null $metadata
- * @property Carbon|null $paid_at
- * @property Carbon|null $shipped_at
- * @property Carbon|null $delivered_at
- * @property Carbon|null $canceled_at
+ * @property \Carbon\CarbonInterface|null $paid_at
+ * @property \Carbon\CarbonInterface|null $shipped_at
+ * @property \Carbon\CarbonInterface|null $delivered_at
+ * @property \Carbon\CarbonInterface|null $canceled_at
  * @property string|null $cancellation_reason
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property \Carbon\CarbonInterface $created_at
+ * @property \Carbon\CarbonInterface $updated_at
  * @property-read Collection<int, OrderItem> $items
  * @property-read OrderAddress|null $billingAddress
  * @property-read OrderAddress|null $shippingAddress
