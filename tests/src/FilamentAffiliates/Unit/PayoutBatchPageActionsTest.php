@@ -8,7 +8,9 @@ use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\Affiliates\Models\AffiliatePayoutMethod;
+use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\FilamentAffiliates\Pages\PayoutBatchPage;
+use AIArmada\FilamentAuthz\Models\Permission;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
@@ -20,6 +22,17 @@ beforeEach(function (): void {
 });
 
 it('processes a payout via the record action', function (): void {
+    $user = User::create([
+        'name' => 'Payout Processor',
+        'email' => 'payout-processor@example.com',
+        'password' => 'secret',
+    ]);
+
+    Permission::create(['name' => 'affiliates.payout.update', 'guard_name' => 'web']);
+
+    $user->givePermissionTo('affiliates.payout.update');
+    $this->actingAs($user);
+
     $affiliate = Affiliate::create([
         'code' => 'AFF-' . Str::uuid(),
         'name' => 'Payout Affiliate',
@@ -64,6 +77,17 @@ it('processes a payout via the record action', function (): void {
 });
 
 it('marks payout as failed when no default method exists', function (): void {
+    $user = User::create([
+        'name' => 'Payout Processor (No Method)',
+        'email' => 'payout-processor-no-method@example.com',
+        'password' => 'secret',
+    ]);
+
+    Permission::create(['name' => 'affiliates.payout.update', 'guard_name' => 'web']);
+
+    $user->givePermissionTo('affiliates.payout.update');
+    $this->actingAs($user);
+
     $affiliate = Affiliate::create([
         'code' => 'AFF-' . Str::uuid(),
         'name' => 'No Method Affiliate',
@@ -95,6 +119,17 @@ it('marks payout as failed when no default method exists', function (): void {
 });
 
 it('rejects a payout and stores notes in metadata', function (): void {
+    $user = User::create([
+        'name' => 'Payout Rejector',
+        'email' => 'payout-rejector@example.com',
+        'password' => 'secret',
+    ]);
+
+    Permission::create(['name' => 'affiliates.payout.update', 'guard_name' => 'web']);
+
+    $user->givePermissionTo('affiliates.payout.update');
+    $this->actingAs($user);
+
     $affiliate = Affiliate::create([
         'code' => 'AFF-' . Str::uuid(),
         'name' => 'Reject Affiliate',
@@ -134,6 +169,17 @@ it('rejects a payout and stores notes in metadata', function (): void {
 });
 
 it('executes batch processing bulk action', function (): void {
+    $user = User::create([
+        'name' => 'Payout Bulk Processor',
+        'email' => 'payout-bulk-processor@example.com',
+        'password' => 'secret',
+    ]);
+
+    Permission::create(['name' => 'affiliates.payout.update', 'guard_name' => 'web']);
+
+    $user->givePermissionTo('affiliates.payout.update');
+    $this->actingAs($user);
+
     $affiliateA = Affiliate::create([
         'code' => 'AFF-' . Str::uuid(),
         'name' => 'Batch Affiliate A',

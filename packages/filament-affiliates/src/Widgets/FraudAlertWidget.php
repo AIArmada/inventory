@@ -7,13 +7,14 @@ namespace AIArmada\FilamentAffiliates\Widgets;
 use AIArmada\Affiliates\Enums\FraudSeverity;
 use AIArmada\Affiliates\Enums\FraudSignalStatus;
 use AIArmada\Affiliates\Models\AffiliateFraudSignal;
-use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\FilamentAffiliates\Support\OwnerScopedQuery;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 final class FraudAlertWidget extends BaseWidget
 {
@@ -27,32 +28,9 @@ final class FraudAlertWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
-        /** @var Model|null $owner */
-        $owner = (bool) config('affiliates.owner.enabled', false)
-            ? OwnerContext::resolve()
-            : null;
-
         return $table
             ->query(
-                AffiliateFraudSignal::query()
-                    ->when(
-                        (bool) config('affiliates.owner.enabled', false),
-                        fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
-                            if (! $owner) {
-                                $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
-
-                                return;
-                            }
-
-                            $affiliateQuery->where(function ($builder) use ($owner): void {
-                                $builder->where('owner_type', $owner->getMorphClass())
-                                    ->where('owner_id', $owner->getKey())
-                                    ->orWhere(function ($inner): void {
-                                        $inner->whereNull('owner_type')->whereNull('owner_id');
-                                    });
-                            });
-                        }),
-                    )
+                OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
                     ->with('affiliate')
                     ->where('status', FraudSignalStatus::Detected)
                     ->latest()
@@ -100,10 +78,17 @@ final class FraudAlertWidget extends BaseWidget
                     ->icon('heroicon-o-x-mark')
                     ->color('gray')
                     ->requiresConfirmation()
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.fraud.update') ?? false)
                     ->action(function (AffiliateFraudSignal $record): void {
+                        Gate::authorize('update', $record);
+
+                        $signal = OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
                         $reviewedBy = Auth::id();
 
-                        $record->dismiss($reviewedBy === null ? null : (string) $reviewedBy);
+                        $signal->dismiss($reviewedBy === null ? null : (string) $reviewedBy);
                     }),
             ])
             ->paginated(false)

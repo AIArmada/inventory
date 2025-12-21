@@ -11,6 +11,7 @@ use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliateFraudSignal;
 use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\FilamentAffiliates\Pages\FraudReviewPage;
+use AIArmada\FilamentAuthz\Models\Permission;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
@@ -27,6 +28,10 @@ it('executes approve and reject record actions', function (): void {
         'email' => 'fraud-reviewer-actions@example.com',
         'password' => 'secret',
     ]);
+
+    Permission::create(['name' => 'affiliates.fraud.update', 'guard_name' => 'web']);
+
+    $user->givePermissionTo('affiliates.fraud.update');
 
     $this->actingAs($user);
 
@@ -106,6 +111,10 @@ it('executes bulk approve and bulk reject actions', function (): void {
         'email' => 'fraud-reviewer-bulk-actions@example.com',
         'password' => 'secret',
     ]);
+
+    Permission::create(['name' => 'affiliates.fraud.update', 'guard_name' => 'web']);
+
+    $user->givePermissionTo('affiliates.fraud.update');
 
     $this->actingAs($user);
 

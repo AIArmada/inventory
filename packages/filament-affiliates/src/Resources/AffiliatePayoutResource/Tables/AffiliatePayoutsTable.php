@@ -8,12 +8,14 @@ use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\Affiliates\Services\AffiliatePayoutService;
 use AIArmada\FilamentAffiliates\Resources\AffiliatePayoutResource;
 use AIArmada\FilamentAffiliates\Services\PayoutExportService;
+use AIArmada\FilamentAffiliates\Support\OwnerScopedQuery;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Gate;
 
 final class AffiliatePayoutsTable
 {
@@ -74,37 +76,63 @@ final class AffiliatePayoutsTable
                     ->icon(Heroicon::OutlinedCheck)
                     ->color('success')
                     ->requiresConfirmation()
-                    ->authorize(fn (): bool => Filament::auth()->user()?->can('affiliates.payout.update') ?? true)
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.payout.update') ?? false)
                     ->visible(fn (AffiliatePayout $record): bool => $record->status !== 'paid')
                     ->action(function (AffiliatePayout $record): void {
-                        app(AffiliatePayoutService::class)->updateStatus($record, 'paid');
+                        Gate::authorize('update', $record);
+
+                        $payout = OwnerScopedQuery::throughAffiliate(AffiliatePayout::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
+                        app(AffiliatePayoutService::class)->updateStatus($payout, 'paid');
                     }),
                 Action::make('queue')
                     ->label('Queue')
                     ->icon(Heroicon::OutlinedClock)
                     ->color('warning')
                     ->requiresConfirmation()
-                    ->authorize(fn (): bool => Filament::auth()->user()?->can('affiliates.payout.update') ?? true)
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.payout.update') ?? false)
                     ->visible(fn (AffiliatePayout $record): bool => $record->status !== 'queued')
                     ->action(function (AffiliatePayout $record): void {
-                        app(AffiliatePayoutService::class)->updateStatus($record, 'queued');
+                        Gate::authorize('update', $record);
+
+                        $payout = OwnerScopedQuery::throughAffiliate(AffiliatePayout::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
+                        app(AffiliatePayoutService::class)->updateStatus($payout, 'queued');
                     }),
                 Action::make('fail')
                     ->label('Mark Failed')
                     ->icon(Heroicon::OutlinedXMark)
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->authorize(fn (): bool => Filament::auth()->user()?->can('affiliates.payout.update') ?? true)
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.payout.update') ?? false)
                     ->visible(fn (AffiliatePayout $record): bool => $record->status !== 'failed')
                     ->action(function (AffiliatePayout $record): void {
-                        app(AffiliatePayoutService::class)->updateStatus($record, 'failed');
+                        Gate::authorize('update', $record);
+
+                        $payout = OwnerScopedQuery::throughAffiliate(AffiliatePayout::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
+                        app(AffiliatePayoutService::class)->updateStatus($payout, 'failed');
                     }),
                 Action::make('export')
                     ->label('Export CSV')
                     ->icon(Heroicon::OutlinedArrowDownTray)
                     ->color('primary')
-                    ->authorize(fn (): bool => Filament::auth()->user()?->can('affiliates.payout.export') ?? true)
-                    ->action(fn (AffiliatePayout $record) => app(PayoutExportService::class)->download($record)),
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.payout.export') ?? false)
+                    ->action(function (AffiliatePayout $record) {
+                        Gate::authorize('export', $record);
+
+                        $payout = OwnerScopedQuery::throughAffiliate(AffiliatePayout::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
+                        return app(PayoutExportService::class)->download($payout);
+                    }),
             ])
             ->bulkActions([]);
     }

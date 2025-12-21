@@ -3,49 +3,16 @@
 declare(strict_types=1);
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Navigation
-    |--------------------------------------------------------------------------
-    */
+    /* Navigation */
 
     'navigation_group' => 'E-commerce',
 
-    'resources' => [
-        'navigation_sort' => [
-            'affiliates' => 60,
-            'affiliate_conversions' => 61,
-            'affiliate_payouts' => 62,
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Widgets
-    |--------------------------------------------------------------------------
-    */
+    /* Features */
 
     'widgets' => [
         'show_conversion_rate' => true,
         'currency' => env('AFFILIATES_DEFAULT_CURRENCY', 'USD'),
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Integrations
-    |--------------------------------------------------------------------------
-    */
-
-    'integrations' => [
-        'filament_cart' => true,
-        'filament_vouchers' => true,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Affiliate Portal
-    |--------------------------------------------------------------------------
-    */
 
     'portal' => [
         'enabled' => env('AFFILIATES_PORTAL_ENABLED', true),
@@ -61,6 +28,23 @@ return [
             'links' => true,
             'conversions' => true,
             'payouts' => true,
+        ],
+    ],
+
+    /* Integrations */
+
+    'integrations' => [
+        'filament_cart' => true,
+        'filament_vouchers' => true,
+    ],
+
+    /* Resources */
+
+    'resources' => [
+        'navigation_sort' => [
+            'affiliates' => 60,
+            'affiliate_conversions' => 61,
+            'affiliate_payouts' => 62,
         ],
     ],
 ];

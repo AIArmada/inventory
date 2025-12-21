@@ -14,8 +14,6 @@ use Illuminate\Database\Eloquent\Model;
 
 final class AffiliateStatsAggregator
 {
-    public function __construct() {}
-
     /**
      * @return array{
      *     total_affiliates:int,

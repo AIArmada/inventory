@@ -56,6 +56,12 @@ final class CartBridge
         /** @var \Illuminate\Database\Eloquent\Builder<FilamentCart> $cartQuery */
         $cartQuery = CartResource::getEloquentQuery()->where('identifier', $identifier);
 
+        if ((bool) config('affiliates.owner.enabled', false)) {
+            /** @var Model|null $owner */
+            $owner = OwnerContext::resolve();
+            $cartQuery->forOwner($owner, false);
+        }
+
         if ($instance) {
             $cartQuery->where('instance', $instance);
         }

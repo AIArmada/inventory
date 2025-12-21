@@ -6,6 +6,9 @@ namespace AIArmada\FilamentAffiliates\Resources\AffiliateResource\Schemas;
 
 use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Enums\CommissionType;
+use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\CommerceSupport\Support\OwnerQuery;
+use AIArmada\CommerceSupport\Support\OwnerScope;
 use BackedEnum;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
@@ -16,6 +19,8 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 final class AffiliateForm
 {
@@ -68,7 +73,19 @@ final class AffiliateForm
                             ->placeholder('Net-30'),
                         Select::make('parent_affiliate_id')
                             ->label('Parent Affiliate (Upline)')
-                            ->relationship('parent', 'name')
+                            ->relationship('parent', 'name', modifyQueryUsing: function (Builder $affiliateQuery): Builder {
+                                if (! (bool) config('affiliates.owner.enabled', false)) {
+                                    return $affiliateQuery;
+                                }
+
+                                /** @var Model|null $owner */
+                                $owner = OwnerContext::resolve();
+                                $includeGlobal = (bool) config('affiliates.owner.include_global', false);
+
+                                $scoped = $affiliateQuery->withoutGlobalScope(OwnerScope::class);
+
+                                return OwnerQuery::applyToEloquentBuilder($scoped, $owner, $includeGlobal);
+                            })
                             ->searchable()
                             ->preload()
                             ->helperText('Optional upline for multi-level commission sharing')

@@ -8,10 +8,14 @@ use AIArmada\Affiliates\Enums\FraudSeverity;
 use AIArmada\Affiliates\Enums\FraudSignalStatus;
 use AIArmada\Affiliates\Models\AffiliateFraudSignal;
 use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\CommerceSupport\Support\OwnerQuery;
+use AIArmada\CommerceSupport\Support\OwnerScope;
+use AIArmada\FilamentAffiliates\Support\OwnerScopedQuery;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -20,6 +24,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 
 final class AffiliateFraudSignalResource extends Resource
@@ -40,7 +45,19 @@ final class AffiliateFraudSignalResource extends Resource
             Section::make('Signal Details')
                 ->schema([
                     Forms\Components\Select::make('affiliate_id')
-                        ->relationship('affiliate', 'name')
+                        ->relationship('affiliate', 'name', modifyQueryUsing: function (Builder $affiliateQuery): Builder {
+                            if (! (bool) config('affiliates.owner.enabled', false)) {
+                                return $affiliateQuery;
+                            }
+
+                            /** @var Model|null $owner */
+                            $owner = OwnerContext::resolve();
+                            $includeGlobal = (bool) config('affiliates.owner.include_global', false);
+
+                            $scoped = $affiliateQuery->withoutGlobalScope(OwnerScope::class);
+
+                            return OwnerQuery::applyToEloquentBuilder($scoped, $owner, $includeGlobal);
+                        })
                         ->disabled(),
 
                     Forms\Components\TextInput::make('rule_code')
@@ -147,21 +164,35 @@ final class AffiliateFraudSignalResource extends Resource
                     ->icon('heroicon-o-x-mark')
                     ->color('gray')
                     ->requiresConfirmation()
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.fraud.update') ?? false)
                     ->visible(fn ($record) => $record->status === FraudSignalStatus::Detected)
                     ->action(function (AffiliateFraudSignal $record): void {
+                        Gate::authorize('update', $record);
+
+                        $signal = OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
                         $reviewedBy = auth()->user()?->getAuthIdentifier();
 
-                        $record->dismiss($reviewedBy === null ? null : (string) $reviewedBy);
+                        $signal->dismiss($reviewedBy === null ? null : (string) $reviewedBy);
                     }),
                 Action::make('confirm')
                     ->icon('heroicon-o-check')
                     ->color('danger')
                     ->requiresConfirmation()
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.fraud.update') ?? false)
                     ->visible(fn ($record) => $record->status === FraudSignalStatus::Detected)
                     ->action(function (AffiliateFraudSignal $record): void {
+                        Gate::authorize('update', $record);
+
+                        $signal = OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
                         $reviewedBy = auth()->user()?->getAuthIdentifier();
 
-                        $record->confirm($reviewedBy === null ? null : (string) $reviewedBy);
+                        $signal->confirm($reviewedBy === null ? null : (string) $reviewedBy);
                     }),
             ])
             ->bulkActions([
@@ -169,12 +200,19 @@ final class AffiliateFraudSignalResource extends Resource
                     ->label('Dismiss Selected')
                     ->icon('heroicon-o-x-mark')
                     ->requiresConfirmation()
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.fraud.update') ?? false)
                     ->action(function ($records): void {
                         $reviewedBy = auth()->user()?->getAuthIdentifier();
                         $reviewedBy = $reviewedBy === null ? null : (string) $reviewedBy;
 
                         $records->each(function (AffiliateFraudSignal $record) use ($reviewedBy): void {
-                            $record->dismiss($reviewedBy);
+                            Gate::authorize('update', $record);
+
+                            $signal = OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
+                                ->whereKey($record->getKey())
+                                ->firstOrFail();
+
+                            $signal->dismiss($reviewedBy);
                         });
                     }),
             ])
@@ -198,7 +236,8 @@ final class AffiliateFraudSignalResource extends Resource
         $includeGlobal = (bool) config('affiliates.owner.include_global', false);
 
         return $query->whereHas('affiliate', function (Builder $affiliateQuery) use ($owner, $includeGlobal): void {
-            $affiliateQuery->forOwner($owner, $includeGlobal);
+            $scoped = $affiliateQuery->withoutGlobalScope(OwnerScope::class);
+            OwnerQuery::applyToEloquentBuilder($scoped, $owner, $includeGlobal);
         });
     }
 
@@ -225,7 +264,8 @@ final class AffiliateFraudSignalResource extends Resource
             $includeGlobal = (bool) config('affiliates.owner.include_global', false);
 
             $query->whereHas('affiliate', function (Builder $affiliateQuery) use ($owner, $includeGlobal): void {
-                $affiliateQuery->forOwner($owner, $includeGlobal);
+                $scoped = $affiliateQuery->withoutGlobalScope(OwnerScope::class);
+                OwnerQuery::applyToEloquentBuilder($scoped, $owner, $includeGlobal);
             });
         }
 

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAffiliates\Support\Integrations;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\FilamentVouchers\Models\Voucher;
 use AIArmada\FilamentVouchers\Resources\VoucherResource;
+use Illuminate\Database\Eloquent\Model;
 
 final class VoucherBridge
 {
@@ -32,10 +34,16 @@ final class VoucherBridge
             return null;
         }
 
+        $voucherQuery = VoucherResource::getEloquentQuery()->where('code', $code);
+
+        if ((bool) config('affiliates.owner.enabled', false)) {
+            /** @var Model|null $owner */
+            $owner = OwnerContext::resolve();
+            $voucherQuery->forOwner($owner, false);
+        }
+
         /** @var Voucher|null $voucher */
-        $voucher = VoucherResource::getEloquentQuery()
-            ->where('code', $code)
-            ->first();
+        $voucher = $voucherQuery->first();
 
         if (! $voucher) {
             return null;

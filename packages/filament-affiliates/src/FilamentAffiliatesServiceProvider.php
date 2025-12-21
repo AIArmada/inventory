@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAffiliates;
 
+use AIArmada\Affiliates\Models\AffiliateFraudSignal;
 use AIArmada\Affiliates\Models\AffiliatePayout;
 use AIArmada\FilamentAffiliates\Services\AffiliateStatsAggregator;
 use AIArmada\FilamentAffiliates\Services\PayoutExportService;
@@ -46,5 +47,6 @@ final class FilamentAffiliatesServiceProvider extends PackageServiceProvider
         });
 
         Gate::policy(AffiliatePayout::class, Policies\AffiliatePayoutPolicy::class);
+        Gate::policy(AffiliateFraudSignal::class, Policies\AffiliateFraudSignalPolicy::class);
     }
 }

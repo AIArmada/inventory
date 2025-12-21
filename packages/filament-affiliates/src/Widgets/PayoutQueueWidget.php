@@ -6,12 +6,13 @@ namespace AIArmada\FilamentAffiliates\Widgets;
 
 use AIArmada\Affiliates\Enums\PayoutStatus;
 use AIArmada\Affiliates\Models\AffiliatePayout;
-use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\FilamentAffiliates\Support\OwnerScopedQuery;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 
 final class PayoutQueueWidget extends BaseWidget
 {
@@ -25,32 +26,9 @@ final class PayoutQueueWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
-        /** @var Model|null $owner */
-        $owner = (bool) config('affiliates.owner.enabled', false)
-            ? OwnerContext::resolve()
-            : null;
-
         return $table
             ->query(
-                AffiliatePayout::query()
-                    ->when(
-                        (bool) config('affiliates.owner.enabled', false),
-                        fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
-                            if (! $owner) {
-                                $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
-
-                                return;
-                            }
-
-                            $affiliateQuery->where(function ($builder) use ($owner): void {
-                                $builder->where('owner_type', $owner->getMorphClass())
-                                    ->where('owner_id', $owner->getKey())
-                                    ->orWhere(function ($inner): void {
-                                        $inner->whereNull('owner_type')->whereNull('owner_id');
-                                    });
-                            });
-                        }),
-                    )
+                OwnerScopedQuery::throughAffiliate(AffiliatePayout::query())
                     ->with('affiliate')
                     ->whereIn('status', [PayoutStatus::Pending->value, PayoutStatus::Processing->value])
                     ->orderBy('scheduled_at')
@@ -86,8 +64,17 @@ final class PayoutQueueWidget extends BaseWidget
                     ->icon('heroicon-o-play')
                     ->color('success')
                     ->requiresConfirmation()
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.payout.update') ?? false)
                     ->visible(fn ($record) => $record->status === PayoutStatus::Pending->value)
-                    ->action(fn ($record) => $record->update(['status' => PayoutStatus::Processing->value])),
+                    ->action(function (AffiliatePayout $record): void {
+                        Gate::authorize('update', $record);
+
+                        $payout = OwnerScopedQuery::throughAffiliate(AffiliatePayout::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
+                        $payout->update(['status' => PayoutStatus::Processing->value]);
+                    }),
 
                 Action::make('view')
                     ->icon('heroicon-o-eye')
@@ -101,30 +88,7 @@ final class PayoutQueueWidget extends BaseWidget
 
     protected function getTableHeading(): ?string
     {
-        /** @var Model|null $owner */
-        $owner = (bool) config('affiliates.owner.enabled', false)
-            ? OwnerContext::resolve()
-            : null;
-
-        $pendingCount = AffiliatePayout::query()
-            ->when(
-                (bool) config('affiliates.owner.enabled', false),
-                fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
-                    if (! $owner) {
-                        $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
-
-                        return;
-                    }
-
-                    $affiliateQuery->where(function ($builder) use ($owner): void {
-                        $builder->where('owner_type', $owner->getMorphClass())
-                            ->where('owner_id', $owner->getKey())
-                            ->orWhere(function ($inner): void {
-                                $inner->whereNull('owner_type')->whereNull('owner_id');
-                            });
-                    });
-                }),
-            )
+        $pendingCount = OwnerScopedQuery::throughAffiliate(AffiliatePayout::query())
             ->whereIn('status', [PayoutStatus::Pending->value, PayoutStatus::Processing->value])
             ->count();
 

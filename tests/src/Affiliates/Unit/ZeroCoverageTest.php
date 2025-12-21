@@ -6,7 +6,6 @@ use AIArmada\Affiliates\Actions\Conversions\MatureConversion;
 use AIArmada\Affiliates\Actions\Conversions\ProcessConversionMaturity;
 use AIArmada\Affiliates\Enums\AffiliateStatus;
 use AIArmada\Affiliates\Enums\ConversionStatus;
-use AIArmada\Affiliates\Http\Middleware\AuthenticateAffiliate;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateConversion;
 use AIArmada\Affiliates\Models\AffiliateTrainingModule;
@@ -293,11 +292,4 @@ test('PerformanceBonusService getLeaderboard with custom limit', function (): vo
     $leaderboard = $service->getLeaderboard(limit: 5);
 
     expect($leaderboard)->toBeInstanceOf(Illuminate\Support\Collection::class);
-});
-
-// AuthenticateAffiliate Middleware Tests
-test('AuthenticateAffiliate middleware can be instantiated', function (): void {
-    $middleware = new AuthenticateAffiliate;
-
-    expect($middleware)->toBeInstanceOf(AuthenticateAffiliate::class);
 });

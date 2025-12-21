@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace AIArmada\FilamentAffiliates\Services;
 
 use AIArmada\Affiliates\Models\AffiliatePayout;
+use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\CommerceSupport\Support\OwnerQuery;
+use AIArmada\CommerceSupport\Support\OwnerScope;
 use League\Csv\Writer;
 use SplTempFileObject;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -21,6 +24,8 @@ final class PayoutExportService
      */
     public function downloadCsv(AffiliatePayout $payout): StreamedResponse
     {
+        $payout = $this->resolveOwnerScopedPayout($payout);
+
         $csv = Writer::createFromFileObject(new SplTempFileObject);
         $csv->insertOne($this->getHeaders());
 
@@ -44,6 +49,8 @@ final class PayoutExportService
      */
     public function downloadExcel(AffiliatePayout $payout): StreamedResponse
     {
+        $payout = $this->resolveOwnerScopedPayout($payout);
+
         $data = $this->buildExportData($payout);
         $filename = sprintf('%s.xlsx', $payout->reference);
 
@@ -63,6 +70,8 @@ final class PayoutExportService
      */
     public function downloadPdf(AffiliatePayout $payout): StreamedResponse
     {
+        $payout = $this->resolveOwnerScopedPayout($payout);
+
         $data = $this->buildExportData($payout);
         $filename = sprintf('%s.pdf', $payout->reference);
 
@@ -86,6 +95,24 @@ final class PayoutExportService
     public function download(AffiliatePayout $payout): StreamedResponse
     {
         return $this->downloadCsv($payout);
+    }
+
+    private function resolveOwnerScopedPayout(AffiliatePayout $payout): AffiliatePayout
+    {
+        if (! (bool) config('affiliates.owner.enabled', false)) {
+            return $payout->loadMissing('conversions');
+        }
+
+        $owner = OwnerContext::resolve();
+        $includeGlobal = (bool) config('affiliates.owner.include_global', false);
+
+        $query = AffiliatePayout::query()->withoutGlobalScope(OwnerScope::class);
+        OwnerQuery::applyToEloquentBuilder($query, $owner, $includeGlobal);
+
+        return $query
+            ->with('conversions')
+            ->whereKey($payout->getKey())
+            ->firstOrFail();
     }
 
     /**

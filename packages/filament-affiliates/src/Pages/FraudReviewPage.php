@@ -8,11 +8,12 @@ use AIArmada\Affiliates\Enums\ConversionStatus;
 use AIArmada\Affiliates\Enums\FraudSeverity;
 use AIArmada\Affiliates\Enums\FraudSignalStatus;
 use AIArmada\Affiliates\Models\AffiliateFraudSignal;
-use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\FilamentAffiliates\Support\OwnerScopedQuery;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\ViewAction;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
@@ -21,7 +22,7 @@ use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 
 final class FraudReviewPage extends Page implements HasForms, HasTable
@@ -41,32 +42,9 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
 
     public function table(Table $table): Table
     {
-        /** @var Model|null $owner */
-        $owner = (bool) config('affiliates.owner.enabled', false)
-            ? OwnerContext::resolve()
-            : null;
-
         return $table
             ->query(
-                AffiliateFraudSignal::query()
-                    ->when(
-                        (bool) config('affiliates.owner.enabled', false),
-                        fn ($query) => $query->whereHas('affiliate', function ($affiliateQuery) use ($owner): void {
-                            if (! $owner) {
-                                $affiliateQuery->whereNull('owner_type')->whereNull('owner_id');
-
-                                return;
-                            }
-
-                            $affiliateQuery->where(function ($builder) use ($owner): void {
-                                $builder->where('owner_type', $owner->getMorphClass())
-                                    ->where('owner_id', $owner->getKey())
-                                    ->orWhere(function ($inner): void {
-                                        $inner->whereNull('owner_type')->whereNull('owner_id');
-                                    });
-                            });
-                        }),
-                    )
+                OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
                     ->where('status', FraudSignalStatus::Detected)
                     ->with(['affiliate', 'conversion'])
                     ->latest()
@@ -131,10 +109,17 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                     ->icon('heroicon-o-check')
                     ->color('success')
                     ->requiresConfirmation()
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.fraud.update') ?? false)
                     ->action(function (AffiliateFraudSignal $record): void {
+                        Gate::authorize('update', $record);
+
+                        $signal = OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
                         $reviewedBy = auth()->user()?->getAuthIdentifier();
 
-                        $record->update([
+                        $signal->update([
                             'status' => FraudSignalStatus::Dismissed,
                             'reviewed_at' => now(),
                             'reviewed_by' => $reviewedBy === null ? null : (string) $reviewedBy,
@@ -146,25 +131,32 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
                     ->requiresConfirmation()
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.fraud.update') ?? false)
                     ->form([
                         Forms\Components\Textarea::make('notes')
                             ->label('Review Notes')
                             ->required(),
                     ])
                     ->action(function (AffiliateFraudSignal $record, array $data): void {
+                        Gate::authorize('update', $record);
+
+                        $signal = OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
+                            ->whereKey($record->getKey())
+                            ->firstOrFail();
+
                         $reviewedBy = auth()->user()?->getAuthIdentifier();
 
-                        $record->update([
+                        $signal->update([
                             'status' => FraudSignalStatus::Confirmed,
                             'reviewed_at' => now(),
                             'reviewed_by' => $reviewedBy === null ? null : (string) $reviewedBy,
-                            'evidence' => array_merge($record->evidence ?? [], [
+                            'evidence' => array_merge($signal->evidence ?? [], [
                                 'review_notes' => $data['notes'],
                             ]),
                         ]);
 
-                        if ($record->conversion) {
-                            $record->conversion->update(['status' => ConversionStatus::Rejected]);
+                        if ($signal->conversion) {
+                            $signal->conversion->update(['status' => ConversionStatus::Rejected]);
                         }
                     }),
 
@@ -176,11 +168,18 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                     ->icon('heroicon-o-check')
                     ->color('success')
                     ->requiresConfirmation()
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.fraud.update') ?? false)
                     ->action(function ($records): void {
                         $reviewedBy = auth()->user()?->getAuthIdentifier();
 
                         $records->each(function ($record) use ($reviewedBy): void {
-                            $record->update([
+                            Gate::authorize('update', $record);
+
+                            $signal = OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
+                                ->whereKey($record->getKey())
+                                ->firstOrFail();
+
+                            $signal->update([
                                 'status' => FraudSignalStatus::Dismissed,
                                 'reviewed_at' => now(),
                                 'reviewed_by' => $reviewedBy === null ? null : (string) $reviewedBy,
@@ -193,18 +192,25 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
                     ->icon('heroicon-o-x-mark')
                     ->color('danger')
                     ->requiresConfirmation()
+                    ->authorize(fn (): bool => (Filament::auth()->user() ?? auth()->user())?->can('affiliates.fraud.update') ?? false)
                     ->action(function ($records): void {
                         $reviewedBy = auth()->user()?->getAuthIdentifier();
 
                         $records->each(function ($record) use ($reviewedBy): void {
-                            $record->update([
+                            Gate::authorize('update', $record);
+
+                            $signal = OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
+                                ->whereKey($record->getKey())
+                                ->firstOrFail();
+
+                            $signal->update([
                                 'status' => FraudSignalStatus::Confirmed,
                                 'reviewed_at' => now(),
                                 'reviewed_by' => $reviewedBy === null ? null : (string) $reviewedBy,
                             ]);
 
-                            if ($record->conversion) {
-                                $record->conversion->update(['status' => ConversionStatus::Rejected]);
+                            if ($signal->conversion) {
+                                $signal->conversion->update(['status' => ConversionStatus::Rejected]);
                             }
                         });
                     }),
@@ -213,9 +219,12 @@ final class FraudReviewPage extends Page implements HasForms, HasTable
 
     public function getViewData(): array
     {
+        $base = OwnerScopedQuery::throughAffiliate(AffiliateFraudSignal::query())
+            ->where('status', FraudSignalStatus::Detected);
+
         return [
-            'pendingCount' => AffiliateFraudSignal::where('status', FraudSignalStatus::Detected)->count(),
-            'criticalCount' => AffiliateFraudSignal::where('status', FraudSignalStatus::Detected)
+            'pendingCount' => (clone $base)->count(),
+            'criticalCount' => (clone $base)
                 ->where('severity', 'critical')
                 ->count(),
         ];
