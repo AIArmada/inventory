@@ -1,6 +1,7 @@
 {
     "name": "aiarmada/commerce",
     "description": "A powerful collection of commerce components for Laravel - build and ship e-commerce features fast.",
+    "type": "metapackage",
     "license": "MIT",
     "homepage": "https://github.com/aiarmada/commerce",
     "support": {
