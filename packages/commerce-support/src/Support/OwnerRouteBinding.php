@@ -17,7 +17,7 @@ final class OwnerRouteBinding
      */
     public static function resolve(string $modelClass, int | string $value, bool $includeGlobal = false): Model
     {
-        return OwnerWriteGuard::findOrFailForOwner($modelClass, $value, null, $includeGlobal);
+        return OwnerWriteGuard::findOrFailForOwner($modelClass, $value, OwnerContext::CURRENT, $includeGlobal);
     }
 
     /**

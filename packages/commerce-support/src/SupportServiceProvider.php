@@ -50,9 +50,22 @@ final class SupportServiceProvider extends PackageServiceProvider
             return;
         }
 
+        /** @var class-string $resolverClass */
+        $resolverClass = (string) config('commerce-support.owner.resolver', NullOwnerResolver::class);
+
+        if ($resolverClass === '' || ! class_exists($resolverClass)) {
+            throw new InvalidArgumentException(sprintf('Invalid owner resolver class: %s', $resolverClass));
+        }
+
+        if (! is_a($resolverClass, OwnerResolverInterface::class, true)) {
+            throw new InvalidArgumentException(
+                sprintf('%s must implement %s', $resolverClass, OwnerResolverInterface::class)
+            );
+        }
+
         $this->app->singleton(OwnerResolverInterface::class, function ($app): OwnerResolverInterface {
             /** @var class-string<OwnerResolverInterface> $resolverClass */
-            $resolverClass = config('commerce-support.owner.resolver', NullOwnerResolver::class);
+            $resolverClass = (string) config('commerce-support.owner.resolver', NullOwnerResolver::class);
 
             $resolver = $app->make($resolverClass);
 

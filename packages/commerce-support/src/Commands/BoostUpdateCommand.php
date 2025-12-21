@@ -111,8 +111,8 @@ final class BoostUpdateCommand extends Command
             $this->output->write("  {$agentName}... ");
 
             try {
-                $guidelinePath = $projectRoot . '/' . $agent->guidelinesPath();
-                $this->writeGuidelineFile($guidelinePath, $composedGuidelines, $agent->frontmatter());
+                $guidelinePath = $projectRoot . '/' . mb_ltrim($agent->guidelinesPath(), '/');
+                $this->writeGuidelineFile($projectRoot, $guidelinePath, $composedGuidelines, $agent->frontmatter());
                 $this->line('<fg=green>✓</>');
             } catch (Exception $e) {
                 $failed[$agentName] = $e->getMessage();
@@ -139,15 +139,29 @@ final class BoostUpdateCommand extends Command
     /**
      * Write the guideline file with proper structure.
      */
-    private function writeGuidelineFile(string $filePath, string $guidelines, bool $frontmatter): void
+    private function writeGuidelineFile(string $projectRoot, string $filePath, string $guidelines, bool $frontmatter): void
     {
         $directory = dirname($filePath);
 
-        if (! is_dir($directory) && ! @mkdir($directory, 0755, true)) {
+        if (! is_dir($directory) && ! mkdir($directory, 0755, true)) {
             throw new RuntimeException("Failed to create directory: {$directory}");
         }
 
-        $handle = @fopen($filePath, 'c+');
+        $realRoot = realpath($projectRoot);
+        $realDirectory = realpath($directory);
+
+        if ($realRoot === false || $realDirectory === false) {
+            throw new RuntimeException('Failed to resolve project root or target directory path.');
+        }
+
+        $realRoot = mb_rtrim($realRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $realDirectory = mb_rtrim($realDirectory, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+        if (! str_starts_with($realDirectory, $realRoot)) {
+            throw new RuntimeException("Refusing to write outside project root: {$filePath}");
+        }
+
+        $handle = fopen($filePath, 'c+');
 
         if (! $handle) {
             throw new RuntimeException("Failed to open file: {$filePath}");
@@ -254,18 +268,23 @@ final class BoostUpdateCommand extends Command
         }
 
         // Create target directory if needed
-        if (! is_dir($targetDir)) {
-            @mkdir($targetDir, 0755, true);
+        if (! is_dir($targetDir) && ! mkdir($targetDir, 0755, true)) {
+            throw new RuntimeException("Failed to create directory: {$targetDir}");
         }
 
-        // Remove existing link/dir if present
+        // Remove existing symlink if present; never delete real directories/files.
         if (is_link($targetLink)) {
-            @unlink($targetLink);
-        } elseif (is_dir($targetLink)) {
-            @rmdir($targetLink);
+            if (! unlink($targetLink)) {
+                throw new RuntimeException("Failed to remove existing symlink: {$targetLink}");
+            }
+        } elseif (file_exists($targetLink)) {
+            $this->components->warn("Skipping symlink creation; a real path already exists at: {$targetLink}");
+
+            return;
         }
 
-        // Create symlink
-        @symlink($sourceDir, $targetLink);
+        if (! symlink($sourceDir, $targetLink)) {
+            throw new RuntimeException("Failed to create symlink: {$targetLink}");
+        }
     }
 }

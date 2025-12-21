@@ -126,6 +126,44 @@ it('scopes query builder owner columns with optional include-global', function (
     expect($scoped)->toBe(['global', 'owner-b']);
 });
 
+it('defaults to excluding global rows for models without explicit config', function (): void {
+    $ownerA = User::query()->create([
+        'name' => 'Owner A',
+        'email' => 'owner-a-default-include-global@example.com',
+        'password' => 'secret',
+    ]);
+
+    OwnerScopedNoConfigFixture::query()->create([
+        'label' => 'owner-a',
+        'owner_type' => $ownerA->getMorphClass(),
+        'owner_id' => $ownerA->getKey(),
+    ]);
+
+    OwnerScopedNoConfigFixture::query()->create([
+        'label' => 'global',
+        'owner_type' => null,
+        'owner_id' => null,
+    ]);
+
+    $scopedDefault = OwnerScopedNoConfigFixture::query()
+        ->withoutOwnerScope()
+        ->forOwner($ownerA)
+        ->orderBy('label')
+        ->pluck('label')
+        ->all();
+
+    expect($scopedDefault)->toBe(['owner-a']);
+
+    $scopedWithGlobal = OwnerScopedNoConfigFixture::query()
+        ->withoutOwnerScope()
+        ->forOwner($ownerA, true)
+        ->orderBy('label')
+        ->pluck('label')
+        ->all();
+
+    expect($scopedWithGlobal)->toBe(['global', 'owner-a']);
+});
+
 final class OwnerScopedFixture extends Model implements OwnerScopeConfigurable
 {
     use HasOwner;
@@ -140,5 +178,17 @@ final class OwnerScopedFixture extends Model implements OwnerScopeConfigurable
     public static function ownerScopeConfig(): OwnerScopeConfig
     {
         return new OwnerScopeConfig(enabled: true, includeGlobal: false);
+    }
+}
+
+final class OwnerScopedNoConfigFixture extends Model
+{
+    use HasOwner;
+
+    protected $guarded = [];
+
+    public function getTable(): string
+    {
+        return 'owner_scope_fixtures';
     }
 }

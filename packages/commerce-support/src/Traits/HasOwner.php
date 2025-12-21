@@ -19,7 +19,7 @@ use InvalidArgumentException;
  * to Eloquent models. Models using this trait should have `owner_type`
  * and `owner_id` columns in their database table.
  *
- * @method static Builder forOwner(?Model $owner, bool $includeGlobal = true)
+ * @method static Builder forOwner(?Model $owner, bool $includeGlobal = false)
  *
  * @property string|null $owner_type
  * @property int|string|null $owner_id
@@ -57,7 +57,7 @@ trait HasOwner // @phpstan-ignore trait.unused
      * @param  bool  $includeGlobal  Whether to include global (ownerless) records
      * @return Builder<static>
      */
-    public function scopeForOwner(Builder $query, Model | string | null $owner = OwnerContext::CURRENT, bool $includeGlobal = true): Builder
+    public function scopeForOwner(Builder $query, Model | string | null $owner = OwnerContext::CURRENT, bool $includeGlobal = false): Builder
     {
         $ownerTypeColumn = 'owner_type';
         $ownerIdColumn = 'owner_id';

@@ -22,11 +22,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('cart_recovery_outcomes', function (Blueprint $table): void {
-            $table->dropUuidMorphs('owner');
+            $table->dropMorphs('owner');
         });
 
         Schema::table('cart_popup_interventions', function (Blueprint $table): void {
-            $table->dropUuidMorphs('owner');
+            $table->dropMorphs('owner');
         });
     }
 };

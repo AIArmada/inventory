@@ -166,7 +166,7 @@ final class SetupCommand extends Command
 
         // Update existing or append new
         foreach ($updates as $key => $value) {
-            $envLine = $key . '=' . (str_contains($value, ' ') ? '"' . $value . '"' : $value);
+            $envLine = $key . '=' . $this->formatEnvValue($value);
 
             if (isset($existingKeys[$key])) {
                 // Update existing line
@@ -180,5 +180,18 @@ final class SetupCommand extends Command
         }
 
         File::put($envPath, implode("\n", $lines));
+    }
+
+    private function formatEnvValue(string $value): string
+    {
+        // Never allow multi-line .env injection.
+        $value = str_replace(["\r\n", "\r", "\n"], '\\n', $value);
+
+        // Always quote to avoid parsing surprises and variable expansion.
+        $escaped = str_replace('\\', '\\\\', $value);
+        $escaped = str_replace('"', '\\"', $escaped);
+        $escaped = str_replace('$', '\\$', $escaped);
+
+        return '"' . $escaped . '"';
     }
 }
