@@ -23,7 +23,10 @@ class SendCompletedHandler implements WebhookHandler
             return WebhookResult::skipped('No send instruction ID in payload');
         }
 
-        $instruction = SendInstruction::where('id', $sendInstructionId)->first();
+        $instruction = SendInstruction::query()
+            ->withoutOwnerScope()
+            ->where('id', $sendInstructionId)
+            ->first();
 
         if ($instruction === null) {
             return WebhookResult::skipped('Send instruction not found locally');

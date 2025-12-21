@@ -165,6 +165,56 @@ it('can optionally include global rows when explicitly requested', function (): 
     expect(Purchase::query()->forOwner()->count())->toBe(2);
 });
 
+it('treats forOwner(null) as global-only (never current owner)', function (): void {
+    config()->set('chip.owner.include_global', true);
+
+    $ownerA = new class extends Model
+    {
+        protected $table = 'tenants';
+
+        public $incrementing = false;
+
+        protected $keyType = 'string';
+
+        protected $guarded = [];
+    };
+
+    $ownerA->id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    $ownerA->name = 'A';
+    $ownerA->save();
+
+    app()->bind(OwnerResolverInterface::class, fn () => new class($ownerA) implements OwnerResolverInterface
+    {
+        public function __construct(private Model $owner) {}
+
+        public function resolve(): ?Model
+        {
+            return $this->owner;
+        }
+    });
+
+    Purchase::withoutEvents(function () use ($ownerA): void {
+        Purchase::create([
+            'id' => '11111111-1111-1111-1111-111111111111',
+            'owner_type' => $ownerA->getMorphClass(),
+            'owner_id' => (string) $ownerA->getKey(),
+            'status' => 'paid',
+            'purchase' => ['amount' => 1000],
+        ]);
+
+        Purchase::create([
+            'id' => '33333333-3333-3333-3333-333333333333',
+            'owner_type' => null,
+            'owner_id' => null,
+            'status' => 'paid',
+            'purchase' => ['amount' => 3000],
+        ]);
+    });
+
+    expect(Purchase::query()->forOwner(null)->pluck('id')->all())
+        ->toBe(['33333333-3333-3333-3333-333333333333']);
+});
+
 it('scopes integer-ID models too (option lists must be owner-safe)', function (): void {
     $ownerA = new class extends Model
     {

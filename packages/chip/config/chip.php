@@ -68,9 +68,26 @@ return [
     |
     */
     'owner' => [
-        'enabled' => env('CHIP_OWNER_ENABLED', true),
+        'enabled' => env('CHIP_OWNER_ENABLED', false),
         'include_global' => env('CHIP_OWNER_INCLUDE_GLOBAL', false),
         'auto_assign_on_create' => env('CHIP_OWNER_AUTO_ASSIGN', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Integrations
+    |--------------------------------------------------------------------------
+    */
+    'integrations' => [
+        // Docs package integration (auto-generate invoices/credit notes)
+        'docs' => [
+            'enabled' => env('CHIP_DOCS_INTEGRATION_ENABLED', true),
+            'auto_generate_invoice' => env('CHIP_DOCS_AUTO_INVOICE', true),
+            'auto_generate_credit_note' => env('CHIP_DOCS_AUTO_CREDIT_NOTE', true),
+            'paid_doc_type' => env('CHIP_DOCS_PAID_TYPE', 'invoice'),
+            'refund_doc_type' => env('CHIP_DOCS_REFUND_TYPE', 'credit_note'),
+            'generate_pdf' => env('CHIP_DOCS_GENERATE_PDF', true),
+        ],
     ],
 
     /*
@@ -127,22 +144,5 @@ return [
         'mask_sensitive_data' => env('CHIP_LOGGING_MASK_SENSITIVE', true),
         'log_requests' => env('CHIP_LOG_REQUESTS', true),
         'log_responses' => env('CHIP_LOG_RESPONSES', true),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Integrations
-    |--------------------------------------------------------------------------
-    */
-    'integrations' => [
-        // Docs package integration (auto-generate invoices/credit notes)
-        'docs' => [
-            'enabled' => env('CHIP_DOCS_INTEGRATION_ENABLED', true),
-            'auto_generate_invoice' => env('CHIP_DOCS_AUTO_INVOICE', true),
-            'auto_generate_credit_note' => env('CHIP_DOCS_AUTO_CREDIT_NOTE', true),
-            'paid_doc_type' => env('CHIP_DOCS_PAID_TYPE', 'invoice'),
-            'refund_doc_type' => env('CHIP_DOCS_REFUND_TYPE', 'credit_note'),
-            'generate_pdf' => env('CHIP_DOCS_GENERATE_PDF', true),
-        ],
     ],
 ];

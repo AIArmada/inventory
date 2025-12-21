@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Chip\Models;
 
+use AIArmada\Chip\Models\Concerns\AutoAssignOwnerOnCreate;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use Akaunting\Money\Money;
@@ -20,6 +21,7 @@ use Override;
  */
 abstract class ChipIntegerModel extends Model
 {
+    use AutoAssignOwnerOnCreate;
     use HasOwner {
         scopeForOwner as private scopeForOwnerUsingTrait;
     }
@@ -78,31 +80,6 @@ abstract class ChipIntegerModel extends Model
     protected function resolveOwner(): ?Model
     {
         return \AIArmada\CommerceSupport\Support\OwnerContext::resolve();
-    }
-
-    protected static function booted(): void
-    {
-        static::creating(function (self $model): void {
-            if (! (bool) config('chip.owner.enabled', true)) {
-                return;
-            }
-
-            if (! (bool) config('chip.owner.auto_assign_on_create', true)) {
-                return;
-            }
-
-            if ($model->hasOwner()) {
-                return;
-            }
-
-            $owner = $model->resolveOwner();
-
-            if ($owner === null) {
-                return;
-            }
-
-            $model->assignOwner($owner);
-        });
     }
 
     protected function toTimestamp(?int $value): ?Carbon

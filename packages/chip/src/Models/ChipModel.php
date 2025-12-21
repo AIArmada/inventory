@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\Chip\Models;
 
+use AIArmada\Chip\Models\Concerns\AutoAssignOwnerOnCreate;
 use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use Akaunting\Money\Money;
@@ -19,10 +21,11 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $owner_type
  * @property string|null $owner_id
  *
- * @method static Builder<static> forOwner(?Model $owner = null, ?bool $includeGlobal = null)
+ * @method static Builder<static> forOwner(Model|null $owner = null, bool|null $includeGlobal = null)
  */
 abstract class ChipModel extends Model implements Auditable
 {
+    use AutoAssignOwnerOnCreate;
     use HasCommerceAudit;
     use HasOwner {
         scopeForOwner as private scopeForOwnerUsingTrait;
@@ -50,13 +53,15 @@ abstract class ChipModel extends Model implements Auditable
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    final public function scopeForOwner(Builder $query, ?Model $owner = null, ?bool $includeGlobal = null): Builder
+    final public function scopeForOwner(Builder $query, Model | string | null $owner = OwnerContext::CURRENT, ?bool $includeGlobal = null): Builder
     {
         if (! (bool) config('chip.owner.enabled', true)) {
             return $query;
         }
 
-        $owner ??= $this->resolveOwner();
+        if ($owner === OwnerContext::CURRENT) {
+            $owner = $this->resolveOwner();
+        }
 
         $includeGlobal ??= (bool) config('chip.owner.include_global', false);
 
@@ -67,7 +72,7 @@ abstract class ChipModel extends Model implements Auditable
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    final public function scopeForOwnerIncludingGlobal(Builder $query, ?Model $owner = null): Builder
+    final public function scopeForOwnerIncludingGlobal(Builder $query, Model | string | null $owner = OwnerContext::CURRENT): Builder
     {
         return $this->scopeForOwner($query, $owner, true);
     }
@@ -120,31 +125,6 @@ abstract class ChipModel extends Model implements Auditable
     protected function resolveOwner(): ?Model
     {
         return \AIArmada\CommerceSupport\Support\OwnerContext::resolve();
-    }
-
-    protected static function booted(): void
-    {
-        static::creating(function (self $model): void {
-            if (! (bool) config('chip.owner.enabled', true)) {
-                return;
-            }
-
-            if (! (bool) config('chip.owner.auto_assign_on_create', true)) {
-                return;
-            }
-
-            if ($model->hasOwner()) {
-                return;
-            }
-
-            $owner = $model->resolveOwner();
-
-            if ($owner === null) {
-                return;
-            }
-
-            $model->assignOwner($owner);
-        });
     }
 
     protected function toTimestamp(?int $value): ?Carbon

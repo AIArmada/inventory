@@ -222,7 +222,8 @@ class RecurringService
     public function getDueSchedules(): Collection
     {
         return RecurringSchedule::query()
-            ->where('status', RecurringStatus::Active)
+            ->where('status', RecurringStatus::Active->value)
+            ->whereNotNull('next_charge_at')
             ->where('next_charge_at', '<=', now())
             ->get();
     }
