@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -53,7 +54,23 @@ class Promotion extends Model
 
     protected static string $ownerScopeConfigKey = 'pricing.features.owner';
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'name',
+        'code',
+        'description',
+        'type',
+        'discount_value',
+        'priority',
+        'is_stackable',
+        'is_active',
+        'usage_limit',
+        'per_customer_limit',
+        'min_purchase_amount',
+        'min_quantity',
+        'conditions',
+        'starts_at',
+        'ends_at',
+    ];
 
     /**
      * @var array<string, string>
@@ -97,12 +114,18 @@ class Promotion extends Model
     /**
      * Products included in this promotion.
      *
-     * @return MorphToMany<\AIArmada\Products\Models\Product, $this>
+     * @return MorphToMany<Model, $this>
      */
     public function products(): MorphToMany
     {
+        $productClass = '\\AIArmada\\Products\\Models\\Product';
+
+        if (! class_exists($productClass)) {
+            throw new RuntimeException('Products package is not installed.');
+        }
+
         return $this->morphedByMany(
-            \AIArmada\Products\Models\Product::class,
+            $productClass,
             'promotionable',
             config('pricing.database.tables.promotionables', 'promotionables')
         );
@@ -111,12 +134,18 @@ class Promotion extends Model
     /**
      * Categories included in this promotion.
      *
-     * @return MorphToMany<\AIArmada\Products\Models\Category, $this>
+     * @return MorphToMany<Model, $this>
      */
     public function categories(): MorphToMany
     {
+        $categoryClass = '\\AIArmada\\Products\\Models\\Category';
+
+        if (! class_exists($categoryClass)) {
+            throw new RuntimeException('Products package is not installed.');
+        }
+
         return $this->morphedByMany(
-            \AIArmada\Products\Models\Category::class,
+            $categoryClass,
             'promotionable',
             config('pricing.database.tables.promotionables', 'promotionables')
         );
@@ -255,6 +284,10 @@ class Promotion extends Model
             $owner = PricingOwnerScope::resolveOwner();
 
             if ($owner === null) {
+                if ($promotion->owner_type !== null || $promotion->owner_id !== null) {
+                    throw new AuthorizationException('Cannot write owned promotions without an owner context.');
+                }
+
                 return;
             }
 
@@ -268,6 +301,18 @@ class Promotion extends Model
         });
 
         static::deleting(function (Promotion $promotion): void {
+            if (PricingOwnerScope::isEnabled()) {
+                $owner = PricingOwnerScope::resolveOwner();
+
+                if ($owner === null) {
+                    if ($promotion->owner_type !== null || $promotion->owner_id !== null) {
+                        throw new AuthorizationException('Cannot delete owned promotions without an owner context.');
+                    }
+                } elseif (! $promotion->belongsToOwner($owner)) {
+                    throw new AuthorizationException('Cannot delete promotions outside the current owner scope.');
+                }
+            }
+
             DB::table(config('pricing.database.tables.promotionables', 'promotionables'))
                 ->where('promotion_id', $promotion->id)
                 ->delete();

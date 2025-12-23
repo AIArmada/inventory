@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentOrders\Pages;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Orders\Models\Order;
 use AIArmada\Orders\Services\OrderService;
 use AIArmada\Orders\States\Processing;
@@ -17,13 +18,16 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
-use RuntimeException;
+use Throwable;
 use UnitEnum;
 
 class FulfillmentQueue extends Page implements HasTable
 {
     use InteractsWithTable;
+
+    public bool $isTableVisible = true;
 
     protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-truck';
 
@@ -49,21 +53,47 @@ class FulfillmentQueue extends Page implements HasTable
 
     public static function getNavigationBadge(): ?string
     {
-        $count = Order::query()
-            ->forOwner()
-            ->whereState('status', Processing::class)
-            ->count();
+        $includeGlobal = (bool) config('orders.owner.include_global', false);
+
+        if ((bool) config('orders.owner.enabled', true) && OwnerContext::resolve() === null) {
+            return null;
+        }
+
+        $owner = OwnerContext::resolve();
+        $ownerKey = $owner ? ($owner->getMorphClass() . ':' . $owner->getKey()) : 'global';
+
+        $cacheKey = sprintf('filament-orders.fulfillment-queue.badge.%s.%s', $ownerKey, $includeGlobal ? 'with-global' : 'owner-only');
+
+        $count = Cache::remember($cacheKey, now()->addSeconds(15), function () use ($includeGlobal): int {
+            return Order::query()
+                ->forOwner(includeGlobal: $includeGlobal)
+                ->whereState('status', Processing::class)
+                ->count();
+        });
 
         return $count > 0 ? (string) $count : null;
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        $urgentCount = Order::query()
-            ->forOwner()
-            ->whereState('status', Processing::class)
-            ->where('created_at', '<=', now()->subHours(48))
-            ->count();
+        $includeGlobal = (bool) config('orders.owner.include_global', false);
+
+        if ((bool) config('orders.owner.enabled', true) && OwnerContext::resolve() === null) {
+            return null;
+        }
+
+        $owner = OwnerContext::resolve();
+        $ownerKey = $owner ? ($owner->getMorphClass() . ':' . $owner->getKey()) : 'global';
+
+        $cacheKey = sprintf('filament-orders.fulfillment-queue.badge-color.%s.%s', $ownerKey, $includeGlobal ? 'with-global' : 'owner-only');
+
+        $urgentCount = Cache::remember($cacheKey, now()->addSeconds(15), function () use ($includeGlobal): int {
+            return Order::query()
+                ->forOwner(includeGlobal: $includeGlobal)
+                ->whereState('status', Processing::class)
+                ->where('created_at', '<=', now()->subHours(48))
+                ->count();
+        });
 
         return $urgentCount > 0 ? 'danger' : 'success';
     }
@@ -73,9 +103,9 @@ class FulfillmentQueue extends Page implements HasTable
         return $table
             ->query(
                 Order::query()
-                    ->forOwner()
+                    ->forOwner(includeGlobal: (bool) config('orders.owner.include_global', false))
                     ->whereState('status', Processing::class)
-                    ->with(['customer', 'items'])
+                    ->with(['customer'])
             )
             ->columns([
                 Tables\Columns\TextColumn::make('order_number')
@@ -195,7 +225,9 @@ class FulfillmentQueue extends Page implements HasTable
                                 ->title('Order marked as shipped')
                                 ->success()
                                 ->send();
-                        } catch (RuntimeException $exception) {
+                        } catch (Throwable $exception) {
+                            report($exception);
+
                             Notification::make()
                                 ->title('Unable to ship order')
                                 ->body($exception->getMessage())
@@ -212,6 +244,6 @@ class FulfillmentQueue extends Page implements HasTable
                     ->url(fn ($record) => \AIArmada\FilamentOrders\Resources\OrderResource::getUrl('view', ['record' => $record]))
                     ->openUrlInNewTab(),
             ])
-            ->poll('30s');
+            ->poll(fn (): ?string => $this->isTableVisible ? '30s' : null);
     }
 }

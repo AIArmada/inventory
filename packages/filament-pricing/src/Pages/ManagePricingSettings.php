@@ -9,6 +9,7 @@ use BackedEnum;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Arr;
@@ -155,6 +156,11 @@ class ManagePricingSettings extends Page
         $settings->customerGroupPricingEnabled = (bool) Arr::get($state, 'customerGroupPricingEnabled', false);
 
         $settings->save();
+
+        Notification::make()
+            ->title(__('Saved'))
+            ->success()
+            ->send();
     }
 
     protected function getHeaderActions(): array

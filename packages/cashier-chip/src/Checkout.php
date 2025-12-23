@@ -85,10 +85,15 @@ class Checkout implements Arrayable, Jsonable, JsonSerializable, Responsable
         // Add products
         if (isset($options['products'])) {
             foreach ($options['products'] as $product) {
+                $quantity = max(1, (int) ($product['quantity'] ?? 1));
+                $price = max(0, (int) ($product['price'] ?? 0));
+                $discount = max(0, (int) ($product['discount'] ?? 0));
+
                 $builder->addProduct(
-                    $product['name'],
-                    $product['price'],
-                    $product['quantity'] ?? 1
+                    (string) ($product['name'] ?? ''),
+                    $price,
+                    $quantity,
+                    $discount
                 );
             }
         } else {

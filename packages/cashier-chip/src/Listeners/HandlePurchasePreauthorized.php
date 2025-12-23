@@ -6,6 +6,7 @@ namespace AIArmada\CashierChip\Listeners;
 
 use AIArmada\CashierChip\Cashier;
 use AIArmada\Chip\Events\PurchasePreauthorized;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -16,6 +17,10 @@ class HandlePurchasePreauthorized
 {
     public function handle(PurchasePreauthorized $event): void
     {
+        if ((bool) config('cashier-chip.features.owner.enabled', true) && OwnerContext::resolve() === null) {
+            return;
+        }
+
         $purchase = $event->purchase;
 
         $clientId = $purchase->getClientId();
@@ -25,7 +30,9 @@ class HandlePurchasePreauthorized
         }
 
         /** @var Model|null $billable */
-        $billable = Cashier::findBillable($clientId);
+        $billable = (bool) config('cashier-chip.features.owner.enabled', true)
+            ? Cashier::findBillableForWebhook($clientId)
+            : Cashier::findBillable($clientId);
 
         if ($billable === null) {
             return;

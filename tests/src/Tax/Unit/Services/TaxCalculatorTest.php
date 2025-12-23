@@ -365,6 +365,17 @@ class TaxCalculatorTest extends TaxTestCase
         $this->calculator->calculateTax(10000, 'standard');
     }
 
+    public function test_tax_disabled_does_not_throw_when_unknown_zone_behavior_is_error(): void
+    {
+        config(['tax.features.enabled' => false]);
+        config(['tax.features.zone_resolution.unknown_zone_behavior' => 'error']);
+
+        $result = $this->calculator->calculateTax(10000, 'standard');
+
+        $this->assertEquals(0, $result->taxAmount);
+        $this->assertEquals('ZERO', $result->zone->code);
+    }
+
     public function test_calculate_tax_with_unknown_zone_zero_behavior(): void
     {
         config(['tax.features.zone_resolution.unknown_zone_behavior' => 'zero']);

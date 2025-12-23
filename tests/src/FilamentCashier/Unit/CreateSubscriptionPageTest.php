@@ -7,6 +7,8 @@ use AIArmada\Cashier\Contracts\SubscriptionBuilderContract;
 use AIArmada\Cashier\Contracts\SubscriptionContract;
 use AIArmada\Cashier\Facades\Cashier;
 use AIArmada\Commerce\Tests\FilamentCashier\Fixtures\ChipBillableUser;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\Commerce\Tests\Support\OwnerResolvers\FixedOwnerResolver;
 use AIArmada\FilamentCashier\Resources\UnifiedSubscriptionResource\Pages\CreateSubscription;
 use Filament\Notifications\Notification;
 
@@ -32,6 +34,9 @@ it('builds customer options, plans, payment methods, and can create a subscripti
         'email' => 'portal@example.com',
         'password' => bcrypt('secret'),
     ]);
+
+    // Ensure customer options are generated within the correct owner context.
+    app()->instance(OwnerResolverInterface::class, new FixedOwnerResolver($user));
 
     $page = app(CreateSubscription::class);
 

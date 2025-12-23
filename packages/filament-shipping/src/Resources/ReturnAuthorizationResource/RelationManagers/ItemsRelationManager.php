@@ -14,6 +14,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class ItemsRelationManager extends RelationManager
 {
@@ -59,6 +60,21 @@ class ItemsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        $canUpdateReturn = function (): bool {
+            $user = auth()->user();
+
+            if ($user === null) {
+                return false;
+            }
+
+            $owner = $this->getOwnerRecord();
+            if (! $owner instanceof Model) {
+                return false;
+            }
+
+            return $user->can('update', $owner);
+        };
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -102,15 +118,19 @@ class ItemsRelationManager extends RelationManager
                     ]),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->authorize($canUpdateReturn),
             ])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->authorize($canUpdateReturn),
+                DeleteAction::make()
+                    ->authorize($canUpdateReturn),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->authorize($canUpdateReturn),
                 ]),
             ]);
     }

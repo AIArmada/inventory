@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use OwenIt\Auditing\Contracts\Auditable;
 use Spatie\ModelStates\HasStates;
 
@@ -143,7 +144,7 @@ class Order extends Model implements Auditable
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeForOwner(Builder $query, Model | string | null $owner = OwnerContext::CURRENT, bool $includeGlobal = true): Builder
+    public function scopeForOwner(Builder $query, Model | string | null $owner = OwnerContext::CURRENT, bool $includeGlobal = false): Builder
     {
         /** @var Builder<static> $scoped */
         $scoped = $this->baseScopeForOwner($query, $owner, $includeGlobal);
@@ -402,20 +403,39 @@ class Order extends Model implements Auditable
                 return;
             }
 
+            $hasOwnerType = $order->owner_type !== null;
+            $hasOwnerId = $order->owner_id !== null;
+
+            if ($hasOwnerType xor $hasOwnerId) {
+                throw new InvalidArgumentException('owner_type and owner_id must both be set or both be null.');
+            }
+
+            $ownerFromContext = OwnerContext::resolve();
+
+            if ($ownerFromContext !== null && $hasOwnerType && $hasOwnerId) {
+                if (
+                    $order->owner_type !== $ownerFromContext->getMorphClass()
+                    || (string) $order->owner_id !== (string) $ownerFromContext->getKey()
+                ) {
+                    throw new InvalidArgumentException('Explicit owner does not match the current owner context.');
+                }
+
+                return;
+            }
+
+            if ($hasOwnerType && $hasOwnerId) {
+                return;
+            }
+
             if (! (bool) config('orders.owner.auto_assign_on_create', true)) {
                 return;
             }
 
-            if ($order->owner_type !== null || $order->owner_id !== null) {
+            if ($ownerFromContext === null) {
                 return;
             }
 
-            $owner = OwnerContext::resolve();
-            if ($owner === null) {
-                return;
-            }
-
-            $order->assignOwner($owner);
+            $order->assignOwner($ownerFromContext);
         });
 
         static::deleting(function (Order $order): void {

@@ -262,6 +262,8 @@ class TaxClassTest extends TaxTestCase
     {
         config(['tax.features.owner.enabled' => true]);
 
+        $this->bindTaxOwnerForScoping(null);
+
         TaxClass::create([
             'name' => 'Global Class',
             'slug' => 'global',
@@ -280,6 +282,7 @@ class TaxClassTest extends TaxTestCase
     public function test_for_owner_scope_with_owner_include_global(): void
     {
         config(['tax.features.owner.enabled' => true]);
+        config(['tax.features.owner.include_global' => true]);
 
         // Create a mock owner
         $owner = new class extends \Illuminate\Database\Eloquent\Model

@@ -102,3 +102,44 @@ it('blocks cross-tenant reads and writes for owned price lists/prices', function
     ]))
         ->toThrow(AuthorizationException::class);
 });
+
+it('blocks writing and deleting owned rows when owner is unresolved', function (): void {
+    config()->set('pricing.features.owner.enabled', true);
+    config()->set('pricing.features.owner.include_global', false);
+
+    $owner = User::query()->create([
+        'name' => 'Owner',
+        'email' => 'pricing-owner-null-context@example.com',
+        'password' => 'secret',
+    ]);
+
+    // No owner context
+    bindPricingOwner(null);
+
+    $ownedList = new PriceList([
+        'name' => 'Owned List',
+        'slug' => 'owned-null-context',
+        'currency' => 'MYR',
+        'is_active' => true,
+    ]);
+    $ownedList->owner_type = $owner->getMorphClass();
+    $ownedList->owner_id = (string) $owner->getKey();
+
+    expect(fn () => $ownedList->save())
+        ->toThrow(AuthorizationException::class);
+
+    // Create an owned row under a real owner context...
+    bindPricingOwner($owner);
+    $list = PriceList::query()->create([
+        'name' => 'List',
+        'slug' => 'list-null-context',
+        'currency' => 'MYR',
+        'is_active' => true,
+    ]);
+
+    // ...then ensure it cannot be deleted without owner context.
+    bindPricingOwner(null);
+
+    expect(fn () => $list->delete())
+        ->toThrow(AuthorizationException::class);
+});

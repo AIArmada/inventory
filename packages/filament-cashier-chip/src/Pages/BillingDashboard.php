@@ -43,21 +43,52 @@ final class BillingDashboard extends Page
 
     public function getHeaderWidgets(): array
     {
-        return [
-            MRRWidget::class,
-            ActiveSubscribersWidget::class,
-            ChurnRateWidget::class,
-            AttentionRequiredWidget::class,
-        ];
+        if (! config('filament-cashier-chip.features.dashboard_widgets', true)) {
+            return [];
+        }
+
+        $widgets = [];
+
+        if (config('filament-cashier-chip.features.dashboard.widgets.mrr', true)) {
+            $widgets[] = MRRWidget::class;
+        }
+
+        if (config('filament-cashier-chip.features.dashboard.widgets.active_subscribers', true)) {
+            $widgets[] = ActiveSubscribersWidget::class;
+        }
+
+        if (config('filament-cashier-chip.features.dashboard.widgets.churn_rate', true)) {
+            $widgets[] = ChurnRateWidget::class;
+        }
+
+        if (config('filament-cashier-chip.features.dashboard.widgets.attention_required', true)) {
+            $widgets[] = AttentionRequiredWidget::class;
+        }
+
+        return $widgets;
     }
 
     public function getFooterWidgets(): array
     {
-        return [
-            RevenueChartWidget::class,
-            SubscriptionDistributionWidget::class,
-            TrialConversionsWidget::class,
-        ];
+        if (! config('filament-cashier-chip.features.dashboard_widgets', true)) {
+            return [];
+        }
+
+        $widgets = [];
+
+        if (config('filament-cashier-chip.features.dashboard.widgets.revenue_chart', true)) {
+            $widgets[] = RevenueChartWidget::class;
+        }
+
+        if (config('filament-cashier-chip.features.dashboard.widgets.subscription_distribution', true)) {
+            $widgets[] = SubscriptionDistributionWidget::class;
+        }
+
+        if (config('filament-cashier-chip.features.dashboard.widgets.trial_conversions', true)) {
+            $widgets[] = TrialConversionsWidget::class;
+        }
+
+        return $widgets;
     }
 
     public function getHeaderWidgetsColumns(): int | array

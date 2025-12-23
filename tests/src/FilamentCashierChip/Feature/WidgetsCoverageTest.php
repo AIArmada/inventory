@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AIArmada\CashierChip\Subscription;
 use AIArmada\CashierChip\SubscriptionItem;
 use AIArmada\Commerce\Tests\FilamentCashierChip\TestCase;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\FilamentCashierChip\Widgets\ActiveSubscribersWidget;
 use AIArmada\FilamentCashierChip\Widgets\AttentionRequiredWidget;
 use AIArmada\FilamentCashierChip\Widgets\ChurnRateWidget;
@@ -13,31 +14,41 @@ use AIArmada\FilamentCashierChip\Widgets\RevenueChartWidget;
 use AIArmada\FilamentCashierChip\Widgets\SubscriptionDistributionWidget;
 use AIArmada\FilamentCashierChip\Widgets\TrialConversionsWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 uses(TestCase::class);
 
-function filamentCashierChip_createSubscriptionWithItem(array $subscriptionAttributes = [], array $itemAttributes = []): Subscription
+function filamentCashierChip_createSubscriptionWithItem(Model $owner, array $subscriptionAttributes = [], array $itemAttributes = []): Subscription
 {
-    $subscription = Subscription::create(array_merge([
-        'user_id' => (string) ($subscriptionAttributes['user_id'] ?? 1),
-        'type' => 'default',
-        'chip_id' => 'sub_' . Str::uuid()->toString(),
-        'chip_status' => Subscription::STATUS_ACTIVE,
-        'billing_interval' => 'month',
-        'billing_interval_count' => 1,
-        'quantity' => 1,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ], $subscriptionAttributes));
+    /** @var Subscription $subscription */
+    $subscription = OwnerContext::withOwner($owner, function () use ($owner, $subscriptionAttributes, $itemAttributes): Subscription {
+        $subscription = Subscription::create(array_merge([
+            'owner_type' => $owner::class,
+            'owner_id' => (string) $owner->getKey(),
+            'user_id' => (string) ($subscriptionAttributes['user_id'] ?? 1),
+            'type' => 'default',
+            'chip_id' => 'sub_' . Str::uuid()->toString(),
+            'chip_status' => Subscription::STATUS_ACTIVE,
+            'billing_interval' => 'month',
+            'billing_interval_count' => 1,
+            'quantity' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ], $subscriptionAttributes));
 
-    SubscriptionItem::create(array_merge([
-        'subscription_id' => $subscription->id,
-        'chip_id' => 'item_' . Str::uuid()->toString(),
-        'chip_price' => 'price_basic',
-        'quantity' => 1,
-        'unit_amount' => 10_00,
-    ], $itemAttributes));
+        SubscriptionItem::create(array_merge([
+            'owner_type' => $owner::class,
+            'owner_id' => (string) $owner->getKey(),
+            'subscription_id' => $subscription->id,
+            'chip_id' => 'item_' . Str::uuid()->toString(),
+            'chip_price' => 'price_basic',
+            'quantity' => 1,
+            'unit_amount' => 10_00,
+        ], $itemAttributes));
+
+        return $subscription;
+    });
 
     return $subscription->refresh();
 }
@@ -45,7 +56,7 @@ function filamentCashierChip_createSubscriptionWithItem(array $subscriptionAttri
 it('covers all dashboard widgets code paths', function (): void {
     $user = $this->createUser();
 
-    filamentCashierChip_createSubscriptionWithItem([
+    filamentCashierChip_createSubscriptionWithItem($user, [
         'user_id' => (string) $user->getKey(),
         'chip_status' => Subscription::STATUS_ACTIVE,
         'created_at' => now()->subMonths(2),
@@ -53,7 +64,7 @@ it('covers all dashboard widgets code paths', function (): void {
         'unit_amount' => 25_00,
     ]);
 
-    filamentCashierChip_createSubscriptionWithItem([
+    filamentCashierChip_createSubscriptionWithItem($user, [
         'user_id' => (string) $user->getKey(),
         'chip_status' => Subscription::STATUS_ACTIVE,
         'created_at' => now()->subDays(2),
@@ -63,35 +74,35 @@ it('covers all dashboard widgets code paths', function (): void {
         'unit_amount' => 30_00,
     ]);
 
-    filamentCashierChip_createSubscriptionWithItem([
+    filamentCashierChip_createSubscriptionWithItem($user, [
         'user_id' => (string) $user->getKey(),
         'chip_status' => Subscription::STATUS_TRIALING,
         'trial_ends_at' => now()->addDays(2),
         'created_at' => now()->subDays(7),
     ]);
 
-    filamentCashierChip_createSubscriptionWithItem([
+    filamentCashierChip_createSubscriptionWithItem($user, [
         'user_id' => (string) $user->getKey(),
         'chip_status' => Subscription::STATUS_PAST_DUE,
     ]);
 
-    filamentCashierChip_createSubscriptionWithItem([
+    filamentCashierChip_createSubscriptionWithItem($user, [
         'user_id' => (string) $user->getKey(),
         'chip_status' => Subscription::STATUS_INCOMPLETE,
     ]);
 
-    filamentCashierChip_createSubscriptionWithItem([
+    filamentCashierChip_createSubscriptionWithItem($user, [
         'user_id' => (string) $user->getKey(),
         'chip_status' => Subscription::STATUS_UNPAID,
     ]);
 
-    filamentCashierChip_createSubscriptionWithItem([
+    filamentCashierChip_createSubscriptionWithItem($user, [
         'user_id' => (string) $user->getKey(),
         'chip_status' => Subscription::STATUS_CANCELED,
         'ends_at' => now()->addDays(2),
     ]);
 
-    filamentCashierChip_createSubscriptionWithItem([
+    filamentCashierChip_createSubscriptionWithItem($user, [
         'user_id' => (string) $user->getKey(),
         'chip_status' => Subscription::STATUS_ACTIVE,
         'created_at' => now()->subMonths(1)->startOfMonth()->addDay(),

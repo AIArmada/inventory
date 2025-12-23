@@ -8,8 +8,14 @@ use AIArmada\FilamentInventory\Resources\InventoryLevelResource;
 use AIArmada\FilamentInventory\Resources\InventoryLocationResource;
 use AIArmada\FilamentInventory\Resources\InventoryMovementResource;
 use AIArmada\FilamentInventory\Resources\InventorySerialResource;
+use AIArmada\Commerce\Tests\FilamentInventory\Fixtures\TestOwner;
+use AIArmada\Commerce\Tests\FilamentInventory\Fixtures\TestOwnerResolver;
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Models\InventorySerial;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema as SchemaFacade;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
 use Filament\Support\Contracts\TranslatableContentDriver;
@@ -178,5 +184,53 @@ describe('InventorySerialResource', function (): void {
         $pages = InventorySerialResource::getPages();
         expect($pages)->toHaveKey('index');
         expect($pages)->toHaveKey('view');
+    });
+
+    it('does not eager-load a cross-tenant batch', function (): void {
+        SchemaFacade::dropIfExists('filament_inventory_test_owners');
+
+        SchemaFacade::create('filament_inventory_test_owners', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->string('name');
+            $table->timestamps();
+        });
+
+        $ownerA = TestOwner::create(['name' => 'Owner A']);
+        $ownerB = TestOwner::create(['name' => 'Owner B']);
+
+        config()->set('inventory.owner.enabled', false);
+
+        $locationA = InventoryLocation::factory()->create([
+            'owner_type' => $ownerA->getMorphClass(),
+            'owner_id' => $ownerA->getKey(),
+        ]);
+
+        $locationB = InventoryLocation::factory()->create([
+            'owner_type' => $ownerB->getMorphClass(),
+            'owner_id' => $ownerB->getKey(),
+        ]);
+
+        $batchB = InventoryBatch::factory()->create([
+            'location_id' => $locationB->id,
+        ]);
+
+        $serialA = InventorySerial::factory()->create([
+            'location_id' => $locationA->id,
+            'batch_id' => $batchB->id,
+        ]);
+
+        config()->set('inventory.owner.enabled', true);
+        config()->set('inventory.owner.include_global', false);
+
+        app()->bind(
+            AIArmada\CommerceSupport\Contracts\OwnerResolverInterface::class,
+            fn () => new TestOwnerResolver($ownerA),
+        );
+
+        /** @var InventorySerial $serial */
+        $serial = InventorySerialResource::getEloquentQuery()->whereKey($serialA->id)->firstOrFail();
+
+        expect($serial->location_id)->toBe($locationA->id);
+        expect($serial->batch)->toBeNull();
     });
 });

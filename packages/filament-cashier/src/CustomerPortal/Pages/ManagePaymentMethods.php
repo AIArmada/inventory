@@ -6,11 +6,11 @@ namespace AIArmada\FilamentCashier\CustomerPortal\Pages;
 
 use AIArmada\FilamentCashier\Support\GatewayDetector;
 use BackedEnum;
-use Exception;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
+use Throwable;
 
 final class ManagePaymentMethods extends Page
 {
@@ -58,7 +58,7 @@ final class ManagePaymentMethods extends Page
                         'is_default' => $defaultMethod !== null && $pm->id === $defaultMethod->id,
                     ]);
                 }
-            } catch (Exception) {
+            } catch (Throwable) {
                 // Silently fail if API is not configured
             }
         }
@@ -76,7 +76,7 @@ final class ManagePaymentMethods extends Page
                         'is_default' => $pm->is_default ?? false,
                     ]);
                 }
-            } catch (Exception) {
+            } catch (Throwable) {
                 // Silently fail if API is not configured
             }
         }
@@ -89,6 +89,18 @@ final class ManagePaymentMethods extends Page
         $user = auth()->user();
 
         if ($user === null) {
+            return;
+        }
+
+        $detector = app(GatewayDetector::class);
+
+        if (! $detector->isAvailable($gateway)) {
+            Notification::make()
+                ->title(__('filament-cashier::portal.payment_methods.error'))
+                ->body(__('filament-cashier::portal.payment_methods.gateway_not_available'))
+                ->danger()
+                ->send();
+
             return;
         }
 
@@ -110,7 +122,7 @@ final class ManagePaymentMethods extends Page
                     ->success()
                     ->send();
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             Notification::make()
                 ->title(__('filament-cashier::portal.payment_methods.error'))
                 ->body($e->getMessage())
@@ -124,6 +136,18 @@ final class ManagePaymentMethods extends Page
         $user = auth()->user();
 
         if ($user === null) {
+            return;
+        }
+
+        $detector = app(GatewayDetector::class);
+
+        if (! $detector->isAvailable($gateway)) {
+            Notification::make()
+                ->title(__('filament-cashier::portal.payment_methods.error'))
+                ->body(__('filament-cashier::portal.payment_methods.gateway_not_available'))
+                ->danger()
+                ->send();
+
             return;
         }
 
@@ -146,7 +170,7 @@ final class ManagePaymentMethods extends Page
                     ->success()
                     ->send();
             }
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             Notification::make()
                 ->title(__('filament-cashier::portal.payment_methods.error'))
                 ->body($e->getMessage())

@@ -20,11 +20,11 @@ use AIArmada\Cashier\Gateways\Stripe\StripePayment;
 use AIArmada\Cashier\Gateways\Stripe\StripePaymentMethod;
 use AIArmada\Cashier\Gateways\Stripe\StripeSubscription;
 use AIArmada\Cashier\Gateways\Stripe\StripeSubscriptionBuilder;
-use Exception;
 use Illuminate\Support\Collection;
 use Laravel\Cashier\Cashier;
 use Stripe\StripeClient;
 use Stripe\Webhook;
+use Throwable;
 
 /**
  * Stripe payment gateway implementation.
@@ -160,7 +160,7 @@ class StripeGateway extends AbstractGateway
             $session = $this->client()->checkout->sessions->retrieve($sessionId);
 
             return new Stripe\StripeCheckout($session);
-        } catch (Exception) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -174,7 +174,7 @@ class StripeGateway extends AbstractGateway
             $subscription = $this->client()->subscriptions->retrieve($subscriptionId);
 
             return new StripeSubscription($subscription);
-        } catch (Exception) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -188,7 +188,7 @@ class StripeGateway extends AbstractGateway
             $paymentIntent = $this->client()->paymentIntents->retrieve($paymentId);
 
             return new StripePayment(new \Laravel\Cashier\Payment($paymentIntent));
-        } catch (Exception) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -202,7 +202,7 @@ class StripeGateway extends AbstractGateway
             $invoice = $this->client()->invoices->retrieve($invoiceId);
 
             return new StripeInvoice($invoice);
-        } catch (Exception) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -292,12 +292,22 @@ class StripeGateway extends AbstractGateway
      */
     public function verifyWebhookSignature(string $payload, array $headers): bool
     {
+        $signature = $headers['Stripe-Signature'] ?? $headers['stripe-signature'] ?? '';
+        $secret = $this->webhookSecret();
+
+        if (! is_string($signature) || $signature === '') {
+            return false;
+        }
+
+        if (! is_string($secret) || $secret === '') {
+            return false;
+        }
+
         try {
-            $signature = $headers['Stripe-Signature'] ?? $headers['stripe-signature'] ?? '';
-            Webhook::constructEvent($payload, $signature, $this->webhookSecret());
+            Webhook::constructEvent($payload, $signature, $secret);
 
             return true;
-        } catch (Exception) {
+        } catch (Throwable) {
             return false;
         }
     }

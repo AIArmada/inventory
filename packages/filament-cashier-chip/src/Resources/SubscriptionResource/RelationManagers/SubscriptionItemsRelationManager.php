@@ -128,6 +128,7 @@ final class SubscriptionItemsRelationManager extends RelationManager
                         TextInput::make('unit_amount')
                             ->label('Unit Amount (cents)')
                             ->numeric()
+                            ->minValue(0)
                             ->placeholder('Optional'),
                     ])
                     ->action(function (SubscriptionItem $record, array $data): void {

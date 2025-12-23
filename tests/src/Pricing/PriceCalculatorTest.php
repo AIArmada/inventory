@@ -10,6 +10,7 @@ use AIArmada\Pricing\Models\PriceList;
 use AIArmada\Pricing\Models\PriceTier;
 use AIArmada\Pricing\Models\Promotion;
 use AIArmada\Pricing\Services\PriceCalculator;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 // Test implementation of Priceable interface
@@ -345,7 +346,7 @@ describe('PriceCalculator Service', function (): void {
                 'is_active' => true,
             ]);
 
-            DB::table('promotionables')->insert([
+            DB::table(config('pricing.database.tables.promotionables', 'promotionables'))->insert([
                 'promotion_id' => $promotion->id,
                 'promotionable_type' => TestPriceableItem::class,
                 'promotionable_id' => $itemId,
@@ -371,7 +372,7 @@ describe('PriceCalculator Service', function (): void {
                 'is_active' => true,
             ]);
 
-            DB::table('promotionables')->insert([
+            DB::table(config('pricing.database.tables.promotionables', 'promotionables'))->insert([
                 'promotion_id' => $promotion->id,
                 'promotionable_type' => TestPriceableItem::class,
                 'promotionable_id' => $itemId,
@@ -395,7 +396,7 @@ describe('PriceCalculator Service', function (): void {
                 'is_active' => true,
             ]);
 
-            DB::table('promotionables')->insert([
+            DB::table(config('pricing.database.tables.promotionables', 'promotionables'))->insert([
                 'promotion_id' => $promotion->id,
                 'promotionable_type' => TestPriceableItem::class,
                 'promotionable_id' => $itemId,
@@ -437,7 +438,7 @@ describe('PriceCalculator Service', function (): void {
                 'is_active' => false,
             ]);
 
-            DB::table('promotionables')->insert([
+            DB::table(config('pricing.database.tables.promotionables', 'promotionables'))->insert([
                 'promotion_id' => $promotion->id,
                 'promotionable_type' => TestPriceableItem::class,
                 'promotionable_id' => $itemId,
@@ -461,7 +462,7 @@ describe('PriceCalculator Service', function (): void {
                 'ends_at' => now()->subDay(),
             ]);
 
-            DB::table('promotionables')->insert([
+            DB::table(config('pricing.database.tables.promotionables', 'promotionables'))->insert([
                 'promotion_id' => $promotion->id,
                 'promotionable_type' => TestPriceableItem::class,
                 'promotionable_id' => $itemId,
@@ -472,6 +473,38 @@ describe('PriceCalculator Service', function (): void {
 
             expect($result->finalPrice)->toBe(10000)
                 ->and($result->promotionName)->toBeNull();
+        });
+
+        it('respects effective_at for promotion scheduling', function (): void {
+            $itemId = 'scheduled-promo-item-' . uniqid();
+
+            $startsAt = CarbonImmutable::parse('2025-01-03 10:00:00');
+            $beforeStart = $startsAt->subMinute();
+            $afterStart = $startsAt->addMinute();
+
+            $promotion = Promotion::create([
+                'name' => 'Scheduled Sale',
+                'type' => PromotionType::Percentage,
+                'discount_value' => 50,
+                'is_active' => true,
+                'starts_at' => $startsAt,
+            ]);
+
+            DB::table(config('pricing.database.tables.promotionables', 'promotionables'))->insert([
+                'promotion_id' => $promotion->id,
+                'promotionable_type' => TestPriceableItem::class,
+                'promotionable_id' => $itemId,
+            ]);
+
+            $item = new TestPriceableItem($itemId, 10000);
+
+            $resultBefore = $this->calculator->calculate($item, 1, ['effective_at' => $beforeStart]);
+            expect($resultBefore->finalPrice)->toBe(10000)
+                ->and($resultBefore->promotionName)->toBeNull();
+
+            $resultAfter = $this->calculator->calculate($item, 1, ['effective_at' => $afterStart]);
+            expect($resultAfter->finalPrice)->toBe(5000)
+                ->and($resultAfter->promotionName)->toBe('Scheduled Sale');
         });
     });
 
@@ -527,6 +560,41 @@ describe('PriceCalculator Service', function (): void {
 
             expect($result->finalPrice)->toBe(9000)
                 ->and($result->priceListName)->toBe('Default List');
+        });
+
+        it('respects effective_at for price list scheduling', function (): void {
+            $itemId = 'scheduled-pl-item-' . uniqid();
+
+            $startsAt = CarbonImmutable::parse('2025-01-04 10:00:00');
+            $beforeStart = $startsAt->subMinute();
+            $afterStart = $startsAt->addMinute();
+
+            $priceList = PriceList::create([
+                'name' => 'Scheduled Default List',
+                'slug' => 'scheduled-default-' . uniqid(),
+                'currency' => 'MYR',
+                'is_active' => true,
+                'is_default' => true,
+                'starts_at' => $startsAt,
+            ]);
+
+            Price::create([
+                'price_list_id' => $priceList->id,
+                'priceable_type' => TestPriceableItem::class,
+                'priceable_id' => $itemId,
+                'amount' => 8000,
+                'currency' => 'MYR',
+            ]);
+
+            $item = new TestPriceableItem($itemId, 10000);
+
+            $resultBefore = $this->calculator->calculate($item, 1, ['effective_at' => $beforeStart]);
+            expect($resultBefore->finalPrice)->toBe(10000)
+                ->and($resultBefore->priceListName)->toBeNull();
+
+            $resultAfter = $this->calculator->calculate($item, 1, ['effective_at' => $afterStart]);
+            expect($resultAfter->finalPrice)->toBe(8000)
+                ->and($resultAfter->priceListName)->toBe('Scheduled Default List');
         });
     });
 

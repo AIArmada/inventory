@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 /**
  * CHIP Subscription Item Model
@@ -115,30 +116,29 @@ class SubscriptionItem extends Model
                 return;
             }
 
+            if ($currentOwner === null) {
+                throw new AuthorizationException('Owner context is required to create subscription items when owner scoping is enabled.');
+            }
+
             if ($item->subscription_id !== null) {
                 /** @var class-string<Subscription> $subscriptionModel */
                 $subscriptionModel = Cashier::$subscriptionModel;
 
-                /** @var Subscription|null $subscription */
-                $subscription = $subscriptionModel::query()
+                /** @var Builder<Subscription> $subscriptionQuery */
+                $subscriptionQuery = $subscriptionModel::query()
+                    ->forOwner($currentOwner)
                     ->select(['id', 'owner_type', 'owner_id'])
-                    ->whereKey($item->subscription_id)
-                    ->first();
+                    ->whereKey($item->subscription_id);
 
-                if ($subscription !== null && $subscription->hasOwner()) {
-                    if ($currentOwner !== null && ! $subscription->belongsToOwner($currentOwner)) {
-                        throw new AuthorizationException('Cross-tenant subscription item write blocked.');
-                    }
+                $subscription = $subscriptionQuery->first();
 
-                    $item->owner_type = $subscription->owner_type;
-                    $item->owner_id = $subscription->owner_id;
-
-                    return;
+                if ($subscription === null) {
+                    throw new AuthorizationException('Cross-tenant subscription item write blocked.');
                 }
-            }
 
-            if ($currentOwner === null) {
-                return;
+                if ($subscription->hasOwner() && ! $subscription->belongsToOwner($currentOwner)) {
+                    throw new AuthorizationException('Cross-tenant subscription item write blocked.');
+                }
             }
 
             $item->assignOwner($currentOwner);
@@ -183,6 +183,8 @@ class SubscriptionItem extends Model
     {
         $this->subscription->guardAgainstIncomplete();
 
+        $quantity = max(1, $quantity);
+
         return DB::transaction(function () use ($quantity) {
             $this->fill([
                 'quantity' => $quantity,
@@ -207,11 +209,17 @@ class SubscriptionItem extends Model
     {
         $this->subscription->guardAgainstIncomplete();
 
+        $unitAmount = $options['unit_amount'] ?? $this->unit_amount;
+
+        if ($unitAmount !== null && (int) $unitAmount < 0) {
+            throw new InvalidArgumentException('Subscription item unit amount must be a non-negative integer.');
+        }
+
         return DB::transaction(function () use ($price, $options) {
             $this->fill([
                 'chip_product' => $options['product'] ?? $this->chip_product,
                 'chip_price' => $price,
-                'unit_amount' => $options['unit_amount'] ?? $this->unit_amount,
+                'unit_amount' => isset($options['unit_amount']) ? (int) $options['unit_amount'] : $this->unit_amount,
             ])->save();
 
             if ($this->subscription->hasSinglePrice()) {

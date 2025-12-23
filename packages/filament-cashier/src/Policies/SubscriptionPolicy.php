@@ -68,8 +68,12 @@ class SubscriptionPolicy
     protected function ownsSubscription(Model $user, Model $subscription): bool
     {
         $userId = $user->getKey();
-        $subscriptionUserId = $subscription->user_id ?? $subscription->owner_id ?? null;
+        $subscriptionUserId = $subscription->getAttribute('user_id') ?? $subscription->getAttribute('billable_id');
 
-        return $userId !== null && $subscriptionUserId !== null && $userId === $subscriptionUserId;
+        if ($userId === null || $subscriptionUserId === null) {
+            return false;
+        }
+
+        return (string) $userId === (string) $subscriptionUserId;
     }
 }

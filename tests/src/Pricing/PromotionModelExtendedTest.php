@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Pricing\Enums\PromotionType;
 use AIArmada\Pricing\Models\Promotion;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Support\Carbon;
 
 describe('Promotion Model - Extended Tests', function (): void {
@@ -83,8 +84,9 @@ describe('Promotion Model - Extended Tests', function (): void {
                 'discount_value' => 20,
                 'is_active' => true,
                 'usage_limit' => 10,
-                'usage_count' => 10,
             ]);
+
+            $promotion->forceFill(['usage_count' => 10])->save();
 
             expect($promotion->isActive())->toBeFalse();
         });
@@ -96,8 +98,9 @@ describe('Promotion Model - Extended Tests', function (): void {
                 'discount_value' => 20,
                 'is_active' => true,
                 'usage_limit' => 10,
-                'usage_count' => 5,
             ]);
+
+            $promotion->forceFill(['usage_count' => 5])->save();
 
             expect($promotion->isActive())->toBeTrue();
         });
@@ -179,8 +182,9 @@ describe('Promotion Model - Extended Tests', function (): void {
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'usage_limit' => null,
-                'usage_count' => 1000,
             ]);
+
+            $promotion->usage_count = 1000;
 
             expect($promotion->hasRemainingUsage())->toBeTrue();
         });
@@ -190,8 +194,9 @@ describe('Promotion Model - Extended Tests', function (): void {
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'usage_limit' => 100,
-                'usage_count' => 50,
             ]);
+
+            $promotion->usage_count = 50;
 
             expect($promotion->hasRemainingUsage())->toBeTrue();
         });
@@ -201,8 +206,9 @@ describe('Promotion Model - Extended Tests', function (): void {
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'usage_limit' => 100,
-                'usage_count' => 100,
             ]);
+
+            $promotion->usage_count = 100;
 
             expect($promotion->hasRemainingUsage())->toBeFalse();
         });
@@ -212,8 +218,9 @@ describe('Promotion Model - Extended Tests', function (): void {
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'usage_limit' => 100,
-                'usage_count' => 101,
             ]);
+
+            $promotion->usage_count = 101;
 
             expect($promotion->hasRemainingUsage())->toBeFalse();
         });
@@ -253,14 +260,15 @@ describe('Promotion Model - Extended Tests', function (): void {
                 'ends_at' => Carbon::now()->subDay(),
             ]);
 
-            Promotion::create([
+            $limitReached = Promotion::create([
                 'name' => "LimitReached-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
                 'usage_limit' => 10,
-                'usage_count' => 10,
             ]);
+
+            $limitReached->forceFill(['usage_count' => 10])->save();
 
             $active = Promotion::where('name', 'like', "%-{$prefix}")->active()->get();
 
@@ -392,24 +400,29 @@ describe('Promotion Model - Extended Tests', function (): void {
             $prefix = uniqid();
 
             // Global record (no owner)
-            Promotion::create([
+            OwnerContext::withOwner(null, static fn () => Promotion::query()->create([
                 'name' => "Global-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
-                'owner_type' => null,
-                'owner_id' => null,
-            ]);
+            ]));
 
             // Owned record
-            Promotion::create([
+            $otherOwner = new class extends Illuminate\Database\Eloquent\Model
+            {
+                public $incrementing = false;
+
+                protected $keyType = 'string';
+            };
+            $otherOwner->id = 'store-123';
+            $otherOwner->setTable('stores');
+
+            OwnerContext::withOwner($otherOwner, static fn () => Promotion::query()->create([
                 'name' => "Owned-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
-                'owner_type' => 'App\\Models\\Store',
-                'owner_id' => 'store-123',
-            ]);
+            ]));
 
             $promotions = Promotion::where('name', 'like', "%-{$prefix}")->forOwner(null)->get();
 
@@ -419,6 +432,7 @@ describe('Promotion Model - Extended Tests', function (): void {
 
         it('returns owned and global records when owner provided with includeGlobal true', function (): void {
             config(['pricing.features.owner.enabled' => true]);
+            config(['pricing.features.owner.include_global' => true]);
 
             $prefix = uniqid();
             $ownerId = 'owner-' . uniqid();
@@ -434,34 +448,37 @@ describe('Promotion Model - Extended Tests', function (): void {
             $owner->setTable('stores');
 
             // Global record
-            Promotion::create([
+            OwnerContext::withOwner(null, static fn () => Promotion::query()->create([
                 'name' => "Global-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
-                'owner_type' => null,
-                'owner_id' => null,
-            ]);
+            ]));
 
             // Owned record matching owner
-            Promotion::create([
+            OwnerContext::withOwner($owner, static fn () => Promotion::query()->create([
                 'name' => "Owned-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
-                'owner_type' => $owner->getMorphClass(),
-                'owner_id' => $ownerId,
-            ]);
+            ]));
 
             // Different owner
-            Promotion::create([
+            $otherOwner = new class extends Illuminate\Database\Eloquent\Model
+            {
+                public $incrementing = false;
+
+                protected $keyType = 'string';
+            };
+            $otherOwner->id = 'other-store-' . uniqid();
+            $otherOwner->setTable('stores');
+
+            OwnerContext::withOwner($otherOwner, static fn () => Promotion::query()->create([
                 'name' => "Other-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
-                'owner_type' => 'App\\Models\\Store',
-                'owner_id' => 'other-store-' . uniqid(),
-            ]);
+            ]));
 
             $promotions = Promotion::where('name', 'like', "%-{$prefix}")->forOwner($owner, true)->get();
 
@@ -485,24 +502,20 @@ describe('Promotion Model - Extended Tests', function (): void {
             $owner->setTable('stores');
 
             // Global record
-            Promotion::create([
+            OwnerContext::withOwner(null, static fn () => Promotion::query()->create([
                 'name' => "Global-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
-                'owner_type' => null,
-                'owner_id' => null,
-            ]);
+            ]));
 
             // Owned record matching owner
-            Promotion::create([
+            OwnerContext::withOwner($owner, static fn () => Promotion::query()->create([
                 'name' => "Owned-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
-                'owner_type' => $owner->getMorphClass(),
-                'owner_id' => $ownerId,
-            ]);
+            ]));
 
             $promotions = Promotion::where('name', 'like', "%-{$prefix}")->forOwner($owner, false)->get();
 
@@ -516,24 +529,29 @@ describe('Promotion Model - Extended Tests', function (): void {
             $prefix = uniqid();
 
             // Global record
-            Promotion::create([
+            OwnerContext::withOwner(null, static fn () => Promotion::query()->create([
                 'name' => "Global-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
-                'owner_type' => null,
-                'owner_id' => null,
-            ]);
+            ]));
 
             // Owned record
-            Promotion::create([
+            $otherOwner = new class extends Illuminate\Database\Eloquent\Model
+            {
+                public $incrementing = false;
+
+                protected $keyType = 'string';
+            };
+            $otherOwner->id = 'store-' . uniqid();
+            $otherOwner->setTable('stores');
+
+            OwnerContext::withOwner($otherOwner, static fn () => Promotion::query()->create([
                 'name' => "Owned-{$prefix}",
                 'type' => PromotionType::Percentage,
                 'discount_value' => 10,
                 'is_active' => true,
-                'owner_type' => 'App\\Models\\Store',
-                'owner_id' => 'store-' . uniqid(),
-            ]);
+            ]));
 
             $promotions = Promotion::where('name', 'like', "%-{$prefix}")->forOwner(null, false)->get();
 

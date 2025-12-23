@@ -24,6 +24,7 @@ class BulkSyncTrackingAction extends BulkAction
             ->icon(Heroicon::OutlinedArrowPath)
             ->color('info')
             ->deselectRecordsAfterCompletion()
+            ->authorize(fn (): bool => auth()->user()?->can('shipping.shipments.sync-tracking') ?? false)
             ->action(function (Collection $records): void {
                 $user = auth()->user();
 

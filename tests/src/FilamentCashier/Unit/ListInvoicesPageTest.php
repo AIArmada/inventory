@@ -6,6 +6,7 @@ use AIArmada\Chip\Models\Purchase;
 use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\FilamentCashier\Resources\UnifiedInvoiceResource\Pages\ListInvoices;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 if (! function_exists('filamentCashier_setProtectedProperty')) {
@@ -31,6 +32,8 @@ it('lists CHIP purchases as unified invoices and applies tabs and filters', func
         'email' => 'invoice-user@example.com',
         'password' => bcrypt('secret'),
     ]);
+
+    Auth::guard()->setUser($user);
 
     $purchaseA = Purchase::query()->create([
         'id' => (string) Str::uuid(),

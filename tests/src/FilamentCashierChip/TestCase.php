@@ -165,6 +165,7 @@ abstract class TestCase extends Orchestra
         });
 
         $this->loadMigrationsFrom(__DIR__ . '/../../../packages/cashier-chip/database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../../../packages/chip/database/migrations');
     }
 
     protected function createUser(array $attributes = []): User

@@ -103,6 +103,16 @@ class TaxExemption extends Model
             if (! $exemption->belongsToOwner($owner)) {
                 throw new AuthorizationException('Cannot write tax exemptions outside the current owner scope.');
             }
+
+            if ($exemption->tax_zone_id !== null) {
+                $zoneExists = TaxOwnerScope::applyToOwnedQuery(TaxZone::query())
+                    ->whereKey($exemption->tax_zone_id)
+                    ->exists();
+
+                if (! $zoneExists) {
+                    throw new AuthorizationException('Tax zone is not accessible in the current owner scope.');
+                }
+            }
         });
     }
 
@@ -143,10 +153,6 @@ class TaxExemption extends Model
      * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
      * @return \Illuminate\Database\Eloquent\Builder<static>
      */
-    /**
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
-     */
     public function scopeActive(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         $now = now();
@@ -166,19 +172,11 @@ class TaxExemption extends Model
      * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
      * @return \Illuminate\Database\Eloquent\Builder<static>
      */
-    /**
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
-     */
     public function scopePending(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('status', 'pending');
     }
 
-    /**
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
-     */
     /**
      * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
      * @return \Illuminate\Database\Eloquent\Builder<static>
@@ -191,10 +189,6 @@ class TaxExemption extends Model
     /**
      * Scope to exemptions for a specific zone (or all zones).
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
-     */
-    /**
      * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
      * @return \Illuminate\Database\Eloquent\Builder<static>
      */

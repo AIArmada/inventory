@@ -10,7 +10,25 @@
             </x-slot>
 
             <div class="mt-4">
-                {{ $this->table }}
+                <div
+                    x-data="{ __filamentOrdersIsIntersecting: true }"
+                    x-init="
+                        const update = () => {
+                            $wire.set('isTableVisible', __filamentOrdersIsIntersecting && document.visibilityState === 'visible')
+                        }
+
+                        const observer = new IntersectionObserver((entries) => {
+                            __filamentOrdersIsIntersecting = entries?.[0]?.isIntersecting ?? true
+                            update()
+                        }, { threshold: 0.01 })
+
+                        observer.observe($el)
+                        document.addEventListener('visibilitychange', update)
+                        update()
+                    "
+                >
+                    {{ $this->table }}
+                </div>
             </div>
         </x-filament::section>
     </div>

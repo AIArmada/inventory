@@ -27,6 +27,14 @@ beforeEach(function (): void {
     config()->set('orders.owner.enabled', true);
     config()->set('orders.owner.include_global', true);
     config()->set('orders.owner.auto_assign_on_create', false);
+
+    app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+    {
+        public function resolve(): ?Model
+        {
+            return null;
+        }
+    });
 });
 
 it('builds a timeline from payments, notes and shipment state', function (): void {

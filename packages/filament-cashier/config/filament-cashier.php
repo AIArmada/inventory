@@ -13,13 +13,6 @@ return [
         'sort' => 50,
     ],
 
-    'resources' => [
-        'navigation_sort' => [
-            'subscriptions' => 10,
-            'invoices' => 20,
-        ],
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Tables
@@ -28,8 +21,6 @@ return [
     'tables' => [
         'polling_interval' => '45s',
         'date_format' => 'M d, Y',
-        'datetime_format' => 'M d, Y H:i',
-        'amount_precision' => 2,
     ],
 
     /*
@@ -61,9 +52,20 @@ return [
         'dashboard' => true,
         'subscriptions' => true,
         'invoices' => true,
-        'customers' => true,
         'gateway_management' => false,
         'customer_portal' => false,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resources
+    |--------------------------------------------------------------------------
+    */
+    'resources' => [
+        'navigation_sort' => [
+            'subscriptions' => 10,
+            'invoices' => 20,
+        ],
     ],
 
     /*
@@ -98,16 +100,5 @@ return [
             'invoices' => true,
             'gateway_switching' => false,
         ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Permissions
-    |--------------------------------------------------------------------------
-    */
-    'permissions' => [
-        'enabled' => false,
-        'guard' => 'web',
-        'prefix' => 'filament-cashier.',
     ],
 ];

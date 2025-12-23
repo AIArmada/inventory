@@ -135,9 +135,12 @@ class CheckoutBuilder
      */
     public function addProduct(string $name, int $price, int $quantity = 1)
     {
+        $price = max(0, $price);
+        $quantity = max(1, $quantity);
+
         $this->products[] = [
             'name' => $name,
-            'price' => $price / 100, // Convert to decimal for CHIP
+            'price' => $price,
             'quantity' => $quantity,
         ];
 
@@ -151,7 +154,28 @@ class CheckoutBuilder
      */
     public function products(array $products)
     {
-        $this->products = $products;
+        $normalized = [];
+
+        foreach ($products as $product) {
+            if (! is_array($product)) {
+                continue;
+            }
+
+            $name = $product['name'] ?? null;
+
+            if (! is_string($name) || $name === '') {
+                continue;
+            }
+
+            $normalized[] = [
+                'name' => $name,
+                'price' => max(0, (int) ($product['price'] ?? 0)),
+                'quantity' => max(1, (int) ($product['quantity'] ?? 1)),
+                'discount' => max(0, (int) ($product['discount'] ?? 0)),
+            ];
+        }
+
+        $this->products = $normalized;
 
         return $this;
     }
@@ -190,6 +214,15 @@ class CheckoutBuilder
                 // Store coupon in metadata for tracking
                 $this->metadata['coupon_id'] = $couponId;
                 $this->metadata['coupon_discount'] = $discount;
+
+                if ($discount > 0 && ! empty($this->products)) {
+                    $firstQuantity = (int) ($this->products[0]['quantity'] ?? 1);
+                    $firstPrice = (int) ($this->products[0]['price'] ?? 0);
+                    $firstTotal = max(0, $firstPrice * max(1, $firstQuantity));
+
+                    $applied = min($discount, $firstTotal);
+                    $this->products[0]['discount'] = (int) ($this->products[0]['discount'] ?? 0) + $applied;
+                }
             }
         }
 

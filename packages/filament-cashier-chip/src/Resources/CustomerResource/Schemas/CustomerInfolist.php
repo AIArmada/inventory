@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCashierChip\Resources\CustomerResource\Schemas;
 
+use AIArmada\CashierChip\Subscription;
+use AIArmada\FilamentCashierChip\Support\CashierChipOwnerScope;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -71,7 +73,16 @@ final class CustomerInfolist
                         ->schema([
                             TextEntry::make('subscriptions_count')
                                 ->label('Active Subscriptions')
-                                ->getStateUsing(fn (Model $record): int => method_exists($record, 'subscriptions') ? $record->subscriptions()->active()->count() : 0)
+                                ->getStateUsing(function (Model $record): int {
+                                    if (! method_exists($record, 'subscriptions')) {
+                                        return 0;
+                                    }
+
+                                    /** @var \Illuminate\Database\Eloquent\Builder<Subscription> $query */
+                                    $query = CashierChipOwnerScope::apply($record->subscriptions()->getQuery());
+
+                                    return $query->active()->count();
+                                })
                                 ->badge()
                                 ->color(fn (int $state): string => $state > 0 ? 'success' : 'gray'),
 

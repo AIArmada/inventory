@@ -101,6 +101,19 @@ class PerformsChargesTest extends CashierChipTestCase
         $this->assertInstanceOf(Checkout::class, $checkout);
     }
 
+    public function test_checkout_charge_returns_checkout(): void
+    {
+        $user = $this->createUser(['chip_id' => 'cli_123']);
+
+        $checkout = $user->checkoutCharge(1000, 'Test Product', 2);
+
+        $this->assertInstanceOf(Checkout::class, $checkout);
+
+        $payload = $checkout->toArray();
+        $this->assertSame(1000, $payload['purchase']['products'][0]['price']);
+        $this->assertSame('2', $payload['purchase']['products'][0]['quantity']);
+    }
+
     public function test_charge_without_chip_id(): void
     {
         $user = $this->createUser(['email' => 'test@example.com', 'name' => 'Test User']);

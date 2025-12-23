@@ -179,14 +179,6 @@ class FakeChipClient
             'payment_method_whitelist' => $data['payment_method_whitelist'] ?? null,
             'is_recurring_token' => $data['is_recurring_token'] ?? false,
             'skip_capture' => $data['skip_capture'] ?? false,
-            'purchase' => [
-                'products' => $data['purchase']['products'] ?? [],
-                'currency' => $data['purchase']['currency'] ?? 'MYR',
-                'total' => $data['purchase']['total'] ?? $this->calculateTotal($data['purchase']['products'] ?? []),
-                'total_override' => $data['purchase']['total_override'] ?? null,
-                'language' => $data['purchase']['language'] ?? 'en',
-                'notes' => $data['purchase']['notes'] ?? null,
-            ],
             'client' => $data['client'] ?? null,
             'checkout_url' => 'https://gate.chip-in.asia/checkout/' . $id,
             'direct_post_url' => 'https://gate.chip-in.asia/direct-post/' . $id,
@@ -204,6 +196,20 @@ class FakeChipClient
             'created_on' => now()->getTimestamp(),
             'updated_on' => now()->getTimestamp(),
         ], $data);
+
+        $products = [];
+        if (isset($purchase['purchase']['products']) && is_array($purchase['purchase']['products'])) {
+            $products = $purchase['purchase']['products'];
+        }
+
+        $purchase['purchase'] = array_merge([
+            'products' => $products,
+            'currency' => $purchase['purchase']['currency'] ?? 'MYR',
+            'total' => $purchase['purchase']['total'] ?? $this->calculateTotal($products),
+            'total_override' => $purchase['purchase']['total_override'] ?? null,
+            'language' => $purchase['purchase']['language'] ?? 'en',
+            'notes' => $purchase['purchase']['notes'] ?? null,
+        ], is_array($purchase['purchase'] ?? null) ? $purchase['purchase'] : []);
 
         $this->purchases[$id] = $purchase;
 
@@ -647,7 +653,10 @@ class FakeChipClient
         foreach ($products as $product) {
             $price = (int) ($product['price'] ?? 0);
             $qty = (int) ($product['quantity'] ?? 1);
-            $total += $price * $qty;
+            $discount = (int) ($product['discount'] ?? 0);
+
+            $lineTotal = $price * $qty;
+            $total += max(0, $lineTotal - $discount);
         }
 
         return $total;

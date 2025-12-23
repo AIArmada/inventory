@@ -102,7 +102,7 @@ class CheckoutBuilderTest extends CashierChipTestCase
         $builder = new CheckoutBuilder;
 
         $result = $builder->products([
-            ['name' => 'Product 1', 'price' => 10.00, 'quantity' => 1],
+            ['name' => 'Product 1', 'price' => 1000, 'quantity' => 1],
         ]);
 
         $this->assertSame($builder, $result);
@@ -131,5 +131,18 @@ class CheckoutBuilderTest extends CashierChipTestCase
             ->currency('MYR');
 
         $this->assertInstanceOf(CheckoutBuilder::class, $result);
+    }
+
+    public function test_create_keeps_prices_in_cents(): void
+    {
+        $checkout = (new CheckoutBuilder)
+            ->addProduct('Test Product', 1000, 2)
+            ->create(2000);
+
+        $payload = $checkout->toArray();
+
+        $this->assertSame(1000, $payload['purchase']['products'][0]['price']);
+        $this->assertSame('2', $payload['purchase']['products'][0]['quantity']);
+        $this->assertSame(2000, $payload['purchase']['total']);
     }
 }

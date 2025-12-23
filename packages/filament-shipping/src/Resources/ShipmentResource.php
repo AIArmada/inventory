@@ -46,9 +46,12 @@ class ShipmentResource extends Resource
         }
 
         $owner = OwnerContext::resolve();
+        if ($owner === null) {
+            return $query->whereRaw('0 = 1');
+        }
 
         /** @var Builder<Shipment> $scoped */
-        $scoped = $query->forOwner($owner);
+        $scoped = $query->forOwner($owner, includeGlobal: true);
 
         return $scoped;
     }

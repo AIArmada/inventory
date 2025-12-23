@@ -25,6 +25,15 @@ beforeEach(function (): void {
     config()->set('orders.owner.enabled', true);
     config()->set('orders.owner.include_global', true);
     config()->set('orders.owner.auto_assign_on_create', false);
+
+    // Default to no ambient owner context so seeding explicit-owner rows is deterministic.
+    app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+    {
+        public function resolve(): ?Model
+        {
+            return null;
+        }
+    });
 });
 
 it('scopes child reads to current owner plus global (items/payments/notes)', function (): void {
@@ -163,15 +172,15 @@ it('scopes child reads to current owner plus global (items/payments/notes)', fun
         }
     });
 
-    expect(OrderItem::query()->forOwner(null, includeGlobal: true)->pluck('id')->all())
+    expect(OrderItem::query()->forOwner(includeGlobal: true)->pluck('id')->all())
         ->toContain($itemA->id, $itemGlobal->id)
         ->not->toContain($itemB->id);
 
-    expect(OrderPayment::query()->forOwner(null, includeGlobal: true)->pluck('id')->all())
+    expect(OrderPayment::query()->forOwner(includeGlobal: true)->pluck('id')->all())
         ->toContain($paymentA->id, $paymentGlobal->id)
         ->not->toContain($paymentB->id);
 
-    expect(OrderNote::query()->forOwner(null, includeGlobal: true)->pluck('id')->all())
+    expect(OrderNote::query()->forOwner(includeGlobal: true)->pluck('id')->all())
         ->toContain($noteA->id, $noteGlobal->id)
         ->not->toContain($noteB->id);
 });
@@ -253,15 +262,15 @@ it('can exclude global rows for child reads when includeGlobal is false', functi
         'is_customer_visible' => false,
     ]);
 
-    expect(OrderItem::query()->forOwner(null, includeGlobal: false)->pluck('id')->all())
+    expect(OrderItem::query()->forOwner(includeGlobal: false)->pluck('id')->all())
         ->toContain($itemA->id)
         ->not->toContain($itemGlobal->id);
 
-    expect(OrderPayment::query()->forOwner(null, includeGlobal: false)->pluck('id')->all())
+    expect(OrderPayment::query()->forOwner(includeGlobal: false)->pluck('id')->all())
         ->toContain($paymentA->id)
         ->not->toContain($paymentGlobal->id);
 
-    expect(OrderNote::query()->forOwner(null, includeGlobal: false)->pluck('id')->all())
+    expect(OrderNote::query()->forOwner(includeGlobal: false)->pluck('id')->all())
         ->toContain($noteA->id)
         ->not->toContain($noteGlobal->id);
 });

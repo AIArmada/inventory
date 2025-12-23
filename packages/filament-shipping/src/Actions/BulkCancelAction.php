@@ -28,6 +28,7 @@ class BulkCancelAction extends BulkAction
             ->modalHeading('Cancel Selected Shipments')
             ->modalDescription('Are you sure you want to cancel all selected shipments? This action cannot be undone.')
             ->deselectRecordsAfterCompletion()
+            ->authorize(fn (): bool => auth()->user()?->can('shipping.shipments.cancel') ?? false)
             ->action(function (Collection $records): void {
                 $user = auth()->user();
 

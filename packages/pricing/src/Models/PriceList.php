@@ -44,7 +44,19 @@ class PriceList extends Model
 
     protected static string $ownerScopeConfigKey = 'pricing.features.owner';
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'currency',
+        'priority',
+        'is_default',
+        'is_active',
+        'customer_id',
+        'segment_id',
+        'starts_at',
+        'ends_at',
+    ];
 
     /**
      * @var array<string, string>
@@ -192,6 +204,10 @@ class PriceList extends Model
             $owner = PricingOwnerScope::resolveOwner();
 
             if ($owner === null) {
+                if ($priceList->owner_type !== null || $priceList->owner_id !== null) {
+                    throw new AuthorizationException('Cannot write owned price lists without an owner context.');
+                }
+
                 return;
             }
 
@@ -205,6 +221,18 @@ class PriceList extends Model
         });
 
         static::deleting(function (PriceList $priceList): void {
+            if (PricingOwnerScope::isEnabled()) {
+                $owner = PricingOwnerScope::resolveOwner();
+
+                if ($owner === null) {
+                    if ($priceList->owner_type !== null || $priceList->owner_id !== null) {
+                        throw new AuthorizationException('Cannot delete owned price lists without an owner context.');
+                    }
+                } elseif (! $priceList->belongsToOwner($owner)) {
+                    throw new AuthorizationException('Cannot delete price lists outside the current owner scope.');
+                }
+            }
+
             $priceList->prices()->delete();
             $priceList->tiers()->delete();
         });

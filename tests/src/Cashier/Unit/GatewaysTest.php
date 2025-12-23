@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Cashier\Contracts\GatewayContract;
 use AIArmada\Cashier\Gateways\AbstractGateway;
+use AIArmada\Cashier\Gateways\StripeGateway;
 use AIArmada\Commerce\Tests\Cashier\CashierTestCase;
 
 uses(CashierTestCase::class);
@@ -54,6 +55,24 @@ describe('Gateways', function (): void {
             $gateway = $this->gatewayManager->gateway('stripe');
 
             expect($gateway->currency())->toBe('USD');
+        });
+
+        it('fails closed when webhook secret is missing', function (): void {
+            $gateway = new StripeGateway(['webhook_secret' => null]);
+
+            $result = $gateway->verifyWebhookSignature('{"id":"evt_test"}', [
+                'Stripe-Signature' => 't=1,v1=abc',
+            ]);
+
+            expect($result)->toBeFalse();
+        });
+
+        it('fails closed when signature header is missing', function (): void {
+            $gateway = new StripeGateway(['webhook_secret' => 'whsec_test']);
+
+            $result = $gateway->verifyWebhookSignature('{"id":"evt_test"}', []);
+
+            expect($result)->toBeFalse();
         });
     });
 

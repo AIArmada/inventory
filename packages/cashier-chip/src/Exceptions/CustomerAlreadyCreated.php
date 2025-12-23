@@ -11,14 +11,13 @@ class CustomerAlreadyCreated extends Exception
 {
     /**
      * Create a new CustomerAlreadyCreated exception.
-     *
-     * @param  Model  $owner
-     * @return static
      */
-    public static function exists($owner)
+    public static function exists(Model $owner): static
     {
+        $chipId = method_exists($owner, 'chipId') ? $owner->chipId() : null;
+
         return new static(
-            class_basename($owner) . " is already a CHIP customer with ID {$owner->chip_id}."
+            class_basename($owner) . ' is already a CHIP customer with ID ' . ($chipId ?: 'unknown') . '.'
         );
     }
 }

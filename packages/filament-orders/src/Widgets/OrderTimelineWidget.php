@@ -38,6 +38,12 @@ class OrderTimelineWidget extends Widget implements HasForms
             return collect([]);
         }
 
+        $this->record->loadMissing([
+            'customer',
+            'payments',
+            'orderNotes.user',
+        ]);
+
         $events = collect([]);
 
         // Order created event
@@ -83,13 +89,15 @@ class OrderTimelineWidget extends Widget implements HasForms
 
         // Payment events
         foreach ($this->record->payments ?? [] as $payment) {
+            $currency = $this->record->currency ?? (string) config('orders.currency.default', 'MYR');
+
             $events->push([
                 'type' => 'payment',
                 'title' => 'Payment ' . ucfirst($payment->status),
                 'description' => sprintf(
                     '%s payment of %s via %s',
                     ucfirst($payment->status),
-                    'RM ' . number_format($payment->amount / 100, 2),
+                    $currency . ' ' . number_format($payment->amount / 100, 2),
                     $payment->gateway
                 ),
                 'icon' => $payment->status === 'completed' ? 'heroicon-o-check-circle' : 'heroicon-o-credit-card',
@@ -158,7 +166,7 @@ class OrderTimelineWidget extends Widget implements HasForms
 
         $user = Filament::auth()->user();
 
-        if (! $user || ! Gate::forUser($user)->allows('update', $this->record)) {
+        if (! $user || ! Gate::forUser($user)->allows('addNote', $this->record)) {
             Notification::make()
                 ->title('Not authorized')
                 ->danger()
@@ -167,11 +175,23 @@ class OrderTimelineWidget extends Widget implements HasForms
             return;
         }
 
-        $this->record->orderNotes()->create([
-            'content' => $data['content'],
-            'is_customer_visible' => $data['is_customer_visible'] ?? false,
-            'user_id' => Filament::auth()->id(),
-        ]);
+        try {
+            $this->record->orderNotes()->create([
+                'content' => $data['content'],
+                'is_customer_visible' => $data['is_customer_visible'] ?? false,
+                'user_id' => Filament::auth()->id(),
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+
+            Notification::make()
+                ->title('Failed to add note')
+                ->body('Please try again. If the problem persists, contact support.')
+                ->danger()
+                ->send();
+
+            return;
+        }
 
         $this->noteData = [];
         $this->form->fill();

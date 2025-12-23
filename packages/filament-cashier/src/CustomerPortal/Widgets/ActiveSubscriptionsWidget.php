@@ -20,6 +20,8 @@ final class ActiveSubscriptionsWidget extends Widget
 
     protected static ?int $sort = 1;
 
+    public int $perGatewayLimit = 5;
+
     /**
      * @return Collection<int, UnifiedSubscription>
      */
@@ -33,14 +35,18 @@ final class ActiveSubscriptionsWidget extends Widget
 
         $subscriptions = collect();
         $detector = app(GatewayDetector::class);
+        $limit = max(1, $this->perGatewayLimit);
 
         if ($detector->isAvailable('stripe') && class_exists(Subscription::class)) {
             $stripeSubscriptions = CashierOwnerScope::apply(Subscription::query())
+                ->with('items')
                 ->where('user_id', $user->getAuthIdentifier())
                 ->where(function ($query): void {
                     $query->whereNull('ends_at')
                         ->orWhere('ends_at', '>', now());
                 })
+                ->orderByDesc('created_at')
+                ->limit($limit)
                 ->get()
                 ->map(fn ($sub) => UnifiedSubscription::fromStripe($sub));
 
@@ -50,11 +56,14 @@ final class ActiveSubscriptionsWidget extends Widget
         if ($detector->isAvailable('chip')) {
             $subscriptionModel = CashierChip::$subscriptionModel;
             $chipSubscriptions = CashierOwnerScope::apply($subscriptionModel::query())
+                ->with('items')
                 ->where('user_id', $user->getAuthIdentifier())
                 ->where(function ($query): void {
                     $query->whereNull('ends_at')
                         ->orWhere('ends_at', '>', now());
                 })
+                ->orderByDesc('created_at')
+                ->limit($limit)
                 ->get()
                 ->map(fn ($sub) => UnifiedSubscription::fromChip($sub));
 

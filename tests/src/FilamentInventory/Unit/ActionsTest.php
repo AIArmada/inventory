@@ -5,12 +5,19 @@ declare(strict_types=1);
 use AIArmada\Commerce\Tests\Inventory\Fixtures\InventoryItem;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentInventory\Actions\AdjustStockAction;
+use AIArmada\FilamentInventory\Actions\ApproveReorderSuggestionAction;
 use AIArmada\FilamentInventory\Actions\CycleCountAction;
+use AIArmada\FilamentInventory\Actions\ReleaseAllocationAction;
 use AIArmada\FilamentInventory\Actions\ReceiveStockAction;
+use AIArmada\FilamentInventory\Actions\RejectReorderSuggestionAction;
 use AIArmada\FilamentInventory\Actions\ShipStockAction;
 use AIArmada\FilamentInventory\Actions\TransferStockAction;
+use AIArmada\Inventory\Enums\ReorderSuggestionStatus;
+use AIArmada\Inventory\Facades\InventoryAllocation as InventoryAllocationFacade;
+use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Models\InventoryReorderSuggestion;
 use AIArmada\Inventory\Services\InventoryService;
 use Illuminate\Database\Eloquent\Model;
 
@@ -244,4 +251,115 @@ it('prevents forged cross-tenant location IDs in stock actions when owner scopin
 
     $levelATransfer = InventoryLevel::query()->where('location_id', $locationA->id)->first();
     expect((int) $levelATransfer?->quantity_on_hand)->toBe(10);
+});
+
+it('prevents releasing allocations outside the current owner context', function (): void {
+    config()->set('inventory.owner.enabled', true);
+    config()->set('inventory.owner.include_global', true);
+
+    $ownerA = InventoryItem::create(['name' => 'Owner A']);
+    $ownerB = InventoryItem::create(['name' => 'Owner B']);
+
+    $item = InventoryItem::create(['name' => 'Widget']);
+
+    setFilamentInventoryOwnerResolver($ownerB);
+
+    $locationB = InventoryLocation::factory()->create([
+        'owner_type' => $ownerB->getMorphClass(),
+        'owner_id' => $ownerB->getKey(),
+    ]);
+
+    $inventory = app(InventoryService::class);
+    $inventory->receive(model: $item, locationId: $locationB->id, quantity: 10);
+
+    $allocations = InventoryAllocationFacade::allocate($item, 5, 'CART-1');
+    /** @var InventoryAllocation $allocation */
+    $allocation = $allocations->first();
+    expect($allocation)->not()->toBeNull();
+
+    $levelBefore = InventoryLevel::query()
+        ->where('inventoryable_type', $item->getMorphClass())
+        ->where('inventoryable_id', $item->getKey())
+        ->where('location_id', $locationB->id)
+        ->first();
+
+    expect((int) $levelBefore?->quantity_reserved)->toBe(5);
+
+    setFilamentInventoryOwnerResolver($ownerA);
+
+    $release = ReleaseAllocationAction::make()->getActionFunction();
+    expect($release)->not()->toBeNull();
+
+    $release($allocation);
+
+    setFilamentInventoryOwnerResolver($ownerB);
+
+    expect(InventoryAllocation::query()->whereKey($allocation->getKey())->exists())->toBeTrue();
+
+    $levelAfter = InventoryLevel::query()
+        ->where('inventoryable_type', $item->getMorphClass())
+        ->where('inventoryable_id', $item->getKey())
+        ->where('location_id', $locationB->id)
+        ->first();
+
+    expect((int) $levelAfter?->quantity_reserved)->toBe(5);
+});
+
+it('prevents approving reorder suggestions outside the current owner context', function (): void {
+    config()->set('inventory.owner.enabled', true);
+    config()->set('inventory.owner.include_global', true);
+
+    $ownerA = InventoryItem::create(['name' => 'Owner A']);
+    $ownerB = InventoryItem::create(['name' => 'Owner B']);
+
+    setFilamentInventoryOwnerResolver($ownerB);
+
+    $locationB = InventoryLocation::factory()->create([
+        'owner_type' => $ownerB->getMorphClass(),
+        'owner_id' => $ownerB->getKey(),
+    ]);
+
+    $suggestion = InventoryReorderSuggestion::factory()->create([
+        'location_id' => $locationB->id,
+    ]);
+
+    expect($suggestion->status->value)->toBe('pending');
+
+    setFilamentInventoryOwnerResolver($ownerA);
+
+    $approve = ApproveReorderSuggestionAction::make()->getActionFunction();
+    expect($approve)->not()->toBeNull();
+    $approve($suggestion);
+
+    $suggestion->refresh();
+    expect($suggestion->status->value)->toBe('pending');
+    expect($suggestion->approved_at)->toBeNull();
+});
+
+it('does not change reorder suggestion when approve is a no-op', function (): void {
+    config()->set('inventory.owner.enabled', false);
+
+    $suggestion = InventoryReorderSuggestion::factory()->approved()->create();
+
+    $approve = ApproveReorderSuggestionAction::make()->getActionFunction();
+    expect($approve)->not()->toBeNull();
+    $approve($suggestion);
+
+    $suggestion->refresh();
+    expect($suggestion->status->value)->toBe('approved');
+});
+
+it('does not change reorder suggestion when reject is a no-op', function (): void {
+    config()->set('inventory.owner.enabled', false);
+
+    $suggestion = InventoryReorderSuggestion::factory()->create([
+        'status' => ReorderSuggestionStatus::Received,
+    ]);
+
+    $reject = RejectReorderSuggestionAction::make()->getActionFunction();
+    expect($reject)->not()->toBeNull();
+    $reject($suggestion);
+
+    $suggestion->refresh();
+    expect($suggestion->status->value)->toBe('received');
 });

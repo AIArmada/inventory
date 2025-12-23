@@ -54,16 +54,16 @@ it('scopes filament-pricing dashboard stats to the current owner (optionally inc
         'owner_id' => null,
     ]);
 
-    Promotion::query()->create([
+    $globalPromotion = Promotion::query()->create([
         'name' => 'Global Promo',
         'code' => 'GLOBAL-XT',
         'type' => 'percentage',
         'discount_value' => 10,
         'is_active' => true,
-        'usage_count' => 7,
         'owner_type' => null,
         'owner_id' => null,
     ]);
+    $globalPromotion->forceFill(['usage_count' => 7])->save();
 
     bindFilamentPricingOwner($ownerA);
 
@@ -74,14 +74,14 @@ it('scopes filament-pricing dashboard stats to the current owner (optionally inc
         'is_active' => true,
     ]);
 
-    Promotion::query()->create([
+    $ownerAPromotion = Promotion::query()->create([
         'name' => 'Owner A Promo',
         'code' => 'A-XT',
         'type' => 'percentage',
         'discount_value' => 10,
         'is_active' => true,
-        'usage_count' => 3,
     ]);
+    $ownerAPromotion->forceFill(['usage_count' => 3])->save();
 
     bindFilamentPricingOwner($ownerB);
 
@@ -92,14 +92,14 @@ it('scopes filament-pricing dashboard stats to the current owner (optionally inc
         'is_active' => true,
     ]);
 
-    Promotion::query()->create([
+    $ownerBPromotion = Promotion::query()->create([
         'name' => 'Owner B Promo',
         'code' => 'B-XT',
         'type' => 'percentage',
         'discount_value' => 10,
         'is_active' => true,
-        'usage_count' => 5,
     ]);
+    $ownerBPromotion->forceFill(['usage_count' => 5])->save();
 
     bindFilamentPricingOwner($ownerA);
 

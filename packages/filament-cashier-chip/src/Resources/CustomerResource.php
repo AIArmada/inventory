@@ -54,10 +54,15 @@ final class CustomerResource extends BaseCashierChipResource
 
     public static function getRelations(): array
     {
-        return [
+        $relations = [
             SubscriptionsRelationManager::class,
-            PaymentMethodsRelationManager::class,
         ];
+
+        if (config('filament-cashier-chip.features.payment_methods', true)) {
+            $relations[] = PaymentMethodsRelationManager::class;
+        }
+
+        return $relations;
     }
 
     public static function getGloballySearchableAttributes(): array

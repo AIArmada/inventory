@@ -20,7 +20,7 @@ final class ProcessRecurringCommand extends Command
 
     public function handle(RecurringService $service): int
     {
-        if ((bool) config('chip.owner.enabled', true) && OwnerContext::resolve() === null) {
+        if ((bool) config('chip.owner.enabled', false) && OwnerContext::resolve() === null) {
             $owners = RecurringSchedule::query()
                 ->withoutOwnerScope()
                 ->select(['owner_type', 'owner_id'])

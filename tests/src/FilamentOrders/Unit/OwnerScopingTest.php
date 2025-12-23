@@ -26,6 +26,14 @@ beforeEach(function (): void {
     config()->set('orders.owner.enabled', true);
     config()->set('orders.owner.include_global', true);
     config()->set('orders.owner.auto_assign_on_create', true);
+
+    app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+    {
+        public function resolve(): ?Model
+        {
+            return null;
+        }
+    });
 });
 
 it('scopes OrderResource to current owner plus global', function (): void {

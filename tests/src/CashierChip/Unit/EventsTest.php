@@ -9,7 +9,10 @@ use AIArmada\CashierChip\Events\SubscriptionCreated;
 use AIArmada\CashierChip\Events\WebhookHandled;
 use AIArmada\CashierChip\Events\WebhookReceived;
 use AIArmada\CashierChip\Subscription;
+use AIArmada\Commerce\Tests\CashierChip\CashierChipTestCase;
 use AIArmada\Commerce\Tests\CashierChip\Fixtures\User;
+
+uses(CashierChipTestCase::class);
 
 it('can create webhook received event', function (): void {
     $payload = ['event_type' => 'purchase.payment.success'];

@@ -15,7 +15,7 @@ use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Facades\Gate;
-use RuntimeException;
+use Throwable;
 
 class ViewOrder extends ViewRecord
 {
@@ -67,7 +67,9 @@ class ViewOrder extends ViewRecord
                             ->send();
 
                         $this->refreshFormData(['status', 'paid_at']);
-                    } catch (RuntimeException $exception) {
+                    } catch (Throwable $exception) {
+                        report($exception);
+
                         Notification::make()
                             ->title('Unable to confirm payment')
                             ->body($exception->getMessage())
@@ -111,7 +113,9 @@ class ViewOrder extends ViewRecord
                             ->send();
 
                         $this->refreshFormData(['status', 'shipped_at']);
-                    } catch (RuntimeException $exception) {
+                    } catch (Throwable $exception) {
+                        report($exception);
+
                         Notification::make()
                             ->title('Unable to ship order')
                             ->body($exception->getMessage())
@@ -142,7 +146,9 @@ class ViewOrder extends ViewRecord
                             ->send();
 
                         $this->refreshFormData(['status', 'delivered_at']);
-                    } catch (RuntimeException $exception) {
+                    } catch (Throwable $exception) {
+                        report($exception);
+
                         Notification::make()
                             ->title('Unable to confirm delivery')
                             ->body($exception->getMessage())
@@ -187,7 +193,9 @@ class ViewOrder extends ViewRecord
                             ->send();
 
                         $this->refreshFormData(['status', 'canceled_at', 'cancellation_reason']);
-                    } catch (RuntimeException $exception) {
+                    } catch (Throwable $exception) {
+                        report($exception);
+
                         Notification::make()
                             ->title('Unable to cancel order')
                             ->body($exception->getMessage())

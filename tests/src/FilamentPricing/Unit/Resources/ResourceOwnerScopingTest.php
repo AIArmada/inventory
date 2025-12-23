@@ -15,6 +15,7 @@ uses(TestCase::class);
 
 it('scopes filament pricing resources to the resolved owner (including global)', function (): void {
     config()->set('pricing.features.owner.enabled', true);
+    config()->set('pricing.features.owner.include_global', true);
 
     $ownerA = User::query()->create([
         'name' => 'Owner A',

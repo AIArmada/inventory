@@ -48,8 +48,13 @@ class RateShoppingEngine
         array $packages,
         array $options = []
     ): Collection {
-        $cacheKey = $this->buildCacheKey($origin, $destination, $packages);
+        $cacheKey = $this->buildCacheKey($origin, $destination, $packages, $options);
         $cacheTtl = $this->config['cache_ttl'] ?? 300;
+
+        // If options cannot be safely hashed (objects/resources), caching can return incorrect rates.
+        if ($cacheKey === null) {
+            return $this->fetchRatesFromAllCarriers($origin, $destination, $packages, $options);
+        }
 
         if ($cacheTtl > 0) {
             $repository = Cache::store();
@@ -177,6 +182,11 @@ class RateShoppingEngine
         // Extract carrier codes (primitives are safely serializable)
         $carrierCodes = $drivers->map(fn ($driver) => $driver->getCarrierCode())->all();
 
+        // If options are not concurrency-safe (contain objects/resources), fall back to sequential calls.
+        if (! $this->isConcurrencySafe($options)) {
+            return $this->getRatesFromCarriers($carrierCodes, $origin, $destination, $packages, $options);
+        }
+
         // Avoid capturing complex objects in concurrent closures.
         // Concurrency may fork/process-isolate and require serialization.
         $originPayload = $origin->toArray();
@@ -268,16 +278,70 @@ class RateShoppingEngine
      *
      * @param  array<PackageData>  $packages
      */
-    protected function buildCacheKey(AddressData $origin, AddressData $destination, array $packages): string
+    /**
+     * Build a cache key for rate lookup.
+     *
+     * Returns null when options are not safely hashable (objects/resources),
+     * because caching would risk returning incorrect rates.
+     *
+     * @param  array<PackageData>  $packages
+     * @param  array<string, mixed>  $options
+     */
+    protected function buildCacheKey(AddressData $origin, AddressData $destination, array $packages, array $options = []): ?string
     {
         $totalWeight = array_sum(array_map(fn (PackageData $p) => $p->weight, $packages));
+
+        $optionsHash = $this->hashForCache($options);
+        if ($optionsHash === null) {
+            return null;
+        }
 
         return 'shipping:rates:' . md5(serialize([
             'origin' => $origin->postCode,
             'destination' => $destination->postCode . $destination->countryCode,
             'weight' => $totalWeight,
             'packages' => count($packages),
+            'options' => $optionsHash,
         ]));
+    }
+
+    /**
+     * @param  array<string, mixed>  $options
+     */
+    private function isConcurrencySafe(array $options): bool
+    {
+        foreach ($options as $value) {
+            if (is_object($value) || is_resource($value)) {
+                return false;
+            }
+
+            if (is_array($value) && ! $this->isConcurrencySafe($value)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Hash options for cache key.
+     *
+     * Returns null if options contain non-hashable values (objects/resources).
+     *
+     * @param  array<string, mixed>  $options
+     */
+    private function hashForCache(array $options): ?string
+    {
+        if (! $this->isConcurrencySafe($options)) {
+            return null;
+        }
+
+        $json = json_encode($options);
+        if ($json === false) {
+            return null;
+        }
+
+        return md5($json);
     }
 
     /**

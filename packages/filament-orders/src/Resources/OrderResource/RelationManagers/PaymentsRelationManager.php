@@ -14,6 +14,15 @@ class PaymentsRelationManager extends RelationManager
 
     protected static ?string $title = 'Payments';
 
+    private function resolveCurrency(): string
+    {
+        if (! isset($this->ownerRecord)) {
+            return (string) config('orders.currency.default', 'MYR');
+        }
+
+        return $this->getOwnerRecord()->currency ?? (string) config('orders.currency.default', 'MYR');
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -30,7 +39,7 @@ class PaymentsRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('amount')
                     ->label('Amount')
-                    ->money('MYR', divideBy: 100)
+                    ->money(fn (): string => $this->resolveCurrency(), divideBy: 100)
                     ->alignEnd(),
 
                 Tables\Columns\TextColumn::make('status')

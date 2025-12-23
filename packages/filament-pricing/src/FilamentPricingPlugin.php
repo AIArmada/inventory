@@ -29,11 +29,20 @@ class FilamentPricingPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
+        $pages = [
+            Pages\ManagePricingSettings::class,
+        ];
+
+        if (class_exists('\\AIArmada\\Products\\Models\\Product') && class_exists('\\AIArmada\\Products\\Models\\Variant')) {
+            $pages[] = Pages\PriceSimulator::class;
+        }
+
         $panel
             ->resources([
                 Resources\PriceListResource::class,
                 Resources\PromotionResource::class,
             ])
+            ->pages($pages)
             ->widgets([
                 Widgets\PricingStatsWidget::class,
             ]);

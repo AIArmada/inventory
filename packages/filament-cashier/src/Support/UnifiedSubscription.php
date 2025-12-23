@@ -6,6 +6,7 @@ namespace AIArmada\FilamentCashier\Support;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -175,11 +176,47 @@ final readonly class UnifiedSubscription
 
     private static function getStripeAmount(Model $subscription): int
     {
-        // Try to get from items relationship
-        if (method_exists($subscription, 'items') && $subscription->items()->exists()) {
-            $item = $subscription->items()->first();
-            if ($item && isset($item->stripe_price)) {
-                return (int) ($item->quantity * ($item->unit_amount ?? 0));
+        if ($subscription->relationLoaded('items')) {
+            $items = $subscription->getRelation('items');
+
+            if (is_iterable($items)) {
+                foreach ($items as $item) {
+                    if (is_object($item) && isset($item->stripe_price)) {
+                        return (int) (($item->quantity ?? 0) * ($item->unit_amount ?? 0));
+                    }
+
+                    break;
+                }
+            }
+
+            return 0;
+        }
+
+        if (! method_exists($subscription, 'items')) {
+            return 0;
+        }
+
+        $items = $subscription->items();
+
+        if ($items instanceof Relation) {
+            $item = $items->select(['quantity', 'unit_amount', 'stripe_price'])->first();
+
+            if (is_object($item) && isset($item->stripe_price)) {
+                return (int) (($item->quantity ?? 0) * ($item->unit_amount ?? 0));
+            }
+
+            return 0;
+        }
+
+        if (is_object($items) && method_exists($items, 'exists') && ! $items->exists()) {
+            return 0;
+        }
+
+        if (is_object($items) && method_exists($items, 'first')) {
+            $item = $items->first();
+
+            if (is_object($item) && isset($item->stripe_price)) {
+                return (int) (($item->quantity ?? 0) * ($item->unit_amount ?? 0));
             }
         }
 
@@ -193,8 +230,42 @@ final readonly class UnifiedSubscription
             return (int) $subscription->amount;
         }
 
-        if (method_exists($subscription, 'items') && $subscription->items()->exists()) {
-            return (int) $subscription->items()->sum(DB::raw('quantity * unit_amount'));
+        if ($subscription->relationLoaded('items')) {
+            $items = $subscription->getRelation('items');
+
+            if (is_iterable($items)) {
+                $total = 0;
+
+                foreach ($items as $item) {
+                    if (! is_object($item)) {
+                        continue;
+                    }
+
+                    $total += (int) (($item->quantity ?? 0) * ($item->unit_amount ?? 0));
+                }
+
+                return $total;
+            }
+
+            return 0;
+        }
+
+        if (! method_exists($subscription, 'items')) {
+            return 0;
+        }
+
+        $items = $subscription->items();
+
+        if ($items instanceof Relation) {
+            return (int) $items->sum(DB::raw('quantity * unit_amount'));
+        }
+
+        if (is_object($items) && method_exists($items, 'sum')) {
+            return (int) $items->sum(DB::raw('quantity * unit_amount'));
+        }
+
+        if (is_object($items) && method_exists($items, 'exists') && ! $items->exists()) {
+            return 0;
         }
 
         return 0;

@@ -37,8 +37,6 @@ class OrderService
                 'order_number' => $orderData['order_number'] ?? Order::generateOrderNumber(),
                 'customer_id' => $orderData['customer_id'] ?? null,
                 'customer_type' => $orderData['customer_type'] ?? null,
-                'owner_id' => $orderData['owner_id'] ?? null,
-                'owner_type' => $orderData['owner_type'] ?? null,
                 'subtotal' => $orderData['subtotal'] ?? 0,
                 'discount_total' => $orderData['discount_total'] ?? 0,
                 'shipping_total' => $orderData['shipping_total'] ?? 0,

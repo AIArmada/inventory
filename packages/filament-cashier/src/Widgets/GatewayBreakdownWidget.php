@@ -9,6 +9,8 @@ use AIArmada\FilamentCashier\Support\CashierOwnerScope;
 use AIArmada\FilamentCashier\Support\GatewayDetector;
 use AIArmada\FilamentCashier\Support\UnifiedSubscription;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Laravel\Cashier\Subscription;
 
 final class GatewayBreakdownWidget extends ChartWidget
@@ -87,16 +89,30 @@ final class GatewayBreakdownWidget extends ChartWidget
             $revenue = [];
 
             if ($detector->isAvailable('stripe') && class_exists(Subscription::class)) {
-                $stripeRevenue = CashierOwnerScope::apply(Subscription::query())
+                $stripeRevenue = 0;
+
+                $stripeQuery = CashierOwnerScope::apply(Subscription::query())
                     ->with('items')
                     ->where(function ($query): void {
                         $query->whereNull('ends_at')
                             ->orWhere('ends_at', '>', now());
-                    })
-                    ->get()
-                    ->map(fn ($sub) => UnifiedSubscription::fromStripe($sub))
-                    ->filter(fn (UnifiedSubscription $sub) => $sub->status->isActive())
-                    ->sum('amount');
+                    });
+
+                $stripeQuery->chunk(200, function (Collection $chunk) use (&$stripeRevenue): void {
+                    foreach ($chunk as $model) {
+                        if (! $model instanceof Model) {
+                            continue;
+                        }
+
+                        $unified = UnifiedSubscription::fromStripe($model);
+
+                        if (! $unified->status->isActive()) {
+                            continue;
+                        }
+
+                        $stripeRevenue += $unified->amount;
+                    }
+                });
 
                 if ($stripeRevenue > 0) {
                     $revenue['stripe'] = $stripeRevenue;
@@ -105,15 +121,30 @@ final class GatewayBreakdownWidget extends ChartWidget
 
             if ($detector->isAvailable('chip')) {
                 $subscriptionModel = CashierChip::$subscriptionModel;
-                $chipRevenue = CashierOwnerScope::apply($subscriptionModel::query())
+                $chipRevenue = 0;
+
+                $chipQuery = CashierOwnerScope::apply($subscriptionModel::query())
+                    ->with('items')
                     ->where(function ($query): void {
                         $query->whereNull('ends_at')
                             ->orWhere('ends_at', '>', now());
-                    })
-                    ->get()
-                    ->map(fn ($sub) => UnifiedSubscription::fromChip($sub))
-                    ->filter(fn (UnifiedSubscription $sub) => $sub->status->isActive())
-                    ->sum('amount');
+                    });
+
+                $chipQuery->chunk(200, function (Collection $chunk) use (&$chipRevenue): void {
+                    foreach ($chunk as $model) {
+                        if (! $model instanceof Model) {
+                            continue;
+                        }
+
+                        $unified = UnifiedSubscription::fromChip($model);
+
+                        if (! $unified->status->isActive()) {
+                            continue;
+                        }
+
+                        $chipRevenue += $unified->amount;
+                    }
+                });
 
                 if ($chipRevenue > 0) {
                     $revenue['chip'] = $chipRevenue;

@@ -87,6 +87,12 @@ abstract class TestCase extends Orchestra
         $this->setUpDatabase();
 
         $this->bindDefaultOwnerResolver();
+
+        // Enforce deterministic CHIP owner-scoping defaults for tests.
+        // Some environments may have CHIP_OWNER_* env vars set, which would otherwise change behavior.
+        config()->set('chip.owner.enabled', false);
+        config()->set('chip.owner.include_global', false);
+        config()->set('chip.owner.auto_assign_on_create', true);
     }
 
     private function bindDefaultOwnerResolver(): void
@@ -261,6 +267,11 @@ abstract class TestCase extends Orchestra
         $app['config']->set('chip.send.api_key', 'test_api_key');
         $app['config']->set('chip.send.api_secret', 'test_send_secret');
         $app['config']->set('chip.webhooks.public_key', 'test_public_key');
+
+        // Ownership defaults (avoid host env vars affecting tests)
+        $app['config']->set('chip.owner.enabled', false);
+        $app['config']->set('chip.owner.include_global', false);
+        $app['config']->set('chip.owner.auto_assign_on_create', true);
         $app['config']->set('chip.is_sandbox', true);
 
         // Configure JNT settings for testing

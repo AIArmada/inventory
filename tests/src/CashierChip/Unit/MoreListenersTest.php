@@ -15,6 +15,7 @@ use AIArmada\Chip\Events\PurchasePaymentFailure;
 use AIArmada\Chip\Events\PurchasePreauthorized;
 use AIArmada\Chip\Events\PurchaseSubscriptionChargeFailure;
 use AIArmada\Commerce\Tests\CashierChip\CashierChipTestCase;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Support\Facades\Event;
 
 class MoreListenersTest extends CashierChipTestCase
@@ -36,7 +37,7 @@ class MoreListenersTest extends CashierChipTestCase
         $event = new PurchasePaymentFailure($purchase, $purchaseData);
 
         $listener = new HandlePurchasePaymentFailure;
-        $listener->handle($event);
+        OwnerContext::withOwner($user, fn (): null => tap(null, fn () => $listener->handle($event)));
 
         Event::assertDispatched(PaymentFailed::class, function ($e) use ($user) {
             return $e->billable->is($user);
@@ -64,7 +65,7 @@ class MoreListenersTest extends CashierChipTestCase
     public function test_handle_purchase_payment_failure_marks_subscription_past_due(): void
     {
         $user = $this->createUser(['chip_id' => 'cli_123']);
-        $subscription = Subscription::factory()->for($user, 'customer')->create([
+        $subscription = Subscription::factory()->for($user, 'owner')->for($user, 'customer')->create([
             'type' => 'default',
             'chip_status' => Subscription::STATUS_ACTIVE,
         ]);
@@ -80,7 +81,7 @@ class MoreListenersTest extends CashierChipTestCase
         $event = new PurchasePaymentFailure($purchase, $purchaseData);
 
         $listener = new HandlePurchasePaymentFailure;
-        $listener->handle($event);
+        OwnerContext::withOwner($user, fn (): null => tap(null, fn () => $listener->handle($event)));
 
         $this->assertEquals(Subscription::STATUS_PAST_DUE, $subscription->fresh()->chip_status);
     }
@@ -102,7 +103,7 @@ class MoreListenersTest extends CashierChipTestCase
         $event = new PurchasePreauthorized($purchase, $purchaseData);
 
         $listener = new HandlePurchasePreauthorized;
-        $listener->handle($event);
+        OwnerContext::withOwner($user, fn (): null => tap(null, fn () => $listener->handle($event)));
 
         $user->refresh();
         // Recurring token should be saved
@@ -141,7 +142,7 @@ class MoreListenersTest extends CashierChipTestCase
         $event = new PurchasePreauthorized($purchase, $purchaseData);
 
         $listener = new HandlePurchasePreauthorized;
-        $listener->handle($event);
+        OwnerContext::withOwner($user, fn (): null => tap(null, fn () => $listener->handle($event)));
 
         $user->refresh();
         $this->assertNull($user->default_pm_id);
@@ -152,7 +153,7 @@ class MoreListenersTest extends CashierChipTestCase
         Event::fake([SubscriptionRenewalFailed::class]);
 
         $user = $this->createUser(['chip_id' => 'cli_123']);
-        $subscription = Subscription::factory()->for($user, 'customer')->create([
+        $subscription = Subscription::factory()->for($user, 'owner')->for($user, 'customer')->create([
             'type' => 'default',
             'chip_status' => Subscription::STATUS_ACTIVE,
         ]);
@@ -169,7 +170,7 @@ class MoreListenersTest extends CashierChipTestCase
         $event = new PurchaseSubscriptionChargeFailure($purchase, $purchaseData);
 
         $listener = new HandleSubscriptionChargeFailure;
-        $listener->handle($event);
+        OwnerContext::withOwner($user, fn (): null => tap(null, fn () => $listener->handle($event)));
 
         Event::assertDispatched(SubscriptionRenewalFailed::class, function ($e) use ($subscription) {
             return $e->subscription->id === $subscription->id;
@@ -179,7 +180,7 @@ class MoreListenersTest extends CashierChipTestCase
     public function test_handle_subscription_charge_failure_marks_past_due(): void
     {
         $user = $this->createUser(['chip_id' => 'cli_123']);
-        $subscription = Subscription::factory()->for($user, 'customer')->create([
+        $subscription = Subscription::factory()->for($user, 'owner')->for($user, 'customer')->create([
             'type' => 'default',
             'chip_status' => Subscription::STATUS_ACTIVE,
         ]);
@@ -195,7 +196,7 @@ class MoreListenersTest extends CashierChipTestCase
         $event = new PurchaseSubscriptionChargeFailure($purchase, $purchaseData);
 
         $listener = new HandleSubscriptionChargeFailure;
-        $listener->handle($event);
+        OwnerContext::withOwner($user, fn (): null => tap(null, fn () => $listener->handle($event)));
 
         $this->assertEquals(Subscription::STATUS_PAST_DUE, $subscription->fresh()->chip_status);
     }

@@ -23,6 +23,12 @@ final class ManageSubscriptions extends Page
 
     protected static ?int $navigationSort = 1;
 
+    public int $perGatewayLimit = 50;
+
+    public bool $hasMoreSubscriptions = false;
+
+    private const int DEFAULT_LOAD_MORE_INCREMENT = 50;
+
     protected string $view = 'filament-cashier::customer-portal.manage-subscriptions';
 
     public static function getNavigationLabel(): string
@@ -48,13 +54,26 @@ final class ManageSubscriptions extends Page
 
         $subscriptions = collect();
         $detector = app(GatewayDetector::class);
+        $limit = max(1, $this->perGatewayLimit);
+        $fetchLimit = $limit + 1;
+
+        $hasMoreStripe = false;
+        $hasMoreChip = false;
 
         // Get Stripe subscriptions for this user
         if ($detector->isAvailable('stripe') && class_exists(Subscription::class)) {
-            $stripeSubscriptions = CashierOwnerScope::apply(Subscription::query())
+            $stripeModels = CashierOwnerScope::apply(Subscription::query())
+                ->with('items')
                 ->where('user_id', $user->getAuthIdentifier())
                 ->orderByDesc('created_at')
+                ->limit($fetchLimit)
                 ->get()
+                ->values();
+
+            $hasMoreStripe = $stripeModels->count() > $limit;
+
+            $stripeSubscriptions = $stripeModels
+                ->take($limit)
                 ->map(fn ($sub) => UnifiedSubscription::fromStripe($sub));
 
             $subscriptions = $subscriptions->merge($stripeSubscriptions);
@@ -63,16 +82,31 @@ final class ManageSubscriptions extends Page
         // Get CHIP subscriptions for this user
         if ($detector->isAvailable('chip')) {
             $subscriptionModel = CashierChip::$subscriptionModel;
-            $chipSubscriptions = CashierOwnerScope::apply($subscriptionModel::query())
+            $chipModels = CashierOwnerScope::apply($subscriptionModel::query())
+                ->with('items')
                 ->where('user_id', $user->getAuthIdentifier())
                 ->orderByDesc('created_at')
+                ->limit($fetchLimit)
                 ->get()
+                ->values();
+
+            $hasMoreChip = $chipModels->count() > $limit;
+
+            $chipSubscriptions = $chipModels
+                ->take($limit)
                 ->map(fn ($sub) => UnifiedSubscription::fromChip($sub));
 
             $subscriptions = $subscriptions->merge($chipSubscriptions);
         }
 
+        $this->hasMoreSubscriptions = $hasMoreStripe || $hasMoreChip;
+
         return $subscriptions->sortByDesc('createdAt')->values();
+    }
+
+    public function loadMoreSubscriptions(int $increment = self::DEFAULT_LOAD_MORE_INCREMENT): void
+    {
+        $this->perGatewayLimit += max(1, $increment);
     }
 
     public function cancelSubscription(string $gateway, string $id): void
@@ -184,6 +218,7 @@ final class ManageSubscriptions extends Page
 
         if ($gateway === 'stripe' && $detector->isAvailable('stripe') && class_exists(Subscription::class)) {
             $sub = CashierOwnerScope::apply(Subscription::query())
+                ->with('items')
                 ->where('user_id', $userId)
                 ->whereKey($id)
                 ->first();
@@ -196,6 +231,7 @@ final class ManageSubscriptions extends Page
         if ($gateway === 'chip' && $detector->isAvailable('chip')) {
             $subscriptionModel = CashierChip::$subscriptionModel;
             $sub = CashierOwnerScope::apply($subscriptionModel::query())
+                ->with('items')
                 ->where('user_id', $userId)
                 ->whereKey($id)
                 ->first();

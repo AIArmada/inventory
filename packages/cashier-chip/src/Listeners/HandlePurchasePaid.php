@@ -7,6 +7,7 @@ namespace AIArmada\CashierChip\Listeners;
 use AIArmada\CashierChip\Cashier;
 use AIArmada\CashierChip\Events\PaymentSucceeded;
 use AIArmada\Chip\Events\PurchasePaid;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -16,6 +17,10 @@ class HandlePurchasePaid
 {
     public function handle(PurchasePaid $event): void
     {
+        if ((bool) config('cashier-chip.features.owner.enabled', true) && OwnerContext::resolve() === null) {
+            return;
+        }
+
         $purchase = $event->purchase;
         $payload = $event->payload;
 
@@ -26,7 +31,9 @@ class HandlePurchasePaid
         }
 
         /** @var Model|null $billable */
-        $billable = Cashier::findBillable($clientId);
+        $billable = (bool) config('cashier-chip.features.owner.enabled', true)
+            ? Cashier::findBillableForWebhook($clientId)
+            : Cashier::findBillable($clientId);
 
         if ($billable === null) {
             return;
@@ -75,7 +82,11 @@ class HandlePurchasePaid
      */
     protected function handleSubscriptionPayment(object $billable, string $subscriptionType): void
     {
-        $subscription = $billable->subscription($subscriptionType);
+        if (! $billable instanceof Model) {
+            return;
+        }
+
+        $subscription = Cashier::findSubscriptionForWebhook($billable, $subscriptionType);
 
         if ($subscription) {
             $interval = $subscription->billing_interval ?? 'month';

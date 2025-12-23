@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace AIArmada\Commerce\Tests\CashierChip\Unit;
 
+use AIArmada\CashierChip\Subscription;
 use AIArmada\CashierChip\SubscriptionBuilder;
 use AIArmada\Commerce\Tests\CashierChip\CashierChipTestCase;
+use AIArmada\Commerce\Tests\CashierChip\Fixtures\User;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use InvalidArgumentException;
 
 class SubscriptionBuilderTest extends CashierChipTestCase
@@ -182,5 +186,25 @@ class SubscriptionBuilderTest extends CashierChipTestCase
         $this->expectExceptionMessage('At least one price is required');
 
         $builder->create();
+    }
+
+    public function test_create_requires_owner_context_when_owner_scoping_enabled(): void
+    {
+        OwnerContext::clearOverride();
+
+        $user = User::create([
+            'name' => 'Test User',
+            'email' => 'test-' . uniqid() . '@example.com',
+            'chip_id' => 'cli_123',
+        ]);
+
+        $builder = new SubscriptionBuilder($user, 'default', 'price_123');
+
+        try {
+            $builder->create();
+            $this->fail('Expected AuthorizationException was not thrown.');
+        } catch (AuthorizationException) {
+            $this->assertSame(0, Subscription::query()->withoutOwnerScope()->count());
+        }
     }
 }

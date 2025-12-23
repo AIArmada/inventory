@@ -8,6 +8,7 @@ use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\CashierChip\Testing\FakeChipClient;
 use AIArmada\CashierChip\Testing\FakeChipCollectService;
 use AIArmada\Chip\Services\ChipCollectService;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Akaunting\Money\Currency;
 use Akaunting\Money\Money;
 use Illuminate\Database\Eloquent\Model;
@@ -86,6 +87,44 @@ class Cashier
         $model = static::$customerModel;
 
         return $model::where('chip_id', $chipId)->first();
+    }
+
+    /**
+     * Resolve a billable from a CHIP client id in system contexts (webhooks/events).
+     *
+     * This explicitly bypasses owner scoping when the current owner is not resolvable,
+     * since webhook/event payloads are not tenant-aware.
+     *
+     * @phpstan-return (Model&BillableContract)|null
+     */
+    public static function findBillableForWebhook(?string $chipId): ?Model
+    {
+        if (! $chipId) {
+            return null;
+        }
+
+        $model = static::$customerModel;
+
+        $query = $model::query();
+
+        if ((bool) config('cashier-chip.features.owner.enabled', true) && OwnerContext::resolve() === null) {
+            return null;
+        }
+
+        return $query->where('chip_id', $chipId)->first();
+    }
+
+    public static function findSubscriptionForWebhook(Model $billable, string $subscriptionType): ?Subscription
+    {
+        $query = Subscription::query()
+            ->where('user_id', $billable->getKey())
+            ->where('type', $subscriptionType);
+
+        if ((bool) config('cashier-chip.features.owner.enabled', true) && OwnerContext::resolve() === null) {
+            return null;
+        }
+
+        return $query->first();
     }
 
     /**

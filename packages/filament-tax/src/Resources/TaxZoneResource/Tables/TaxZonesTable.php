@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentTax\Resources\TaxZoneResource\Tables;
 
+use AIArmada\FilamentTax\Support\FilamentTaxAuthz;
 use AIArmada\Tax\Models\TaxZone;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
@@ -69,13 +70,16 @@ final class TaxZonesTable
                 EditAction::make(),
             ])
             ->toolbarActions([
-                BulkAction::make('delete')
-                    ->label('Delete Selected')
-                    ->icon(Heroicon::OutlinedTrash)
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(fn ($records) => $records->each->delete())
-                    ->deselectRecordsAfterCompletion(),
+                FilamentTaxAuthz::requirePermission(
+                    BulkAction::make('delete')
+                        ->label('Delete Selected')
+                        ->icon(Heroicon::OutlinedTrash)
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn ($records) => $records->each->delete())
+                        ->deselectRecordsAfterCompletion(),
+                    'tax.zones.delete',
+                ),
             ]);
     }
 }

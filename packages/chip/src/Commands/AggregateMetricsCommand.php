@@ -22,7 +22,7 @@ final class AggregateMetricsCommand extends Command
 
     public function handle(MetricsAggregator $aggregator): int
     {
-        if ((bool) config('chip.owner.enabled', true) && OwnerContext::resolve() === null) {
+        if ((bool) config('chip.owner.enabled', false) && OwnerContext::resolve() === null) {
             $owners = Purchase::query()
                 ->withoutOwnerScope()
                 ->select(['owner_type', 'owner_id'])

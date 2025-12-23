@@ -7,8 +7,8 @@ namespace AIArmada\FilamentTax\Resources\TaxClassResource\Schemas;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Forms\Set as SetFormState;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set as SetFormState;
 use Filament\Schemas\Schema;
 
 final class TaxClassForm

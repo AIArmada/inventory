@@ -29,10 +29,12 @@ class RecentOrdersWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $includeGlobal = (bool) config('orders.owner.include_global', false);
+
         return $table
             ->query(
                 Order::query()
-                    ->forOwner()
+                    ->forOwner(includeGlobal: $includeGlobal)
                     ->with(['items'])
                     ->latest()
                     ->limit(10)

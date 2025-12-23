@@ -12,7 +12,10 @@ use AIArmada\Cashier\Contracts\PaymentMethodContract;
 use AIArmada\Cashier\Contracts\SubscriptionBuilderContract;
 use AIArmada\Cashier\Contracts\SubscriptionContract;
 use AIArmada\Cashier\Gateways\AbstractGateway;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Commerce\Tests\Cashier\CashierTestCase;
+use AIArmada\Commerce\Tests\Cashier\Fixtures\OwnerScopedBillableUser;
+use AIArmada\Commerce\Tests\Cashier\Fixtures\Tenant;
 use AIArmada\Commerce\Tests\Cashier\Fixtures\User;
 use Illuminate\Support\Collection;
 
@@ -232,6 +235,67 @@ describe('AbstractGateway Protected Methods', function (): void {
             $billable = $gateway->findBillable('cus_nonexistent');
 
             expect($billable)->toBeNull();
+        });
+
+        it('fails closed when billable is owner-scoped and no owner context exists', function (): void {
+            config(['cashier.models.billable' => OwnerScopedBillableUser::class]);
+
+            $tenant = Tenant::create(['name' => 'Tenant A']);
+
+            OwnerContext::withOwner($tenant, function () use ($tenant): void {
+                OwnerScopedBillableUser::create([
+                    'name' => 'Owner Scoped User',
+                    'email' => 'owner-scoped@example.com',
+                    'testable_id' => 'cus_123',
+                    'owner_type' => Tenant::class,
+                    'owner_id' => $tenant->getKey(),
+                ]);
+            });
+
+            $gateway = new TestableGateway(['model' => OwnerScopedBillableUser::class]);
+
+            $resolved = $gateway->findBillable('cus_123');
+
+            expect($resolved)->toBeNull();
+        });
+
+        it('resolves billable within the active owner context only', function (): void {
+            config(['cashier.models.billable' => OwnerScopedBillableUser::class]);
+
+            $tenantA = Tenant::create(['name' => 'Tenant A']);
+            $tenantB = Tenant::create(['name' => 'Tenant B']);
+
+            $userA = OwnerContext::withOwner($tenantA, function () use ($tenantA): OwnerScopedBillableUser {
+                return OwnerScopedBillableUser::create([
+                    'name' => 'User A',
+                    'email' => 'user-a@example.com',
+                    'testable_id' => 'cus_abc',
+                    'owner_type' => Tenant::class,
+                    'owner_id' => $tenantA->getKey(),
+                ]);
+            });
+
+            OwnerContext::withOwner($tenantB, function () use ($tenantB): void {
+                OwnerScopedBillableUser::create([
+                    'name' => 'User B',
+                    'email' => 'user-b@example.com',
+                    'testable_id' => 'cus_abc',
+                    'owner_type' => Tenant::class,
+                    'owner_id' => $tenantB->getKey(),
+                ]);
+            });
+
+            $gateway = new TestableGateway(['model' => OwnerScopedBillableUser::class]);
+
+            $resolvedA = OwnerContext::withOwner($tenantA, fn () => $gateway->findBillable('cus_abc'));
+
+            expect($resolvedA)->not->toBeNull()
+                ->and($resolvedA?->getKey())->toBe($userA->getKey());
+
+            $resolvedB = OwnerContext::withOwner($tenantB, fn () => $gateway->findBillable('cus_abc'));
+
+            expect($resolvedB)->not->toBeNull()
+                ->and($resolvedB?->getAttribute('email'))->toBe('user-b@example.com');
         });
     });
 

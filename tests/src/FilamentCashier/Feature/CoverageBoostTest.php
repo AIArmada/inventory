@@ -38,6 +38,8 @@ use Filament\Tables\Table;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\Commerce\Tests\Support\OwnerResolvers\FixedOwnerResolver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as AuthenticatableUser;
 use Illuminate\Support\Carbon;
@@ -163,6 +165,7 @@ it('covers the filament-cashier public surface', function (): void {
         SchemaFacade::create('cashier_chip_subscriptions', function (\Illuminate\Database\Schema\Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id');
+            $table->nullableMorphs('owner');
             $table->string('type');
             $table->string('chip_id')->unique();
             $table->string('chip_status');
@@ -182,6 +185,7 @@ it('covers the filament-cashier public surface', function (): void {
         SchemaFacade::create('cashier_chip_subscription_items', function (\Illuminate\Database\Schema\Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('subscription_id');
+            $table->nullableMorphs('owner');
             $table->string('chip_id')->unique();
             $table->string('chip_product')->nullable();
             $table->string('chip_price')->nullable();
@@ -200,6 +204,11 @@ it('covers the filament-cashier public surface', function (): void {
         'email' => 'cashier-test@example.com',
         'password' => bcrypt('secret'),
     ]);
+
+    // Align owner context with the current customer/billable.
+    app()->instance(OwnerResolverInterface::class, new FixedOwnerResolver($dbUser));
+
+    Auth::guard()->setUser($dbUser);
 
     \AIArmada\CashierChip\Cashier::useCustomerModel($userModel);
     \AIArmada\CashierChip\Cashier::useSubscriptionModel(\AIArmada\CashierChip\Subscription::class);

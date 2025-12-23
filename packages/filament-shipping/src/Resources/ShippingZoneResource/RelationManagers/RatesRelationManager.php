@@ -17,6 +17,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class RatesRelationManager extends RelationManager
 {
@@ -129,6 +130,21 @@ class RatesRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
+        $canManageRates = function (): bool {
+            $user = auth()->user();
+
+            if ($user === null) {
+                return false;
+            }
+
+            $owner = $this->getOwnerRecord();
+            if (! $owner instanceof Model) {
+                return false;
+            }
+
+            return $user->can('manageRates', $owner);
+        };
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')
@@ -180,15 +196,19 @@ class RatesRelationManager extends RelationManager
                     ]),
             ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->authorize($canManageRates),
             ])
             ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->authorize($canManageRates),
+                DeleteAction::make()
+                    ->authorize($canManageRates),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
-                    DeleteBulkAction::make(),
+                    DeleteBulkAction::make()
+                        ->authorize($canManageRates),
                 ]),
             ]);
     }

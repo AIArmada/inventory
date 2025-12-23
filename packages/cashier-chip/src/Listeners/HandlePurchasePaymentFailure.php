@@ -7,6 +7,7 @@ namespace AIArmada\CashierChip\Listeners;
 use AIArmada\CashierChip\Cashier;
 use AIArmada\CashierChip\Events\PaymentFailed;
 use AIArmada\Chip\Events\PurchasePaymentFailure;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -16,6 +17,10 @@ class HandlePurchasePaymentFailure
 {
     public function handle(PurchasePaymentFailure $event): void
     {
+        if ((bool) config('cashier-chip.features.owner.enabled', true) && OwnerContext::resolve() === null) {
+            return;
+        }
+
         $purchase = $event->purchase;
         $payload = $event->payload;
 
@@ -26,7 +31,9 @@ class HandlePurchasePaymentFailure
         }
 
         /** @var Model|null $billable */
-        $billable = Cashier::findBillable($clientId);
+        $billable = (bool) config('cashier-chip.features.owner.enabled', true)
+            ? Cashier::findBillableForWebhook($clientId)
+            : Cashier::findBillable($clientId);
 
         if ($billable === null) {
             return;
@@ -48,7 +55,11 @@ class HandlePurchasePaymentFailure
      */
     protected function handleSubscriptionPaymentFailure(object $billable, string $subscriptionType): void
     {
-        $subscription = $billable->subscription($subscriptionType);
+        if (! $billable instanceof Model) {
+            return;
+        }
+
+        $subscription = Cashier::findSubscriptionForWebhook($billable, $subscriptionType);
 
         if ($subscription) {
             $subscription->forceFill([

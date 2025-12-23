@@ -10,6 +10,7 @@ use AIArmada\FilamentCashier\Support\GatewayDetector;
 use AIArmada\FilamentCashier\Support\UnifiedSubscription;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Laravel\Cashier\Subscription;
 
@@ -21,12 +22,10 @@ final class TotalMrrWidget extends StatsOverviewWidget
 
     protected function getStats(): array
     {
-        $subscriptions = $this->getActiveSubscriptions();
+        $summary = $this->getActiveSubscriptionsSummary();
 
         // Calculate MRR by currency
-        $mrrByCurrency = $subscriptions
-            ->groupBy('currency')
-            ->map(fn (Collection $subs) => $subs->sum('amount'));
+        $mrrByCurrency = collect($summary['mrrByCurrency']);
 
         // Primary MRR (use base currency from config or largest)
         $baseCurrency = config('filament-cashier.currency.base', 'USD');
@@ -45,7 +44,7 @@ final class TotalMrrWidget extends StatsOverviewWidget
         $formattedMrr = $this->formatCurrency($primaryMrr, $baseCurrency);
 
         // Calculate trend (mock for now - would need historical data)
-        $trend = $subscriptions->count() > 0 ? '+12%' : '0%';
+        $trend = $summary['count'] > 0 ? '+12%' : '0%';
 
         return [
             Stat::make(__('filament-cashier::dashboard.widgets.total_mrr.label'), $formattedMrr)
@@ -62,41 +61,72 @@ final class TotalMrrWidget extends StatsOverviewWidget
      * Uses once() to cache the result for the current request, avoiding
      * redundant database queries during the widget render cycle.
      *
-     * @return Collection<int, UnifiedSubscription>
+     * @return array{count: int, mrrByCurrency: array<string, int>}
      */
-    protected function getActiveSubscriptions(): Collection
+    protected function getActiveSubscriptionsSummary(): array
     {
-        return once(function (): Collection {
-            $subscriptions = collect();
+        return once(function (): array {
+            $count = 0;
+            $mrrByCurrency = [];
             $detector = app(GatewayDetector::class);
 
             if ($detector->isAvailable('stripe') && class_exists(Subscription::class)) {
-                $stripeSubscriptions = CashierOwnerScope::apply(Subscription::query())
+                $stripeQuery = CashierOwnerScope::apply(Subscription::query())
                     ->with('items')
                     ->where(function ($query): void {
                         $query->whereNull('ends_at')
                             ->orWhere('ends_at', '>', now());
-                    })
-                    ->get()
-                    ->map(fn ($sub) => UnifiedSubscription::fromStripe($sub));
+                    });
 
-                $subscriptions = $subscriptions->merge($stripeSubscriptions);
+                $stripeQuery->chunk(200, function (Collection $chunk) use (&$count, &$mrrByCurrency): void {
+                    foreach ($chunk as $model) {
+                        if (! $model instanceof Model) {
+                            continue;
+                        }
+
+                        $unified = UnifiedSubscription::fromStripe($model);
+
+                        if (! $unified->status->isActive()) {
+                            continue;
+                        }
+
+                        $mrrByCurrency[$unified->currency] = ($mrrByCurrency[$unified->currency] ?? 0) + $unified->amount;
+                        $count++;
+                    }
+                });
             }
 
             if ($detector->isAvailable('chip')) {
                 $subscriptionModel = CashierChip::$subscriptionModel;
-                $chipSubscriptions = CashierOwnerScope::apply($subscriptionModel::query())
+                $chipQuery = CashierOwnerScope::apply($subscriptionModel::query())
+                    ->with('items')
                     ->where(function ($query): void {
                         $query->whereNull('ends_at')
                             ->orWhere('ends_at', '>', now());
-                    })
-                    ->get()
-                    ->map(fn ($sub) => UnifiedSubscription::fromChip($sub));
+                    });
 
-                $subscriptions = $subscriptions->merge($chipSubscriptions);
+                $chipQuery->chunk(200, function (Collection $chunk) use (&$count, &$mrrByCurrency): void {
+                    foreach ($chunk as $model) {
+                        if (! $model instanceof Model) {
+                            continue;
+                        }
+
+                        $unified = UnifiedSubscription::fromChip($model);
+
+                        if (! $unified->status->isActive()) {
+                            continue;
+                        }
+
+                        $mrrByCurrency[$unified->currency] = ($mrrByCurrency[$unified->currency] ?? 0) + $unified->amount;
+                        $count++;
+                    }
+                });
             }
 
-            return $subscriptions->filter(fn (UnifiedSubscription $sub) => $sub->status->isActive());
+            return [
+                'count' => $count,
+                'mrrByCurrency' => $mrrByCurrency,
+            ];
         });
     }
 

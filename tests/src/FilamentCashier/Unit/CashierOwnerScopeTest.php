@@ -100,6 +100,58 @@ it('scopes user_id queries to current owner billables', function (): void {
     expect($records)->toBe(['Record A']);
 });
 
+it('fails closed when billable supports owner scoping but no owner context exists', function (): void {
+    if (! Schema::hasTable('filament_cashier_tenant_billables')) {
+        Schema::create('filament_cashier_tenant_billables', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->nullableMorphs('owner');
+            $table->timestamps();
+        });
+    }
+
+    if (! Schema::hasTable('filament_cashier_tenant_records')) {
+        Schema::create('filament_cashier_tenant_records', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('user_id');
+            $table->string('name');
+            $table->timestamps();
+        });
+    }
+
+    /** @var class-string<\Illuminate\Database\Eloquent\Model> $ownerModel */
+    $ownerModel = config('auth.providers.users.model');
+
+    $ownerA = $ownerModel::query()->create([
+        'name' => 'Owner A3',
+        'email' => 'owner-a3@example.com',
+        'password' => bcrypt('secret'),
+    ]);
+
+    config()->set('cashier.models.billable', TenantBillableUser::class);
+
+    $billableA = TenantBillableUser::query()->create([
+        'name' => 'Billable A3',
+        'email' => 'billable-a3@example.com',
+        'owner_type' => $ownerA->getMorphClass(),
+        'owner_id' => $ownerA->getKey(),
+    ]);
+
+    TenantRecord::query()->create([
+        'user_id' => $billableA->getKey(),
+        'name' => 'Record A3',
+    ]);
+
+    // No OwnerResolver binding here: OwnerContext::resolve() returns null.
+    // Since the billable model supports owner scoping, this must fail closed.
+    $records = CashierOwnerScope::apply(TenantRecord::query())
+        ->pluck('name')
+        ->all();
+
+    expect($records)->toBe([]);
+});
+
 it('blocks selecting a cross-tenant customer when an owner context exists', function (): void {
     if (! Schema::hasTable('filament_cashier_tenant_billables')) {
         Schema::create('filament_cashier_tenant_billables', function (Blueprint $table): void {

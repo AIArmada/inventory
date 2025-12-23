@@ -10,7 +10,10 @@ use AIArmada\CashierChip\Exceptions\SubscriptionUpdateFailure;
 use AIArmada\CashierChip\Payment;
 use AIArmada\CashierChip\Subscription;
 use AIArmada\Chip\Data\PurchaseData;
+use AIArmada\Commerce\Tests\CashierChip\CashierChipTestCase;
 use Illuminate\Database\Eloquent\Model;
+
+uses(CashierChipTestCase::class);
 
 it('can create customer already created exception', function (): void {
     $owner = Mockery::mock(Model::class);

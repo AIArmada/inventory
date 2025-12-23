@@ -27,6 +27,14 @@ beforeEach(function (): void {
     config()->set('orders.owner.enabled', true);
     config()->set('orders.owner.include_global', true);
     config()->set('orders.owner.auto_assign_on_create', false);
+
+    app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+    {
+        public function resolve(): ?Model
+        {
+            return null;
+        }
+    });
 });
 
 it('calculates stats using an owner-scoped query', function (): void {
@@ -99,11 +107,11 @@ it('calculates stats using an owner-scoped query', function (): void {
 
     $today = now()->startOfDay();
 
-    $scopedTodayOrders = Order::query()->forOwner()->whereDate('created_at', $today)->count();
-    $unscopedTodayOrders = Order::query()->whereDate('created_at', $today)->count();
+    $scopedTodayOrders = Order::query()->forOwner(includeGlobal: true)->whereDate('created_at', $today)->count();
+    $unscopedTodayOrders = Order::query()->withoutOwnerScope()->whereDate('created_at', $today)->count();
 
-    $scopedTodayRevenue = Order::query()->forOwner()->whereDate('created_at', $today)->whereNotNull('paid_at')->sum('grand_total');
-    $unscopedTodayRevenue = Order::query()->whereDate('created_at', $today)->whereNotNull('paid_at')->sum('grand_total');
+    $scopedTodayRevenue = Order::query()->forOwner(includeGlobal: true)->whereDate('created_at', $today)->whereNotNull('paid_at')->sum('grand_total');
+    $unscopedTodayRevenue = Order::query()->withoutOwnerScope()->whereDate('created_at', $today)->whereNotNull('paid_at')->sum('grand_total');
 
     expect($scopedTodayOrders)->toBeLessThan($unscopedTodayOrders);
     expect($scopedTodayRevenue)->toBeLessThan($unscopedTodayRevenue);
@@ -118,5 +126,8 @@ it('calculates stats using an owner-scoped query', function (): void {
 
     expect($stats)->toHaveCount(4);
     expect($stats[0]->getValue())->toBe(number_format($scopedTodayOrders));
-    expect($stats[1]->getValue())->toBe('RM ' . number_format($scopedTodayRevenue / 100, 2));
+
+    $currency = (string) config('orders.currency.default', 'MYR');
+
+    expect($stats[1]->getValue())->toBe($currency . ' ' . number_format($scopedTodayRevenue / 100, 2));
 });

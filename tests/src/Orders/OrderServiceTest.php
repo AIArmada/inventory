@@ -12,9 +12,62 @@ use AIArmada\Orders\States\Processing;
 use AIArmada\Orders\States\Refunded;
 use AIArmada\Orders\States\Returned;
 use AIArmada\Orders\States\Shipped;
+use AIArmada\Commerce\Tests\Support\Fixtures\TestOwner;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
 describe('OrderService', function (): void {
     describe('Order Creation', function (): void {
+        it('ignores caller-supplied owner fields and assigns current owner context', function (): void {
+            config()->set('orders.owner.enabled', true);
+            config()->set('orders.owner.auto_assign_on_create', true);
+
+            Schema::dropIfExists('test_owners');
+            Schema::create('test_owners', function (Blueprint $table): void {
+                $table->uuid('id')->primary();
+                $table->string('name');
+                $table->timestamps();
+            });
+
+            $ownerA = TestOwner::query()->create(['name' => 'Owner A']);
+            $ownerB = TestOwner::query()->create(['name' => 'Owner B']);
+
+            app()->instance(OwnerResolverInterface::class, new class($ownerA) implements OwnerResolverInterface
+            {
+                public function __construct(
+                    private readonly ?Model $owner,
+                ) {}
+
+                public function resolve(): ?Model
+                {
+                    return $this->owner;
+                }
+            });
+
+            $service = new OrderService;
+
+            $order = $service->createOrder([
+                'order_number' => 'ORD-SVC-OWNER-' . uniqid(),
+                'owner_type' => $ownerB->getMorphClass(),
+                'owner_id' => $ownerB->getKey(),
+                'subtotal' => 10000,
+                'grand_total' => 10000,
+                'currency' => 'MYR',
+            ], [
+                [
+                    'name' => 'Product 1',
+                    'quantity' => 1,
+                    'unit_price' => 10000,
+                    'tax_amount' => 0,
+                ],
+            ]);
+
+            expect($order->owner_type)->toBe($ownerA->getMorphClass())
+                ->and($order->owner_id)->toBe($ownerA->getKey());
+        });
+
         it('can create an order with items and addresses', function (): void {
             $service = new OrderService;
 

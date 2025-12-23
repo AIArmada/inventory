@@ -83,7 +83,13 @@ final class GatewayManagement extends Page
      */
     public function getDefaultGateway(): ?string
     {
-        return config('cashier.default_gateway', config('filament-cashier.gateways.default'));
+        $cached = cache()->get('filament-cashier.default_gateway');
+
+        if (is_string($cached) && $cached !== '') {
+            return $cached;
+        }
+
+        return config('cashier.default');
     }
 
     /**

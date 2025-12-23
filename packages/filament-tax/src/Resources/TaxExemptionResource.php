@@ -10,6 +10,7 @@ use AIArmada\FilamentTax\Resources\TaxExemptionResource\Tables\TaxExemptionsTabl
 use AIArmada\Tax\Models\TaxExemption;
 use AIArmada\Tax\Support\TaxOwnerScope;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
@@ -58,10 +59,12 @@ final class TaxExemptionResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
+        $now = CarbonImmutable::now();
+
         $expiring = TaxOwnerScope::applyToOwnedQuery(self::getModel()::query())
             ->whereNotNull('expires_at')
-            ->where('expires_at', '>=', now())
-            ->where('expires_at', '<=', now()->addDays(30))
+            ->where('expires_at', '>=', $now)
+            ->where('expires_at', '<=', $now->addDays(30))
             ->count();
 
         return $expiring > 0 ? (string) $expiring : null;

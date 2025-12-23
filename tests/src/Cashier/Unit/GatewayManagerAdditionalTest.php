@@ -81,8 +81,8 @@ describe('GatewayManager - Additional Coverage', function (): void {
 
             expect($config)->toBeArray()
                 ->and($config)->toHaveKey('driver')
-                ->and($config)->toHaveKey('key')
-                ->and($config)->toHaveKey('secret');
+                ->and($config)->toHaveKey('secret')
+                ->and($config)->toHaveKey('webhook_secret');
         });
 
         it('returns empty array for unconfigured gateway', function (): void {

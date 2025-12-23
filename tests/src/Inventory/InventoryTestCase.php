@@ -5,12 +5,20 @@ declare(strict_types=1);
 namespace AIArmada\Commerce\Tests\Inventory;
 
 use AIArmada\Commerce\Tests\TestCase;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Inventory\InventoryServiceProvider;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 abstract class InventoryTestCase extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        OwnerContext::clearOverride();
+    }
+
     protected function getPackageProviders($app): array
     {
         $providers = parent::getPackageProviders($app);

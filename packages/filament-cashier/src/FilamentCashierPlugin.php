@@ -156,6 +156,12 @@ final class FilamentCashierPlugin implements Plugin
     {
         $gateways = app(GatewayDetector::class)->availableGateways();
 
+        $customerPortalMode = $this->customerPortalMode || (bool) config('filament-cashier.features.customer_portal', false);
+        $enableDashboard = $this->enableDashboard && (bool) config('filament-cashier.features.dashboard', true);
+        $enableSubscriptions = $this->enableSubscriptions && (bool) config('filament-cashier.features.subscriptions', true);
+        $enableInvoices = $this->enableInvoices && (bool) config('filament-cashier.features.invoices', true);
+        $enableGatewayManagement = $this->enableGatewayManagement && (bool) config('filament-cashier.features.gateway_management', false);
+
         if ($gateways->isEmpty()) {
             $panel->pages([GatewaySetup::class]);
 
@@ -166,15 +172,15 @@ final class FilamentCashierPlugin implements Plugin
         $pages = [];
         $widgets = [];
 
-        if ($this->enableSubscriptions) {
+        if ($enableSubscriptions) {
             $resources[] = UnifiedSubscriptionResource::class;
         }
 
-        if ($this->enableInvoices) {
+        if ($enableInvoices) {
             $resources[] = UnifiedInvoiceResource::class;
         }
 
-        if ($this->enableDashboard && ! $this->customerPortalMode) {
+        if ($enableDashboard && ! $customerPortalMode) {
             $pages[] = BillingDashboard::class;
             $widgets = [
                 TotalMrrWidget::class,
@@ -185,7 +191,7 @@ final class FilamentCashierPlugin implements Plugin
             ];
         }
 
-        if ($this->enableGatewayManagement && ! $this->customerPortalMode) {
+        if ($enableGatewayManagement && ! $customerPortalMode) {
             $pages[] = GatewayManagement::class;
         }
 

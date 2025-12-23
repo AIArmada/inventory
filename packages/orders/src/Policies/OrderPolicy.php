@@ -36,6 +36,15 @@ class OrderPolicy
         return $user->can('update_order');
     }
 
+    public function addNote(User $user, Order $order): bool
+    {
+        if (! $this->view($user, $order)) {
+            return false;
+        }
+
+        return $user->can('update_order') || $user->can('add_order_note');
+    }
+
     public function delete(User $user, Order $order): bool
     {
         return $user->can('delete_order');

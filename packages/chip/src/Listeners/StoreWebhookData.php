@@ -27,6 +27,17 @@ final class StoreWebhookData
             return;
         }
 
+        if ((bool) config('chip.owner.enabled', false) && OwnerContext::resolve() === null) {
+            Log::channel(config('chip.logging.channel', 'stack'))
+                ->warning('CHIP webhook store_data skipped because owner context is missing while owner scoping is enabled', [
+                    'event_type' => $event->eventType,
+                    'id' => $event->payload['id'] ?? null,
+                    'brand_id' => $event->payload['brand_id'] ?? null,
+                ]);
+
+            return;
+        }
+
         $payload = $event->payload;
 
         // Only process purchase-related webhooks
@@ -139,17 +150,22 @@ final class StoreWebhookData
             return;
         }
 
+        $match = [
+            'id' => $clientId,
+        ];
+
+        if ($owner !== null) {
+            $match['owner_type'] = $owner->getMorphClass();
+            $match['owner_id'] = $owner->getKey();
+        }
+
         $client = Client::updateOrCreate(
+            $match,
             [
-                'owner_type' => $owner?->getMorphClass(),
-                'owner_id' => $owner?->getKey(),
-                'email' => $clientData['email'],
-            ],
-            [
-                'id' => $clientId,
                 'type' => 'client',
                 'created_on' => $payload['created_on'],
                 'updated_on' => $payload['updated_on'],
+                'email' => $clientData['email'],
                 'phone' => $clientData['phone'] ?? null,
                 'full_name' => $clientData['full_name'] ?? null,
                 'personal_code' => $clientData['personal_code'] ?? null,
@@ -222,7 +238,7 @@ final class StoreWebhookData
 
     private function resolveOwner(): ?Model
     {
-        if (! (bool) config('chip.owner.enabled', true)) {
+        if (! (bool) config('chip.owner.enabled', false)) {
             return null;
         }
 

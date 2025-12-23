@@ -44,9 +44,12 @@ class ShippingZoneResource extends Resource
         }
 
         $owner = OwnerContext::resolve();
+        if ($owner === null) {
+            return $query->whereRaw('0 = 1');
+        }
 
         /** @var Builder<ShippingZone> $scoped */
-        $scoped = $query->forOwner($owner);
+        $scoped = $query->forOwner($owner, includeGlobal: true);
 
         return $scoped;
     }

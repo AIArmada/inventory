@@ -165,7 +165,7 @@ class MetricsAggregator
 
     protected function resolveOwner(): ?Model
     {
-        if (! (bool) config('chip.owner.enabled', true)) {
+        if (! (bool) config('chip.owner.enabled', false)) {
             return null;
         }
 

@@ -78,6 +78,7 @@ final class LocationTreeService
     public function getFlatTree(): array
     {
         return InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+            ->withCount('children')
             ->orderByRaw('COALESCE(path, id)')
             ->get()
             ->map(fn (InventoryLocation $loc): array => [
@@ -86,7 +87,7 @@ final class LocationTreeService
                 'code' => $loc->code,
                 'depth' => $loc->depth,
                 'is_active' => $loc->is_active,
-                'children_count' => InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query()->where('parent_id', $loc->id))->count(),
+                'children_count' => $loc->children_count,
             ])
             ->toArray();
     }

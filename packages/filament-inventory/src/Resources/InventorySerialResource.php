@@ -29,6 +29,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use UnitEnum;
 
 final class InventorySerialResource extends Resource
@@ -47,7 +48,12 @@ final class InventorySerialResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = InventorySerial::query()->with(['location', 'batch']);
+        $query = InventorySerial::query()->with([
+            'location',
+            'batch' => static function (Relation $relation): void {
+                InventoryOwnerScope::applyToQueryByLocationRelation($relation->getQuery(), 'location');
+            },
+        ]);
 
         return InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
     }
@@ -78,7 +84,11 @@ final class InventorySerialResource extends Resource
 
                                 Select::make('batch_id')
                                     ->label('Batch')
-                                    ->relationship('batch', 'batch_number')
+                                    ->relationship(
+                                        name: 'batch',
+                                        titleAttribute: 'batch_number',
+                                        modifyQueryUsing: fn (Builder $query): Builder => InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location'),
+                                    )
                                     ->searchable()
                                     ->preload(),
 

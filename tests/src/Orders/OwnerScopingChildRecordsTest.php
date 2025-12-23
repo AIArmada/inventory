@@ -7,9 +7,9 @@ use AIArmada\Orders\Models\Order;
 use AIArmada\Orders\Models\OrderItem;
 use AIArmada\Orders\Models\OrderNote;
 use AIArmada\Orders\States\Created;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -25,6 +25,15 @@ beforeEach(function (): void {
     config()->set('orders.owner.enabled', true);
     config()->set('orders.owner.include_global', true);
     config()->set('orders.owner.auto_assign_on_create', false);
+
+    // Default to no ambient owner context so seeding explicit-owner rows is deterministic.
+    app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+    {
+        public function resolve(): ?Model
+        {
+            return null;
+        }
+    });
 });
 
 it('prevents creating child rows for orders outside the current owner scope', function (): void {
@@ -58,13 +67,13 @@ it('prevents creating child rows for orders outside the current owner scope', fu
         'quantity' => 1,
         'unit_price' => 1000,
         'currency' => 'MYR',
-    ]))->toThrow(ModelNotFoundException::class);
+    ]))->toThrow(AuthorizationException::class);
 
     expect(fn () => OrderNote::query()->create([
         'order_id' => $orderB->id,
         'content' => 'Cross-tenant note',
         'is_customer_visible' => false,
-    ]))->toThrow(ModelNotFoundException::class);
+    ]))->toThrow(AuthorizationException::class);
 });
 
 it('auto-assigns child row owner from the parent order', function (): void {

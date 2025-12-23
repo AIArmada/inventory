@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentTax\Resources\TaxRateResource\Tables;
 
+use AIArmada\FilamentTax\Support\FilamentTaxAuthz;
 use AIArmada\Tax\Support\TaxOwnerScope;
 use Filament\Actions\BulkAction;
 use Filament\Actions\EditAction;
@@ -108,25 +109,34 @@ final class TaxRatesTable
                 EditAction::make(),
             ])
             ->toolbarActions([
-                BulkAction::make('activate')
-                    ->label('Activate')
-                    ->icon(Heroicon::OutlinedCheckCircle)
-                    ->color('success')
-                    ->action(fn ($records) => $records->each->update(['is_active' => true]))
-                    ->deselectRecordsAfterCompletion(),
-                BulkAction::make('deactivate')
-                    ->label('Deactivate')
-                    ->icon(Heroicon::OutlinedXCircle)
-                    ->color('danger')
-                    ->action(fn ($records) => $records->each->update(['is_active' => false]))
-                    ->deselectRecordsAfterCompletion(),
-                BulkAction::make('delete')
-                    ->label('Delete Selected')
-                    ->icon(Heroicon::OutlinedTrash)
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(fn ($records) => $records->each->delete())
-                    ->deselectRecordsAfterCompletion(),
+                FilamentTaxAuthz::requirePermission(
+                    BulkAction::make('activate')
+                        ->label('Activate')
+                        ->icon(Heroicon::OutlinedCheckCircle)
+                        ->color('success')
+                        ->action(fn ($records) => $records->each->update(['is_active' => true]))
+                        ->deselectRecordsAfterCompletion(),
+                    'tax.rates.update',
+                ),
+                FilamentTaxAuthz::requirePermission(
+                    BulkAction::make('deactivate')
+                        ->label('Deactivate')
+                        ->icon(Heroicon::OutlinedXCircle)
+                        ->color('danger')
+                        ->action(fn ($records) => $records->each->update(['is_active' => false]))
+                        ->deselectRecordsAfterCompletion(),
+                    'tax.rates.update',
+                ),
+                FilamentTaxAuthz::requirePermission(
+                    BulkAction::make('delete')
+                        ->label('Delete Selected')
+                        ->icon(Heroicon::OutlinedTrash)
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->action(fn ($records) => $records->each->delete())
+                        ->deselectRecordsAfterCompletion(),
+                    'tax.rates.delete',
+                ),
             ]);
     }
 }

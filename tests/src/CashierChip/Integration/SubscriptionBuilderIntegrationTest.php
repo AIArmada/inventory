@@ -88,6 +88,17 @@ class SubscriptionBuilderIntegrationTest extends CashierChipTestCase
         $this->assertEquals(5, $subscription->quantity);
     }
 
+    public function test_subscription_builder_quantity_clamps_to_minimum_one(): void
+    {
+        $user = $this->createUser(['chip_id' => 'cli_qty_clamp_123']);
+
+        $subscription = $user->newSubscription('default', 'price_per_seat')
+            ->quantity(0)
+            ->create();
+
+        $this->assertEquals(1, $subscription->quantity);
+    }
+
     public function test_can_create_subscription_with_billing_interval(): void
     {
         $user = $this->createUser(['chip_id' => 'cli_interval_123']);

@@ -171,6 +171,8 @@ Route::post('chip/webhook', [WebhookController::class, 'handleWebhook'])
 
 CHIP webhooks contain this structure:
 
+All monetary amounts are integers in the smallest currency unit (for MYR, this is cents).
+
 ```json
 {
     "event_type": "purchase.payment_successful",
@@ -185,7 +187,7 @@ CHIP webhooks contain this structure:
         "products": [
             {
                 "name": "Product Name",
-                "price": 100.00,
+                "price": 10000,
                 "quantity": 1
             }
         ]

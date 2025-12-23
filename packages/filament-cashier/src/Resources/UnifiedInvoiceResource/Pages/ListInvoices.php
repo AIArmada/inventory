@@ -9,13 +9,13 @@ use AIArmada\FilamentCashier\Resources\UnifiedInvoiceResource;
 use AIArmada\FilamentCashier\Support\CashierOwnerScope;
 use AIArmada\FilamentCashier\Support\GatewayDetector;
 use AIArmada\FilamentCashier\Support\UnifiedInvoice;
-use Exception;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\Paginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Throwable;
 
 final class ListInvoices extends ListRecords
 {
@@ -81,6 +81,14 @@ final class ListInvoices extends ListRecords
             return $this->allInvoices;
         }
 
+        $userId = auth()->id();
+
+        if ($userId === null) {
+            $this->allInvoices = collect();
+
+            return $this->allInvoices;
+        }
+
         $invoices = collect();
         $detector = app(GatewayDetector::class);
         $billableModel = config('cashier.models.billable', 'App\\Models\\User');
@@ -91,9 +99,9 @@ final class ListInvoices extends ListRecords
             return $invoices;
         }
 
-        // Get users with subscriptions
         $users = CashierOwnerScope::apply($billableModel::query())
-            ->limit(100)
+            ->whereKey($userId)
+            ->limit(1)
             ->get();
 
         // Collect Stripe invoices
@@ -106,7 +114,7 @@ final class ListInvoices extends ListRecords
                             // @phpstan-ignore method.nonObject
                             $invoices->push(UnifiedInvoice::fromStripe($invoice, (string) $user->getKey()));
                         }
-                    } catch (Exception) {
+                    } catch (Throwable) {
                         // Silently fail if API is not configured
                     }
                 }
@@ -116,6 +124,7 @@ final class ListInvoices extends ListRecords
         // Collect CHIP invoices/purchases
         if ($detector->isAvailable('chip') && class_exists(Purchase::class)) {
             $chipPurchases = CashierOwnerScope::apply(Purchase::query())
+                ->where('user_id', $userId)
                 ->orderByDesc('created_at')
                 ->limit(100)
                 ->get();

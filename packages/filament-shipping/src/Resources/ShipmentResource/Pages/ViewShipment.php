@@ -27,6 +27,7 @@ class ViewShipment extends ViewRecord
                 ->color('success')
                 ->requiresConfirmation()
                 ->visible(fn (Shipment $record) => $record->isPending())
+                ->authorize(fn (Shipment $record): bool => auth()->user()?->can('ship', $record) ?? false)
                 ->action(function (Shipment $record): void {
                     try {
                         app(ShipmentService::class)->ship($record);
@@ -51,6 +52,7 @@ class ViewShipment extends ViewRecord
                 ->color('danger')
                 ->requiresConfirmation()
                 ->visible(fn (Shipment $record) => $record->isCancellable())
+                ->authorize(fn (Shipment $record): bool => auth()->user()?->can('cancel', $record) ?? false)
                 ->action(function (Shipment $record): void {
                     try {
                         app(ShipmentService::class)->cancel($record);
@@ -72,6 +74,7 @@ class ViewShipment extends ViewRecord
                 ->label('Print Label')
                 ->icon('heroicon-o-printer')
                 ->visible(fn (Shipment $record) => $record->label_url !== null)
+                ->authorize(fn (Shipment $record): bool => auth()->user()?->can('printLabel', $record) ?? false)
                 ->url(fn (Shipment $record) => $record->label_url)
                 ->openUrlInNewTab(),
         ];

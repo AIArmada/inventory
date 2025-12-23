@@ -71,6 +71,7 @@ return [
         'enabled' => env('CHIP_OWNER_ENABLED', false),
         'include_global' => env('CHIP_OWNER_INCLUDE_GLOBAL', false),
         'auto_assign_on_create' => env('CHIP_OWNER_AUTO_ASSIGN', true),
+        'webhook_brand_id_map' => [],
     ],
 
     /*

@@ -12,6 +12,7 @@ return [
         'title' => 'Langganan Saya',
         'new' => 'Langganan Baru',
         'empty' => 'Anda tiada langganan aktif.',
+        'load_more' => 'Muat lagi',
         'cancel' => 'Batal',
         'resume' => 'Sambung',
         'change_plan' => 'Tukar Pelan',
@@ -31,6 +32,7 @@ return [
         'default_updated' => 'Kaedah pembayaran lalai dikemaskini.',
         'deleted' => 'Kaedah pembayaran dipadam.',
         'error' => 'Ralat berlaku.',
+        'gateway_not_available' => 'Gateway tidak tersedia.',
     ],
 
     'invoices' => [

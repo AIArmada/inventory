@@ -34,7 +34,6 @@ return [
     */
     'defaults' => [
         'currency' => 'MYR',
-        'weight_unit' => 'g',
         'reference_prefix' => env('SHIPPING_REFERENCE_PREFIX', 'SHP-'),
         'origin' => [
             'name' => env('SHIPPING_ORIGIN_NAME', env('APP_NAME', 'Store')),
@@ -61,26 +60,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Default Shipping Driver
-    |--------------------------------------------------------------------------
-    |
-    | This option controls the default shipping driver that will be used when
-    | no specific driver is requested. The driver must be registered in the
-    | drivers array below or extended via ShippingManager::extend().
-    |
+    | Drivers
     */
     'default' => env('SHIPPING_DRIVER', 'manual'),
 
     /*
     |--------------------------------------------------------------------------
-    | Shipping Drivers
-    |--------------------------------------------------------------------------
-    |
-    | Here you may configure the shipping drivers for your application.
-    | Carrier packages auto-register via extend(). This configuration is
-    | for built-in drivers or manual overrides.
-    |
-    */
     'drivers' => [
         'manual' => [
             'driver' => 'manual',
@@ -110,12 +95,8 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Rate Shopping Configuration
+    | Rate Shopping
     |--------------------------------------------------------------------------
-    |
-    | Configure how rate shopping works when comparing rates from multiple
-    | carriers. The strategy determines which rate is selected by default.
-    |
     */
     'rate_shopping' => [
         'strategy' => 'cheapest', // cheapest, fastest, preferred
@@ -130,12 +111,8 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Free Shipping Configuration
+    | Free Shipping
     |--------------------------------------------------------------------------
-    |
-    | Configure global free shipping rules. These can be overridden by
-    | zone-specific or carrier-specific settings.
-    |
     */
     'free_shipping' => [
         'enabled' => false,
@@ -144,11 +121,8 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Tracking Configuration
+    | Tracking
     |--------------------------------------------------------------------------
-    |
-    | Configure automatic tracking synchronization and webhook handling.
-    |
     */
     'tracking' => [
         'sync_interval' => 3600, // 1 hour in seconds

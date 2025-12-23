@@ -14,7 +14,13 @@ use AIArmada\Cashier\Contracts\PaymentContract;
 use AIArmada\Cashier\Contracts\PaymentMethodContract;
 use AIArmada\Cashier\Contracts\SubscriptionBuilderContract;
 use AIArmada\Cashier\Contracts\SubscriptionContract;
+use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\CommerceSupport\Support\OwnerQuery;
+use AIArmada\CommerceSupport\Support\OwnerScope;
+use AIArmada\CommerceSupport\Support\OwnerScopeConfig;
 use Akaunting\Money\Money;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 /**
@@ -229,7 +235,37 @@ abstract class AbstractGateway implements GatewayContract
     {
         $model = $this->billableModel();
 
-        return $model::where($this->gatewayIdColumn(), $gatewayId)->first();
+        /** @var Builder<Model> $query */
+        $query = $model::query();
+
+        if (method_exists($model, 'ownerScopeConfig')) {
+            /** @var OwnerScopeConfig $ownerScopeConfig */
+            $ownerScopeConfig = $model::ownerScopeConfig();
+
+            if ($ownerScopeConfig->enabled) {
+                $owner = OwnerContext::resolve();
+
+                if ($owner === null) {
+                    return null;
+                }
+
+                $query = OwnerQuery::applyToEloquentBuilder(
+                    $query->withoutGlobalScope(OwnerScope::class),
+                    $owner,
+                    false,
+                    $ownerScopeConfig->ownerTypeColumn,
+                    $ownerScopeConfig->ownerIdColumn,
+                );
+            }
+        }
+
+        $billable = $query->where($this->gatewayIdColumn(), $gatewayId)->first();
+
+        if (! $billable instanceof BillableContract) {
+            return null;
+        }
+
+        return $billable;
     }
 
     /**

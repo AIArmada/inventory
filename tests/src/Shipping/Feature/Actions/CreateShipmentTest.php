@@ -109,4 +109,28 @@ describe('CreateShipment Action', function (): void {
 
         expect($shipment->status)->toBe(ShipmentStatus::Draft);
     });
+
+    it('requires owner context when owner scoping is enabled', function (): void {
+        config(['shipping.features.owner.enabled' => true]);
+
+        try {
+            // Force OwnerContext::resolve() to return null even if a resolver is bound.
+            \AIArmada\CommerceSupport\Support\OwnerContext::override(null);
+
+            $action = app(CreateShipment::class);
+
+            $data = [
+                'reference' => 'TEST-OWNER-CONTEXT',
+                'carrier_code' => 'test-carrier',
+                'origin_address' => ['name' => 'Origin'],
+                'destination_address' => ['name' => 'Dest'],
+            ];
+
+            expect(fn () => $action->handle($data))
+                ->toThrow(Illuminate\Auth\Access\AuthorizationException::class);
+        } finally {
+            \AIArmada\CommerceSupport\Support\OwnerContext::clearOverride();
+            config(['shipping.features.owner.enabled' => false]);
+        }
+    });
 });

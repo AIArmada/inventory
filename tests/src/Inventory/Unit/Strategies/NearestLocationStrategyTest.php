@@ -423,6 +423,31 @@ describe('NearestLocationStrategy', function (): void {
         expect($allocations[0]['location_id'])->toBe($locationWithCoords->id);
     });
 
+    it('does not allow SQL injection via preferLocationIds', function (): void {
+        $location = InventoryLocation::factory()->create([
+            'coordinate_x' => 0,
+            'coordinate_y' => 0,
+        ]);
+
+        InventoryLevel::factory()->create([
+            'inventoryable_type' => $this->item->getMorphClass(),
+            'inventoryable_id' => $this->item->getKey(),
+            'location_id' => $location->id,
+            'quantity_on_hand' => 10,
+            'quantity_reserved' => 0,
+        ]);
+
+        $context = new AllocationContext(
+            preferLocationIds: [$location->id, "x' OR 1=1 --"],
+        );
+
+        $allocations = $this->strategy->allocate($this->item, 1, $context);
+
+        expect($allocations)->toHaveCount(1);
+        expect($allocations[0]['location_id'])->toBe($location->id);
+        expect($allocations[0]['quantity'])->toBe(1);
+    });
+
     it('returns empty allocations when no inventory available', function (): void {
         $allocations = $this->strategy->allocate($this->item, 50);
 

@@ -126,8 +126,16 @@ class Coupon implements Arrayable, Jsonable, JsonSerializable
      */
     public function duration(): string
     {
-        // Check voucher metadata for duration, default to 'once'
-        return $this->voucher->metadata['duration'] ?? 'once';
+        $duration = $this->voucher->metadata['duration'] ?? 'once';
+
+        if (! is_string($duration)) {
+            return 'once';
+        }
+
+        return match ($duration) {
+            'once', 'repeating', 'forever' => $duration,
+            default => 'once',
+        };
     }
 
     /**
@@ -139,7 +147,15 @@ class Coupon implements Arrayable, Jsonable, JsonSerializable
             return null;
         }
 
-        return $this->voucher->metadata['duration_in_months'] ?? null;
+        $months = $this->voucher->metadata['duration_in_months'] ?? null;
+
+        if ($months === null) {
+            return null;
+        }
+
+        $months = (int) $months;
+
+        return $months > 0 ? $months : null;
     }
 
     /**

@@ -24,6 +24,7 @@ class BulkPrintLabelsAction extends BulkAction
             ->icon(Heroicon::OutlinedPrinter)
             ->color('gray')
             ->deselectRecordsAfterCompletion()
+            ->authorize(fn (): bool => auth()->user() !== null)
             ->action(function (Collection $records): void {
                 $user = auth()->user();
 
@@ -73,6 +74,16 @@ class BulkPrintLabelsAction extends BulkAction
                         report($e);
                         $errors[] = "{$record->tracking_number}: error generating label";
                     }
+                }
+
+                if (count($labels) === 0 && count($errors) === 0) {
+                    Notification::make()
+                        ->title('No Printable Labels')
+                        ->body('None of the selected shipments have printable labels.')
+                        ->warning()
+                        ->send();
+
+                    return;
                 }
 
                 if (count($labels) === 1) {

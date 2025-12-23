@@ -203,6 +203,10 @@ class PriceListResource extends Resource
 
     public static function getRelations(): array
     {
+        if (! class_exists('\\AIArmada\\Products\\Models\\Product') || ! class_exists('\\AIArmada\\Products\\Models\\Variant')) {
+            return [];
+        }
+
         return [
             RelationManagers\PricesRelationManager::class,
             RelationManagers\TiersRelationManager::class,

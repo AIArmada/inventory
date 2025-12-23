@@ -11,10 +11,13 @@ use AIArmada\CashierChip\Events\PaymentSucceeded;
 use AIArmada\CashierChip\Events\WebhookHandled;
 use AIArmada\CashierChip\Events\WebhookReceived;
 use AIArmada\CashierChip\Subscription;
+use AIArmada\Chip\Support\ChipWebhookOwnerResolver;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -25,7 +28,38 @@ class WebhookController extends Controller
      */
     public function __invoke(Request $request): Response
     {
+        $signatureFailure = $this->signatureFailureResponse($request);
+
+        if ($signatureFailure !== null) {
+            return $signatureFailure;
+        }
+
         $payload = $request->all();
+
+        if ((bool) config('cashier-chip.features.owner.enabled', true) && OwnerContext::resolve() === null) {
+            $owner = ChipWebhookOwnerResolver::resolveFromPayload($payload);
+
+            if ($owner === null) {
+                Log::channel(config('cashier-chip.logger', config('logging.default', 'stack')))
+                    ->error('cashier-chip webhook received but no owner could be resolved for brand_id', [
+                        'event_type' => $payload['event_type'] ?? null,
+                        'brand_id' => $payload['brand_id'] ?? ($payload['purchase']['brand_id'] ?? null),
+                    ]);
+
+                return new Response('Owner resolution failed', 500);
+            }
+
+            return OwnerContext::withOwner($owner, fn (): Response => $this->handleScoped($payload));
+        }
+
+        return $this->handleScoped($payload);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function handleScoped(array $payload): Response
+    {
 
         WebhookReceived::dispatch($payload);
 
@@ -149,8 +183,7 @@ class WebhookController extends Controller
             return;
         }
 
-        /** @var Subscription|null $subscription */
-        $subscription = $billable->subscription($subscriptionType);
+        $subscription = Cashier::findSubscriptionForWebhook($billable, $subscriptionType);
 
         if (! $subscription) {
             return;
@@ -177,8 +210,7 @@ class WebhookController extends Controller
             return;
         }
 
-        /** @var Subscription|null $subscription */
-        $subscription = $billable->subscription($subscriptionType);
+        $subscription = Cashier::findSubscriptionForWebhook($billable, $subscriptionType);
 
         if (! $subscription) {
             return;
@@ -217,7 +249,49 @@ class WebhookController extends Controller
             return null;
         }
 
+        if ((bool) config('cashier-chip.features.owner.enabled', true)) {
+            return Cashier::findBillableForWebhook($chipId);
+        }
+
         return Cashier::findBillable($chipId);
+    }
+
+    /**
+     * Verify webhook signatures when enabled.
+     */
+    protected function signatureFailureResponse(Request $request): ?Response
+    {
+        $shouldVerify = (bool) config('cashier-chip.webhooks.verify_signature', true);
+
+        if (! $shouldVerify) {
+            if (app()->environment('production')) {
+                Log::channel(config('cashier-chip.logger', config('logging.default', 'stack')))
+                    ->warning('cashier-chip webhook signature verification is disabled in production');
+            }
+
+            return null;
+        }
+
+        $signature = $request->header('X-Signature');
+
+        if (! is_string($signature) || $signature === '') {
+            return new Response('Missing signature header', 400);
+        }
+
+        $secret = config('cashier-chip.webhooks.secret');
+
+        if (! is_string($secret) || $secret === '') {
+            return new Response('Webhook secret not configured', 500);
+        }
+
+        $payload = $request->getContent();
+        $expected = hash_hmac('sha256', $payload, $secret);
+
+        if (! hash_equals($expected, $signature)) {
+            return new Response('Invalid signature', 401);
+        }
+
+        return null;
     }
 
     /**

@@ -10,26 +10,22 @@ return [
     */
     'navigation_group' => 'Inventory',
 
-    'resources' => [
-        'navigation_sort' => [
-            'locations' => 10,
-            'levels' => 20,
-            'movements' => 30,
-            'allocations' => 40,
-            'batches' => 50,
-            'serials' => 60,
-        ],
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Tables
     |--------------------------------------------------------------------------
     */
-    'polling_interval' => '45s',
-
     'tables' => [
-        'date_format' => 'Y-m-d H:i:s',
+        'expiry_warning_days' => 30,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Defaults
+    |--------------------------------------------------------------------------
+    */
+    'defaults' => [
+        'costing_method' => env('FILAMENT_INVENTORY_COSTING_METHOD', 'fifo'),
     ],
 
     /*
@@ -52,6 +48,22 @@ return [
         // Resources
         'batch_resource' => env('FILAMENT_INVENTORY_BATCH_RESOURCE', true),
         'serial_resource' => env('FILAMENT_INVENTORY_SERIAL_RESOURCE', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resources
+    |--------------------------------------------------------------------------
+    */
+    'resources' => [
+        'navigation_sort' => [
+            'locations' => 10,
+            'levels' => 20,
+            'movements' => 30,
+            'allocations' => 40,
+            'batches' => 50,
+            'serials' => 60,
+        ],
     ],
 
     /*

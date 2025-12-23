@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace AIArmada\FilamentPricing\Pages;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\Customers\Models\Customer;
 use AIArmada\Pricing\Services\PriceCalculator;
 use BackedEnum;
+use DateTimeInterface;
 use Filament\Forms;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -19,6 +21,7 @@ use Filament\Support\Enums\FontWeight;
 use Filament\Support\Enums\TextSize;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use UnitEnum;
 
 class PriceSimulator extends Page
@@ -44,10 +47,6 @@ class PriceSimulator extends Page
 
     private function resolveOwner(): ?Model
     {
-        if (! (bool) config('pricing.features.owner.enabled', false)) {
-            return null;
-        }
-
         return OwnerContext::resolve();
     }
 
@@ -157,10 +156,15 @@ class PriceSimulator extends Page
                             ->label('Customer')
                             ->searchable()
                             ->helperText('Optional: simulate for a specific customer')
+                            ->visible(fn (): bool => class_exists(Customer::class))
                             ->getSearchResultsUsing(function (string $search): array {
+                                if (! class_exists(Customer::class)) {
+                                    return [];
+                                }
+
                                 $owner = $this->resolveOwner();
 
-                                return \AIArmada\Customers\Models\Customer::query()
+                                return Customer::query()
                                     /** @phpstan-ignore-next-line */
                                     ->forOwner($owner)
                                     ->where(function (Builder $query) use ($search): void {
@@ -176,13 +180,13 @@ class PriceSimulator extends Page
                                     ->toArray();
                             })
                             ->getOptionLabelUsing(function ($value): ?string {
-                                if ($value === null) {
+                                if ($value === null || ! class_exists(Customer::class)) {
                                     return null;
                                 }
 
                                 $owner = $this->resolveOwner();
 
-                                $customer = \AIArmada\Customers\Models\Customer::query()
+                                $customer = Customer::query()
                                     /** @phpstan-ignore-next-line */
                                     ->forOwner($owner)
                                     ->whereKey($value)
@@ -249,8 +253,8 @@ class PriceSimulator extends Page
         // Get customer if provided
         $customer = null;
 
-        if (! empty($data['customer_id'])) {
-            $customer = \AIArmada\Customers\Models\Customer::query()
+        if (! empty($data['customer_id']) && class_exists(Customer::class)) {
+            $customer = Customer::query()
                 /** @phpstan-ignore-next-line */
                 ->forOwner($owner)
                 ->find($data['customer_id']);
@@ -259,6 +263,12 @@ class PriceSimulator extends Page
         // Calculate price using PriceCalculator
         $pricingService = app(PriceCalculator::class);
         $context = $customer ? ['customer_id' => $customer->id] : [];
+
+        $effectiveAt = Arr::get($data, 'effective_date');
+
+        if ($effectiveAt instanceof DateTimeInterface || (is_string($effectiveAt) && $effectiveAt !== '')) {
+            $context['effective_at'] = $effectiveAt;
+        }
         /** @var \AIArmada\Pricing\Contracts\Priceable $priceable */
         $priceResult = $pricingService->calculate(
             item: $priceable,

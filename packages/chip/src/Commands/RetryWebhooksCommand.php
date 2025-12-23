@@ -21,7 +21,7 @@ final class RetryWebhooksCommand extends Command
 
     public function handle(WebhookRetryManager $retryManager): int
     {
-        if ((bool) config('chip.owner.enabled', true) && OwnerContext::resolve() === null) {
+        if ((bool) config('chip.owner.enabled', false) && OwnerContext::resolve() === null) {
             $owners = Webhook::query()
                 ->withoutOwnerScope()
                 ->select(['owner_type', 'owner_id'])

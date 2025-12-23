@@ -20,6 +20,8 @@ use AIArmada\Shipping\Models\Shipment;
 use AIArmada\Shipping\Models\ShipmentEvent;
 use AIArmada\Shipping\Models\ShipmentLabel;
 use AIArmada\Shipping\ShippingManager;
+use AIArmada\Shipping\Support\ShippingOwnerScope;
+use Illuminate\Auth\Access\AuthorizationException;
 use RuntimeException;
 
 /**
@@ -37,6 +39,22 @@ class ShipmentService
      */
     public function create(ShipmentData $data, ?string $ownerId = null, ?string $ownerType = null): Shipment
     {
+        if (ShippingOwnerScope::isEnabled()) {
+            $owner = ShippingOwnerScope::resolveOwner();
+
+            if ($owner === null) {
+                throw new AuthorizationException('Owner context is required when shipping owner scoping is enabled.');
+            }
+
+            if (($ownerId !== null || $ownerType !== null)
+                && ($ownerId !== $owner->getKey() || $ownerType !== $owner->getMorphClass())) {
+                throw new AuthorizationException('Cannot create shipment outside the current owner context.');
+            }
+
+            $ownerId = (string) $owner->getKey();
+            $ownerType = $owner->getMorphClass();
+        }
+
         $shipment = Shipment::create([
             'owner_id' => $ownerId,
             'owner_type' => $ownerType,

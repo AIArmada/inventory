@@ -67,8 +67,12 @@ class PaymentMethodPolicy
     protected function ownsPaymentMethod(Model $user, Model $paymentMethod): bool
     {
         $userId = $user->getKey();
-        $pmUserId = $paymentMethod->user_id ?? $paymentMethod->owner_id ?? $paymentMethod->billable_id ?? null;
+        $pmUserId = $paymentMethod->getAttribute('billable_id') ?? $paymentMethod->getAttribute('user_id');
 
-        return $userId !== null && $pmUserId !== null && $userId === $pmUserId;
+        if ($userId === null || $pmUserId === null) {
+            return false;
+        }
+
+        return (string) $userId === (string) $pmUserId;
     }
 }

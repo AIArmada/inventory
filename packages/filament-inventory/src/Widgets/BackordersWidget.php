@@ -11,6 +11,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Route;
 
 final class BackordersWidget extends TableWidget
 {
@@ -101,6 +102,7 @@ final class BackordersWidget extends TableWidget
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
+                    ->visible(fn (): bool => Route::has('filament.admin.resources.inventory-backorders.view'))
                     ->url(fn (InventoryBackorder $record): string => route('filament.admin.resources.inventory-backorders.view', $record)),
             ])
             ->emptyStateHeading('No Open Backorders')

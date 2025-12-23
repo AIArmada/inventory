@@ -28,32 +28,34 @@ final class GatewayComparisonWidget extends ChartWidget
 
     protected function getData(): array
     {
-        $detector = app(GatewayDetector::class);
-        $gateways = $detector->availableGateways();
+        return once(function (): array {
+            $detector = app(GatewayDetector::class);
+            $gateways = $detector->availableGateways();
 
-        // Generate last 6 months labels
-        $labels = collect(range(5, 0))->map(function ($monthsAgo) {
-            return now()->subMonths($monthsAgo)->format('M Y');
-        })->toArray();
+            // Generate last 6 months labels
+            $labels = collect(range(5, 0))->map(function ($monthsAgo) {
+                return now()->subMonths($monthsAgo)->format('M Y');
+            })->toArray();
 
-        $datasets = [];
+            $datasets = [];
 
-        foreach ($gateways as $gateway) {
-            $config = $detector->getGatewayConfig($gateway);
-            $datasets[] = [
-                'label' => $config['label'],
-                'data' => $this->getMonthlyDataForGateway($gateway),
-                'borderColor' => $this->getColorValue($config['color']),
-                'backgroundColor' => $this->getColorValue($config['color'], 0.1),
-                'fill' => true,
-                'tension' => 0.3,
+            foreach ($gateways as $gateway) {
+                $config = $detector->getGatewayConfig($gateway);
+                $datasets[] = [
+                    'label' => $config['label'],
+                    'data' => $this->getMonthlyDataForGateway($gateway),
+                    'borderColor' => $this->getColorValue($config['color']),
+                    'backgroundColor' => $this->getColorValue($config['color'], 0.1),
+                    'fill' => true,
+                    'tension' => 0.3,
+                ];
+            }
+
+            return [
+                'datasets' => $datasets,
+                'labels' => $labels,
             ];
-        }
-
-        return [
-            'datasets' => $datasets,
-            'labels' => $labels,
-        ];
+        });
     }
 
     protected function getType(): string

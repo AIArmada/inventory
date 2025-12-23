@@ -28,7 +28,7 @@ class TaxCalculator
         array $context = []
     ): TaxResultData {
         if (! $this->isTaxEnabled()) {
-            return $this->createZeroResult($zoneId, $context);
+            return $this->createZeroResult($zoneId);
         }
 
         // Add zone ID to context for exemption checking
@@ -71,7 +71,7 @@ class TaxCalculator
     public function calculateShippingTax(int $shippingAmountInCents, ?string $zoneId = null, array $context = []): TaxResultData
     {
         if (! $this->isShippingTaxable()) {
-            return $this->createZeroResult($zoneId, $context);
+            return $this->createZeroResult($zoneId);
         }
 
         // Use standard tax class for shipping
@@ -210,15 +210,18 @@ class TaxCalculator
 
     /**
      * Create a zero-tax result.
-     *
-     * @param  array<string, mixed>  $context
      */
-    protected function createZeroResult(?string $zoneId, array $context): TaxResultData
+    protected function createZeroResult(?string $zoneId): TaxResultData
     {
-        $zone = $zoneId
-            ? TaxOwnerScope::applyToOwnedQuery(TaxZone::query())->whereKey($zoneId)->first()
-            : null;
-        $zone = $zone ?? $this->resolveZone($zoneId, $context);
+        $zone = null;
+
+        if ($zoneId !== null) {
+            $zone = TaxOwnerScope::applyToOwnedQuery(TaxZone::query())
+                ->whereKey($zoneId)
+                ->first();
+        }
+
+        $zone ??= TaxZone::zeroRate();
         $rate = TaxRate::zeroRate('zero', $zone);
 
         return new TaxResultData(

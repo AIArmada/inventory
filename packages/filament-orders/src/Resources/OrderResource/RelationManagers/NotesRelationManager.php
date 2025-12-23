@@ -4,19 +4,31 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentOrders\Resources\OrderResource\RelationManagers;
 
+use AIArmada\Orders\Models\Order;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
-use RuntimeException;
+use Illuminate\Support\Facades\Gate;
 
 class NotesRelationManager extends RelationManager
 {
     protected static string $relationship = 'orderNotes';
 
     protected static ?string $title = 'Notes';
+
+    private function getOrderRecordOrNull(): ?Order
+    {
+        if (! isset($this->ownerRecord)) {
+            return null;
+        }
+
+        $record = $this->getOwnerRecord();
+
+        return $record instanceof Order ? $record : null;
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -62,25 +74,65 @@ class NotesRelationManager extends RelationManager
             ])
             ->headerActions([
                 \Filament\Actions\CreateAction::make()
+                    ->authorize(function (): bool {
+                        $user = Filament::auth()->user();
+
+                        $order = $this->getOrderRecordOrNull();
+
+                        if ($user === null || $order === null) {
+                            return false;
+                        }
+
+                        return Gate::forUser($user)->allows('addNote', $order);
+                    })
                     ->mutateFormDataUsing(function (array $data): array {
                         $userId = Filament::auth()->id();
 
-                        if (! $userId) {
-                            throw new RuntimeException('You must be authenticated to add a note.');
-                        }
-
-                        $data['user_id'] = (string) $userId;
+                        $data['user_id'] = $userId ? (string) $userId : null;
 
                         return $data;
                     }),
             ])
             ->actions([
-                \Filament\Actions\EditAction::make(),
-                \Filament\Actions\DeleteAction::make(),
+                \Filament\Actions\EditAction::make()
+                    ->authorize(function (): bool {
+                        $user = Filament::auth()->user();
+
+                        $order = $this->getOrderRecordOrNull();
+
+                        if ($user === null || $order === null) {
+                            return false;
+                        }
+
+                        return Gate::forUser($user)->allows('update', $order);
+                    }),
+                \Filament\Actions\DeleteAction::make()
+                    ->authorize(function (): bool {
+                        $user = Filament::auth()->user();
+
+                        $order = $this->getOrderRecordOrNull();
+
+                        if ($user === null || $order === null) {
+                            return false;
+                        }
+
+                        return Gate::forUser($user)->allows('update', $order);
+                    }),
             ])
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([
-                    \Filament\Actions\DeleteBulkAction::make(),
+                    \Filament\Actions\DeleteBulkAction::make()
+                        ->authorize(function (): bool {
+                            $user = Filament::auth()->user();
+
+                            $order = $this->getOrderRecordOrNull();
+
+                            if ($user === null || $order === null) {
+                                return false;
+                            }
+
+                            return Gate::forUser($user)->allows('update', $order);
+                        }),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

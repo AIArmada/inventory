@@ -84,5 +84,17 @@
                 </div>
             </div>
         @endforelse
+
+        @if ($this->hasMoreSubscriptions)
+            <div class="flex justify-center">
+                <x-filament::button
+                    size="sm"
+                    color="gray"
+                    wire:click="loadMoreSubscriptions"
+                >
+                    {{ __('filament-cashier::portal.subscriptions.load_more') }}
+                </x-filament::button>
+            </div>
+        @endif
     </div>
 </x-filament-panels::page>

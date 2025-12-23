@@ -54,8 +54,8 @@ describe('GatewayManager', function (): void {
         $config = $this->gatewayManager->getGatewayConfig('stripe');
 
         expect($config)->toBeArray()
-            ->and($config)->toHaveKey('key')
-            ->and($config)->toHaveKey('secret');
+            ->and($config)->toHaveKey('secret')
+            ->and($config)->toHaveKey('webhook_secret');
     });
 
     it('throws exception for unknown gateway', function (): void {

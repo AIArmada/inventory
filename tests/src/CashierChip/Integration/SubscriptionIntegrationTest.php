@@ -105,6 +105,24 @@ class SubscriptionIntegrationTest extends CashierChipTestCase
         $this->assertEquals(5, $subscription->fresh()->quantity);
     }
 
+    public function test_update_quantity_clamps_to_minimum_one(): void
+    {
+        $user = $this->createUser(['chip_id' => 'cli_qty_min_clamp_123']);
+        $subscription = Subscription::factory()->for($user, 'owner')->create([
+            'chip_price' => 'price_per_seat',
+            'quantity' => 2,
+            'chip_status' => Subscription::STATUS_ACTIVE,
+        ]);
+        SubscriptionItem::factory()->for($subscription)->create([
+            'chip_price' => 'price_per_seat',
+            'quantity' => 2,
+        ]);
+
+        $subscription->updateQuantity(0);
+
+        $this->assertEquals(1, $subscription->fresh()->quantity);
+    }
+
     public function test_increment_quantity(): void
     {
         $user = $this->createUser(['chip_id' => 'cli_qty_inc_123']);

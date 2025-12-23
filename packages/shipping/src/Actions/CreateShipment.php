@@ -28,13 +28,18 @@ final class CreateShipment
     public function handle(array $data): Shipment
     {
         Validator::make($data, [
-            'carrier_code' => ['required', 'string'],
+            'carrier_code' => ['required_without:carrier', 'string'],
+            'carrier' => ['required_without:carrier_code', 'string'],
             'origin_address' => ['required', 'array'],
             'destination_address' => ['required', 'array'],
         ])->validate();
 
         return DB::transaction(function () use ($data): Shipment {
             $owner = ShippingOwnerScope::resolveOwner();
+
+            if (ShippingOwnerScope::isEnabled() && $owner === null) {
+                throw new AuthorizationException('Owner context is required when shipping owner scoping is enabled.');
+            }
 
             if (array_key_exists('owner_id', $data) || array_key_exists('owner_type', $data)) {
                 $providedOwnerId = $data['owner_id'] ?? null;

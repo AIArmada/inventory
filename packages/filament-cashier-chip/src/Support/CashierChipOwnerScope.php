@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AIArmada\FilamentCashierChip\Support;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\CommerceSupport\Support\OwnerQuery;
+use AIArmada\CommerceSupport\Support\OwnerScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,12 +33,33 @@ final class CashierChipOwnerScope
         $owner ??= self::resolveOwner();
         $includeGlobal ??= (bool) config('cashier-chip.features.owner.include_global', false);
 
+        if ($owner === null) {
+            return $query->whereKey([]);
+        }
+
         if (! method_exists($model, 'scopeForOwner')) {
             return $query->whereKey([]);
         }
 
-        /** @phpstan-ignore-next-line dynamic scope */
-        return $query->forOwner($owner, $includeGlobal);
+        $ownerTypeColumn = 'owner_type';
+        $ownerIdColumn = 'owner_id';
+
+        $modelClass = $model::class;
+
+        if (method_exists($modelClass, 'ownerScopeConfig')) {
+            /** @var \AIArmada\CommerceSupport\Support\OwnerScopeConfig $config */
+            $config = $modelClass::ownerScopeConfig();
+            $ownerTypeColumn = $config->ownerTypeColumn;
+            $ownerIdColumn = $config->ownerIdColumn;
+        }
+
+        return OwnerQuery::applyToEloquentBuilder(
+            $query->withoutGlobalScope(OwnerScope::class),
+            $owner,
+            $includeGlobal,
+            $ownerTypeColumn,
+            $ownerIdColumn,
+        );
     }
 
     public static function resolveOwner(): ?Model

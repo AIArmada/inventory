@@ -41,7 +41,17 @@ class Price extends Model
 
     protected static string $ownerScopeConfigKey = 'pricing.features.owner';
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'price_list_id',
+        'priceable_id',
+        'priceable_type',
+        'amount',
+        'compare_amount',
+        'currency',
+        'min_quantity',
+        'starts_at',
+        'ends_at',
+    ];
 
     /**
      * @var array<string, string>
@@ -76,7 +86,11 @@ class Price extends Model
 
             $owner = PricingOwnerScope::resolveOwner();
 
-            if ($owner !== null) {
+            if ($owner === null) {
+                if ($price->owner_type !== null || $price->owner_id !== null) {
+                    throw new AuthorizationException('Cannot write owned prices without an owner context.');
+                }
+            } else {
                 if ($price->owner_type === null && $price->owner_id === null) {
                     $price->assignOwner($owner);
                 }
@@ -86,9 +100,7 @@ class Price extends Model
                 }
             }
 
-            $priceListQuery = $owner === null
-                ? PriceList::query()
-                : PricingOwnerScope::applyToOwnedQuery(PriceList::query());
+            $priceListQuery = PricingOwnerScope::applyToOwnedQuery(PriceList::query());
 
             $priceListExists = $priceListQuery
                 ->whereKey($price->price_list_id)
@@ -184,7 +196,7 @@ class Price extends Model
 
     public function hasDiscount(): bool
     {
-        return $this->compare_amount && $this->compare_amount > $this->amount;
+        return $this->compare_amount !== null && $this->compare_amount > $this->amount;
     }
 
     public function getDiscountPercentage(): ?float

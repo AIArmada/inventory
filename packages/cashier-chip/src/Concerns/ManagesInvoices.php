@@ -13,6 +13,13 @@ use Illuminate\Support\Collection;
 trait ManagesInvoices
 {
     /**
+     * Stored tab items for later invoicing (in-memory).
+     *
+     * @var array<int, array{name: string, price: int, quantity: int}>
+     */
+    public array $tabs = [];
+
+    /**
      * Get all of the invoices for the Billable model.
      *
      * @return Collection<int, Invoice>
@@ -85,14 +92,13 @@ trait ManagesInvoices
      */
     public function tab(string $name, int $amount, array $options = []): self
     {
-        // Store tab items for later invoicing
-        $tabs = $this->tabs ?? [];
-        $tabs[] = [
+        $quantity = (int) ($options['quantity'] ?? 1);
+
+        $this->tabs[] = [
             'name' => $name,
             'price' => $amount,
-            'quantity' => $options['quantity'] ?? 1,
+            'quantity' => max(1, $quantity),
         ];
-        $this->tabs = $tabs;
 
         return $this;
     }
@@ -104,7 +110,7 @@ trait ManagesInvoices
      */
     public function invoice(array $options = []): Invoice
     {
-        $tabs = $this->tabs ?? [];
+        $tabs = $this->tabs;
 
         if (empty($tabs)) {
             throw new Exception('No items to invoice.');

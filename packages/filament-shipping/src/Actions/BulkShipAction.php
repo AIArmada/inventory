@@ -28,6 +28,7 @@ class BulkShipAction extends BulkAction
             ->modalHeading('Ship Selected Packages')
             ->modalDescription('This will create shipments with carriers for all selected pending packages.')
             ->deselectRecordsAfterCompletion()
+            ->authorize(fn (): bool => auth()->user()?->can('shipping.shipments.ship') ?? false)
             ->action(function (Collection $records): void {
                 $user = auth()->user();
 

@@ -6,7 +6,10 @@ use AIArmada\CashierChip\Cashier as CashierChip;
 use AIArmada\CashierChip\Subscription as ChipSubscription;
 use AIArmada\CashierChip\SubscriptionItem as ChipSubscriptionItem;
 use AIArmada\FilamentCashier\Resources\UnifiedSubscriptionResource\Pages\ListSubscriptions;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\Commerce\Tests\Support\OwnerResolvers\FixedOwnerResolver;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
@@ -30,6 +33,7 @@ it('lists CHIP subscriptions as unified subscriptions and applies tabs and filte
         Schema::create('cashier_chip_subscriptions', function (\Illuminate\Database\Schema\Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id');
+            $table->nullableMorphs('owner');
             $table->string('type');
             $table->string('chip_id')->unique();
             $table->string('chip_status');
@@ -49,6 +53,7 @@ it('lists CHIP subscriptions as unified subscriptions and applies tabs and filte
         Schema::create('cashier_chip_subscription_items', function (\Illuminate\Database\Schema\Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('subscription_id');
+            $table->nullableMorphs('owner');
             $table->string('chip_id')->unique();
             $table->string('chip_product')->nullable();
             $table->string('chip_price')->nullable();
@@ -65,6 +70,11 @@ it('lists CHIP subscriptions as unified subscriptions and applies tabs and filte
         'email' => 'subscriptions@example.com',
         'password' => bcrypt('secret'),
     ]);
+
+    // Align owner context with the current customer.
+    app()->instance(OwnerResolverInterface::class, new FixedOwnerResolver($user));
+
+    Auth::guard()->setUser($user);
 
     CashierChip::useCustomerModel($userModel);
     CashierChip::useSubscriptionModel(ChipSubscription::class);

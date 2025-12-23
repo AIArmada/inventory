@@ -9,6 +9,7 @@ use AIArmada\CashierChip\Listeners\HandlePurchasePaid;
 use AIArmada\Chip\Data\PurchaseData;
 use AIArmada\Chip\Events\PurchasePaid;
 use AIArmada\Commerce\Tests\CashierChip\CashierChipTestCase;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Support\Facades\Event;
 
 class ListenersTest extends CashierChipTestCase
@@ -32,7 +33,7 @@ class ListenersTest extends CashierChipTestCase
         $event = new PurchasePaid($purchase, $purchaseData);
 
         $listener = new HandlePurchasePaid;
-        $listener->handle($event);
+        OwnerContext::withOwner($user, fn (): null => tap(null, fn () => $listener->handle($event)));
 
         Event::assertDispatched(PaymentSucceeded::class, function ($e) use ($user) {
             return $e->billable->is($user);
@@ -62,7 +63,7 @@ class ListenersTest extends CashierChipTestCase
         $event = new PurchasePaid($purchase, $purchaseData);
 
         $listener = new HandlePurchasePaid;
-        $listener->handle($event);
+        OwnerContext::withOwner($user, fn (): null => tap(null, fn () => $listener->handle($event)));
 
         $user->refresh();
         $this->assertEquals('tok_123', $user->default_pm_id);

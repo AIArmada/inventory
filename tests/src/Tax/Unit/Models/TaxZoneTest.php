@@ -372,6 +372,8 @@ class TaxZoneTest extends TaxTestCase
     {
         config(['tax.features.owner.enabled' => true]);
 
+        $this->bindTaxOwnerForScoping(null);
+
         TaxZone::create([
             'name' => 'Global Zone',
             'code' => 'GLOBAL',
@@ -390,6 +392,7 @@ class TaxZoneTest extends TaxTestCase
     public function test_for_owner_scope_with_owner_include_global(): void
     {
         config(['tax.features.owner.enabled' => true]);
+        config(['tax.features.owner.include_global' => true]);
 
         $owner = new class extends \Illuminate\Database\Eloquent\Model
         {

@@ -27,7 +27,7 @@ describe('CashierServiceProvider', function (): void {
 
     it('has the stripe gateway configured', function (): void {
         expect(config('cashier.gateways.stripe'))->toBeArray()
-            ->and(config('cashier.gateways.stripe.key'))->toBe('pk_test_xxx');
+            ->and(config('cashier.gateways.stripe.secret'))->toBe('sk_test_xxx');
     });
 
     it('has the chip gateway configured', function (): void {

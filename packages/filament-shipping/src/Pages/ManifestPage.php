@@ -255,9 +255,18 @@ class ManifestPage extends Page implements HasTable
      */
     protected function getTableQuery(): Builder
     {
-        $query = Shipment::query()
-            ->forOwner($this->resolveOwner())
-            ->where('status', ShipmentStatus::Shipped);
+        $query = Shipment::query();
+
+        if ((bool) config('shipping.features.owner.enabled', false)) {
+            $owner = OwnerContext::resolve();
+            if ($owner === null) {
+                return $query->whereRaw('0 = 1');
+            }
+
+            $query->forOwner($owner, includeGlobal: true);
+        }
+
+        $query->where('status', ShipmentStatus::Shipped);
 
         if ($this->manifestDate !== null) {
             $query->whereDate('shipped_at', $this->manifestDate);

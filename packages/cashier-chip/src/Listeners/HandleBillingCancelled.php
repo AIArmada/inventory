@@ -9,6 +9,7 @@ use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\CashierChip\Events\SubscriptionCanceled;
 use AIArmada\CashierChip\Subscription;
 use AIArmada\Chip\Events\BillingCancelled;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -18,6 +19,10 @@ class HandleBillingCancelled
 {
     public function handle(BillingCancelled $event): void
     {
+        if ((bool) config('cashier-chip.features.owner.enabled', true) && OwnerContext::resolve() === null) {
+            return;
+        }
+
         $billingTemplateClient = $event->billingTemplateClient;
 
         $clientId = $billingTemplateClient->client_id;
@@ -27,18 +32,22 @@ class HandleBillingCancelled
         }
 
         /** @var (Model&BillableContract)|null $billable */
-        $billable = Cashier::findBillable($clientId);
+        $billable = (bool) config('cashier-chip.features.owner.enabled', true)
+            ? Cashier::findBillableForWebhook($clientId)
+            : Cashier::findBillable($clientId);
 
         if ($billable === null) {
             return;
         }
 
-        // Find subscription by billing template ID or recurring token
-        /** @var Subscription|null $subscription */
-        $subscription = $billable->subscriptions()
-            ->where('chip_billing_template_id', $billingTemplateClient->billing_template_id)
-            ->orWhere('recurring_token', $billingTemplateClient->recurring_token)
-            ->first();
+        $query = Subscription::query()
+            ->where('user_id', $billable->getKey())
+            ->where(function ($query) use ($billingTemplateClient): void {
+                $query->where('chip_billing_template_id', $billingTemplateClient->billing_template_id)
+                    ->orWhere('recurring_token', $billingTemplateClient->recurring_token);
+            });
+
+        $subscription = $query->first();
 
         if ($subscription) {
             $subscription->forceFill([

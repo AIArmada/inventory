@@ -87,6 +87,79 @@ describe('Order Policies', function (): void {
             expect($policy->update($user, $order))->toBeFalse();
         });
 
+        it('allows adding notes to final orders when user can update orders (and can view)', function (): void {
+            $user = Mockery::mock(User::class);
+            $user->shouldReceive('can')->with('view_order')->andReturn(true);
+            $user->shouldReceive('can')->with('update_order')->andReturn(true);
+
+            $order = Order::create([
+                'order_number' => 'ORD-POLICY-NOTE1-' . uniqid(),
+                'status' => Completed::class,
+                'currency' => 'MYR',
+                'subtotal' => 10000,
+                'grand_total' => 10000,
+            ]);
+
+            $policy = new OrderPolicy;
+
+            expect($policy->addNote($user, $order))->toBeTrue();
+        });
+
+        it('allows adding notes to final orders when user has add_order_note permission (and can view)', function (): void {
+            $user = Mockery::mock(User::class);
+            $user->shouldReceive('can')->with('view_order')->andReturn(true);
+            $user->shouldReceive('can')->with('update_order')->andReturn(false);
+            $user->shouldReceive('can')->with('add_order_note')->andReturn(true);
+
+            $order = Order::create([
+                'order_number' => 'ORD-POLICY-NOTE2-' . uniqid(),
+                'status' => Completed::class,
+                'currency' => 'MYR',
+                'subtotal' => 10000,
+                'grand_total' => 10000,
+            ]);
+
+            $policy = new OrderPolicy;
+
+            expect($policy->addNote($user, $order))->toBeTrue();
+        });
+
+        it('denies adding notes when user cannot view the order', function (): void {
+            $user = Mockery::mock(User::class);
+            $user->shouldReceive('can')->with('view_order')->andReturn(false);
+
+            $order = Order::create([
+                'order_number' => 'ORD-POLICY-NOTE3-' . uniqid(),
+                'status' => Completed::class,
+                'currency' => 'MYR',
+                'subtotal' => 10000,
+                'grand_total' => 10000,
+            ]);
+
+            $policy = new OrderPolicy;
+
+            expect($policy->addNote($user, $order))->toBeFalse();
+        });
+
+        it('denies adding notes when user can view but lacks both update and add_order_note permissions', function (): void {
+            $user = Mockery::mock(User::class);
+            $user->shouldReceive('can')->with('view_order')->andReturn(true);
+            $user->shouldReceive('can')->with('update_order')->andReturn(false);
+            $user->shouldReceive('can')->with('add_order_note')->andReturn(false);
+
+            $order = Order::create([
+                'order_number' => 'ORD-POLICY-NOTE4-' . uniqid(),
+                'status' => Completed::class,
+                'currency' => 'MYR',
+                'subtotal' => 10000,
+                'grand_total' => 10000,
+            ]);
+
+            $policy = new OrderPolicy;
+
+            expect($policy->addNote($user, $order))->toBeFalse();
+        });
+
         it('allows deleting orders when user has permission', function (): void {
             $user = Mockery::mock(User::class);
             $user->shouldReceive('can')->with('delete_order')->andReturn(true);

@@ -43,12 +43,17 @@ final class CalculateShippingRate
             return $driver->getRates($origin, $destination, $packages, $options);
         }
 
-        // Get rates from all registered drivers
+        // Get rates from all registered drivers (skip drivers that don't service destination)
         $rates = collect();
 
         foreach ($this->shippingManager->getAvailableDrivers() as $carrierName) {
             try {
                 $driver = $this->shippingManager->driver($carrierName);
+
+                if (! $driver->servicesDestination($destination)) {
+                    continue;
+                }
+
                 $carrierRates = $driver->getRates($origin, $destination, $packages, $options);
                 $rates = $rates->merge($carrierRates);
             } catch (Throwable $e) {
@@ -58,6 +63,6 @@ final class CalculateShippingRate
             }
         }
 
-        return $rates;
+        return $rates->sortBy('rate')->values();
     }
 }

@@ -11,6 +11,7 @@ use AIArmada\CashierChip\SubscriptionItem;
 use AIArmada\CashierChip\Testing\FakeChipCollectService;
 use AIArmada\Chip\ChipServiceProvider;
 use AIArmada\Commerce\Tests\CashierChip\Fixtures\User;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Cache\CacheServiceProvider;
 use Illuminate\Database\DatabaseServiceProvider;
 use Illuminate\Database\Schema\Blueprint;
@@ -34,6 +35,8 @@ abstract class CashierChipTestCase extends Orchestra
     {
         parent::setUp();
 
+        OwnerContext::clearOverride();
+
         Cashier::useCustomerModel(User::class);
         Cashier::useSubscriptionModel(Subscription::class);
         Cashier::useSubscriptionItemModel(SubscriptionItem::class);
@@ -54,6 +57,8 @@ abstract class CashierChipTestCase extends Orchestra
     {
         // Reset and disable fake after each test
         Cashier::unfake();
+
+        OwnerContext::clearOverride();
 
         parent::tearDown();
     }
@@ -114,7 +119,7 @@ abstract class CashierChipTestCase extends Orchestra
     {
         // Create users table first (before cashier-chip migrations run)
         Schema::create('users', function (Blueprint $table): void {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('name');
             $table->string('email')->unique();
             $table->string('phone')->nullable();
@@ -133,9 +138,13 @@ abstract class CashierChipTestCase extends Orchestra
 
     protected function createUser(array $attributes = []): User
     {
-        return User::create(array_merge([
+        $user = User::create(array_merge([
             'name' => 'Test User',
-            'email' => 'test@example.com',
+            'email' => 'test-' . uniqid() . '@example.com',
         ], $attributes));
+
+        OwnerContext::override($user);
+
+        return $user;
     }
 }

@@ -12,6 +12,7 @@ return [
         'title' => 'My Subscriptions',
         'new' => 'New Subscription',
         'empty' => 'You have no active subscriptions.',
+        'load_more' => 'Load more',
         'cancel' => 'Cancel',
         'resume' => 'Resume',
         'change_plan' => 'Change Plan',
@@ -32,6 +33,7 @@ return [
         'default_updated' => 'Default payment method updated.',
         'deleted' => 'Payment method deleted.',
         'error' => 'An error occurred.',
+        'gateway_not_available' => 'Gateway is not available.',
     ],
 
     'invoices' => [

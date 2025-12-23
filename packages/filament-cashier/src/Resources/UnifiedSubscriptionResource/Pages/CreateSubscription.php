@@ -9,7 +9,6 @@ use AIArmada\Cashier\Facades\Cashier;
 use AIArmada\FilamentCashier\Resources\UnifiedSubscriptionResource;
 use AIArmada\FilamentCashier\Support\CashierOwnerScope;
 use AIArmada\FilamentCashier\Support\GatewayDetector;
-use Exception;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -24,6 +23,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\HtmlString;
 use RuntimeException;
+use Throwable;
 
 final class CreateSubscription extends CreateRecord
 {
@@ -174,6 +174,12 @@ final class CreateSubscription extends CreateRecord
             return [];
         }
 
+        $gatewayDetector = app(GatewayDetector::class);
+
+        if (! $gatewayDetector->isAvailable($gateway)) {
+            return [];
+        }
+
         $billableModel = config('cashier.models.billable', 'App\\Models\\User');
 
         if (! class_exists($billableModel)) {
@@ -193,7 +199,7 @@ final class CreateSubscription extends CreateRecord
             if ($gateway === 'stripe' && method_exists($user, 'paymentMethods')) {
                 return $user->paymentMethods()
                     ->mapWithKeys(fn ($pm) => [
-                        $pm->id => ($pm->card->brand ?? 'Card') . ' •••• ' . ($pm->card->last4 ?? '****'),
+                        $pm->id => ($pm->card->brand ?? 'Card') . ' **** ' . ($pm->card->last4 ?? '****'),
                     ])
                     ->toArray();
             }
@@ -201,11 +207,11 @@ final class CreateSubscription extends CreateRecord
             if ($gateway === 'chip' && method_exists($user, 'chipPaymentMethods')) {
                 return $user->chipPaymentMethods()
                     ->mapWithKeys(fn ($pm) => [
-                        $pm->id => $pm->type . ' •••• ' . ($pm->last4 ?? '****'),
+                        $pm->id => $pm->type . ' **** ' . ($pm->last4 ?? '****'),
                     ])
                     ->toArray();
             }
-        } catch (Exception) {
+        } catch (Throwable) {
             // Silently fail if gateway API is not configured
         }
 
@@ -226,7 +232,14 @@ final class CreateSubscription extends CreateRecord
         if (! $user instanceof BillableContract) {
             throw new RuntimeException('Configured cashier billable model must implement BillableContract.');
         }
+
         $gateway = $data['gateway'];
+
+        $gatewayDetector = app(GatewayDetector::class);
+
+        if (! $gatewayDetector->isAvailable($gateway)) {
+            throw new RuntimeException("Selected gateway is not available: {$gateway}");
+        }
 
         // Build the subscription using the unified cashier interface
         if (class_exists(Cashier::class)) {

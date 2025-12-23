@@ -21,8 +21,8 @@ use AIArmada\Cashier\Gateways\Chip\ChipSubscription;
 use AIArmada\Cashier\Gateways\Chip\ChipSubscriptionBuilder;
 use AIArmada\CashierChip\Cashier as CashierChip;
 use AIArmada\Chip\Services\ChipCollectService;
-use Exception;
 use Illuminate\Support\Collection;
+use Throwable;
 
 /**
  * CHIP payment gateway implementation.
@@ -150,7 +150,7 @@ class ChipGateway extends AbstractGateway
             $purchase = $this->client()->getPurchase($sessionId);
 
             return new Chip\ChipCheckout($purchase);
-        } catch (Exception) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -169,7 +169,7 @@ class ChipGateway extends AbstractGateway
             }
 
             return new ChipSubscription($subscription);
-        } catch (Exception) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -183,7 +183,7 @@ class ChipGateway extends AbstractGateway
             $purchase = $this->client()->getPurchase($paymentId);
 
             return new ChipPayment(new \AIArmada\CashierChip\Payment($purchase));
-        } catch (Exception) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -198,7 +198,7 @@ class ChipGateway extends AbstractGateway
             $purchase = $this->client()->getPurchase($invoiceId);
 
             return new Chip\ChipInvoice($purchase);
-        } catch (Exception) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -291,17 +291,32 @@ class ChipGateway extends AbstractGateway
     public function verifyWebhookSignature(string $payload, array $headers): bool
     {
         // CHIP webhook verification
-        $publicKey = $this->client()->getPublicKey();
         $signature = $headers['X-Signature'] ?? $headers['x-signature'] ?? '';
 
+        if (! is_string($signature) || $signature === '') {
+            return false;
+        }
+
+        $decodedSignature = base64_decode($signature, true);
+
+        if ($decodedSignature === false || $decodedSignature === '') {
+            return false;
+        }
+
         try {
+            $publicKey = $this->client()->getPublicKey();
+
+            if (! is_string($publicKey) || $publicKey === '') {
+                return false;
+            }
+
             return openssl_verify(
                 $payload,
-                base64_decode($signature),
+                $decodedSignature,
                 $publicKey,
                 OPENSSL_ALGO_SHA256
             ) === 1;
-        } catch (Exception) {
+        } catch (Throwable) {
             return false;
         }
     }

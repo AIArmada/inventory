@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Widgets;
 
+use AIArmada\FilamentInventory\Actions\ApproveReorderSuggestionAction;
+use AIArmada\FilamentInventory\Actions\RejectReorderSuggestionAction;
 use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
-use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryReorderSuggestion;
-use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
 
 final class ReorderSuggestionsWidget extends TableWidget
 {
@@ -96,83 +94,8 @@ final class ReorderSuggestionsWidget extends TableWidget
                     ->color(fn (InventoryReorderSuggestion $record): string => $record->status->color()),
             ])
             ->actions([
-                Action::make('approve')
-                    ->label('Approve')
-                    ->icon('heroicon-o-check')
-                    ->color('success')
-                    ->requiresConfirmation()
-                    ->action(function (InventoryReorderSuggestion $record): void {
-                        if (InventoryOwnerScope::isEnabled()) {
-                            $allowNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::resolveOwner() === null;
-
-                            if ($record->location_id === null && ! $allowNullLocation) {
-                                Notification::make()
-                                    ->title('Not allowed')
-                                    ->body('This record is not available for the current owner context.')
-                                    ->danger()
-                                    ->send();
-
-                                return;
-                            }
-
-                            if ($record->location_id !== null) {
-                                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
-                                    ->whereKey($record->location_id)
-                                    ->exists();
-
-                                if (! $isAllowed) {
-                                    Notification::make()
-                                        ->title('Not allowed')
-                                        ->body('This record is not available for the current owner context.')
-                                        ->danger()
-                                        ->send();
-
-                                    return;
-                                }
-                            }
-                        }
-
-                        $record->approve(Auth::id());
-                    }),
-
-                Action::make('reject')
-                    ->label('Reject')
-                    ->icon('heroicon-o-x-mark')
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->action(function (InventoryReorderSuggestion $record): void {
-                        if (InventoryOwnerScope::isEnabled()) {
-                            $allowNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::resolveOwner() === null;
-
-                            if ($record->location_id === null && ! $allowNullLocation) {
-                                Notification::make()
-                                    ->title('Not allowed')
-                                    ->body('This record is not available for the current owner context.')
-                                    ->danger()
-                                    ->send();
-
-                                return;
-                            }
-
-                            if ($record->location_id !== null) {
-                                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
-                                    ->whereKey($record->location_id)
-                                    ->exists();
-
-                                if (! $isAllowed) {
-                                    Notification::make()
-                                        ->title('Not allowed')
-                                        ->body('This record is not available for the current owner context.')
-                                        ->danger()
-                                        ->send();
-
-                                    return;
-                                }
-                            }
-                        }
-
-                        $record->reject();
-                    }),
+                ApproveReorderSuggestionAction::make(),
+                RejectReorderSuggestionAction::make(),
             ])
             ->emptyStateHeading('No Pending Suggestions')
             ->emptyStateDescription('All stock levels are healthy.')

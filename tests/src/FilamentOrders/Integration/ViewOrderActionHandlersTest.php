@@ -34,7 +34,27 @@ beforeEach(function (): void {
     config()->set('orders.owner.include_global', true);
     config()->set('orders.owner.auto_assign_on_create', false);
 
+    app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+    {
+        public function resolve(): ?Model
+        {
+            return null;
+        }
+    });
+
     app()->register(OrdersServiceProvider::class);
+
+    $owner = TestOwner::query()->create(['name' => 'Owner A']);
+
+    app()->instance(OwnerResolverInterface::class, new class($owner) implements OwnerResolverInterface
+    {
+        public function __construct(private readonly ?Model $owner) {}
+
+        public function resolve(): ?Model
+        {
+            return $this->owner;
+        }
+    });
 
     $user = User::query()->create([
         'name' => 'QA',
@@ -85,17 +105,8 @@ afterEach(function (): void {
 });
 
 it('executes ViewOrder action handlers (error paths) without crashing', function (): void {
-    $owner = TestOwner::query()->create(['name' => 'Owner A']);
-
-    app()->instance(OwnerResolverInterface::class, new class($owner) implements OwnerResolverInterface
-    {
-        public function __construct(private readonly ?Model $owner) {}
-
-        public function resolve(): ?Model
-        {
-            return $this->owner;
-        }
-    });
+    /** @var TestOwner $owner */
+    $owner = TestOwner::query()->firstOrFail();
 
     $pendingOrder = Order::query()->create([
         'owner_type' => $owner->getMorphClass(),

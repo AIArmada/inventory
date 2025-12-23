@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentInventory\Resources\InventoryAllocationResource\Tables;
 
+use AIArmada\FilamentInventory\Actions\ReleaseAllocationAction;
 use AIArmada\FilamentInventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Facades\InventoryAllocation as InventoryAllocationFacade;
 use AIArmada\Inventory\Models\InventoryAllocation;
-use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\ViewAction;
@@ -114,23 +114,7 @@ final class InventoryAllocationsTable
                 ViewAction::make()
                     ->icon(Heroicon::OutlinedEye),
 
-                Action::make('release')
-                    ->label('Release')
-                    ->icon(Heroicon::OutlinedArrowUturnLeft)
-                    ->color('danger')
-                    ->requiresConfirmation()
-                    ->modalHeading('Release Allocation')
-                    ->modalDescription('This will release the allocated inventory back to available stock.')
-                    ->action(function (InventoryAllocation $record): void {
-                        $quantity = $record->quantity;
-                        InventoryAllocationFacade::releaseAllocation($record);
-
-                        Notification::make()
-                            ->title('Allocation Released')
-                            ->body("Released {$quantity} units back to inventory.")
-                            ->success()
-                            ->send();
-                    }),
+                ReleaseAllocationAction::make(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([
@@ -151,6 +135,16 @@ final class InventoryAllocationsTable
                                     $totalReleased += InventoryAllocationFacade::releaseAllocation($record);
                                 }
                             });
+
+                            if ($totalReleased <= 0) {
+                                Notification::make()
+                                    ->title('Release Failed')
+                                    ->body('No allocations were released. They may be outside the current owner context or already released.')
+                                    ->danger()
+                                    ->send();
+
+                                return;
+                            }
 
                             Notification::make()
                                 ->title('Allocations Released')

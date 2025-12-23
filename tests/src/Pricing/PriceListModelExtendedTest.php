@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AIArmada\Pricing\Models\Price;
 use AIArmada\Pricing\Models\PriceList;
 use AIArmada\Pricing\Models\PriceTier;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Support\Carbon;
 
 describe('PriceList Model - Extended Tests', function (): void {
@@ -288,24 +289,29 @@ describe('PriceList Model - Extended Tests', function (): void {
             $prefix = uniqid();
 
             // Global record (no owner)
-            PriceList::create([
+            OwnerContext::withOwner(null, static fn () => PriceList::query()->create([
                 'name' => 'Global List',
                 'slug' => "global-{$prefix}",
                 'currency' => 'MYR',
                 'is_active' => true,
-                'owner_type' => null,
-                'owner_id' => null,
-            ]);
+            ]));
 
             // Owned record
-            PriceList::create([
+            $otherOwner = new class extends Illuminate\Database\Eloquent\Model
+            {
+                public $incrementing = false;
+
+                protected $keyType = 'string';
+            };
+            $otherOwner->id = 'store-123';
+            $otherOwner->setTable('stores');
+
+            OwnerContext::withOwner($otherOwner, static fn () => PriceList::query()->create([
                 'name' => 'Owned List',
                 'slug' => "owned-{$prefix}",
                 'currency' => 'MYR',
                 'is_active' => true,
-                'owner_type' => 'App\\Models\\Store',
-                'owner_id' => 'store-123',
-            ]);
+            ]));
 
             $lists = PriceList::where('slug', 'like', "%-{$prefix}")->forOwner(null)->get();
 
@@ -315,6 +321,7 @@ describe('PriceList Model - Extended Tests', function (): void {
 
         it('returns owned and global records when owner provided with includeGlobal true', function (): void {
             config(['pricing.features.owner.enabled' => true]);
+            config(['pricing.features.owner.include_global' => true]);
 
             $prefix = uniqid();
             $ownerId = 'owner-' . uniqid();
@@ -330,34 +337,37 @@ describe('PriceList Model - Extended Tests', function (): void {
             $owner->setTable('stores');
 
             // Global record
-            PriceList::create([
+            OwnerContext::withOwner(null, static fn () => PriceList::query()->create([
                 'name' => 'Global List',
                 'slug' => "global-{$prefix}",
                 'currency' => 'MYR',
                 'is_active' => true,
-                'owner_type' => null,
-                'owner_id' => null,
-            ]);
+            ]));
 
             // Owned record matching owner
-            PriceList::create([
+            OwnerContext::withOwner($owner, static fn () => PriceList::query()->create([
                 'name' => 'Owned List',
                 'slug' => "owned-{$prefix}",
                 'currency' => 'MYR',
                 'is_active' => true,
-                'owner_type' => $owner->getMorphClass(),
-                'owner_id' => $ownerId,
-            ]);
+            ]));
 
             // Different owner
-            PriceList::create([
+            $otherOwner = new class extends Illuminate\Database\Eloquent\Model
+            {
+                public $incrementing = false;
+
+                protected $keyType = 'string';
+            };
+            $otherOwner->id = 'other-store-' . uniqid();
+            $otherOwner->setTable('stores');
+
+            OwnerContext::withOwner($otherOwner, static fn () => PriceList::query()->create([
                 'name' => 'Other Owner List',
                 'slug' => "other-{$prefix}",
                 'currency' => 'MYR',
                 'is_active' => true,
-                'owner_type' => 'App\\Models\\Store',
-                'owner_id' => 'other-store-' . uniqid(),
-            ]);
+            ]));
 
             $lists = PriceList::where('slug', 'like', "%-{$prefix}")->forOwner($owner, true)->get();
 
@@ -381,24 +391,20 @@ describe('PriceList Model - Extended Tests', function (): void {
             $owner->setTable('stores');
 
             // Global record
-            PriceList::create([
+            OwnerContext::withOwner(null, static fn () => PriceList::query()->create([
                 'name' => 'Global List',
                 'slug' => "global-{$prefix}",
                 'currency' => 'MYR',
                 'is_active' => true,
-                'owner_type' => null,
-                'owner_id' => null,
-            ]);
+            ]));
 
             // Owned record matching owner
-            PriceList::create([
+            OwnerContext::withOwner($owner, static fn () => PriceList::query()->create([
                 'name' => 'Owned List',
                 'slug' => "owned-{$prefix}",
                 'currency' => 'MYR',
                 'is_active' => true,
-                'owner_type' => $owner->getMorphClass(),
-                'owner_id' => $ownerId,
-            ]);
+            ]));
 
             $lists = PriceList::where('slug', 'like', "%-{$prefix}")->forOwner($owner, false)->get();
 
@@ -412,24 +418,29 @@ describe('PriceList Model - Extended Tests', function (): void {
             $prefix = uniqid();
 
             // Global record
-            PriceList::create([
+            OwnerContext::withOwner(null, static fn () => PriceList::query()->create([
                 'name' => 'Global List',
                 'slug' => "global-{$prefix}",
                 'currency' => 'MYR',
                 'is_active' => true,
-                'owner_type' => null,
-                'owner_id' => null,
-            ]);
+            ]));
 
             // Owned record
-            PriceList::create([
+            $otherOwner = new class extends Illuminate\Database\Eloquent\Model
+            {
+                public $incrementing = false;
+
+                protected $keyType = 'string';
+            };
+            $otherOwner->id = 'store-' . uniqid();
+            $otherOwner->setTable('stores');
+
+            OwnerContext::withOwner($otherOwner, static fn () => PriceList::query()->create([
                 'name' => 'Owned List',
                 'slug' => "owned-{$prefix}",
                 'currency' => 'MYR',
                 'is_active' => true,
-                'owner_type' => 'App\\Models\\Store',
-                'owner_id' => 'store-' . uniqid(),
-            ]);
+            ]));
 
             $lists = PriceList::where('slug', 'like', "%-{$prefix}")->forOwner(null, false)->get();
 

@@ -171,6 +171,8 @@ describe('PendingActionsWidget', function (): void {
     });
 
     it('scopes pending shipment count to current owner plus global', function (): void {
+            config()->set('shipping.features.owner.enabled', true);
+            config()->set('shipping.features.owner.include_global', true);
         Schema::dropIfExists('test_owners');
         Schema::create('test_owners', function (Blueprint $table): void {
             $table->uuid('id')->primary();

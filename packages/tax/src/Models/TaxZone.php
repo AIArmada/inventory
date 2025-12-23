@@ -279,6 +279,7 @@ class TaxZone extends Model
 
                 if ($zone->owner_type === null && $zone->owner_id === null) {
                     $hasOwnedRates = TaxRate::query()
+                        ->withoutOwnerScope()
                         ->where('zone_id', $zone->id)
                         ->whereNotNull('owner_type')
                         ->whereNotNull('owner_id')
@@ -289,6 +290,7 @@ class TaxZone extends Model
                     }
 
                     TaxRate::query()
+                        ->withoutOwnerScope()
                         ->where('zone_id', $zone->id)
                         ->whereNull('owner_type')
                         ->whereNull('owner_id')
@@ -298,6 +300,7 @@ class TaxZone extends Model
                 }
 
                 TaxRate::query()
+                    ->withoutOwnerScope()
                     ->where('zone_id', $zone->id)
                     ->where('owner_type', $zone->owner_type)
                     ->where('owner_id', $zone->owner_id)

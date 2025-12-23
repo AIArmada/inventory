@@ -424,7 +424,7 @@ class Subscription extends Model
 
         $this->guardAgainstMultiplePrices();
 
-        return $this->updateQuantity($this->quantity + $count, $price);
+        return $this->updateQuantity(((int) $this->quantity) + $count, $price);
     }
 
     /**
@@ -455,6 +455,8 @@ class Subscription extends Model
     public function updateQuantity(int $quantity, ?string $price = null)
     {
         $this->guardAgainstIncomplete();
+
+        $quantity = max(1, $quantity);
 
         if ($price) {
             $this->findItemOrFail($price)->updateQuantity($quantity);
@@ -552,6 +554,7 @@ class Subscription extends Model
             foreach ($prices as $priceKey => $priceValue) {
                 $price = is_string($priceValue) ? $priceValue : $priceKey;
                 $quantity = is_array($priceValue) ? ($priceValue['quantity'] ?? 1) : 1;
+                $quantity = max(1, (int) $quantity);
 
                 $this->items()->create([
                     'owner_type' => $this->owner_type,
@@ -1068,7 +1071,18 @@ class Subscription extends Model
                 /** @var class-string<Model> $customerModel */
                 $customerModel = Cashier::$customerModel;
 
-                if (method_exists($customerModel, 'scopeForOwner')) {
+                if (
+                    $owner !== null
+                    && is_a($owner, $customerModel)
+                    && (string) $owner->getKey() === (string) $subscription->user_id
+                ) {
+                    // Safe fast-path: tenant owner is the billable.
+                    // No additional owner-scoped lookup required.
+                } else {
+                    if (! method_exists($customerModel, 'scopeForOwner')) {
+                        throw new AuthorizationException('Unable to validate subscription owner against customer model; owner scoping is required.');
+                    }
+
                     $exists = $customerModel::forOwner($owner, false)
                         ->whereKey($subscription->user_id)
                         ->exists();

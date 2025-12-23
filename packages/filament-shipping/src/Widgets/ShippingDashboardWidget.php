@@ -48,16 +48,36 @@ class ShippingDashboardWidget extends StatsOverviewWidget
 
     protected function getPendingCount(): int
     {
-        return Shipment::query()
-            ->forOwner($this->resolveOwner())
+        $query = Shipment::query();
+
+        if ((bool) config('shipping.features.owner.enabled', false)) {
+            $owner = OwnerContext::resolve();
+            if ($owner === null) {
+                return 0;
+            }
+
+            $query->forOwner($owner, includeGlobal: true);
+        }
+
+        return $query
             ->where('status', ShipmentStatus::Pending)
             ->count();
     }
 
     protected function getInTransitCount(): int
     {
-        return Shipment::query()
-            ->forOwner($this->resolveOwner())
+        $query = Shipment::query();
+
+        if ((bool) config('shipping.features.owner.enabled', false)) {
+            $owner = OwnerContext::resolve();
+            if ($owner === null) {
+                return 0;
+            }
+
+            $query->forOwner($owner, includeGlobal: true);
+        }
+
+        return $query
             ->whereIn('status', [
                 ShipmentStatus::Shipped,
                 ShipmentStatus::InTransit,
@@ -68,8 +88,18 @@ class ShippingDashboardWidget extends StatsOverviewWidget
 
     protected function getDeliveredTodayCount(): int
     {
-        return Shipment::query()
-            ->forOwner($this->resolveOwner())
+        $query = Shipment::query();
+
+        if ((bool) config('shipping.features.owner.enabled', false)) {
+            $owner = OwnerContext::resolve();
+            if ($owner === null) {
+                return 0;
+            }
+
+            $query->forOwner($owner, includeGlobal: true);
+        }
+
+        return $query
             ->where('status', ShipmentStatus::Delivered)
             ->whereDate('delivered_at', today())
             ->count();
@@ -77,8 +107,18 @@ class ShippingDashboardWidget extends StatsOverviewWidget
 
     protected function getExceptionsCount(): int
     {
-        return Shipment::query()
-            ->forOwner($this->resolveOwner())
+        $query = Shipment::query();
+
+        if ((bool) config('shipping.features.owner.enabled', false)) {
+            $owner = OwnerContext::resolve();
+            if ($owner === null) {
+                return 0;
+            }
+
+            $query->forOwner($owner, includeGlobal: true);
+        }
+
+        return $query
             ->whereIn('status', [
                 ShipmentStatus::Exception,
                 ShipmentStatus::DeliveryFailed,
@@ -88,8 +128,18 @@ class ShippingDashboardWidget extends StatsOverviewWidget
 
     protected function getPendingReturnsCount(): int
     {
-        return ReturnAuthorization::query()
-            ->forOwner($this->resolveOwner())
+        $query = ReturnAuthorization::query();
+
+        if ((bool) config('shipping.features.owner.enabled', false)) {
+            $owner = OwnerContext::resolve();
+            if ($owner === null) {
+                return 0;
+            }
+
+            $query->forOwner($owner, includeGlobal: true);
+        }
+
+        return $query
             ->where('status', 'pending')
             ->count();
     }

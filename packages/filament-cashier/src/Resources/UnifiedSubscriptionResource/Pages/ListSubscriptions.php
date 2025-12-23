@@ -105,13 +105,22 @@ final class ListSubscriptions extends ListRecords
             return $this->allSubscriptions;
         }
 
+        $userId = auth()->id();
+
+        if ($userId === null) {
+            $this->allSubscriptions = collect();
+
+            return $this->allSubscriptions;
+        }
+
         $subscriptions = collect();
         $detector = app(GatewayDetector::class);
 
         // Collect from Stripe if available
         if ($detector->isAvailable('stripe') && class_exists(Subscription::class)) {
             $stripeSubscriptions = CashierOwnerScope::apply(Subscription::query())
-                ->with('user')
+                ->with(['user', 'items'])
+                ->where('user_id', $userId)
                 ->orderByDesc('created_at')
                 ->get()
                 ->map(fn ($sub) => UnifiedSubscription::fromStripe($sub));
@@ -123,7 +132,8 @@ final class ListSubscriptions extends ListRecords
         if ($detector->isAvailable('chip')) {
             $subscriptionModel = CashierChip::$subscriptionModel;
             $chipSubscriptions = CashierOwnerScope::apply($subscriptionModel::query())
-                ->with('user')
+                ->with(['user', 'items'])
+                ->where('user_id', $userId)
                 ->orderByDesc('created_at')
                 ->get()
                 ->map(fn ($sub) => UnifiedSubscription::fromChip($sub));

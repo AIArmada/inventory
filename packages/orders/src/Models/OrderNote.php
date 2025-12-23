@@ -26,6 +26,7 @@ use InvalidArgumentException;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property-read Order $order
+ * @property-read Model|null $user
  */
 class OrderNote extends Model
 {
@@ -66,7 +67,7 @@ class OrderNote extends Model
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeForOwner(Builder $query, Model | string | null $owner = OwnerContext::CURRENT, bool $includeGlobal = true): Builder
+    public function scopeForOwner(Builder $query, Model | string | null $owner = OwnerContext::CURRENT, bool $includeGlobal = false): Builder
     {
         /** @var Builder<static> $scoped */
         $scoped = $this->baseScopeForOwner($query, $owner, $includeGlobal);
@@ -84,6 +85,17 @@ class OrderNote extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * @return BelongsTo<Model, OrderNote>
+     */
+    public function user(): BelongsTo
+    {
+        /** @var class-string<Model> $userModel */
+        $userModel = config('auth.providers.users.model', Model::class);
+
+        return $this->belongsTo($userModel, 'user_id');
     }
 
     // ─────────────────────────────────────────────────────────────

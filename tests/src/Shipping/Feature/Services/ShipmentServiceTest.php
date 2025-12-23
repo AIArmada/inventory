@@ -75,6 +75,54 @@ describe('ShipmentService', function (): void {
         expect($shipment->total_weight)->toBe(1000); // 2 * 500
     });
 
+    it('enforces owner context when owner scoping is enabled', function (): void {
+        config(['shipping.features.owner.enabled' => true]);
+
+        $owner = new class extends \Illuminate\Database\Eloquent\Model {
+            public $incrementing = false;
+            protected $keyType = 'string';
+        };
+        $owner->setAttribute('id', 'test-owner-123');
+
+        \AIArmada\CommerceSupport\Support\OwnerContext::override($owner);
+
+        $origin = new AddressData(
+            name: 'Test Origin',
+            phone: '123-456-7890',
+            address: '123 Origin St',
+            postCode: '12345',
+            countryCode: 'US'
+        );
+
+        $destination = new AddressData(
+            name: 'Test Destination',
+            phone: '987-654-3210',
+            address: '456 Dest St',
+            postCode: '67890',
+            countryCode: 'US'
+        );
+
+        $data = new ShipmentData(
+            reference: 'TEST-SHIP-OWNER',
+            carrierCode: 'null',
+            serviceCode: 'standard',
+            origin: $origin,
+            destination: $destination,
+            items: [new ShipmentItemData(name: 'Item', quantity: 1, weight: 100)]
+        );
+
+        expect(fn () => $this->service->create($data, 'other-owner', 'OtherOwner'))
+            ->toThrow(Illuminate\Auth\Access\AuthorizationException::class);
+
+        $shipment = $this->service->create($data);
+
+        expect($shipment->owner_id)->toBe('test-owner-123');
+        expect($shipment->owner_type)->toBe($owner->getMorphClass());
+
+        \AIArmada\CommerceSupport\Support\OwnerContext::clearOverride();
+        config(['shipping.features.owner.enabled' => false]);
+    });
+
     it('can mark shipment as pending', function (): void {
         $shipment = Shipment::create([
             'owner_type' => 'TestOwner',

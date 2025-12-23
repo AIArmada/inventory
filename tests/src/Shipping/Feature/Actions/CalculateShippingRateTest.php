@@ -50,6 +50,35 @@ describe('CalculateShippingRate Action', function (): void {
         // Isolate from any custom drivers registered by other packages.
         app()->instance(ShippingManager::class, new ShippingManager(app()));
 
+        // Ensure the expected built-in drivers are configured for this test.
+        config([
+            'shipping.drivers' => [
+                'manual' => [
+                    'driver' => 'manual',
+                    'name' => 'Manual Shipping',
+                    'default_rate' => 1000,
+                    'estimated_days' => 3,
+                    'free_shipping_threshold' => null,
+                ],
+                'flat_rate' => [
+                    'driver' => 'flat_rate',
+                    'name' => 'Flat Rate Shipping',
+                    'rates' => [
+                        'standard' => [
+                            'name' => 'Standard Delivery',
+                            'rate' => 800,
+                            'estimated_days' => 3,
+                        ],
+                        'express' => [
+                            'name' => 'Express Delivery',
+                            'rate' => 1500,
+                            'estimated_days' => 1,
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
         $action = app(CalculateShippingRate::class);
 
         $origin = new AddressData(

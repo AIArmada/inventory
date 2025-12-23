@@ -25,6 +25,9 @@ beforeEach(function (): void {
 });
 
 it('scopes ShipmentResource to current owner plus global', function (): void {
+    config()->set('shipping.features.owner.enabled', true);
+    config()->set('shipping.features.owner.include_global', true);
+
     $ownerA = TestOwner::query()->create(['name' => 'Owner A']);
     $ownerB = TestOwner::query()->create(['name' => 'Owner B']);
 
@@ -76,4 +79,46 @@ it('scopes ShipmentResource to current owner plus global', function (): void {
         ->toContain($shipmentA->id)
         ->toContain($shipmentGlobal->id)
         ->not->toContain($shipmentB->id);
+});
+
+it('returns empty when owner scoping is enabled but owner context is missing', function (): void {
+    config()->set('shipping.features.owner.enabled', true);
+    config()->set('shipping.features.owner.include_global', true);
+
+    $ownerA = TestOwner::query()->create(['name' => 'Owner A']);
+
+    $shipmentA = Shipment::query()->create([
+        'owner_type' => $ownerA->getMorphClass(),
+        'owner_id' => $ownerA->getKey(),
+        'reference' => 'REF-A',
+        'carrier_code' => 'test',
+        'status' => ShipmentStatus::Pending,
+        'origin_address' => ['country' => 'MY', 'city' => 'Kuala Lumpur'],
+        'destination_address' => ['country' => 'MY', 'city' => 'Kuala Lumpur'],
+    ]);
+
+    $shipmentGlobal = Shipment::query()->create([
+        'owner_type' => null,
+        'owner_id' => null,
+        'reference' => 'REF-G',
+        'carrier_code' => 'test',
+        'status' => ShipmentStatus::Pending,
+        'origin_address' => ['country' => 'MY', 'city' => 'Kuala Lumpur'],
+        'destination_address' => ['country' => 'MY', 'city' => 'Kuala Lumpur'],
+    ]);
+
+    app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+    {
+        public function resolve(): ?Model
+        {
+            return null;
+        }
+    });
+
+    $ids = ShipmentResource::getEloquentQuery()->pluck('id')->all();
+
+    expect($ids)
+        ->not->toContain($shipmentA->id)
+        ->not->toContain($shipmentGlobal->id)
+        ->toBe([]);
 });

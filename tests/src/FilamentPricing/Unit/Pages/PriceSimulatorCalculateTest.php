@@ -8,11 +8,14 @@ use AIArmada\Pricing\Data\PriceResultData;
 use AIArmada\Pricing\Services\PriceCalculator;
 use AIArmada\Products\Models\Product;
 use AIArmada\Products\Models\Variant;
+use Carbon\CarbonImmutable;
 
 uses(TestCase::class);
 
 it('calculates pricing for a product using the bound PriceCalculator', function (): void {
     $product = Product::factory()->create(['price' => 1000]);
+
+    $effectiveAt = CarbonImmutable::parse('2025-01-01 12:00:00');
 
     $calculator = new class extends PriceCalculator
     {
@@ -49,12 +52,13 @@ it('calculates pricing for a product using the bound PriceCalculator', function 
         'product_id' => $product->getKey(),
         'customer_id' => null,
         'quantity' => 2,
-        'effective_date' => now(),
+        'effective_date' => $effectiveAt,
     ];
 
     $page->calculate();
 
-    expect($calculator->lastContext)->toBe([]);
+    expect($calculator->lastContext)->toHaveKey('effective_at')
+        ->and($calculator->lastContext['effective_at'])->toBeInstanceOf(DateTimeInterface::class);
 
     expect($page->result)->not->toBeNull();
     expect($page->result['final_price'])->toBe(900);
@@ -64,6 +68,8 @@ it('calculates pricing for a product using the bound PriceCalculator', function 
 
 it('passes customer_id in context when a customer is provided', function (): void {
     $product = Product::factory()->create(['price' => 1000]);
+
+    $effectiveAt = CarbonImmutable::parse('2025-01-02 12:00:00');
     $customer = \AIArmada\Customers\Models\Customer::query()->create([
         'first_name' => 'Test',
         'last_name' => 'Customer',
@@ -111,12 +117,13 @@ it('passes customer_id in context when a customer is provided', function (): voi
         'product_id' => $product->getKey(),
         'customer_id' => $customer->getKey(),
         'quantity' => 1,
-        'effective_date' => now(),
+        'effective_date' => $effectiveAt,
     ];
 
     $page->calculate();
 
-    expect($calculator->lastContext)->toMatchArray(['customer_id' => $customer->getKey()]);
+    expect($calculator->lastContext)->toMatchArray(['customer_id' => $customer->getKey()])
+        ->and($calculator->lastContext)->toHaveKey('effective_at');
     expect($page->result)->not->toBeNull();
 });
 

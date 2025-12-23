@@ -211,12 +211,8 @@ trait PerformsCharges
         array $sessionOptions = [],
         array $customerOptions = []
     ): Checkout {
-        return $this->checkout([
-            [
-                'name' => $name,
-                'price' => $amount,
-                'quantity' => $quantity,
-            ],
-        ], $sessionOptions, $customerOptions);
+        return Checkout::customer($this)
+            ->addProduct($name, $amount, $quantity)
+            ->create($amount * max(1, $quantity), array_merge($sessionOptions, $customerOptions));
     }
 }

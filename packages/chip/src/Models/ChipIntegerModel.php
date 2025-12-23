@@ -58,7 +58,7 @@ abstract class ChipIntegerModel extends Model
      */
     final public function scopeForOwner(Builder $query, ?Model $owner = null, ?bool $includeGlobal = null): Builder
     {
-        if (! (bool) config('chip.owner.enabled', true)) {
+        if (! (bool) config('chip.owner.enabled', false)) {
             return $query;
         }
 

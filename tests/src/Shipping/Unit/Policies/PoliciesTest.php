@@ -184,6 +184,8 @@ describe('ShipmentPolicy', function (): void {
     });
 
     it('allows view when record belongs to the resolved owner even without permission', function (): void {
+        config(['shipping.features.owner.enabled' => true]);
+
         $user = createUserWithPermissions([]);
 
         $owner = Mockery::mock(\Illuminate\Database\Eloquent\Model::class);
@@ -203,9 +205,12 @@ describe('ShipmentPolicy', function (): void {
         $shipment = Mockery::mock(Shipment::class)->makePartial();
         $shipment->shouldReceive('belongsToOwner')->with($owner)->andReturnTrue();
 
-        expect($this->policy->view($user, $shipment))->toBeTrue();
-
-        app()->forgetInstance(\AIArmada\CommerceSupport\Contracts\OwnerResolverInterface::class);
+        try {
+            expect($this->policy->view($user, $shipment))->toBeTrue();
+        } finally {
+            app()->forgetInstance(\AIArmada\CommerceSupport\Contracts\OwnerResolverInterface::class);
+            config(['shipping.features.owner.enabled' => false]);
+        }
     });
 
     it('denies view when neither owner nor has permission', function (): void {
@@ -477,6 +482,8 @@ describe('ReturnAuthorizationPolicy', function (): void {
     });
 
     it('allows view when record belongs to the resolved owner even without permission', function (): void {
+        config(['shipping.features.owner.enabled' => true]);
+
         $user = createUserWithPermissions([]);
 
         $owner = Mockery::mock(\Illuminate\Database\Eloquent\Model::class);
@@ -496,9 +503,12 @@ describe('ReturnAuthorizationPolicy', function (): void {
         $rma = Mockery::mock(ReturnAuthorization::class)->makePartial();
         $rma->shouldReceive('belongsToOwner')->with($owner)->andReturnTrue();
 
-        expect($this->policy->view($user, $rma))->toBeTrue();
-
-        app()->forgetInstance(\AIArmada\CommerceSupport\Contracts\OwnerResolverInterface::class);
+        try {
+            expect($this->policy->view($user, $rma))->toBeTrue();
+        } finally {
+            app()->forgetInstance(\AIArmada\CommerceSupport\Contracts\OwnerResolverInterface::class);
+            config(['shipping.features.owner.enabled' => false]);
+        }
     });
 
     it('denies view when neither owner nor has permission', function (): void {

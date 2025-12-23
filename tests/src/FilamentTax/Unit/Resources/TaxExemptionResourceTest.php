@@ -9,14 +9,60 @@ uses(TestCase::class);
 use AIArmada\FilamentTax\Resources\TaxExemptionResource;
 use AIArmada\Tax\Models\TaxClass;
 use AIArmada\Tax\Models\TaxExemption;
+use Filament\Forms\Components\FileUpload;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
+use Livewire\Component as LivewireComponent;
 
 it('builds tax exemption resource form schema', function (): void {
-    $schema = TaxExemptionResource::form(Schema::make());
+    $livewire = new class extends LivewireComponent implements HasSchemas
+    {
+        use InteractsWithSchemas;
+
+        public function render(): string
+        {
+            return '';
+        }
+    };
+
+    $schema = TaxExemptionResource::form(Schema::make($livewire));
 
     expect($schema->getComponents())->not()->toBeEmpty();
+
+    $flatten = function (array $components) use (&$flatten): array {
+        $all = [];
+
+        foreach ($components as $component) {
+            if (! is_object($component)) {
+                continue;
+            }
+
+            $all[] = $component;
+
+            if (method_exists($component, 'getChildComponents')) {
+                $all = [...$all, ...$flatten($component->getChildComponents())];
+            }
+        }
+
+        return $all;
+    };
+
+    $fileUpload = collect($flatten($schema->getComponents()))
+        ->first(function (object $component): bool {
+            return ($component instanceof FileUpload)
+                && method_exists($component, 'getName')
+                && ($component->getName() === 'document_path');
+        });
+
+    expect($fileUpload)
+        ->toBeInstanceOf(FileUpload::class)
+        ->and($fileUpload->getDiskName())->toBe('local')
+        ->and($fileUpload->getVisibility())->toBe('private')
+        ->and($fileUpload->isOpenable())->toBeFalse()
+        ->and($fileUpload->isDownloadable())->toBeFalse();
 });
 
 it('builds tax exemption resource table definition', function (): void {

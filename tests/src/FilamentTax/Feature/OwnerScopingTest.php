@@ -8,12 +8,16 @@ uses(TestCase::class);
 
 use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\FilamentTax\Actions\DownloadTaxExemptionCertificateAction;
 use AIArmada\FilamentTax\Resources\TaxExemptionResource;
 use AIArmada\FilamentTax\Resources\TaxZoneResource;
 use AIArmada\Tax\Models\TaxClass;
 use AIArmada\Tax\Models\TaxExemption;
 use AIArmada\Tax\Models\TaxZone;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 function bindOwnerResolverForFilamentTax(?Model $owner): void
 {
@@ -29,10 +33,6 @@ function bindOwnerResolverForFilamentTax(?Model $owner): void
 }
 
 it('scopes filament tax resources and badges to the current owner', function (): void {
-    $taxConfig = require dirname(__DIR__, 4) . '/packages/tax/config/tax.php';
-
-    expect($taxConfig['features']['owner']['include_global'] ?? null)->toBeTrue();
-
     config()->set('tax.features.owner.enabled', true);
     config()->set('tax.features.owner.include_global', false);
 
@@ -98,4 +98,68 @@ it('scopes filament tax resources and badges to the current owner', function ():
 
     expect(TaxZoneResource::getEloquentQuery()->whereKey($zoneA->id)->exists())->toBeTrue()
         ->and(TaxZoneResource::getEloquentQuery()->whereKey($zoneB->id)->exists())->toBeFalse();
+});
+
+it('prevents cross-tenant certificate downloads', function (): void {
+    config()->set('tax.features.owner.enabled', true);
+    config()->set('tax.features.owner.include_global', false);
+
+    Storage::fake('local');
+
+    $ownerA = User::query()->create([
+        'name' => 'Owner A',
+        'email' => 'filament-tax-download-owner-a@example.com',
+        'password' => 'secret',
+    ]);
+
+    $ownerB = User::query()->create([
+        'name' => 'Owner B',
+        'email' => 'filament-tax-download-owner-b@example.com',
+        'password' => 'secret',
+    ]);
+
+    bindOwnerResolverForFilamentTax($ownerA);
+
+    $classA = TaxClass::query()->create([
+        'name' => 'Standard A',
+        'slug' => 'standard-a-download',
+        'is_active' => true,
+    ]);
+
+    Storage::disk('local')->put('tax-exemptions/a.pdf', 'A');
+
+    $exemptionA = TaxExemption::query()->create([
+        'exemptable_type' => TaxClass::class,
+        'exemptable_id' => $classA->id,
+        'reason' => 'A',
+        'status' => 'approved',
+        'document_path' => 'tax-exemptions/a.pdf',
+    ]);
+
+    bindOwnerResolverForFilamentTax($ownerB);
+
+    $classB = TaxClass::query()->create([
+        'name' => 'Standard B',
+        'slug' => 'standard-b-download',
+        'is_active' => true,
+    ]);
+
+    Storage::disk('local')->put('tax-exemptions/b.pdf', 'B');
+
+    $exemptionB = TaxExemption::query()->create([
+        'exemptable_type' => TaxClass::class,
+        'exemptable_id' => $classB->id,
+        'reason' => 'B',
+        'status' => 'approved',
+        'document_path' => 'tax-exemptions/b.pdf',
+    ]);
+
+    bindOwnerResolverForFilamentTax($ownerA);
+
+    $action = app(DownloadTaxExemptionCertificateAction::class);
+
+    expect($action->execute($exemptionA))->toBeInstanceOf(StreamedResponse::class);
+
+    expect(fn (): StreamedResponse => $action->execute($exemptionB))
+        ->toThrow(NotFoundHttpException::class);
 });

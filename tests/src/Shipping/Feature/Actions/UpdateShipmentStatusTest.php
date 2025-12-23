@@ -15,6 +15,7 @@ describe('UpdateShipmentStatus', function (): void {
             'owner_id' => 'test-owner-123',
             'reference' => 'TEST-001',
             'carrier_code' => 'test-carrier',
+            'status' => ShipmentStatus::Pending,
             'origin_address' => [
                 'name' => 'Test Origin',
                 'street' => '123 Origin St',
@@ -53,7 +54,7 @@ describe('UpdateShipmentStatus', function (): void {
             'owner_id' => 'test-owner-123',
             'reference' => 'TEST-002',
             'carrier_code' => 'test-carrier',
-            'status' => ShipmentStatus::Shipped,
+            'status' => ShipmentStatus::InTransit,
             'shipped_at' => now()->subDay(),
             'origin_address' => [
                 'name' => 'Test Origin',
@@ -92,6 +93,7 @@ describe('UpdateShipmentStatus', function (): void {
             'owner_id' => 'test-owner-123',
             'reference' => 'TEST-003',
             'carrier_code' => 'test-carrier',
+            'status' => ShipmentStatus::Shipped,
             'origin_address' => [
                 'name' => 'Test Origin',
                 'street' => '123 Origin St',
@@ -121,5 +123,22 @@ describe('UpdateShipmentStatus', function (): void {
         expect($event)->not->toBeNull();
         expect($event->normalized_status)->toBe(TrackingStatus::InTransit);
         expect($event->raw_data)->toBe($metadata);
+    });
+
+    it('rejects invalid status transitions', function (): void {
+        $shipment = Shipment::create([
+            'owner_type' => 'TestOwner',
+            'owner_id' => 'test-owner-123',
+            'reference' => 'TEST-004',
+            'carrier_code' => 'test-carrier',
+            'status' => ShipmentStatus::Draft,
+            'origin_address' => ['name' => 'Origin'],
+            'destination_address' => ['name' => 'Dest'],
+        ]);
+
+        $action = new UpdateShipmentStatus;
+
+        expect(fn () => $action->handle($shipment, ShipmentStatus::Delivered))
+            ->toThrow(AIArmada\Shipping\Exceptions\InvalidStatusTransitionException::class);
     });
 });

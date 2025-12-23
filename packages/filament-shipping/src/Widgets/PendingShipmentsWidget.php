@@ -29,10 +29,20 @@ class PendingShipmentsWidget extends BaseWidget
     {
         $weightUnit = (string) config('shipping.defaults.weight_unit', 'g');
 
+        $query = Shipment::query();
+
+        if ((bool) config('shipping.features.owner.enabled', false)) {
+            $owner = OwnerContext::resolve();
+            if ($owner === null) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->forOwner($owner, includeGlobal: true);
+            }
+        }
+
         return $table
             ->query(
-                Shipment::query()
-                    ->forOwner($this->resolveOwner())
+                $query
                     ->where('status', ShipmentStatus::Pending)
                     ->latest()
                     ->limit(10)

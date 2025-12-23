@@ -55,7 +55,7 @@ abstract class ChipModel extends Model implements Auditable
      */
     final public function scopeForOwner(Builder $query, Model | string | null $owner = OwnerContext::CURRENT, ?bool $includeGlobal = null): Builder
     {
-        if (! (bool) config('chip.owner.enabled', true)) {
+        if (! (bool) config('chip.owner.enabled', false)) {
             return $query;
         }
 

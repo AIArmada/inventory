@@ -35,8 +35,10 @@ class OrderResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
+        $includeGlobal = (bool) config('orders.owner.include_global', false);
+
         return Order::query()
-            ->forOwner()
+            ->forOwner(includeGlobal: $includeGlobal)
             ->with(['customer']);
     }
 
@@ -93,31 +95,31 @@ class OrderResource extends Resource
                     ->schema([
                         Forms\Components\TextInput::make('subtotal')
                             ->label('Subtotal')
-                            ->prefix('RM')
+                            ->prefix(fn (?Order $record): string => $record?->currency ?? (string) config('orders.currency.default', 'MYR'))
                             ->numeric()
                             ->disabled(),
 
                         Forms\Components\TextInput::make('discount_total')
                             ->label('Discount')
-                            ->prefix('RM')
+                            ->prefix(fn (?Order $record): string => $record?->currency ?? (string) config('orders.currency.default', 'MYR'))
                             ->numeric()
                             ->disabled(),
 
                         Forms\Components\TextInput::make('shipping_total')
                             ->label('Shipping')
-                            ->prefix('RM')
+                            ->prefix(fn (?Order $record): string => $record?->currency ?? (string) config('orders.currency.default', 'MYR'))
                             ->numeric()
                             ->disabled(),
 
                         Forms\Components\TextInput::make('tax_total')
                             ->label('Tax')
-                            ->prefix('RM')
+                            ->prefix(fn (?Order $record): string => $record?->currency ?? (string) config('orders.currency.default', 'MYR'))
                             ->numeric()
                             ->disabled(),
 
                         Forms\Components\TextInput::make('grand_total')
                             ->label('Grand Total')
-                            ->prefix('RM')
+                            ->prefix(fn (?Order $record): string => $record?->currency ?? (string) config('orders.currency.default', 'MYR'))
                             ->numeric()
                             ->disabled(),
                     ])

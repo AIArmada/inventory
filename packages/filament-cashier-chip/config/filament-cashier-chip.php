@@ -13,14 +13,6 @@ return [
         'badge_color' => 'success',
     ],
 
-    'resources' => [
-        'navigation_sort' => [
-            'subscriptions' => 10,
-            'customers' => 20,
-            'invoices' => 30,
-        ],
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Tables
@@ -53,6 +45,19 @@ return [
                 'subscription_distribution' => true,
                 'trial_conversions' => true,
             ],
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Resources
+    |--------------------------------------------------------------------------
+    */
+    'resources' => [
+        'navigation_sort' => [
+            'subscriptions' => 10,
+            'customers' => 20,
+            'invoices' => 30,
         ],
     ],
 ];

@@ -245,14 +245,15 @@ class PromotionResource extends Resource
                 Actions\Action::make('duplicate')
                     ->label('Duplicate')
                     ->icon('heroicon-o-document-duplicate')
-                    ->action(function ($record) {
+                    ->authorize(fn (): bool => static::canCreate())
+                    ->action(function (Promotion $record) {
                         $new = $record->replicate();
                         $new->name = $record->name . ' (Copy)';
                         $new->code = null;
                         $new->usage_count = 0;
                         $new->save();
 
-                        return redirect()->route('filament.admin.resources.promotions.edit', $new);
+                        return redirect(static::getUrl('edit', ['record' => $new]));
                     }),
             ])
             ->bulkActions([

@@ -43,14 +43,9 @@ it('scopes reads and blocks cross-tenant subscription item writes', function ():
 
     bindCashierChipOwner($ownerB);
 
-    $customerB = User::query()->create([
-        'name' => 'Customer B',
-        'email' => 'cashier-chip-customer-b-xt@example.com',
-    ]);
-
     /** @var Subscription $subscriptionB */
     $subscriptionB = Subscription::factory()->create([
-        'user_id' => $customerB->id,
+        'user_id' => $ownerB->id,
         'type' => 'default',
     ]);
 
@@ -69,5 +64,28 @@ it('scopes reads and blocks cross-tenant subscription item writes', function ():
         'chip_price' => 'price_test',
         'quantity' => 1,
         'unit_amount' => 1_000,
+    ]))->toThrow(AuthorizationException::class);
+});
+
+it('blocks subscription creation when billable differs from owner and owner-scoped validation is unavailable', function (): void {
+    config()->set('cashier-chip.features.owner.enabled', true);
+    config()->set('cashier-chip.features.owner.include_global', false);
+    config()->set('cashier-chip.features.owner.auto_assign_on_create', true);
+
+    $owner = User::query()->create([
+        'name' => 'Owner XT',
+        'email' => 'cashier-chip-owner-xt-2@example.com',
+    ]);
+
+    $customer = User::query()->create([
+        'name' => 'Customer XT',
+        'email' => 'cashier-chip-customer-xt-2@example.com',
+    ]);
+
+    bindCashierChipOwner($owner);
+
+    expect(fn () => Subscription::factory()->create([
+        'user_id' => $customer->id,
+        'type' => 'default',
     ]))->toThrow(AuthorizationException::class);
 });

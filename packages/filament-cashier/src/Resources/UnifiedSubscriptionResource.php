@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentCashier\Resources;
 
 use AIArmada\FilamentCashier\FilamentCashierPlugin;
+use AIArmada\FilamentCashier\Policies\SubscriptionPolicy;
 use AIArmada\FilamentCashier\Resources\UnifiedSubscriptionResource\Pages;
 use AIArmada\FilamentCashier\Support\GatewayDetector;
 use AIArmada\FilamentCashier\Support\SubscriptionStatus;
@@ -19,6 +20,7 @@ use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -30,6 +32,11 @@ final class UnifiedSubscriptionResource extends Resource
     protected static string | BackedEnum | null $navigationIcon = Heroicon::OutlinedCreditCard;
 
     protected static ?int $navigationSort = 10;
+
+    public static function getNavigationSort(): ?int
+    {
+        return (int) config('filament-cashier.resources.navigation_sort.subscriptions', 10);
+    }
 
     public static function getNavigationGroup(): ?string
     {
@@ -144,6 +151,12 @@ final class UnifiedSubscriptionResource extends Resource
                     ]))
                     ->modalDescription(__('filament-cashier::subscriptions.actions.cancel_description'))
                     ->action(function (UnifiedSubscription $record): void {
+                        $user = auth()->user();
+
+                        if ($user === null || ! app(SubscriptionPolicy::class)->cancel($user, $record->original)) {
+                            throw new AuthorizationException('Not authorized to cancel this subscription.');
+                        }
+
                         if (method_exists($record->original, 'cancel')) {
                             $record->original->cancel();
                         }
@@ -157,6 +170,12 @@ final class UnifiedSubscriptionResource extends Resource
                     ->visible(fn (UnifiedSubscription $record): bool => $record->status->isResumable())
                     ->requiresConfirmation()
                     ->action(function (UnifiedSubscription $record): void {
+                        $user = auth()->user();
+
+                        if ($user === null || ! app(SubscriptionPolicy::class)->resume($user, $record->original)) {
+                            throw new AuthorizationException('Not authorized to resume this subscription.');
+                        }
+
                         if (method_exists($record->original, 'resume')) {
                             $record->original->resume();
                         }
@@ -179,7 +198,19 @@ final class UnifiedSubscriptionResource extends Resource
                         ->color('danger')
                         ->requiresConfirmation()
                         ->action(function (Collection $records): void {
-                            $records->each(function (UnifiedSubscription $record): void {
+                            $user = auth()->user();
+
+                            if ($user === null) {
+                                throw new AuthorizationException('Not authorized to cancel subscriptions.');
+                            }
+
+                            $policy = app(SubscriptionPolicy::class);
+
+                            $records->each(function (UnifiedSubscription $record) use ($user, $policy): void {
+                                if (! $policy->cancel($user, $record->original)) {
+                                    throw new AuthorizationException('Not authorized to cancel this subscription.');
+                                }
+
                                 if (method_exists($record->original, 'cancel')) {
                                     $record->original->cancel();
                                 }

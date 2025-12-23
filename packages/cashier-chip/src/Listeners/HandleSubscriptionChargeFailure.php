@@ -9,6 +9,7 @@ use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\CashierChip\Events\SubscriptionRenewalFailed;
 use AIArmada\CashierChip\Subscription;
 use AIArmada\Chip\Events\PurchaseSubscriptionChargeFailure;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -18,6 +19,10 @@ class HandleSubscriptionChargeFailure
 {
     public function handle(PurchaseSubscriptionChargeFailure $event): void
     {
+        if ((bool) config('cashier-chip.features.owner.enabled', true) && OwnerContext::resolve() === null) {
+            return;
+        }
+
         $purchase = $event->purchase;
         $payload = $event->payload;
 
@@ -28,7 +33,9 @@ class HandleSubscriptionChargeFailure
         }
 
         /** @var (Model&BillableContract)|null $billable */
-        $billable = Cashier::findBillable($clientId);
+        $billable = (bool) config('cashier-chip.features.owner.enabled', true)
+            ? Cashier::findBillableForWebhook($clientId)
+            : Cashier::findBillable($clientId);
 
         if ($billable === null) {
             return;
@@ -41,7 +48,7 @@ class HandleSubscriptionChargeFailure
         }
 
         /** @var Subscription|null $subscription */
-        $subscription = $billable->subscription($subscriptionType);
+        $subscription = Cashier::findSubscriptionForWebhook($billable, $subscriptionType);
 
         if ($subscription) {
             $subscription->forceFill([

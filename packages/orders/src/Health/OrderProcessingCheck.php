@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Orders\Health;
 
 use AIArmada\CommerceSupport\Health\CommerceHealthCheck;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Orders\Models\Order;
 use AIArmada\Orders\States\PendingPayment;
 use AIArmada\Orders\States\Processing;
@@ -64,12 +65,26 @@ class OrderProcessingCheck extends CommerceHealthCheck
      */
     protected function performCheck(): Result
     {
-        $stuckPending = Order::query()
+        $baseQuery = Order::query();
+
+        if ((bool) config('orders.owner.enabled', true)) {
+            $owner = OwnerContext::resolve();
+
+            if ($owner === null) {
+                return $this->warning('Owner context missing; skipping order processing metrics.', [
+                    'reason' => 'owner_context_missing',
+                ]);
+            }
+
+            $baseQuery->forOwner($owner, includeGlobal: false);
+        }
+
+        $stuckPending = (clone $baseQuery)
             ->whereState('status', PendingPayment::class)
             ->where('created_at', '<', Carbon::now()->subHours($this->maxPendingHours))
             ->count();
 
-        $stuckProcessing = Order::query()
+        $stuckProcessing = (clone $baseQuery)
             ->whereState('status', Processing::class)
             ->where('created_at', '<', Carbon::now()->subHours($this->maxProcessingHours))
             ->count();
@@ -93,7 +108,7 @@ class OrderProcessingCheck extends CommerceHealthCheck
             ]);
         }
 
-        $todayOrders = Order::query()
+        $todayOrders = (clone $baseQuery)
             ->whereDate('created_at', Carbon::today())
             ->count();
 

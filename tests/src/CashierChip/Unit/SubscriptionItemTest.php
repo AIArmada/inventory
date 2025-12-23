@@ -73,6 +73,16 @@ it('can update quantity', function (): void {
     expect($this->item->quantity)->toBe(10);
 });
 
+it('cannot set quantity below 1 via updateQuantity', function (): void {
+    $this->item->updateQuantity(0);
+
+    expect($this->item->quantity)->toBe(1);
+
+    $this->item->updateQuantity(-10);
+
+    expect($this->item->quantity)->toBe(1);
+});
+
 it('updates subscription quantity for single price', function (): void {
     $this->item->updateQuantity(5);
 
@@ -97,6 +107,12 @@ it('can swap to new price with options', function (): void {
     expect($this->item->chip_product)->toBe('prod_456');
     expect($this->item->unit_amount)->toBe(99900);
 });
+
+it('rejects negative unit_amount in swap options', function (): void {
+    $this->item->swap('price_yearly', [
+        'unit_amount' => -1,
+    ]);
+})->throws(InvalidArgumentException::class);
 
 it('updates subscription price for single price swap', function (): void {
     $this->item->swap('price_yearly');

@@ -20,6 +20,7 @@ class PriceResultData extends Data
         public ?string $priceListName = null,
         public ?string $tierDescription = null,
         public ?string $promotionName = null,
+        public string $currency = 'MYR',
         /** @var array<int, array<string, mixed>> */
         public array $breakdown = [],
     ) {}
@@ -37,7 +38,7 @@ class PriceResultData extends Data
      */
     public function getFormattedSavings(): string
     {
-        return 'RM ' . number_format($this->discountAmount / 100, 2);
+        return $this->currencySymbol() . number_format($this->discountAmount / 100, 2);
     }
 
     /**
@@ -45,7 +46,7 @@ class PriceResultData extends Data
      */
     public function getFormattedFinalPrice(): string
     {
-        return 'RM ' . number_format($this->finalPrice / 100, 2);
+        return $this->currencySymbol() . number_format($this->finalPrice / 100, 2);
     }
 
     /**
@@ -53,6 +54,18 @@ class PriceResultData extends Data
      */
     public function getFormattedOriginalPrice(): string
     {
-        return 'RM ' . number_format($this->originalPrice / 100, 2);
+        return $this->currencySymbol() . number_format($this->originalPrice / 100, 2);
+    }
+
+    private function currencySymbol(): string
+    {
+        return match ($this->currency) {
+            'MYR' => 'RM ',
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            'SGD' => 'S$',
+            default => $this->currency . ' ',
+        };
     }
 }

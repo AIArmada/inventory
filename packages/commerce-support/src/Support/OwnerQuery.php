@@ -11,6 +11,18 @@ use Illuminate\Database\Query\Builder as QueryBuilder;
 final class OwnerQuery
 {
     /**
+     * Qualify an Eloquent column (table.column) when not already qualified.
+     */
+    private static function qualifyEloquentColumn(EloquentBuilder $query, string $column): string
+    {
+        if (str_contains($column, '.')) {
+            return $column;
+        }
+
+        return $query->getModel()->qualifyColumn($column);
+    }
+
+    /**
      * @template TModel of Model
      *
      * @param  EloquentBuilder<TModel>  $query
@@ -23,6 +35,9 @@ final class OwnerQuery
         string $ownerTypeColumn = 'owner_type',
         string $ownerIdColumn = 'owner_id',
     ): EloquentBuilder {
+        $ownerTypeColumn = self::qualifyEloquentColumn($query, $ownerTypeColumn);
+        $ownerIdColumn = self::qualifyEloquentColumn($query, $ownerIdColumn);
+
         if ($owner === null) {
             return $query->whereNull($ownerTypeColumn)->whereNull($ownerIdColumn);
         }

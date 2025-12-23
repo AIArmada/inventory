@@ -30,6 +30,11 @@ final class UnifiedInvoiceResource extends Resource
 
     protected static ?int $navigationSort = 20;
 
+    public static function getNavigationSort(): ?int
+    {
+        return (int) config('filament-cashier.resources.navigation_sort.invoices', 20);
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return FilamentCashierPlugin::get()->getNavigationGroup();

@@ -3,14 +3,7 @@
 declare(strict_types=1);
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Database
-    |--------------------------------------------------------------------------
-    |
-    | Configure the database table names used by the orders package.
-    |
-    */
+    /* Database */
     'database' => [
         'tables' => [
             'orders' => 'orders',
@@ -23,38 +16,20 @@ return [
         'json_column_type' => env('ORDERS_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Defaults
-    |--------------------------------------------------------------------------
-    |
-    | Default currency for orders.
-    |
-    */
+    /* Defaults */
     'currency' => [
         'default' => 'MYR',
         'decimal_places' => 2,
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Features
-    |--------------------------------------------------------------------------
-    */
+    /* Features */
     'owner' => [
         'enabled' => true,
         'include_global' => false,
         'auto_assign_on_create' => true,
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Order Number Generation
-    |--------------------------------------------------------------------------
-    |
-    | Configure how order numbers are generated.
-    |
-    */
+    /* Behavior */
     'order_number' => [
         'prefix' => env('ORDERS_ORDER_NUMBER_PREFIX', 'ORD'),
         'separator' => env('ORDERS_ORDER_NUMBER_SEPARATOR', '-'),
@@ -63,14 +38,6 @@ return [
         'date_format' => env('ORDERS_ORDER_NUMBER_DATE_FORMAT', 'Ymd'),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Invoice
-    |--------------------------------------------------------------------------
-    |
-    | Configure invoice number generation.
-    |
-    */
     'invoice' => [
         'prefix' => env('ORDERS_INVOICE_PREFIX', 'INV'),
         'separator' => env('ORDERS_INVOICE_SEPARATOR', '-'),
@@ -78,36 +45,17 @@ return [
         'date_format' => env('ORDERS_INVOICE_DATE_FORMAT', 'Ymd'),
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Integrations
-    |--------------------------------------------------------------------------
-    |
-    | Configure optional package integrations.
-    |
-    */
+    /* Integrations */
     'integrations' => [
         'inventory' => [
             'enabled' => true,
-            'deduct_on' => 'payment_confirmed', // When to deduct inventory
         ],
         'affiliates' => [
-            'enabled' => true,
-            'attribute_on' => 'payment_confirmed', // When to attribute commissions
-        ],
-        'shipping' => [
             'enabled' => true,
         ],
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Auditing
-    |--------------------------------------------------------------------------
-    |
-    | Configure compliance-grade auditing with owen-it/laravel-auditing.
-    |
-    */
+    /* Logging */
     'audit' => [
         'enabled' => env('ORDERS_AUDIT_ENABLED', true),
         'threshold' => env('ORDERS_AUDIT_THRESHOLD', 500),

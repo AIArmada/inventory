@@ -52,6 +52,16 @@ it('registers resources and widgets on the panel', function (): void {
         AIArmada\FilamentPricing\Resources\PromotionResource::class,
     ])->andReturnSelf();
 
+    $expectedPages = [
+        AIArmada\FilamentPricing\Pages\ManagePricingSettings::class,
+    ];
+
+    if (class_exists('\\AIArmada\\Products\\Models\\Product') && class_exists('\\AIArmada\\Products\\Models\\Variant')) {
+        $expectedPages[] = AIArmada\FilamentPricing\Pages\PriceSimulator::class;
+    }
+
+    $panel->shouldReceive('pages')->once()->with($expectedPages)->andReturnSelf();
+
     $panel->shouldReceive('widgets')->once()->with([
         AIArmada\FilamentPricing\Widgets\PricingStatsWidget::class,
     ])->andReturnSelf();

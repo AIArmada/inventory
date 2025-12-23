@@ -14,7 +14,7 @@ trait AutoAssignOwnerOnCreate
     protected static function bootAutoAssignOwnerOnCreate(): void
     {
         static::creating(function (self $model): void {
-            if (! (bool) config('chip.owner.enabled', true)) {
+            if (! (bool) config('chip.owner.enabled', false)) {
                 return;
             }
 

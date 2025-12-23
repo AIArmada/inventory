@@ -12,14 +12,19 @@ use Illuminate\Support\Facades\Schema;
 final class CashierOwnerScope
 {
     /**
+     * @var array<string, bool>
+     */
+    private static array $hasColumnCache = [];
+
+    /**
      * Apply owner scoping to a query.
      *
      * Strategy:
-     * - If no owner context is available, return query unchanged.
+     * - If owner scoping primitives exist but no owner context is available, fail closed.
      * - If the model supports `scopeForOwner`, use it.
-     * - Else, if the model has a `user_id` column and the billable model supports owner scoping,
+     * - Else, if the model has a `user_id` or `billable_id` column and the billable model supports owner scoping,
      *   scope via a subquery of billable IDs for the current owner.
-     * - Else, fail closed (empty query) when an owner context exists.
+     * - Else, fail closed when an owner context exists.
      *
      * @template TModel of Model
      *
@@ -30,7 +35,15 @@ final class CashierOwnerScope
     {
         $owner ??= self::resolveOwner();
 
+        $requiresOwnerContext = self::requiresOwnerContext();
+
         if ($owner === null) {
+            return $requiresOwnerContext ? self::empty($query) : $query;
+        }
+
+        // If the configured billable model does not support owner scoping, we cannot safely
+        // enforce tenant boundaries here. Treat as non-owner mode and leave the query unchanged.
+        if (! $requiresOwnerContext) {
             return $query;
         }
 
@@ -42,8 +55,12 @@ final class CashierOwnerScope
             return $query->forOwner($owner, $includeGlobal);
         }
 
-        if (self::modelHasUserId($model)) {
-            return self::applyViaUserId($query, $owner, $includeGlobal);
+        if (self::modelHasColumn($model, 'user_id')) {
+            return self::applyViaBillableIdSubquery($query, 'user_id', $owner, $includeGlobal);
+        }
+
+        if (self::modelHasColumn($model, 'billable_id')) {
+            return self::applyViaBillableIdSubquery($query, 'billable_id', $owner, $includeGlobal);
         }
 
         return self::empty($query);
@@ -54,9 +71,30 @@ final class CashierOwnerScope
         return OwnerContext::resolve();
     }
 
-    private static function modelHasUserId(Model $model): bool
+    private static function requiresOwnerContext(): bool
     {
-        return Schema::hasColumn($model->getTable(), 'user_id');
+        $billableModel = (string) config('cashier.models.billable', 'App\\Models\\User');
+
+        if (! class_exists($billableModel)) {
+            return false;
+        }
+
+        $billable = new $billableModel;
+
+        return method_exists($billable, 'scopeForOwner');
+    }
+
+    private static function modelHasColumn(Model $model, string $column): bool
+    {
+        $table = $model->getTable();
+        $connection = $model->getConnectionName() ?? config('database.default');
+        $cacheKey = $connection . ':' . $table . ':' . $column;
+
+        if (array_key_exists($cacheKey, self::$hasColumnCache)) {
+            return self::$hasColumnCache[$cacheKey];
+        }
+
+        return self::$hasColumnCache[$cacheKey] = Schema::connection($connection)->hasColumn($table, $column);
     }
 
     /**
@@ -65,7 +103,7 @@ final class CashierOwnerScope
      * @param  Builder<TModel>  $query
      * @return Builder<TModel>
      */
-    private static function applyViaUserId(Builder $query, Model $owner, bool $includeGlobal): Builder
+    private static function applyViaBillableIdSubquery(Builder $query, string $foreignKey, Model $owner, bool $includeGlobal): Builder
     {
         $billableModel = (string) config('cashier.models.billable', 'App\\Models\\User');
 
@@ -87,7 +125,7 @@ final class CashierOwnerScope
         /** @phpstan-ignore-next-line dynamic local scope */
         $billables = $billables->forOwner($owner, $includeGlobal)->select($billableKeyName);
 
-        return $query->whereIn('user_id', $billables);
+        return $query->whereIn($foreignKey, $billables);
     }
 
     /**

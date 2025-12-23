@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentOrders;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\FilamentOrders\Support\FilamentOrdersCache;
 use AIArmada\Orders\Actions\GenerateInvoice;
 use AIArmada\Orders\Models\Order;
 use Filament\Facades\Filament;
@@ -23,6 +25,14 @@ class FilamentOrdersServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'filament-orders');
 
+        Order::saved(static function (Order $order): void {
+            FilamentOrdersCache::forgetForOrder($order);
+        });
+
+        Order::deleted(static function (Order $order): void {
+            FilamentOrdersCache::forgetForOrder($order);
+        });
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/../resources/views' => resource_path('views/vendor/filament-orders'),
@@ -37,7 +47,13 @@ class FilamentOrdersServiceProvider extends ServiceProvider
         Route::middleware(['web', FilamentAuthenticate::class])
             ->group(function (): void {
                 Route::get('/orders/{order}/invoice/download', function (string $order) {
-                    $record = Order::query()->forOwner()->findOrFail($order);
+                    if ((bool) config('orders.owner.enabled', true) && OwnerContext::resolve() === null) {
+                        abort(404);
+                    }
+
+                    $record = Order::query()
+                        ->forOwner(includeGlobal: (bool) config('orders.owner.include_global', false))
+                        ->findOrFail($order);
 
                     $user = Filament::auth()->user();
 

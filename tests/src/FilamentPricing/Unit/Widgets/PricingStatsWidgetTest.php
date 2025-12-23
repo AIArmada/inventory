@@ -25,21 +25,21 @@ it('builds pricing stats with correct counts', function (): void {
         'is_active' => false,
     ]);
 
-    Promotion::query()->create([
+    $activePromotion = Promotion::query()->create([
         'name' => 'Promo A',
         'type' => 'percentage',
         'discount_value' => 10,
         'is_active' => true,
-        'usage_count' => 3,
     ]);
+    $activePromotion->forceFill(['usage_count' => 3])->save();
 
-    Promotion::query()->create([
+    $inactivePromotion = Promotion::query()->create([
         'name' => 'Promo Inactive',
         'type' => 'percentage',
         'discount_value' => 10,
         'is_active' => false,
-        'usage_count' => 5,
     ]);
+    $inactivePromotion->forceFill(['usage_count' => 5])->save();
 
     $widget = app(PricingStatsWidget::class);
 

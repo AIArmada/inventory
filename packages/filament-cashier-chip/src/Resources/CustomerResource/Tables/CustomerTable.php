@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCashierChip\Resources\CustomerResource\Tables;
 
+use AIArmada\FilamentCashierChip\Support\CashierChipOwnerScope;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\IconColumn;
@@ -63,7 +64,9 @@ final class CustomerTable
 
                 TextColumn::make('subscriptions_count')
                     ->label('Subscriptions')
-                    ->counts('subscriptions')
+                    ->counts([
+                        'subscriptions' => fn (Builder $query): Builder => CashierChipOwnerScope::apply($query),
+                    ])
                     ->badge()
                     ->color(fn (int $state): string => $state > 0 ? 'success' : 'gray')
                     ->sortable(),
@@ -114,7 +117,10 @@ final class CustomerTable
                 Filter::make('has_subscriptions')
                     ->label('Has Subscriptions')
                     ->toggle()
-                    ->query(fn (Builder $query): Builder => $query->has('subscriptions')),
+                    ->query(fn (Builder $query): Builder => $query->whereHas(
+                        'subscriptions',
+                        fn (Builder $subscriptionsQuery): Builder => CashierChipOwnerScope::apply($subscriptionsQuery),
+                    )),
 
                 Filter::make('on_trial')
                     ->label('On Trial')

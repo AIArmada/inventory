@@ -27,10 +27,6 @@ class TiersRelationManager extends RelationManager
 
     private function resolveOwner(): ?Model
     {
-        if (! (bool) config('pricing.features.owner.enabled', false)) {
-            return null;
-        }
-
         return OwnerContext::resolve();
     }
 

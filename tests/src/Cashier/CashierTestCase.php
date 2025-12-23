@@ -82,7 +82,6 @@ abstract class CashierTestCase extends Orchestra
         $app['config']->set('cashier.gateways', [
             'stripe' => [
                 'driver' => 'stripe',
-                'key' => 'pk_test_xxx',
                 'secret' => 'sk_test_xxx',
                 'webhook_secret' => 'whsec_xxx',
                 'currency' => 'USD',
@@ -91,8 +90,6 @@ abstract class CashierTestCase extends Orchestra
             'chip' => [
                 'driver' => 'chip',
                 'brand_id' => 'test_brand_id',
-                'api_key' => 'test_api_key',
-                'webhook_key' => 'test_webhook_key',
                 'currency' => 'MYR',
                 'currency_locale' => 'ms_MY',
             ],
@@ -112,11 +109,18 @@ abstract class CashierTestCase extends Orchestra
             $table->string('phone')->nullable();
             $table->string('stripe_id')->nullable()->index();
             $table->string('chip_id')->nullable()->index();
+            $table->string('testable_id')->nullable()->index();
             $table->string('preferred_gateway')->nullable();
             $table->string('pm_type')->nullable();
             $table->string('pm_last_four', 4)->nullable();
             $table->timestamp('trial_ends_at')->nullable();
+            $table->nullableMorphs('owner');
             $table->timestamps();
+        });
+
+        Schema::create('tenants', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
         });
 
         // Note: Subscription tables are NOT created here.

@@ -13,9 +13,10 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Get as GetFormState;
 use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get as GetFormState;
+use Filament\Schemas\Components\Utilities\Set as SetFormState;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -35,7 +36,10 @@ final class TaxExemptionForm
                                     ->options(self::getExemptableTypes())
                                     ->required()
                                     ->live()
-                                    ->default('AIArmada\\Customers\\Models\\Customer'),
+                                    ->default(fn (): ?string => array_key_first(self::getExemptableTypes()))
+                                    ->afterStateUpdated(function (SetFormState $set): void {
+                                        $set('exemptable_id', null);
+                                    }),
 
                                 Select::make('exemptable_id')
                                     ->label('Customer/Entity')
@@ -139,10 +143,9 @@ final class TaxExemptionForm
                                     ->label('Certificate Document')
                                     ->acceptedFileTypes(['application/pdf', 'image/*'])
                                     ->maxSize(5120)
-                                    ->disk('public')
+                                    ->disk('local')
                                     ->directory('tax-exemptions')
-                                    ->downloadable()
-                                    ->openable(),
+                                    ->visibility('private'),
 
                                 Textarea::make('reason')
                                     ->label('Exemption Reason')

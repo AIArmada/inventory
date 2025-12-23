@@ -59,7 +59,7 @@ class RenewSubscriptionsCommand extends Command
             $this->warn('DRY RUN MODE - No charges will be made');
         }
 
-        if ((bool) config('cashier-chip.features.owner.enabled', false) && OwnerContext::resolve() === null) {
+        if ((bool) config('cashier-chip.features.owner.enabled', true) && OwnerContext::resolve() === null) {
             $owners = Subscription::query()
                 ->withoutOwnerScope()
                 ->select(['owner_type', 'owner_id'])

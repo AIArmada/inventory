@@ -9,13 +9,19 @@ use AIArmada\CashierChip\Events\WebhookReceived;
 use AIArmada\CashierChip\Http\Controllers\WebhookController;
 use AIArmada\CashierChip\Subscription;
 use AIArmada\Commerce\Tests\CashierChip\CashierChipTestCase;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 
 uses(CashierChipTestCase::class);
 
 beforeEach(function (): void {
-    Event::fake();
+    Event::fake([
+        WebhookReceived::class,
+        WebhookHandled::class,
+        PaymentSucceeded::class,
+        PaymentFailed::class,
+    ]);
 
     $this->user = $this->createUser([
         'chip_id' => 'test-client-id',
@@ -246,4 +252,76 @@ it('handles non-existent billable gracefully', function (): void {
     $response->assertStatus(200);
 
     Event::assertNotDispatched(PaymentSucceeded::class);
+});
+
+it('requires owner resolution via brand_id mapping when owner scoping is enabled', function (): void {
+    config()->set('cashier-chip.features.owner.enabled', true);
+    config()->set('cashier-chip.features.owner.include_global', false);
+    config()->set('cashier-chip.features.owner.auto_assign_on_create', true);
+
+    config()->set('chip.owner.webhook_brand_id_map', [
+        'test_brand_id' => [
+            'owner_type' => $this->user->getMorphClass(),
+            'owner_id' => (string) $this->user->getKey(),
+        ],
+    ]);
+
+    OwnerContext::withOwner($this->user, function (): void {
+        $this->user->subscriptions()->create([
+            'type' => 'standard',
+            'chip_id' => 'test-sub-id',
+            'chip_status' => Subscription::STATUS_PAST_DUE,
+            'chip_price' => 'price_monthly',
+            'billing_interval' => 'month',
+            'billing_interval_count' => 1,
+        ]);
+    });
+
+    // Simulate a webhook request arriving without ambient owner context.
+    OwnerContext::override(null);
+
+    $payload = [
+        'brand_id' => 'test_brand_id',
+        'event_type' => 'purchase.paid',
+        'purchase' => [
+            'id' => 'test-purchase-id',
+            'status' => 'paid',
+            'client' => ['id' => 'test-client-id'],
+            'metadata' => [
+                'subscription_type' => 'standard',
+            ],
+        ],
+    ];
+
+    $this->postJson('/chip/webhook', $payload)
+        ->assertStatus(200);
+
+    $subscription = Subscription::query()
+        ->withoutOwnerScope()
+        ->where('user_id', $this->user->getKey())
+        ->where('type', 'standard')
+        ->first();
+
+    expect($subscription)->not->toBeNull();
+    expect($subscription?->chip_status)->toBe(Subscription::STATUS_ACTIVE);
+});
+
+it('fails closed when owner scoping is enabled but brand_id has no mapping', function (): void {
+    config()->set('cashier-chip.features.owner.enabled', true);
+    config()->set('chip.owner.webhook_brand_id_map', []);
+
+    OwnerContext::override(null);
+
+    $payload = [
+        'brand_id' => 'missing-brand',
+        'event_type' => 'purchase.paid',
+        'purchase' => [
+            'id' => 'test-purchase-id',
+            'status' => 'paid',
+            'client' => ['id' => 'test-client-id'],
+        ],
+    ];
+
+    $this->postJson('/chip/webhook', $payload)
+        ->assertStatus(500);
 });

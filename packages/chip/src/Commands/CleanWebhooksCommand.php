@@ -26,7 +26,7 @@ final class CleanWebhooksCommand extends Command
         $cutoffDate = Carbon::now()->subDays($days);
         $dryRun = (bool) $this->option('dry-run');
 
-        if ((bool) config('chip.owner.enabled', true) && OwnerContext::resolve() === null) {
+        if ((bool) config('chip.owner.enabled', false) && OwnerContext::resolve() === null) {
             return $this->handleAllOwners($cutoffDate, (string) $status, $days, $dryRun);
         }
 

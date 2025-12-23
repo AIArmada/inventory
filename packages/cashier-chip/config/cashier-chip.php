@@ -68,7 +68,6 @@ return [
     'webhooks' => [
         'secret' => env('CHIP_WEBHOOK_SECRET'),
         'verify_signature' => env('CHIP_WEBHOOK_VERIFY_SIGNATURE', true),
-        'tolerance' => env('CHIP_WEBHOOK_TOLERANCE', 300),
     ],
 
     /*
@@ -94,5 +93,4 @@ return [
     | Notifications
     |--------------------------------------------------------------------------
     */
-    'payment_notification' => env('CASHIER_CHIP_PAYMENT_NOTIFICATION'),
 ];

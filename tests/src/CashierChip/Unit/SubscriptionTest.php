@@ -8,6 +8,7 @@ use AIArmada\CashierChip\PaymentMethod;
 use AIArmada\CashierChip\Subscription;
 use AIArmada\Commerce\Tests\CashierChip\CashierChipTestCase;
 use AIArmada\Commerce\Tests\CashierChip\Fixtures\User;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use Carbon\Carbon;
 use LogicException;
 use Mockery;
@@ -212,13 +213,23 @@ class SubscriptionTest extends CashierChipTestCase
     public function test_increment_decrement_quantity()
     {
         $user = User::create(['email' => 'test@example.com', 'name' => 'Test', 'chip_id' => 'cli_1']);
-        $subscription = Subscription::factory()->for($user, 'customer')->create(['quantity' => 1, 'chip_price' => 'price_1']);
-        $subscription->items()->create(['quantity' => 1, 'chip_id' => 'si_1', 'chip_price' => 'price_1']);
 
-        $subscription->incrementQuantity();
+        $subscription = null;
+        OwnerContext::withOwner($user, function () use ($user, &$subscription): void {
+            $subscription = Subscription::factory()
+                ->for($user, 'owner')
+                ->for($user, 'customer')
+                ->create(['quantity' => 1, 'chip_price' => 'price_1']);
+
+            $subscription->items()->create(['quantity' => 1, 'chip_id' => 'si_1', 'chip_price' => 'price_1']);
+        });
+
+        $this->assertInstanceOf(Subscription::class, $subscription);
+
+        OwnerContext::withOwner($user, fn (): mixed => $subscription->incrementQuantity());
         $this->assertEquals(2, $subscription->fresh()->quantity);
 
-        $subscription->decrementQuantity();
+        OwnerContext::withOwner($user, fn (): mixed => $subscription->decrementQuantity());
         $this->assertEquals(1, $subscription->fresh()->quantity);
     }
 

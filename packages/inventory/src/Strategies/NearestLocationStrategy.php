@@ -131,14 +131,26 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
         }
 
         if ($context->preferLocationIds !== null) {
-            $preferred = $context->preferLocationIds;
-            // Use CASE WHEN for cross-database compatibility (MySQL FIELD() doesn't work in SQLite)
-            $cases = [];
-            foreach ($preferred as $index => $locationId) {
-                $cases[] = "WHEN location_id = '{$locationId}' THEN {$index}";
+            $preferred = array_values($context->preferLocationIds);
+
+            if (count($preferred) > 0) {
+                // Use CASE WHEN for cross-database compatibility (MySQL FIELD() doesn't work in SQLite)
+                // Bind parameters to avoid SQL injection.
+                $cases = [];
+                $bindings = [];
+
+                foreach ($preferred as $index => $locationId) {
+                    $cases[] = 'WHEN location_id = ? THEN ?';
+                    $bindings[] = (string) $locationId;
+                    $bindings[] = (int) $index;
+                }
+
+                $casesSql = implode(' ', $cases);
+                $orderSql = "CASE {$casesSql} ELSE ? END";
+                $bindings[] = count($preferred);
+
+                $query->orderByRaw($orderSql, $bindings);
             }
-            $orderSql = 'CASE ' . implode(' ', $cases) . ' ELSE ' . count($preferred) . ' END';
-            $query->orderByRaw($orderSql);
         }
 
         return $query->get();

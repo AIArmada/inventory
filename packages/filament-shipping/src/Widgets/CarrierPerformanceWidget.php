@@ -34,6 +34,20 @@ class CarrierPerformanceWidget extends ChartWidget
     {
         $startDate = Carbon::now()->subDays(30);
 
+        $query = Shipment::query();
+
+        if ((bool) config('shipping.features.owner.enabled', false)) {
+            $owner = OwnerContext::resolve();
+            if ($owner === null) {
+                return [
+                    'datasets' => [],
+                    'labels' => [],
+                ];
+            }
+
+            $query->forOwner($owner, includeGlobal: true);
+        }
+
         $delivered = ShipmentStatus::Delivered->value;
         $inTransitStatuses = [
             ShipmentStatus::Shipped->value,
@@ -48,8 +62,7 @@ class CarrierPerformanceWidget extends ChartWidget
         $inTransitPlaceholders = implode(', ', array_fill(0, count($inTransitStatuses), '?'));
         $exceptionPlaceholders = implode(', ', array_fill(0, count($exceptionStatuses), '?'));
 
-        $rows = Shipment::query()
-            ->forOwner($this->resolveOwner())
+        $rows = $query
             ->where('created_at', '>=', $startDate)
             ->whereNotNull('carrier_code')
             ->select('carrier_code')

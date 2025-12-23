@@ -40,7 +40,17 @@ class PriceTier extends Model
 
     protected static string $ownerScopeConfigKey = 'pricing.features.owner';
 
-    protected $guarded = ['id'];
+    protected $fillable = [
+        'price_list_id',
+        'tierable_id',
+        'tierable_type',
+        'min_quantity',
+        'max_quantity',
+        'amount',
+        'discount_type',
+        'discount_value',
+        'currency',
+    ];
 
     /**
      * @var array<string, string>
@@ -74,7 +84,11 @@ class PriceTier extends Model
 
             $owner = PricingOwnerScope::resolveOwner();
 
-            if ($owner !== null) {
+            if ($owner === null) {
+                if ($tier->owner_type !== null || $tier->owner_id !== null) {
+                    throw new AuthorizationException('Cannot write owned price tiers without an owner context.');
+                }
+            } else {
                 if ($tier->owner_type === null && $tier->owner_id === null) {
                     $tier->assignOwner($owner);
                 }
@@ -85,9 +99,7 @@ class PriceTier extends Model
             }
 
             if ($tier->price_list_id !== null) {
-                $priceListQuery = $owner === null
-                    ? PriceList::query()
-                    : PricingOwnerScope::applyToOwnedQuery(PriceList::query());
+                $priceListQuery = PricingOwnerScope::applyToOwnedQuery(PriceList::query());
 
                 $priceListExists = $priceListQuery
                     ->whereKey($tier->price_list_id)

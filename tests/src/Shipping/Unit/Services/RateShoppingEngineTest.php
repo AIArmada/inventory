@@ -583,4 +583,50 @@ describe('RateShoppingEngine', function (): void {
 
         expect($rates)->toBeEmpty();
     });
+
+    it('falls back to sequential rate fetching when options are not concurrency-safe', function (): void {
+        $shippingManager = Mockery::mock(ShippingManager::class);
+
+        $fedexDriver = Mockery::mock(ShippingDriverInterface::class);
+        $fedexDriver->shouldReceive('getCarrierCode')->andReturn('fedex');
+        $fedexDriver->shouldReceive('servicesDestination')->andReturn(true);
+        $fedexDriver->shouldReceive('getRates')->andReturn(collect([
+            new RateQuoteData(carrier: 'fedex', service: 'ground', rate: 1500, currency: 'USD', estimatedDays: 3),
+        ]));
+
+        $shippingManager->shouldReceive('getDriversForDestination')->andReturn(collect([$fedexDriver]));
+        $shippingManager->shouldReceive('hasDriver')->with('fedex')->andReturn(true);
+        $shippingManager->shouldReceive('driver')->with('fedex')->andReturn($fedexDriver);
+
+        Concurrency::shouldReceive('run')->never();
+
+        $engine = new RateShoppingEngine($shippingManager, [
+            'cache_ttl' => 0,
+        ]);
+
+        $origin = new AddressData(
+            name: 'Origin',
+            phone: '123-456-7890',
+            address: '123 Origin St',
+            postCode: '12345',
+            countryCode: 'US'
+        );
+
+        $destination = new AddressData(
+            name: 'Destination',
+            phone: '987-654-3210',
+            address: '456 Dest St',
+            postCode: '67890',
+            countryCode: 'US'
+        );
+
+        $packages = [new PackageData(1000, 10, 5, 5, 500, 'box', 1)];
+
+        $unsafeOptions = ['note' => (object) ['x' => 1]];
+
+        $rates = $engine->getAllRates($origin, $destination, $packages, $unsafeOptions);
+
+        expect($rates)->toHaveCount(1);
+        expect($rates->first()->carrier)->toBe('fedex');
+    });
 });

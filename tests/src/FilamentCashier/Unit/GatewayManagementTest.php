@@ -7,7 +7,8 @@ use Filament\Actions\Action;
 use Illuminate\Support\Collection;
 
 it('reports gateway health and default gateway without network calls', function (): void {
-    config()->set('filament-cashier.gateways.default', 'chip');
+    // Default gateway now falls back to core cashier config.
+    config()->set('cashier.default', 'chip');
 
     $page = app(GatewayManagement::class);
 

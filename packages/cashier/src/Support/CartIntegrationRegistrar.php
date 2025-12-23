@@ -136,7 +136,7 @@ final class CartIntegrationRegistrar
             return;
         }
 
-        $failureMode = config('cashier.cart.failure_mode', 'retry_window');
+        $failureMode = config('cashier.cart.failure_mode', 'hybrid');
 
         switch ($failureMode) {
             case 'immediate_release':

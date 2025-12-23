@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentOrders\Widgets;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Orders\Models\Order;
 use Filament\Facades\Filament;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -37,14 +39,23 @@ class OrderStatusDistributionWidget extends ChartWidget
             'refunded' => ['label' => 'Refunded', 'color' => '#64748b'],
         ];
 
+        $includeGlobal = (bool) config('orders.owner.include_global', false);
+
+        $owner = OwnerContext::resolve();
+        $ownerKey = $owner ? ($owner->getMorphClass() . ':' . $owner->getKey()) : 'global';
+
+        $cacheKey = sprintf('filament-orders.status-distribution.%s.%s', $ownerKey, $includeGlobal ? 'with-global' : 'owner-only');
+
         /** @var array<string, int> $countsByStatus */
-        $countsByStatus = Order::query()
-            ->forOwner()
-            ->select('status', DB::raw('COUNT(*) as aggregate'))
-            ->groupBy('status')
-            ->pluck('aggregate', 'status')
-            ->map(fn ($value): int => (int) $value)
-            ->all();
+        $countsByStatus = Cache::remember($cacheKey, now()->addSeconds(30), function () use ($includeGlobal): array {
+            return Order::query()
+                ->forOwner(includeGlobal: $includeGlobal)
+                ->select('status', DB::raw('COUNT(*) as aggregate'))
+                ->groupBy('status')
+                ->pluck('aggregate', 'status')
+                ->map(fn ($value): int => (int) $value)
+                ->all();
+        });
 
         $counts = [];
         $labels = [];

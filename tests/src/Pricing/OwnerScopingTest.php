@@ -6,6 +6,8 @@ use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Pricing\Models\PriceList;
 use AIArmada\Pricing\Models\Promotion;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 describe('Pricing owner scoping', function (): void {
     beforeEach(function (): void {
@@ -35,20 +37,31 @@ describe('Pricing owner scoping', function (): void {
             'owner_id' => $ownerA->getKey(),
         ]));
 
-        $corrupt = OwnerContext::withOwner(null, static fn () => PriceList::query()->create([
+        $corruptId = (string) Str::uuid();
+        DB::table((new PriceList)->getTable())->insert([
+            'id' => $corruptId,
             'name' => 'Corrupt',
-            'slug' => 'corrupt-price-list',
+            'slug' => 'corrupt-price-list-' . uniqid(),
             'currency' => 'MYR',
+            'priority' => 0,
+            'is_default' => false,
+            'is_active' => true,
+            'customer_id' => null,
+            'segment_id' => null,
+            'starts_at' => null,
+            'ends_at' => null,
             'owner_type' => $ownerA->getMorphClass(),
             'owner_id' => null,
-        ]));
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $ids = PriceList::query()->forOwner(null)->pluck('id')->all();
 
         expect($ids)
             ->toContain($global->id)
             ->not->toContain($owned->id)
-            ->not->toContain($corrupt->id);
+            ->not->toContain($corruptId);
     });
 
     it('scopes Promotion owner=null to global-only records', function (): void {
@@ -72,19 +85,36 @@ describe('Pricing owner scoping', function (): void {
             'owner_id' => $ownerA->getKey(),
         ]));
 
-        $corrupt = OwnerContext::withOwner(null, static fn () => Promotion::query()->create([
+        $corruptId = (string) Str::uuid();
+        DB::table((new Promotion)->getTable())->insert([
+            'id' => $corruptId,
             'name' => 'Corrupt Promo',
+            'code' => null,
+            'description' => null,
+            'type' => 'percentage',
             'discount_value' => 10,
+            'priority' => 0,
+            'is_stackable' => false,
+            'is_active' => true,
+            'usage_limit' => null,
+            'usage_count' => 0,
+            'min_purchase_amount' => null,
+            'min_quantity' => null,
+            'conditions' => null,
+            'starts_at' => null,
+            'ends_at' => null,
             'owner_type' => $ownerA->getMorphClass(),
             'owner_id' => null,
-        ]));
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $ids = Promotion::query()->forOwner(null)->pluck('id')->all();
 
         expect($ids)
             ->toContain($global->id)
             ->not->toContain($owned->id)
-            ->not->toContain($corrupt->id);
+            ->not->toContain($corruptId);
     });
 
     it('includes global records when includeGlobal=true and owner is provided', function (): void {

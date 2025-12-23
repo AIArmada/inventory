@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use DateTimeInterface;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -104,10 +105,24 @@ class SubscriptionBuilder
     {
         $options = is_array($price) ? $price : ['price' => $price];
 
-        $quantity = $price['quantity'] ?? $quantity;
+        $resolvedQuantity = $options['quantity'] ?? $quantity;
 
-        if (! is_null($quantity)) {
-            $options['quantity'] = $quantity;
+        if ($resolvedQuantity !== null) {
+            $options['quantity'] = max(1, (int) $resolvedQuantity);
+        }
+
+        if (isset($options['unit_amount'])) {
+            $unitAmount = (int) $options['unit_amount'];
+
+            if ($unitAmount < 0) {
+                throw new InvalidArgumentException('Subscription item unit amount must be a non-negative integer.');
+            }
+
+            $options['unit_amount'] = $unitAmount;
+        }
+
+        if (! isset($options['price']) || ! is_string($options['price']) || $options['price'] === '') {
+            throw new InvalidArgumentException('A non-empty price identifier is required.');
         }
 
         if (isset($options['price'])) {
@@ -377,7 +392,7 @@ class SubscriptionBuilder
         $owner = OwnerContext::resolve();
 
         if ($owner === null) {
-            return [];
+            throw new AuthorizationException('Owner context is required to create subscriptions when owner scoping is enabled.');
         }
 
         return [

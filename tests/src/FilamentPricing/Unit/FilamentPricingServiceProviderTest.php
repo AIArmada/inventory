@@ -13,5 +13,6 @@ it('boots and registers without errors', function (): void {
     $provider->register();
     $provider->boot();
 
-    expect(true)->toBeTrue();
+    expect(view()->exists('filament-pricing::pages.price-simulator'))->toBeTrue();
+    expect(view()->exists('filament-pricing::pages.manage-pricing-settings'))->toBeTrue();
 });
