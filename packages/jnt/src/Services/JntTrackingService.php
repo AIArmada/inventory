@@ -12,7 +12,9 @@ use AIArmada\Jnt\Events\JntOrderStatusChanged;
 use AIArmada\Jnt\Models\JntOrder;
 use AIArmada\Jnt\Models\JntTrackingEvent;
 use Carbon\Carbon;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Throwable;
 
 class JntTrackingService
@@ -89,100 +91,104 @@ class JntTrackingService
      */
     public function syncOrderTracking(JntOrder $order): JntOrder
     {
-        $trackingNumber = $order->tracking_number;
+        $owner = OwnerContext::fromTypeAndId($order->owner_type, $order->owner_id);
 
-        if ($trackingNumber === null) {
-            return $order;
-        }
+        return OwnerContext::withOwner($owner, function () use ($order): JntOrder {
+            $trackingNumber = $order->tracking_number;
 
-        $trackingData = $this->expressService->trackParcel(trackingNumber: $trackingNumber);
-
-        // Store new events
-        foreach ($trackingData->details->toCollection() as $detail) {
-            $scanTime = Carbon::parse($detail->scanTime);
-
-            $ownerType = $order->owner_type;
-            $ownerId = $order->owner_id;
-
-            JntTrackingEvent::firstOrCreate(
-                [
-                    'order_id' => $order->id,
-                    'tracking_number' => $trackingNumber,
-                    'scan_type_code' => $detail->scanTypeCode,
-                    'scan_time' => $scanTime,
-                    'owner_type' => $ownerType,
-                    'owner_id' => $ownerId,
-                ],
-                [
-                    'order_reference' => $order->order_id,
-                    'scan_type_name' => $detail->scanTypeName,
-                    'scan_type' => $detail->scanType,
-                    'description' => $detail->description,
-                    'scan_network_type_name' => $detail->scanNetworkTypeName,
-                    'scan_network_name' => $detail->scanNetworkName,
-                    'scan_network_contact' => $detail->scanNetworkContact,
-                    'scan_network_province' => $detail->scanNetworkProvince,
-                    'scan_network_city' => $detail->scanNetworkCity,
-                    'scan_network_area' => $detail->scanNetworkArea,
-                    'scan_network_country' => $detail->scanNetworkCountry,
-                    'post_code' => $detail->postCode,
-                    'next_stop_name' => $detail->nextStopName,
-                    'next_network_province_name' => $detail->nextNetworkProvinceName,
-                    'next_network_city_name' => $detail->nextNetworkCityName,
-                    'next_network_area_name' => $detail->nextNetworkAreaName,
-                    'remark' => $detail->remark,
-                    'problem_type' => $detail->problemType,
-                    'payment_status' => $detail->paymentStatus,
-                    'payment_method' => $detail->paymentMethod,
-                    'actual_weight' => $detail->actualWeight,
-                    'longitude' => $detail->longitude,
-                    'latitude' => $detail->latitude,
-                    'time_zone' => $detail->timeZone,
-                    'scan_network_id' => $detail->scanNetworkId,
-                    'staff_name' => $detail->staffName,
-                    'staff_contact' => $detail->staffContact,
-                    'otp' => $detail->otp,
-                    'second_level_type_code' => $detail->secondLevelTypeCode,
-                    'wc_trace_flag' => $detail->wcTraceFlag,
-                    'signature_picture_url' => $detail->signaturePictureUrl,
-                    'sign_url' => $detail->signUrl,
-                    'electronic_signature_pic_url' => $detail->electronicSignaturePicUrl,
-                    'payload' => $detail->toApiArray(),
-                    'owner_type' => $ownerType,
-                    'owner_id' => $ownerId,
-                ]
-            );
-        }
-
-        // Update order status
-        $currentStatus = $this->getCurrentStatus($trackingData);
-        $previousStatusCode = $order->last_status_code;
-
-        if ($trackingData->details->count() > 0) {
-            $latestDetail = $trackingData->details->first();
-            $order->last_status_code = $latestDetail->scanTypeCode;
-            $order->last_status = $latestDetail->description;
-            $order->last_tracked_at = now();
-
-            // Check if this is a problem event
-            if ($latestDetail->problemType !== null || $currentStatus === TrackingStatus::Exception) {
-                $order->has_problem = true;
+            if ($trackingNumber === null) {
+                return $order;
             }
 
-            // Mark as delivered if appropriate
-            if ($currentStatus === TrackingStatus::Delivered && $order->delivered_at === null) {
-                $order->delivered_at = Carbon::parse($latestDetail->scanTime);
+            $trackingData = $this->expressService->trackParcel(trackingNumber: $trackingNumber);
+
+            // Store new events
+            foreach ($trackingData->details->toCollection() as $detail) {
+                $scanTime = Carbon::parse($detail->scanTime);
+
+                $ownerType = $order->owner_type;
+                $ownerId = $order->owner_id;
+
+                JntTrackingEvent::firstOrCreate(
+                    [
+                        'order_id' => $order->id,
+                        'tracking_number' => $trackingNumber,
+                        'scan_type_code' => $detail->scanTypeCode,
+                        'scan_time' => $scanTime,
+                        'owner_type' => $ownerType,
+                        'owner_id' => $ownerId,
+                    ],
+                    [
+                        'order_reference' => $order->order_id,
+                        'scan_type_name' => $detail->scanTypeName,
+                        'scan_type' => $detail->scanType,
+                        'description' => $detail->description,
+                        'scan_network_type_name' => $detail->scanNetworkTypeName,
+                        'scan_network_name' => $detail->scanNetworkName,
+                        'scan_network_contact' => $detail->scanNetworkContact,
+                        'scan_network_province' => $detail->scanNetworkProvince,
+                        'scan_network_city' => $detail->scanNetworkCity,
+                        'scan_network_area' => $detail->scanNetworkArea,
+                        'scan_network_country' => $detail->scanNetworkCountry,
+                        'post_code' => $detail->postCode,
+                        'next_stop_name' => $detail->nextStopName,
+                        'next_network_province_name' => $detail->nextNetworkProvinceName,
+                        'next_network_city_name' => $detail->nextNetworkCityName,
+                        'next_network_area_name' => $detail->nextNetworkAreaName,
+                        'remark' => $detail->remark,
+                        'problem_type' => $detail->problemType,
+                        'payment_status' => $detail->paymentStatus,
+                        'payment_method' => $detail->paymentMethod,
+                        'actual_weight' => $detail->actualWeight,
+                        'longitude' => $detail->longitude,
+                        'latitude' => $detail->latitude,
+                        'time_zone' => $detail->timeZone,
+                        'scan_network_id' => $detail->scanNetworkId,
+                        'staff_name' => $detail->staffName,
+                        'staff_contact' => $detail->staffContact,
+                        'otp' => $detail->otp,
+                        'second_level_type_code' => $detail->secondLevelTypeCode,
+                        'wc_trace_flag' => $detail->wcTraceFlag,
+                        'signature_picture_url' => $detail->signaturePictureUrl,
+                        'sign_url' => $detail->signUrl,
+                        'electronic_signature_pic_url' => $detail->electronicSignaturePicUrl,
+                        'payload' => $detail->toApiArray(),
+                        'owner_type' => $ownerType,
+                        'owner_id' => $ownerId,
+                    ]
+                );
             }
-        }
 
-        $order->save();
+            // Update order status
+            $currentStatus = $this->getCurrentStatus($trackingData);
+            $previousStatusCode = $order->last_status_code;
 
-        // Fire status changed event if status actually changed
-        if ($previousStatusCode !== $order->last_status_code) {
-            event(new JntOrderStatusChanged($order, $currentStatus, $previousStatusCode));
-        }
+            if ($trackingData->details->count() > 0) {
+                $latestDetail = $trackingData->details->first();
+                $order->last_status_code = $latestDetail->scanTypeCode;
+                $order->last_status = $latestDetail->description;
+                $order->last_tracked_at = now();
 
-        return $order->fresh() ?? $order;
+                // Check if this is a problem event
+                if ($latestDetail->problemType !== null || $currentStatus === TrackingStatus::Exception) {
+                    $order->has_problem = true;
+                }
+
+                // Mark as delivered if appropriate
+                if ($currentStatus === TrackingStatus::Delivered && $order->delivered_at === null) {
+                    $order->delivered_at = Carbon::parse($latestDetail->scanTime);
+                }
+            }
+
+            $order->save();
+
+            // Fire status changed event if status actually changed
+            if ($previousStatusCode !== $order->last_status_code) {
+                event(JntOrderStatusChanged::fromOrder($order, $currentStatus, $previousStatusCode));
+            }
+
+            return $order->fresh() ?? $order;
+        });
     }
 
     /**
@@ -220,11 +226,44 @@ class JntTrackingService
      */
     public function getOrdersNeedingTrackingUpdate(int $limit = 100): Collection
     {
-        /** @var bool $includeGlobal */
+        if (! (bool) config('jnt.owner.enabled', false)) {
+            return JntOrder::query()
+                ->whereNotNull('tracking_number')
+                ->whereNull('delivered_at')
+                ->where(function ($query): void {
+                    $query->whereNull('last_tracked_at')
+                        ->orWhere('last_tracked_at', '<', now()->subHours(1));
+                })
+                ->orderBy('last_tracked_at', 'asc')
+                ->limit($limit)
+                ->get();
+        }
+
+        $owner = OwnerContext::resolve();
+
+        if ($owner === null) {
+            throw new AuthorizationException('JNT tracking updates require an explicit owner context when jnt.owner.enabled is true.');
+        }
+
         $includeGlobal = (bool) config('jnt.owner.include_global', false);
 
+        return $this->getOrdersNeedingTrackingUpdateForOwner(owner: $owner, includeGlobal: $includeGlobal, limit: $limit);
+
+    }
+
+    /**
+     * Get orders that need tracking updates for a specific owner.
+     *
+     * NOTE: Non-request surfaces must not rely on ambient auth; pass/iterate owners explicitly.
+     *
+     * @return Collection<int, JntOrder>
+     */
+    public function getOrdersNeedingTrackingUpdateForOwner(?Model $owner, bool $includeGlobal = false, int $limit = 100): Collection
+    {
+        $includeGlobal = $includeGlobal && (bool) config('jnt.owner.include_global', false);
+
         /** @var \Illuminate\Database\Eloquent\Builder<JntOrder> $query */
-        $query = JntOrder::query()->forOwner(owner: OwnerContext::CURRENT, includeGlobal: $includeGlobal);
+        $query = JntOrder::query()->forOwner(owner: $owner, includeGlobal: $includeGlobal);
 
         return $query
             ->whereNotNull('tracking_number')

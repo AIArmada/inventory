@@ -3,11 +3,7 @@
 declare(strict_types=1);
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | Database
-    |--------------------------------------------------------------------------
-    */
+    /* Database */
     'database' => [
         'table_prefix' => 'product_',
         'json_column_type' => 'json',
@@ -31,21 +27,13 @@ return [
         ],
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Defaults
-    |--------------------------------------------------------------------------
-    */
+    /* Defaults */
     'defaults' => [
         'currency' => 'MYR',
         'store_money_in_cents' => true,
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Features
-    |--------------------------------------------------------------------------
-    */
+    /* Features / Behavior */
     'features' => [
         'owner' => [
             'enabled' => true,
@@ -54,17 +42,11 @@ return [
         ],
 
         'variants' => [
-            'auto_generate' => true,
             'sku_pattern' => '{parent_sku}-{option_codes}',
             'max_combinations' => 1000,
         ],
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | Media
-    |--------------------------------------------------------------------------
-    */
     'media' => [
         'collections' => [
             'gallery' => [
@@ -72,15 +54,12 @@ return [
                 'mimes' => ['image/jpeg', 'image/png', 'image/webp'],
             ],
             'hero' => [
-                'limit' => 1,
                 'mimes' => ['image/jpeg', 'image/png', 'image/webp'],
             ],
             'icon' => [
-                'limit' => 1,
                 'mimes' => ['image/jpeg', 'image/png', 'image/webp'],
             ],
             'banner' => [
-                'limit' => 1,
                 'mimes' => ['image/jpeg', 'image/png', 'image/webp'],
             ],
             'videos' => [
@@ -121,14 +100,7 @@ return [
         ],
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | SEO
-    |--------------------------------------------------------------------------
-    */
     'seo' => [
-        'meta_title_suffix' => null,
-        'meta_description_length' => 160,
         'slug_max_length' => 100,
     ],
 ];

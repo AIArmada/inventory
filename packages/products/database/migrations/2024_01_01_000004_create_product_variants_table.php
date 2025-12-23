@@ -15,10 +15,15 @@ return new class extends Migration
 
             $table->uuid('id')->primary();
 
+            // Owner (for multi-tenancy)
+            $table->nullableUuidMorphs('owner');
+
             $table->foreignUuid('product_id');
 
+            $table->string('name')->nullable();
+
             // Identification
-            $table->string('sku')->unique();
+            $table->string('sku');
             $table->string('barcode')->nullable();
 
             // Price overrides (null = use parent product price)
@@ -39,6 +44,8 @@ return new class extends Migration
             $table->{$jsonColumnType}('metadata')->nullable();
 
             $table->timestamps();
+
+            $table->unique(['owner_type', 'owner_id', 'sku']);
 
             $table->index('product_id');
             $table->index('is_enabled');

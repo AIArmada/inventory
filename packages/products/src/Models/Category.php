@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Sluggable\HasSlug;
@@ -86,7 +87,7 @@ class Category extends Model implements HasMedia
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = false): Builder
     {
         $ownerToScope = $owner;
 
@@ -94,8 +95,14 @@ class Category extends Model implements HasMedia
             $ownerToScope = OwnerContext::CURRENT;
         }
 
+        $includeGlobalToScope = $includeGlobal;
+
+        if (func_num_args() < 3) {
+            $includeGlobalToScope = (bool) config('products.features.owner.include_global', false);
+        }
+
         /** @var Builder<Category> $scoped */
-        $scoped = $this->baseScopeForOwner($query, $ownerToScope, $includeGlobal);
+        $scoped = $this->baseScopeForOwner($query, $ownerToScope, $includeGlobalToScope);
 
         return $scoped;
     }
@@ -194,14 +201,24 @@ class Category extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
+        /** @var array{mimes?:array<int,string>} $hero */
+        $hero = config('products.media.collections.hero', []);
+        /** @var array{mimes?:array<int,string>} $icon */
+        $icon = config('products.media.collections.icon', []);
+        /** @var array{mimes?:array<int,string>} $banner */
+        $banner = config('products.media.collections.banner', []);
+
         $this->addMediaCollection('hero')
-            ->singleFile();
+            ->singleFile()
+            ->acceptsMimeTypes($hero['mimes'] ?? ['image/jpeg', 'image/png', 'image/webp']);
 
         $this->addMediaCollection('icon')
-            ->singleFile();
+            ->singleFile()
+            ->acceptsMimeTypes($icon['mimes'] ?? ['image/jpeg', 'image/png', 'image/webp']);
 
         $this->addMediaCollection('banner')
-            ->singleFile();
+            ->singleFile()
+            ->acceptsMimeTypes($banner['mimes'] ?? ['image/jpeg', 'image/png', 'image/webp']);
     }
 
     // =========================================================================
@@ -330,10 +347,10 @@ class Category extends Model implements HasMedia
      */
     public function getAllProducts(): Collection
     {
-        $products = $this->products;
+        $products = $this->products()->get();
 
-        foreach ($this->descendants as $descendant) {
-            $products = $products->merge($descendant->products);
+        foreach ($this->children()->get() as $child) {
+            $products = $products->merge($child->getAllProducts());
         }
 
         return $products->unique('id');
@@ -374,6 +391,19 @@ class Category extends Model implements HasMedia
                 return;
             }
 
+            $hasOwnerType = $category->owner_type !== null;
+            $hasOwnerId = $category->owner_id !== null;
+
+            if ($hasOwnerType !== $hasOwnerId) {
+                throw new InvalidArgumentException('Invalid owner columns: owner_type and owner_id must be both set or both null.');
+            }
+
+            $owner = OwnerContext::resolve();
+
+            if ($owner !== null && $hasOwnerType && ! $category->belongsToOwner($owner)) {
+                throw new InvalidArgumentException('Cross-tenant write blocked: category owner does not match the current owner context.');
+            }
+
             if (! (bool) config('products.features.owner.auto_assign_on_create', true)) {
                 return;
             }
@@ -382,7 +412,6 @@ class Category extends Model implements HasMedia
                 return;
             }
 
-            $owner = OwnerContext::resolve();
             if ($owner === null) {
                 return;
             }

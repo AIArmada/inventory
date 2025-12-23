@@ -4,12 +4,59 @@ declare(strict_types=1);
 
 namespace AIArmada\Products\Policies;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Products\Models\Product;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Database\Eloquent\Model;
 
 class ProductPolicy
 {
     use HandlesAuthorization;
+
+    private function canAccessProduct(Product $product): bool
+    {
+        if (! (bool) config('products.features.owner.enabled', true)) {
+            return true;
+        }
+
+        $owner = OwnerContext::resolve();
+
+        if ($owner === null) {
+            return $this->isGlobalModel($product);
+        }
+
+        if ($this->belongsToOwner($product, $owner)) {
+            return true;
+        }
+
+        $includeGlobal = (bool) config('products.features.owner.include_global', false);
+
+        return $includeGlobal && $this->isGlobalModel($product);
+    }
+
+    private function belongsToOwner(Model $model, Model $owner): bool
+    {
+        if (! method_exists($model, 'belongsToOwner')) {
+            return false;
+        }
+
+        /** @var bool $belongs */
+        $belongs = $model->belongsToOwner($owner);
+
+        return $belongs;
+    }
+
+    private function isGlobalModel(Model $model): bool
+    {
+        if (! method_exists($model, 'isGlobal')) {
+            return false;
+        }
+
+        /** @var bool $isGlobal */
+        $isGlobal = $model->isGlobal();
+
+        return $isGlobal;
+    }
 
     /**
      * Determine whether the user can view any products.
@@ -24,12 +71,7 @@ class ProductPolicy
      */
     public function view($user, Product $product): bool
     {
-        // Check ownership if the product has an owner
-        if (method_exists($product, 'isOwnedBy')) {
-            return $product->isOwnedBy($user);
-        }
-
-        return true;
+        return $this->canAccessProduct($product);
     }
 
     /**
@@ -45,11 +87,7 @@ class ProductPolicy
      */
     public function update($user, Product $product): bool
     {
-        if (method_exists($product, 'isOwnedBy')) {
-            return $product->isOwnedBy($user);
-        }
-
-        return true;
+        return $this->canAccessProduct($product);
     }
 
     /**
@@ -57,11 +95,7 @@ class ProductPolicy
      */
     public function delete($user, Product $product): bool
     {
-        if (method_exists($product, 'isOwnedBy')) {
-            return $product->isOwnedBy($user);
-        }
-
-        return true;
+        return $this->canAccessProduct($product);
     }
 
     /**

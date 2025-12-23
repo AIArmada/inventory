@@ -3,9 +3,24 @@
 declare(strict_types=1);
 
 use AIArmada\Products\Models\AttributeSet;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\OwnerContext;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 describe('AttributeSet Model', function (): void {
+    beforeEach(function (): void {
+        OwnerContext::clearOverride();
+
+        app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+        {
+            public function resolve(): ?Model
+            {
+                return null;
+            }
+        });
+    });
+
     it('scopes setAsDefault() updates to the same owner', function (): void {
         $ownerType = 'tenant';
         $ownerAId = (string) Str::uuid();

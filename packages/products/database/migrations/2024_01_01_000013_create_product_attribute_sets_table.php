@@ -17,12 +17,14 @@ return new class extends Migration
             $table->nullableUuidMorphs('owner');
 
             $table->string('name');
-            $table->string('code')->unique();
+            $table->string('code');
             $table->text('description')->nullable();
             $table->boolean('is_default')->default(false);
             $table->unsignedInteger('position')->default(0);
 
             $table->timestamps();
+
+            $table->unique(['owner_type', 'owner_id', 'code']);
 
             $table->index(['is_default', 'position']);
         });

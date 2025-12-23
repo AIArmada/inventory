@@ -29,7 +29,7 @@ describe('SendShipmentNotifications listener', function (): void {
         $order = new JntOrder;
         $order->forceFill(['id' => 'test-id', 'order_id' => 'ORDER123']);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::Delivered);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Delivered);
 
         config(['jnt.notifications.queue' => true]);
         expect($listener->shouldQueue($event))->toBeTrue();
@@ -48,7 +48,7 @@ describe('SendShipmentNotifications listener', function (): void {
         $order = new JntOrder;
         $order->forceFill(['id' => 'test-id', 'order_id' => 'ORDER123']);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::Delivered);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Delivered);
 
         $listener->handle($event);
 
@@ -61,14 +61,13 @@ describe('SendShipmentNotifications listener', function (): void {
         $trackingService = Mockery::mock(JntTrackingService::class);
         $listener = new SendShipmentNotifications($trackingService);
 
-        $order = new JntOrder;
-        $order->forceFill([
-            'id' => 'test-id',
+        $order = JntOrder::query()->create([
             'order_id' => 'ORDER123',
+            'customer_code' => 'CUST',
             'metadata' => [],
         ]);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::Delivered);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Delivered);
 
         $listener->handle($event);
 
@@ -108,16 +107,15 @@ describe('SendShipmentNotifications listener', function (): void {
         $method = $reflection->getMethod('createNotification');
         $method->setAccessible(true);
 
-        $order = new JntOrder;
-        $order->forceFill([
-            'id' => 'test-id',
+        $order = JntOrder::query()->create([
             'order_id' => 'ORDER123',
+            'customer_code' => 'CUST',
             'tracking_number' => 'JNT123',
         ]);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::PickedUp);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::PickedUp);
 
-        $notification = $method->invoke($listener, $event);
+        $notification = $method->invoke($listener, $event, $order);
 
         // Since tracking fails, notification will be null
         expect($notification)->toBeNull();

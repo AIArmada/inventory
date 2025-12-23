@@ -4,32 +4,66 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Events;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Jnt\Enums\TrackingStatus;
 use AIArmada\Jnt\Models\JntOrder;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
+use Illuminate\Database\Eloquent\Model;
 
 class JntOrderStatusChanged
 {
     use Dispatchable;
     use InteractsWithSockets;
-    use SerializesModels;
 
     public function __construct(
-        public readonly JntOrder $order,
+        public readonly string $orderKey,
+        public readonly ?string $orderReference,
+        public readonly ?string $trackingNumber,
+        public readonly ?string $ownerType,
+        public readonly string | int | null $ownerId,
         public readonly TrackingStatus $currentStatus,
         public readonly ?string $previousStatusCode = null,
     ) {}
 
+    public static function fromOrder(JntOrder $order, TrackingStatus $currentStatus, ?string $previousStatusCode = null): self
+    {
+        return new self(
+            orderKey: (string) $order->getKey(),
+            orderReference: $order->order_id,
+            trackingNumber: $order->tracking_number,
+            ownerType: $order->owner_type,
+            ownerId: $order->owner_id,
+            currentStatus: $currentStatus,
+            previousStatusCode: $previousStatusCode,
+        );
+    }
+
+    public function owner(): ?Model
+    {
+        return OwnerContext::fromTypeAndId($this->ownerType, $this->ownerId);
+    }
+
+    public function resolveOrder(): ?JntOrder
+    {
+        if ($this->orderKey === '') {
+            return null;
+        }
+
+        return JntOrder::query()
+            ->forOwner($this->owner(), false)
+            ->whereKey($this->orderKey)
+            ->first();
+    }
+
     public function getOrderId(): string
     {
-        return $this->order->order_id;
+        return $this->orderReference ?? '';
     }
 
     public function getTrackingNumber(): ?string
     {
-        return $this->order->tracking_number;
+        return $this->trackingNumber;
     }
 
     public function isDelivered(): bool

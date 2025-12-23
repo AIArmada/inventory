@@ -6,7 +6,9 @@ namespace AIArmada\FilamentProducts\Widgets;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Products\Models\Category;
+use AIArmada\Products\Models\Product;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Database\Eloquent\Builder;
 
 class CategoryDistributionChart extends ChartWidget
 {
@@ -20,15 +22,72 @@ class CategoryDistributionChart extends ChartWidget
     {
         $pivotTable = config('products.database.tables.category_product', 'category_product');
         $categoriesTable = (new Category)->getTable();
-        $productsTable = (new \AIArmada\Products\Models\Product)->getTable();
+        $productsTable = (new Product)->getTable();
 
         $query = Category::query();
 
+        $productsSubquery = Product::query()->select('id');
+
         if ((bool) config('products.features.owner.enabled', true)) {
+            $query->withoutOwnerScope();
+            $productsSubquery->withoutOwnerScope();
+
             $owner = OwnerContext::resolve();
             $includeGlobal = (bool) config('products.features.owner.include_global', false);
 
-            $query->forOwner($owner, $includeGlobal);
+            $query->where(function (Builder $where) use ($categoriesTable, $owner, $includeGlobal): void {
+                if ($owner === null) {
+                    $where->whereNull($categoriesTable . '.owner_type')
+                        ->whereNull($categoriesTable . '.owner_id');
+
+                    return;
+                }
+
+                if (! $includeGlobal) {
+                    $where->where($categoriesTable . '.owner_type', $owner->getMorphClass())
+                        ->where($categoriesTable . '.owner_id', $owner->getKey());
+
+                    return;
+                }
+
+                $where
+                    ->where(function (Builder $ownedOrGlobal) use ($categoriesTable, $owner): void {
+                        $ownedOrGlobal
+                            ->where($categoriesTable . '.owner_type', $owner->getMorphClass())
+                            ->where($categoriesTable . '.owner_id', $owner->getKey())
+                            ->orWhere(function (Builder $globalOnly) use ($categoriesTable): void {
+                                $globalOnly->whereNull($categoriesTable . '.owner_type')
+                                    ->whereNull($categoriesTable . '.owner_id');
+                            });
+                    });
+            });
+
+            $productsSubquery->where(function (Builder $where) use ($productsTable, $owner, $includeGlobal): void {
+                if ($owner === null) {
+                    $where->whereNull($productsTable . '.owner_type')
+                        ->whereNull($productsTable . '.owner_id');
+
+                    return;
+                }
+
+                if (! $includeGlobal) {
+                    $where->where($productsTable . '.owner_type', $owner->getMorphClass())
+                        ->where($productsTable . '.owner_id', $owner->getKey());
+
+                    return;
+                }
+
+                $where
+                    ->where(function (Builder $ownedOrGlobal) use ($productsTable, $owner): void {
+                        $ownedOrGlobal
+                            ->where($productsTable . '.owner_type', $owner->getMorphClass())
+                            ->where($productsTable . '.owner_id', $owner->getKey())
+                            ->orWhere(function (Builder $globalOnly) use ($productsTable): void {
+                                $globalOnly->whereNull($productsTable . '.owner_type')
+                                    ->whereNull($productsTable . '.owner_id');
+                            });
+                    });
+            });
         }
 
         $categories = $query
@@ -38,7 +97,7 @@ class CategoryDistributionChart extends ChartWidget
             ])
             ->join($pivotTable, $categoriesTable . '.id', '=', $pivotTable . '.category_id')
             ->join($productsTable, $productsTable . '.id', '=', $pivotTable . '.product_id')
-            ->whereIn($productsTable . '.id', \AIArmada\Products\Models\Product::query()->forOwner()->select('id'))
+            ->whereIn($productsTable . '.id', $productsSubquery)
             ->selectRaw('count(' . $productsTable . '.id) as products_count')
             ->groupBy($categoriesTable . '.id', $categoriesTable . '.name')
             ->orderByDesc('products_count')

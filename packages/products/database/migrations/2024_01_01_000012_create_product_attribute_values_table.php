@@ -13,6 +13,9 @@ return new class extends Migration
         Schema::create(config('products.database.tables.attribute_values', 'product_attribute_values'), function (Blueprint $table): void {
             $table->uuid('id')->primary();
 
+            // Owner (for multi-tenancy)
+            $table->nullableUuidMorphs('owner');
+
             // The attribute this value belongs to
             $table->foreignUuid('attribute_id');
 

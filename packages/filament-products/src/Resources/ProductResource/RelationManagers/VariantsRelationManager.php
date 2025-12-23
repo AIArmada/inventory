@@ -128,13 +128,13 @@ class VariantsRelationManager extends RelationManager
                     ->mutateFormDataUsing(function (array $data): array {
                         // Convert prices to cents
                         if (isset($data['price']) && is_numeric($data['price'])) {
-                            $data['price'] = (int) ($data['price'] * 100);
+                            $data['price'] = (int) round(((float) $data['price']) * 100);
                         }
                         if (isset($data['compare_price']) && is_numeric($data['compare_price'])) {
-                            $data['compare_price'] = (int) ($data['compare_price'] * 100);
+                            $data['compare_price'] = (int) round(((float) $data['compare_price']) * 100);
                         }
                         if (isset($data['cost']) && is_numeric($data['cost'])) {
-                            $data['cost'] = (int) ($data['cost'] * 100);
+                            $data['cost'] = (int) round(((float) $data['cost']) * 100);
                         }
 
                         return $data;
@@ -178,13 +178,13 @@ class VariantsRelationManager extends RelationManager
                     ->mutateFormDataUsing(function (array $data): array {
                         // Convert to cents before save
                         if (isset($data['price']) && is_numeric($data['price'])) {
-                            $data['price'] = (int) ($data['price'] * 100);
+                            $data['price'] = (int) round(((float) $data['price']) * 100);
                         }
                         if (isset($data['compare_price']) && is_numeric($data['compare_price'])) {
-                            $data['compare_price'] = (int) ($data['compare_price'] * 100);
+                            $data['compare_price'] = (int) round(((float) $data['compare_price']) * 100);
                         }
                         if (isset($data['cost']) && is_numeric($data['cost'])) {
-                            $data['cost'] = (int) ($data['cost'] * 100);
+                            $data['cost'] = (int) round(((float) $data['cost']) * 100);
                         }
 
                         return $data;

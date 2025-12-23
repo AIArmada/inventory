@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use InvalidArgumentException;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Sluggable\HasSlug;
@@ -89,7 +90,7 @@ class Collection extends Model implements HasMedia
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = false): Builder
     {
         $ownerToScope = $owner;
 
@@ -97,8 +98,14 @@ class Collection extends Model implements HasMedia
             $ownerToScope = OwnerContext::CURRENT;
         }
 
+        $includeGlobalToScope = $includeGlobal;
+
+        if (func_num_args() < 3) {
+            $includeGlobalToScope = (bool) config('products.features.owner.include_global', false);
+        }
+
         /** @var Builder<Collection> $scoped */
-        $scoped = $this->baseScopeForOwner($query, $ownerToScope, $includeGlobal);
+        $scoped = $this->baseScopeForOwner($query, $ownerToScope, $includeGlobalToScope);
 
         return $scoped;
     }
@@ -132,11 +139,18 @@ class Collection extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
+        /** @var array{mimes?:array<int,string>} $hero */
+        $hero = config('products.media.collections.hero', []);
+        /** @var array{mimes?:array<int,string>} $banner */
+        $banner = config('products.media.collections.banner', []);
+
         $this->addMediaCollection('hero')
-            ->singleFile();
+            ->singleFile()
+            ->acceptsMimeTypes($hero['mimes'] ?? ['image/jpeg', 'image/png', 'image/webp']);
 
         $this->addMediaCollection('banner')
-            ->singleFile();
+            ->singleFile()
+            ->acceptsMimeTypes($banner['mimes'] ?? ['image/jpeg', 'image/png', 'image/webp']);
     }
 
     // =========================================================================
@@ -304,6 +318,19 @@ class Collection extends Model implements HasMedia
                 return;
             }
 
+            $hasOwnerType = $collection->owner_type !== null;
+            $hasOwnerId = $collection->owner_id !== null;
+
+            if ($hasOwnerType !== $hasOwnerId) {
+                throw new InvalidArgumentException('Invalid owner columns: owner_type and owner_id must be both set or both null.');
+            }
+
+            $owner = OwnerContext::resolve();
+
+            if ($owner !== null && $hasOwnerType && ! $collection->belongsToOwner($owner)) {
+                throw new InvalidArgumentException('Cross-tenant write blocked: collection owner does not match the current owner context.');
+            }
+
             if (! (bool) config('products.features.owner.auto_assign_on_create', true)) {
                 return;
             }
@@ -312,7 +339,6 @@ class Collection extends Model implements HasMedia
                 return;
             }
 
-            $owner = OwnerContext::resolve();
             if ($owner === null) {
                 return;
             }

@@ -18,7 +18,7 @@ return new class extends Migration
             // Owner (for multi-tenancy)
             $table->nullableUuidMorphs('owner');
 
-            $table->string('code')->unique();
+            $table->string('code');
             $table->string('name');
             $table->text('description')->nullable();
             $table->string('type')->default('text'); // AttributeType enum
@@ -45,6 +45,8 @@ return new class extends Migration
             $table->text('default_value')->nullable();
 
             $table->timestamps();
+
+            $table->unique(['owner_type', 'owner_id', 'code']);
 
             $table->index(['type', 'is_filterable']);
             $table->index(['is_searchable']);

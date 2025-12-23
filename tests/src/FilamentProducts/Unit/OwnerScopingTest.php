@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AIArmada\Commerce\Tests\FilamentProducts\Fixtures\TestOwner;
 use AIArmada\Commerce\Tests\TestCase;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\FilamentProducts\Resources\CategoryResource;
 use AIArmada\FilamentProducts\Resources\ProductResource;
 use AIArmada\Products\Enums\ProductStatus;
@@ -25,8 +26,18 @@ beforeEach(function (): void {
         $table->timestamps();
     });
 
-    config()->set('products.owner.enabled', true);
-    config()->set('products.owner.include_global', true);
+    config()->set('products.features.owner.enabled', true);
+    config()->set('products.features.owner.include_global', true);
+
+    OwnerContext::clearOverride();
+
+    app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+    {
+        public function resolve(): ?Model
+        {
+            return null;
+        }
+    });
 });
 
 it('scopes ProductResource query to current owner plus global', function (): void {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Commerce\Tests\Support\Fixtures\TestOwner;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Products\Models\Attribute;
 use AIArmada\Products\Models\Category;
 use AIArmada\Products\Models\Collection;
@@ -24,9 +25,19 @@ beforeEach(function (): void {
     config()->set('products.features.owner.enabled', true);
     config()->set('products.features.owner.include_global', true);
     config()->set('products.features.owner.auto_assign_on_create', true);
+
+    OwnerContext::clearOverride();
+
+    app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+    {
+        public function resolve(): ?Model
+        {
+            return null;
+        }
+    });
 });
 
-it('scopes Product::forOwner() to current owner plus global and excludes corrupt partial-owner rows', function (): void {
+it('scopes Product::forOwner() to current owner plus global', function (): void {
     config()->set('products.features.owner.auto_assign_on_create', false);
 
     $ownerA = TestOwner::query()->create(['name' => 'Owner A']);
@@ -53,12 +64,12 @@ it('scopes Product::forOwner() to current owner plus global and excludes corrupt
         'price' => 1000,
     ]);
 
-    $productCorrupt = Product::query()->create([
+    expect(fn () => Product::query()->create([
         'owner_type' => $ownerA->getMorphClass(),
         'owner_id' => null,
         'name' => 'CORRUPT',
         'price' => 1000,
-    ]);
+    ]))->toThrow(InvalidArgumentException::class);
 
     app()->instance(OwnerResolverInterface::class, new class($ownerA) implements OwnerResolverInterface
     {
@@ -78,7 +89,7 @@ it('scopes Product::forOwner() to current owner plus global and excludes corrupt
         ->toContain($productA->id)
         ->toContain($productGlobal->id)
         ->not->toContain($productB->id)
-        ->not->toContain($productCorrupt->id);
+        ;
 });
 
 it('returns strict global-only when owner resolver returns null', function (): void {
@@ -100,12 +111,12 @@ it('returns strict global-only when owner resolver returns null', function (): v
         'price' => 1000,
     ]);
 
-    $productCorrupt = Product::query()->create([
+    expect(fn () => Product::query()->create([
         'owner_type' => $ownerA->getMorphClass(),
         'owner_id' => null,
         'name' => 'CORRUPT',
         'price' => 1000,
-    ]);
+    ]))->toThrow(InvalidArgumentException::class);
 
     app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
     {
@@ -120,7 +131,7 @@ it('returns strict global-only when owner resolver returns null', function (): v
     expect($ids)
         ->toContain($productGlobal->id)
         ->not->toContain($productA->id)
-        ->not->toContain($productCorrupt->id);
+        ;
 });
 
 it('auto-assigns owner on create when enabled', function (): void {

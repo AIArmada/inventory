@@ -593,6 +593,7 @@ abstract class TestCase extends Orchestra
 
         Schema::create('product_options', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
             $table->uuid('product_id');
             $table->string('name');
             $table->integer('position')->default(0);
@@ -602,6 +603,7 @@ abstract class TestCase extends Orchestra
 
         Schema::create('product_option_values', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
             $table->uuid('option_id');
             $table->string('name');
             $table->unsignedInteger('position')->default(0);
@@ -613,6 +615,7 @@ abstract class TestCase extends Orchestra
 
         Schema::create('product_variants', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
             $table->uuid('product_id');
             $table->string('name')->nullable();
             $table->string('sku')->nullable()->index();
@@ -691,6 +694,7 @@ abstract class TestCase extends Orchestra
 
         Schema::create('product_attribute_values', function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->nullableUuidMorphs('owner');
             $table->foreignUuid('attribute_id');
             $table->uuidMorphs('attributable');
             $table->text('value')->nullable();

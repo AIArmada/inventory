@@ -39,7 +39,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Unique slug per parent
-            $table->unique(['parent_id', 'slug']);
+            $table->unique(['owner_type', 'owner_id', 'parent_id', 'slug']);
             $table->index('parent_id');
             $table->index(['is_visible', 'position']);
         });

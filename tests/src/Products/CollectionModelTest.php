@@ -5,9 +5,24 @@ declare(strict_types=1);
 use AIArmada\Products\Enums\ProductStatus;
 use AIArmada\Products\Models\Collection;
 use AIArmada\Products\Models\Product;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\OwnerContext;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 describe('Collection Model', function (): void {
+    beforeEach(function (): void {
+        OwnerContext::clearOverride();
+
+        app()->instance(OwnerResolverInterface::class, new class implements OwnerResolverInterface
+        {
+            public function resolve(): ?Model
+            {
+                return null;
+            }
+        });
+    });
+
     describe('Collection Creation', function (): void {
         it('can create a collection', function (): void {
             $collection = Collection::create([
@@ -95,6 +110,9 @@ describe('Collection Model', function (): void {
         });
 
         it('does not leak products across owners for automatic collections', function (): void {
+            config()->set('products.features.owner.include_global', true);
+            config()->set('products.features.owner.auto_assign_on_create', false);
+
             $ownerType = 'tenant';
             $ownerAId = (string) Str::uuid();
             $ownerBId = (string) Str::uuid();
@@ -142,6 +160,9 @@ describe('Collection Model', function (): void {
         });
 
         it('filters manual collection products to same owner and global', function (): void {
+                config()->set('products.features.owner.include_global', true);
+            config()->set('products.features.owner.auto_assign_on_create', false);
+
             $ownerType = 'tenant';
             $ownerAId = (string) Str::uuid();
             $ownerBId = (string) Str::uuid();

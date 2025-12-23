@@ -19,10 +19,10 @@ return new class extends Migration
 
             // Basic fields
             $table->string('name');
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->text('description')->nullable();
             $table->text('short_description')->nullable();
-            $table->string('sku')->unique()->nullable();
+            $table->string('sku')->nullable();
             $table->string('barcode')->nullable();
 
             // Type and status
@@ -63,6 +63,9 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
 
             $table->timestamps();
+
+            $table->unique(['owner_type', 'owner_id', 'slug']);
+            $table->unique(['owner_type', 'owner_id', 'sku']);
 
             // Indexes
             $table->index(['status', 'visibility']);

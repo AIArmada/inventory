@@ -19,7 +19,7 @@ return new class extends Migration
             $table->nullableUuidMorphs('owner');
 
             $table->string('name');
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->text('description')->nullable();
 
             // Type: manual or automatic (rule-based)
@@ -44,6 +44,8 @@ return new class extends Migration
             $table->{$jsonColumnType}('metadata')->nullable();
 
             $table->timestamps();
+
+            $table->unique(['owner_type', 'owner_id', 'slug']);
 
             $table->index(['type', 'is_visible']);
             $table->index('is_featured');

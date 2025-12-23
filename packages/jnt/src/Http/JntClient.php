@@ -209,33 +209,39 @@ class JntClient
 
             if (in_array($keyString, ['password', 'private_key', 'digest', 'signature'], true)) {
                 $masked[$key] = '***MASKED***';
+
                 continue;
             }
 
             if (in_array($keyString, ['customer_code', 'customercode', 'apiaccount', 'api_account'], true)) {
                 $asString = (string) $value;
                 $masked[$key] = $asString === '' ? '' : mb_substr($asString, 0, 3) . '***';
+
                 continue;
             }
 
             if (in_array($keyString, ['phone', 'mobile', 'tel', 'telephone'], true)) {
                 $asString = preg_replace('/\D+/', '', (string) $value) ?? '';
                 $masked[$key] = $asString === '' ? '' : '***' . mb_substr($asString, -2);
+
                 continue;
             }
 
             if (in_array($keyString, ['email'], true)) {
                 $masked[$key] = '***MASKED***';
+
                 continue;
             }
 
             if (in_array($keyString, ['address', 'addr', 'postcode', 'post_code', 'postal_code'], true)) {
                 $masked[$key] = '***MASKED***';
+
                 continue;
             }
 
             if (is_array($value)) {
                 $masked[$key] = $this->maskSensitiveDataRecursive($value);
+
                 continue;
             }
 

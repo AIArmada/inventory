@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentProducts\Pages;
 
-use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\FilamentProducts\Support\OwnerScope;
 use AIArmada\Products\Enums\ProductStatus;
+use AIArmada\Products\Models\Category;
 use AIArmada\Products\Models\Product;
 use BackedEnum;
 use Filament\Forms\Components\Radio;
@@ -39,15 +40,6 @@ class BulkEditProducts extends Page implements HasForms, HasTable
 
     protected static ?string $title = 'Bulk Edit';
 
-    private function resolveOwner(): ?Model
-    {
-        if (! (bool) config('products.features.owner.enabled', true)) {
-            return null;
-        }
-
-        return OwnerContext::resolve();
-    }
-
     /**
      * Bulk editing should never mutate global records when a tenant owner is resolved.
      *
@@ -55,7 +47,7 @@ class BulkEditProducts extends Page implements HasForms, HasTable
      */
     private function getOwnerOnlyProductsQuery(): Builder
     {
-        $owner = $this->resolveOwner();
+        $owner = OwnerScope::resolveOwner();
 
         return Product::query()->forOwner($owner, false);
     }
@@ -66,7 +58,7 @@ class BulkEditProducts extends Page implements HasForms, HasTable
      */
     private function scopeCategoriesQuery(Builder $query): Builder
     {
-        $owner = $this->resolveOwner();
+        $owner = OwnerScope::resolveOwner();
 
         return $query->forOwner($owner, false);
     }
@@ -234,11 +226,15 @@ class BulkEditProducts extends Page implements HasForms, HasTable
                                 ->required(),
                         ])
                         ->action(function ($records, array $data): void {
+                            /** @var array<int, string> $categories */
+                            $categories = $data['categories'] ?? [];
+                            $categories = OwnerScope::ensureAllowed('categories', Category::class, $categories);
+
                             foreach ($records as $product) {
                                 if ($data['mode'] === 'replace') {
-                                    $product->categories()->sync($data['categories']);
+                                    $product->categories()->sync($categories);
                                 } else {
-                                    $product->categories()->syncWithoutDetaching($data['categories']);
+                                    $product->categories()->syncWithoutDetaching($categories);
                                 }
                             }
 

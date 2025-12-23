@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use InvalidArgumentException;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -130,7 +131,7 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = false): Builder
     {
         $ownerToScope = $owner;
 
@@ -138,8 +139,14 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
             $ownerToScope = OwnerContext::CURRENT;
         }
 
+        $includeGlobalToScope = $includeGlobal;
+
+        if (func_num_args() < 3) {
+            $includeGlobalToScope = (bool) config('products.features.owner.include_global', false);
+        }
+
         /** @var Builder<Product> $scoped */
-        $scoped = $this->baseScopeForOwner($query, $ownerToScope, $includeGlobal);
+        $scoped = $this->baseScopeForOwner($query, $ownerToScope, $includeGlobalToScope);
 
         return $scoped;
     }
@@ -213,20 +220,32 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
         /** @var array{limit?:int, mimes?:array<int,string>} $documents */
         $documents = config('products.media.collections.documents', []);
 
-        $this->addMediaCollection('gallery')
+        $galleryCollection = $this->addMediaCollection('gallery')
             ->acceptsMimeTypes($gallery['mimes'] ?? ['image/jpeg', 'image/png', 'image/webp'])
             ->useFallbackUrl('/images/product-placeholder.jpg')
             ->useFallbackPath(public_path('/images/product-placeholder.jpg'));
+
+        if (isset($gallery['limit']) && (int) $gallery['limit'] > 0) {
+            $galleryCollection->onlyKeepLatest((int) $gallery['limit']);
+        }
 
         $this->addMediaCollection('hero')
             ->singleFile()
             ->acceptsMimeTypes($hero['mimes'] ?? ['image/jpeg', 'image/png', 'image/webp']);
 
-        $this->addMediaCollection('videos')
+        $videosCollection = $this->addMediaCollection('videos')
             ->acceptsMimeTypes($videos['mimes'] ?? ['video/mp4', 'video/webm']);
 
-        $this->addMediaCollection('documents')
+        if (isset($videos['limit']) && (int) $videos['limit'] > 0) {
+            $videosCollection->onlyKeepLatest((int) $videos['limit']);
+        }
+
+        $documentsCollection = $this->addMediaCollection('documents')
             ->acceptsMimeTypes($documents['mimes'] ?? ['application/pdf']);
+
+        if (isset($documents['limit']) && (int) $documents['limit'] > 0) {
+            $documentsCollection->onlyKeepLatest((int) $documents['limit']);
+        }
     }
 
     public function registerMediaConversions(?Media $media = null): void
@@ -594,6 +613,19 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
         static::creating(function (Product $product): void {
             if (! (bool) config('products.features.owner.enabled', true)) {
                 return;
+            }
+
+            $hasOwnerType = $product->owner_type !== null;
+            $hasOwnerId = $product->owner_id !== null;
+
+            if ($hasOwnerType !== $hasOwnerId) {
+                throw new InvalidArgumentException('Invalid owner columns: owner_type and owner_id must be both set or both null.');
+            }
+
+            $owner = OwnerContext::resolve();
+
+            if ($owner !== null && $hasOwnerType && ! $product->belongsToOwner($owner)) {
+                throw new InvalidArgumentException('Cross-tenant write blocked: product owner does not match the current owner context.');
             }
 
             if (! (bool) config('products.features.owner.auto_assign_on_create', true)) {

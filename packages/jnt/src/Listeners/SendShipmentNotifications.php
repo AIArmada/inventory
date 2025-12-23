@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Listeners;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Jnt\Data\TrackingData;
 use AIArmada\Jnt\Data\TrackingDetailData;
 use AIArmada\Jnt\Enums\TrackingStatus;
@@ -42,18 +43,27 @@ class SendShipmentNotifications implements ShouldQueue
             return;
         }
 
-        $order = $event->order;
-        $notifiable = $this->resolveNotifiable($order);
+        $owner = $event->owner();
 
-        if ($notifiable === null) {
-            return;
-        }
+        OwnerContext::withOwner($owner, function () use ($event): void {
+            $order = $event->resolveOrder();
 
-        $notification = $this->createNotification($event);
+            if ($order === null) {
+                return;
+            }
 
-        if ($notification !== null) {
-            Notification::send($notifiable, $notification);
-        }
+            $notifiable = $this->resolveNotifiable($order);
+
+            if ($notifiable === null) {
+                return;
+            }
+
+            $notification = $this->createNotification($event, $order);
+
+            if ($notification !== null) {
+                Notification::send($notifiable, $notification);
+            }
+        });
     }
 
     /**
@@ -102,9 +112,9 @@ class SendShipmentNotifications implements ShouldQueue
     /**
      * Create the appropriate notification based on status change.
      */
-    private function createNotification(JntOrderStatusChanged $event): OrderShippedNotification | OrderDeliveredNotification | OrderProblemNotification | null
+    private function createNotification(JntOrderStatusChanged $event, JntOrder $order): OrderShippedNotification | OrderDeliveredNotification | OrderProblemNotification | null
     {
-        $trackingData = $this->getTrackingData($event->order);
+        $trackingData = $this->getTrackingData($order);
 
         if ($trackingData === null) {
             return null;
@@ -115,7 +125,7 @@ class SendShipmentNotifications implements ShouldQueue
             TrackingStatus::InTransit,
             TrackingStatus::AtHub => new OrderShippedNotification(
                 tracking: $trackingData,
-                estimatedDelivery: $this->getEstimatedDelivery($event->order)
+                estimatedDelivery: $this->getEstimatedDelivery($order)
             ),
             TrackingStatus::OutForDelivery => new OrderShippedNotification(
                 tracking: $trackingData,

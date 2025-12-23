@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AIArmada\Commerce\Tests\FilamentProducts\Fixtures\TestOwner;
 use AIArmada\Commerce\Tests\TestCase;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\FilamentProducts\Pages\ImportExportProducts;
 use AIArmada\Products\Enums\ProductStatus;
 use AIArmada\Products\Models\Product;
@@ -42,8 +43,8 @@ beforeEach(function (): void {
         $table->timestamps();
     });
 
-    config()->set('products.owner.enabled', true);
-    config()->set('products.owner.include_global', true);
+    config()->set('products.features.owner.enabled', true);
+    config()->set('products.features.owner.include_global', true);
 });
 
 it('exports owner-scoped products to csv (no cross-tenant leakage)', function (): void {
@@ -52,38 +53,44 @@ it('exports owner-scoped products to csv (no cross-tenant leakage)', function ()
 
     setProductsOwner($ownerA);
 
-    Product::query()->create([
-        'owner_type' => $ownerA->getMorphClass(),
-        'owner_id' => $ownerA->getKey(),
-        'name' => 'OwnerA Product',
-        'slug' => 'owner-a-product',
-        'sku' => 'A-1',
-        'currency' => 'MYR',
-        'price' => 1000,
-        'status' => ProductStatus::Active,
-    ]);
+    OwnerContext::withOwner($ownerA, static function () use ($ownerA): void {
+        Product::query()->create([
+            'owner_type' => $ownerA->getMorphClass(),
+            'owner_id' => $ownerA->getKey(),
+            'name' => 'OwnerA Product',
+            'slug' => 'owner-a-product',
+            'sku' => 'A-1',
+            'currency' => 'MYR',
+            'price' => 1000,
+            'status' => ProductStatus::Active,
+        ]);
+    });
 
-    Product::query()->create([
-        'owner_type' => $ownerB->getMorphClass(),
-        'owner_id' => $ownerB->getKey(),
-        'name' => 'OwnerB Product',
-        'slug' => 'owner-b-product',
-        'sku' => 'B-1',
-        'currency' => 'MYR',
-        'price' => 1000,
-        'status' => ProductStatus::Active,
-    ]);
+    OwnerContext::withOwner($ownerB, static function () use ($ownerB): void {
+        Product::query()->create([
+            'owner_type' => $ownerB->getMorphClass(),
+            'owner_id' => $ownerB->getKey(),
+            'name' => 'OwnerB Product',
+            'slug' => 'owner-b-product',
+            'sku' => 'B-1',
+            'currency' => 'MYR',
+            'price' => 1000,
+            'status' => ProductStatus::Active,
+        ]);
+    });
 
-    Product::query()->create([
-        'owner_type' => null,
-        'owner_id' => null,
-        'name' => 'Global Product',
-        'slug' => 'global-product',
-        'sku' => 'G-1',
-        'currency' => 'MYR',
-        'price' => 1000,
-        'status' => ProductStatus::Active,
-    ]);
+    OwnerContext::withOwner(null, static function (): void {
+        Product::query()->create([
+            'owner_type' => null,
+            'owner_id' => null,
+            'name' => 'Global Product',
+            'slug' => 'global-product',
+            'sku' => 'G-1',
+            'currency' => 'MYR',
+            'price' => 1000,
+            'status' => ProductStatus::Active,
+        ]);
+    });
 
     $page = app(ImportExportProducts::class);
 
@@ -112,16 +119,18 @@ it('does not update cross-tenant products during import when update_existing is 
 
     setProductsOwner($ownerA);
 
-    $productB = Product::query()->create([
-        'owner_type' => $ownerB->getMorphClass(),
-        'owner_id' => $ownerB->getKey(),
-        'name' => 'B Original',
-        'slug' => 'b-original',
-        'sku' => 'SKU-1',
-        'currency' => 'MYR',
-        'price' => 1000,
-        'status' => ProductStatus::Active,
-    ]);
+    $productB = OwnerContext::withOwner($ownerB, static function () use ($ownerB): Product {
+        return Product::query()->create([
+            'owner_type' => $ownerB->getMorphClass(),
+            'owner_id' => $ownerB->getKey(),
+            'name' => 'B Original',
+            'slug' => 'b-original',
+            'sku' => 'SKU-1',
+            'currency' => 'MYR',
+            'price' => 1000,
+            'status' => ProductStatus::Active,
+        ]);
+    });
 
     Storage::disk('local')->put('imports/products.csv', implode("\n", [
         'name,sku,currency,price,status',
@@ -141,6 +150,6 @@ it('does not update cross-tenant products during import when update_existing is 
 
     expect($productB->name)->toBe('B Original');
 
-    expect(Product::query()->where('sku', 'SKU-1')->count())->toBe(1);
+    expect(Product::query()->withoutOwnerScope()->where('sku', 'SKU-1')->count())->toBe(1);
     expect(Storage::disk('local')->exists('imports/products.csv'))->toBeFalse();
 });

@@ -12,8 +12,9 @@ return new class extends Migration
     {
         Schema::create(config('products.database.tables.category_product', 'category_product'), function (Blueprint $table): void {
             $table->foreignUuid('category_id');
-
             $table->foreignUuid('product_id');
+
+            $table->unsignedInteger('position')->default(0);
 
             $table->timestamps();
 

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\Products\Models;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\CommerceSupport\Traits\HasOwner;
+use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Pricing\Contracts\Priceable;
 use AIArmada\Products\Traits\HasAttributes;
 use Akaunting\Money\Money;
@@ -13,12 +16,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * @property string $id
+ * @property string|null $owner_type
+ * @property string|null $owner_id
  * @property string $product_id
+ * @property string|null $name
  * @property string $sku
  * @property string|null $barcode
  * @property int|null $price
@@ -42,8 +49,14 @@ class Variant extends Model implements HasMedia, Priceable
 {
     use HasAttributes;
     use HasFactory;
+    use HasOwner {
+        scopeForOwner as baseScopeForOwner;
+    }
+    use HasOwnerScopeConfig;
     use HasUuids;
     use InteractsWithMedia;
+
+    protected static string $ownerScopeConfigKey = 'products.features.owner';
 
     protected $guarded = ['id'];
 
@@ -74,6 +87,30 @@ class Variant extends Model implements HasMedia, Priceable
         $prefix = config('products.database.table_prefix', 'product_');
 
         return $tables['variants'] ?? $prefix . 'variants';
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
+     */
+    public function scopeForOwner(\Illuminate\Database\Eloquent\Builder $query, ?Model $owner = null, bool $includeGlobal = false): \Illuminate\Database\Eloquent\Builder
+    {
+        $ownerToScope = $owner;
+
+        if (func_num_args() < 2) {
+            $ownerToScope = OwnerContext::CURRENT;
+        }
+
+        $includeGlobalToScope = $includeGlobal;
+
+        if (func_num_args() < 3) {
+            $includeGlobalToScope = (bool) config('products.features.owner.include_global', false);
+        }
+
+        /** @var \Illuminate\Database\Eloquent\Builder<Variant> $scoped */
+        $scoped = $this->baseScopeForOwner($query, $ownerToScope, $includeGlobalToScope);
+
+        return $scoped;
     }
 
     // =========================================================================
@@ -111,11 +148,15 @@ class Variant extends Model implements HasMedia, Priceable
 
     public function registerMediaCollections(): void
     {
-        /** @var array{mimes?:array<int,string>} $variantImages */
+        /** @var array{limit?:int, mimes?:array<int,string>} $variantImages */
         $variantImages = config('products.media.collections.variant_images', []);
 
-        $this->addMediaCollection('variant_images')
+        $variantImagesCollection = $this->addMediaCollection('variant_images')
             ->acceptsMimeTypes($variantImages['mimes'] ?? ['image/jpeg', 'image/png', 'image/webp']);
+
+        if (isset($variantImages['limit']) && (int) $variantImages['limit'] > 0) {
+            $variantImagesCollection->onlyKeepLatest((int) $variantImages['limit']);
+        }
     }
 
     // =========================================================================
@@ -323,6 +364,60 @@ class Variant extends Model implements HasMedia, Priceable
 
     protected static function booted(): void
     {
+        static::creating(function (Variant $variant): void {
+            if (! (bool) config('products.features.owner.enabled', true)) {
+                return;
+            }
+
+            $hasOwnerType = $variant->owner_type !== null;
+            $hasOwnerId = $variant->owner_id !== null;
+
+            if ($hasOwnerType !== $hasOwnerId) {
+                throw new InvalidArgumentException('Invalid owner columns: owner_type and owner_id must be both set or both null.');
+            }
+
+            $currentOwner = OwnerContext::resolve();
+
+            if ($currentOwner !== null && $hasOwnerType && ! $variant->belongsToOwner($currentOwner)) {
+                throw new InvalidArgumentException('Cross-tenant write blocked: variant owner does not match the current owner context.');
+            }
+
+            $product = Product::query()->withoutOwnerScope()->whereKey($variant->product_id)->first();
+
+            if ($product === null) {
+                throw new InvalidArgumentException('Invalid product_id: product not found.');
+            }
+
+            if ($product !== null && $currentOwner !== null) {
+                $includeGlobal = (bool) config('products.features.owner.include_global', false);
+
+                if (! $product->belongsToOwner($currentOwner) && ! ($includeGlobal && $product->isGlobal())) {
+                    throw new InvalidArgumentException('Cross-tenant write blocked: variant product does not belong to the current owner context.');
+                }
+            }
+
+            if ($hasOwnerType) {
+                $productOwner = $product->owner;
+                if ($productOwner !== null && ! $variant->belongsToOwner($productOwner)) {
+                    throw new InvalidArgumentException('Cross-tenant write blocked: variant owner does not match its product owner.');
+                }
+
+                return;
+            }
+
+            if (! (bool) config('products.features.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            $ownerToAssign = $product?->owner ?? $currentOwner;
+
+            if ($ownerToAssign === null) {
+                return;
+            }
+
+            $variant->assignOwner($ownerToAssign);
+        });
+
         static::deleting(function (Variant $variant): void {
             $variant->optionValues()->detach();
         });

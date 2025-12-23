@@ -224,12 +224,7 @@ trait HasAttributes
     protected static function bootHasAttributes(): void
     {
         static::deleting(function ($model): void {
-            // Only delete if the relationship table exists
-            if ($model->attributeValues()->getRelated()->getConnection()->getSchemaBuilder()->hasTable(
-                $model->attributeValues()->getRelated()->getTable()
-            )) {
-                $model->attributeValues()->delete();
-            }
+            $model->attributeValues()->delete();
         });
     }
 }

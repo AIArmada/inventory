@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AIArmada\Commerce\Tests\FilamentProducts\Fixtures\TestOwner;
 use AIArmada\Commerce\Tests\TestCase;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\FilamentProducts\Pages\BulkEditProducts;
 use AIArmada\FilamentProducts\Pages\ImportExportProducts;
 use AIArmada\FilamentProducts\Resources\AttributeGroupResource\Pages\ListAttributeGroups;
@@ -68,8 +69,8 @@ beforeEach(function (): void {
         $table->timestamps();
     });
 
-    config()->set('products.owner.enabled', true);
-    config()->set('products.owner.include_global', true);
+    config()->set('products.features.owner.enabled', true);
+    config()->set('products.features.owner.include_global', true);
 });
 
 it('covers resource page header actions methods', function (): void {
@@ -186,16 +187,18 @@ it('covers widget query logic with owner scoping', function (): void {
         'requires_shipping' => false,
     ]);
 
-    Product::query()->create([
-        'owner_type' => $ownerB->getMorphClass(),
-        'owner_id' => $ownerB->getKey(),
-        'name' => 'B1',
-        'slug' => 'b1',
-        'status' => ProductStatus::Active,
-        'type' => ProductType::Simple,
-        'price' => 1000,
-        'requires_shipping' => true,
-    ]);
+    OwnerContext::withOwner($ownerB, static function () use ($ownerB): void {
+        Product::query()->create([
+            'owner_type' => $ownerB->getMorphClass(),
+            'owner_id' => $ownerB->getKey(),
+            'name' => 'B1',
+            'slug' => 'b1',
+            'status' => ProductStatus::Active,
+            'type' => ProductType::Simple,
+            'price' => 1000,
+            'requires_shipping' => true,
+        ]);
+    });
 
     $catA = Category::query()->create([
         'owner_type' => $ownerA->getMorphClass(),
@@ -204,12 +207,14 @@ it('covers widget query logic with owner scoping', function (): void {
         'slug' => 'cata',
     ]);
 
-    $catB = Category::query()->create([
-        'owner_type' => $ownerB->getMorphClass(),
-        'owner_id' => $ownerB->getKey(),
-        'name' => 'CatB',
-        'slug' => 'catb',
-    ]);
+    $catB = OwnerContext::withOwner($ownerB, static function () use ($ownerB): Category {
+        return Category::query()->create([
+            'owner_type' => $ownerB->getMorphClass(),
+            'owner_id' => $ownerB->getKey(),
+            'name' => 'CatB',
+            'slug' => 'catb',
+        ]);
+    });
 
     $productA1->categories()->attach($catA);
     $productA2->categories()->attach($catA);

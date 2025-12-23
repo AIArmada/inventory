@@ -12,7 +12,6 @@ return new class extends Migration
     {
         Schema::create(config('products.database.tables.collection_product', 'collection_product'), function (Blueprint $table): void {
             $table->foreignUuid('collection_id');
-
             $table->foreignUuid('product_id');
 
             // Position for ordering products within a collection

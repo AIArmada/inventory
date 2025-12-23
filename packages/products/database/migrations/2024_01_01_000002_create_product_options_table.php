@@ -13,6 +13,9 @@ return new class extends Migration
         Schema::create(config('products.database.tables.options', 'product_options'), function (Blueprint $table): void {
             $table->uuid('id')->primary();
 
+            // Owner (for multi-tenancy)
+            $table->nullableUuidMorphs('owner');
+
             $table->foreignUuid('product_id');
 
             $table->string('name'); // e.g., Size, Color, Material

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentProducts\Pages;
 
-use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\FilamentProducts\Support\OwnerScope;
 use AIArmada\Products\Enums\ProductStatus;
 use AIArmada\Products\Enums\ProductType;
 use AIArmada\Products\Enums\ProductVisibility;
@@ -18,6 +18,7 @@ use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use League\Csv\Reader;
 use League\Csv\Writer;
 use UnitEnum;
@@ -38,11 +39,7 @@ class ImportExportProducts extends Page
 
     private function resolveOwner(): ?Model
     {
-        if (! (bool) config('products.features.owner.enabled', true)) {
-            return null;
-        }
-
-        return OwnerContext::resolve();
+        return OwnerScope::resolveOwner();
     }
 
     public function getImportFormProperty(): Schema
@@ -85,7 +82,19 @@ class ImportExportProducts extends Page
         }
 
         try {
-            $filePath = Storage::disk('local')->path((string) $csvFile);
+            if (! is_string($csvFile) || $csvFile === '') {
+                throw new Exception('CSV file is missing.');
+            }
+
+            if (! Str::startsWith($csvFile, 'imports/')) {
+                throw new Exception('Invalid CSV file path.');
+            }
+
+            if (! Storage::disk('local')->exists($csvFile)) {
+                throw new Exception('CSV file not found.');
+            }
+
+            $filePath = Storage::disk('local')->path($csvFile);
             $csv = Reader::createFromPath($filePath, 'r');
             $csv->setHeaderOffset(0);
 
@@ -118,7 +127,7 @@ class ImportExportProducts extends Page
 
                     $productData = array_filter($productData, fn ($value): bool => $value !== null);
 
-                    if ($data['update_existing'] && isset($record['sku'])) {
+                    if (($data['update_existing'] ?? false) && isset($record['sku'])) {
                         $owner = $this->resolveOwner();
                         $product = Product::query()->forOwner($owner, false)->where('sku', $record['sku'])->first();
                         if ($product) {
@@ -138,7 +147,7 @@ class ImportExportProducts extends Page
                     $imported++;
                 } catch (Exception $e) {
                     $errors[] = "Row {$offset}: {$e->getMessage()}";
-                    if (! $data['skip_errors']) {
+                    if (! ($data['skip_errors'] ?? true)) {
                         throw $e;
                     }
                 }

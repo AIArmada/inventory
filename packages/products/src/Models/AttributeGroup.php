@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use InvalidArgumentException;
 
 /**
  * @property string $id
@@ -68,7 +69,7 @@ class AttributeGroup extends Model
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = false): Builder
     {
         $ownerToScope = $owner;
 
@@ -76,8 +77,14 @@ class AttributeGroup extends Model
             $ownerToScope = OwnerContext::CURRENT;
         }
 
+        $includeGlobalToScope = $includeGlobal;
+
+        if (func_num_args() < 3) {
+            $includeGlobalToScope = (bool) config('products.features.owner.include_global', false);
+        }
+
         /** @var Builder<AttributeGroup> $scoped */
-        $scoped = $this->baseScopeForOwner($query, $ownerToScope, $includeGlobal);
+        $scoped = $this->baseScopeForOwner($query, $ownerToScope, $includeGlobalToScope);
 
         return $scoped;
     }
@@ -141,6 +148,19 @@ class AttributeGroup extends Model
                 return;
             }
 
+            $hasOwnerType = $group->owner_type !== null;
+            $hasOwnerId = $group->owner_id !== null;
+
+            if ($hasOwnerType !== $hasOwnerId) {
+                throw new InvalidArgumentException('Invalid owner columns: owner_type and owner_id must be both set or both null.');
+            }
+
+            $owner = OwnerContext::resolve();
+
+            if ($owner !== null && $hasOwnerType && ! $group->belongsToOwner($owner)) {
+                throw new InvalidArgumentException('Cross-tenant write blocked: attribute group owner does not match the current owner context.');
+            }
+
             if (! (bool) config('products.features.owner.auto_assign_on_create', true)) {
                 return;
             }
@@ -149,7 +169,6 @@ class AttributeGroup extends Model
                 return;
             }
 
-            $owner = OwnerContext::resolve();
             if ($owner === null) {
                 return;
             }

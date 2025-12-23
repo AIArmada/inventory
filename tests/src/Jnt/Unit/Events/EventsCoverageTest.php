@@ -20,9 +20,11 @@ describe('JntOrderStatusChanged event', function (): void {
             'tracking_number' => 'JNT123456',
         ]);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::Delivered);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Delivered);
 
-        expect($event->order)->toBe($order);
+        expect($event->orderKey)->toBe('test-uuid');
+        expect($event->orderReference)->toBe('ORDER123');
+        expect($event->trackingNumber)->toBe('JNT123456');
         expect($event->currentStatus)->toBe(TrackingStatus::Delivered);
         expect($event->previousStatusCode)->toBeNull();
     });
@@ -31,7 +33,7 @@ describe('JntOrderStatusChanged event', function (): void {
         $order = new JntOrder;
         $order->forceFill(['id' => 'test-uuid', 'order_id' => 'ORDER123']);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::InTransit, 'pending');
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::InTransit, 'pending');
 
         expect($event->previousStatusCode)->toBe('pending');
     });
@@ -40,7 +42,7 @@ describe('JntOrderStatusChanged event', function (): void {
         $order = new JntOrder;
         $order->forceFill(['id' => 'test-uuid', 'order_id' => 'ORDER123']);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::PickedUp);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::PickedUp);
 
         expect($event->getOrderId())->toBe('ORDER123');
     });
@@ -53,7 +55,7 @@ describe('JntOrderStatusChanged event', function (): void {
             'tracking_number' => 'JNT123456',
         ]);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::InTransit);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::InTransit);
 
         expect($event->getTrackingNumber())->toBe('JNT123456');
     });
@@ -62,10 +64,10 @@ describe('JntOrderStatusChanged event', function (): void {
         $order = new JntOrder;
         $order->forceFill(['id' => 'test-uuid', 'order_id' => 'ORDER123']);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::Delivered);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Delivered);
         expect($event->isDelivered())->toBeTrue();
 
-        $event2 = new JntOrderStatusChanged($order, TrackingStatus::InTransit);
+        $event2 = JntOrderStatusChanged::fromOrder($order, TrackingStatus::InTransit);
         expect($event2->isDelivered())->toBeFalse();
     });
 
@@ -73,10 +75,10 @@ describe('JntOrderStatusChanged event', function (): void {
         $order = new JntOrder;
         $order->forceFill(['id' => 'test-uuid', 'order_id' => 'ORDER123']);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::Exception);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Exception);
         expect($event->hasException())->toBeTrue();
 
-        $event2 = new JntOrderStatusChanged($order, TrackingStatus::Delivered);
+        $event2 = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Delivered);
         expect($event2->hasException())->toBeFalse();
     });
 
@@ -84,13 +86,13 @@ describe('JntOrderStatusChanged event', function (): void {
         $order = new JntOrder;
         $order->forceFill(['id' => 'test-uuid', 'order_id' => 'ORDER123']);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::ReturnInitiated);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::ReturnInitiated);
         expect($event->isReturning())->toBeTrue();
 
-        $event2 = new JntOrderStatusChanged($order, TrackingStatus::Returned);
+        $event2 = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Returned);
         expect($event2->isReturning())->toBeTrue();
 
-        $event3 = new JntOrderStatusChanged($order, TrackingStatus::InTransit);
+        $event3 = JntOrderStatusChanged::fromOrder($order, TrackingStatus::InTransit);
         expect($event3->isReturning())->toBeFalse();
     });
 
@@ -98,10 +100,10 @@ describe('JntOrderStatusChanged event', function (): void {
         $order = new JntOrder;
         $order->forceFill(['id' => 'test-uuid', 'order_id' => 'ORDER123']);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::DeliveryAttempted);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::DeliveryAttempted);
         expect($event->requiresAttention())->toBeTrue();
 
-        $event2 = new JntOrderStatusChanged($order, TrackingStatus::Delivered);
+        $event2 = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Delivered);
         expect($event2->requiresAttention())->toBeFalse();
     });
 
@@ -109,11 +111,47 @@ describe('JntOrderStatusChanged event', function (): void {
         $order = new JntOrder;
         $order->forceFill(['id' => 'test-uuid', 'order_id' => 'ORDER123']);
 
-        $event = new JntOrderStatusChanged($order, TrackingStatus::Delivered);
+        $event = JntOrderStatusChanged::fromOrder($order, TrackingStatus::Delivered);
         expect($event->isTerminal())->toBeTrue();
 
-        $event2 = new JntOrderStatusChanged($order, TrackingStatus::InTransit);
+        $event2 = JntOrderStatusChanged::fromOrder($order, TrackingStatus::InTransit);
         expect($event2->isTerminal())->toBeFalse();
+    });
+
+    it('does not resolve cross-tenant orders when payload owner is wrong', function (): void {
+        config()->set('jnt.owner.enabled', true);
+        config()->set('jnt.owner.include_global', false);
+
+        $ownerA = \AIArmada\Commerce\Tests\Fixtures\Models\User::query()->create([
+            'name' => 'Owner A',
+            'email' => 'evt-owner-a@example.com',
+            'password' => 'secret',
+        ]);
+
+        $ownerB = \AIArmada\Commerce\Tests\Fixtures\Models\User::query()->create([
+            'name' => 'Owner B',
+            'email' => 'evt-owner-b@example.com',
+            'password' => 'secret',
+        ]);
+
+        $order = JntOrder::query()->create([
+            'order_id' => 'ORD-EVT-A',
+            'customer_code' => 'CUST',
+            'owner_type' => $ownerA->getMorphClass(),
+            'owner_id' => $ownerA->getKey(),
+        ]);
+
+        $tamperedEvent = new JntOrderStatusChanged(
+            orderKey: (string) $order->getKey(),
+            orderReference: $order->order_id,
+            trackingNumber: $order->tracking_number,
+            ownerType: $ownerB->getMorphClass(),
+            ownerId: $ownerB->getKey(),
+            currentStatus: TrackingStatus::InTransit,
+            previousStatusCode: null,
+        );
+
+        expect($tamperedEvent->resolveOrder())->toBeNull();
     });
 });
 

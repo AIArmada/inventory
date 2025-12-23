@@ -281,4 +281,30 @@ describe('JntTrackingService', function (): void {
         expect($result['failed'])->toHaveCount(1);
         expect($result['failed'][0]['error'])->toBe('API Error');
     });
+
+    it('requires an owner context to fetch orders needing updates when owner scoping is enabled', function (): void {
+        config()->set('jnt.owner.enabled', true);
+        config()->set('jnt.owner.include_global', false);
+
+        // Force a null owner even if a test-bound OwnerResolverInterface exists.
+        \AIArmada\CommerceSupport\Support\OwnerContext::override(null);
+
+        JntOrder::query()->create([
+            'order_id' => 'ORD-NEEDS-TRACKING-1',
+            'customer_code' => 'CUST',
+            'tracking_number' => 'JNT-TRACK-1',
+        ]);
+
+        $expressService = Mockery::mock(JntExpressService::class);
+        $statusMapper = Mockery::mock(JntStatusMapper::class);
+
+        $service = new JntTrackingService($expressService, $statusMapper);
+
+        try {
+            expect(fn (): \Illuminate\Database\Eloquent\Collection => $service->getOrdersNeedingTrackingUpdate(limit: 10))
+                ->toThrow(\Illuminate\Auth\Access\AuthorizationException::class);
+        } finally {
+            \AIArmada\CommerceSupport\Support\OwnerContext::clearOverride();
+        }
+    });
 });
