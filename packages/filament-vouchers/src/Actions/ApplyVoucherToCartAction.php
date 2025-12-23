@@ -6,6 +6,7 @@ namespace AIArmada\FilamentVouchers\Actions;
 
 use AIArmada\FilamentCart\Models\Cart;
 use AIArmada\FilamentCart\Services\CartInstanceManager;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Exceptions\VoucherException;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -37,6 +38,23 @@ final class ApplyVoucherToCartAction
             ])
             ->action(function (array $data, Cart $record): void {
                 $code = $data['voucher_code'] ?? '';
+
+                if (OwnerScopedQueries::isEnabled()) {
+                    $isVisible = OwnerScopedQueries::scopeVoucherLike(Cart::query())
+                        ->whereKey($record->getKey())
+                        ->exists();
+
+                    if (! $isVisible) {
+                        Notification::make()
+                            ->warning()
+                            ->title('Not Authorized')
+                            ->body('You cannot modify this cart.')
+                            ->icon(Heroicon::OutlinedExclamationCircle)
+                            ->send();
+
+                        return;
+                    }
+                }
 
                 try {
                     $cartInstance = app(CartInstanceManager::class)->resolve(

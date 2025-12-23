@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use AIArmada\Commerce\Tests\Fixtures\Models\User;
+use AIArmada\Commerce\Tests\Support\OwnerResolvers\FixedOwnerResolver;
 use AIArmada\Commerce\Tests\TestCase;
+use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentCart\Models\Cart;
 use AIArmada\FilamentCart\Services\CartInstanceManager;
 use AIArmada\FilamentVouchers\Widgets\AIInsightsWidget;
@@ -247,4 +250,75 @@ it('covers cart-related widgets and voucher suggestions', function (): void {
     });
 
     $suggestions->applySuggestion($voucher->code);
+});
+
+it('prevents voucher suggestions widget cross-tenant cart access when owner scoping enabled', function (): void {
+    config()->set('vouchers.owner.enabled', true);
+    config()->set('vouchers.owner.include_global', false);
+
+    $ownerA = User::query()->create([
+        'name' => 'Owner A',
+        'email' => 'owner-a-voucher-suggestions@example.com',
+        'password' => 'secret',
+    ]);
+
+    $ownerB = User::query()->create([
+        'name' => 'Owner B',
+        'email' => 'owner-b-voucher-suggestions@example.com',
+        'password' => 'secret',
+    ]);
+
+    app()->bind(OwnerResolverInterface::class, fn (): OwnerResolverInterface => new FixedOwnerResolver($ownerA));
+
+    $cartOwnedByB = Cart::query()->create([
+        'owner_type' => $ownerB->getMorphClass(),
+        'owner_id' => (string) $ownerB->getKey(),
+        'instance' => 'default',
+        'identifier' => 'cart-owned-by-b',
+        'currency' => 'USD',
+        'subtotal' => 10000,
+        'total' => 10000,
+    ]);
+
+    $voucher = Voucher::query()->create([
+        'code' => 'OWNER-A-ONLY',
+        'name' => 'Owner A Voucher',
+        'type' => VoucherType::Fixed,
+        'value' => 500,
+        'currency' => 'USD',
+        'status' => VoucherStatus::Active,
+        'allows_manual_redemption' => true,
+        'starts_at' => now()->subDay(),
+    ]);
+    $voucher->assignOwner($ownerA)->save();
+
+    $manager = new class
+    {
+        public int $calls = 0;
+
+        public function resolve(string $instance, string $identifier): object
+        {
+            $this->calls++;
+
+            return new class
+            {
+                public function getAppliedVouchers(): array
+                {
+                    return [];
+                }
+
+                public function applyVoucher(string $code): void {}
+            };
+        }
+    };
+
+    app()->instance(CartInstanceManager::class, $manager);
+
+    $suggestions = app(VoucherSuggestionsWidget::class);
+    $suggestions->record = $cartOwnedByB;
+
+    expect($suggestions->getEligibleVouchers())->toBeEmpty();
+    $suggestions->applySuggestion($voucher->code);
+
+    expect($manager->calls)->toBe(0);
 });

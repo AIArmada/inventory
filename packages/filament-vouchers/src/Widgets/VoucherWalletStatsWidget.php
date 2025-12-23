@@ -30,7 +30,7 @@ final class VoucherWalletStatsWidget extends BaseWidget
         /** @var Connection $connection */
         $connection = VoucherWallet::query()->getConnection();
         $driver = $connection->getDriverName();
-        $concat = $driver === 'pgsql'
+        $concat = $driver === 'pgsql' || $driver === 'sqlite'
             ? "holder_type || '-' || holder_id"
             : "CONCAT(holder_type, '-', holder_id)";
         $uniqueOwners = (clone $wallets)->selectRaw("COUNT(DISTINCT {$concat}) as count")
@@ -104,13 +104,10 @@ final class VoucherWalletStatsWidget extends BaseWidget
         /** @var Builder<VoucherWallet> $query */
         $query = VoucherWallet::query();
 
-        /** @var Builder<VoucherWallet> $scoped */
-        $scoped = OwnerScopedQueries::scopeOwnerColumns(
-            $query,
-            OwnerScopedQueries::owner(),
-            OwnerScopedQueries::includeGlobal(),
-        );
+        if (! OwnerScopedQueries::isEnabled()) {
+            return $query;
+        }
 
-        return $scoped;
+        return $query->whereIn('voucher_id', OwnerScopedQueries::voucherIds());
     }
 }

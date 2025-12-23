@@ -45,6 +45,16 @@ final class VoucherSuggestionsWidget extends Widget
             return collect();
         }
 
+        if (OwnerScopedQueries::isEnabled()) {
+            $isVisible = OwnerScopedQueries::scopeVoucherLike(Cart::query())
+                ->whereKey($this->record->getKey())
+                ->exists();
+
+            if (! $isVisible) {
+                return collect();
+            }
+        }
+
         try {
             $cartTotal = $this->record->subtotal;
             $cartCurrency = $this->record->currency;
@@ -143,6 +153,23 @@ final class VoucherSuggestionsWidget extends Widget
     {
         if (! $this->record instanceof Cart) {
             return;
+        }
+
+        if (OwnerScopedQueries::isEnabled()) {
+            $isVisible = OwnerScopedQueries::scopeVoucherLike(Cart::query())
+                ->whereKey($this->record->getKey())
+                ->exists();
+
+            if (! $isVisible) {
+                Notification::make()
+                    ->warning()
+                    ->title('Not Authorized')
+                    ->body('You cannot modify this cart.')
+                    ->icon(Heroicon::OutlinedExclamationCircle)
+                    ->send();
+
+                return;
+            }
         }
 
         try {

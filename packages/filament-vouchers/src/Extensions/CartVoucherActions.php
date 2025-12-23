@@ -6,6 +6,7 @@ namespace AIArmada\FilamentVouchers\Extensions;
 
 use AIArmada\FilamentCart\Models\Cart;
 use AIArmada\FilamentCart\Services\CartInstanceManager;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Exceptions\VoucherException;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Grid;
@@ -60,6 +61,23 @@ final class CartVoucherActions
             ])
             ->action(function (array $data, Cart $record): void {
                 $code = mb_trim($data['voucher_code'] ?? '');
+
+                if (OwnerScopedQueries::isEnabled()) {
+                    $isVisible = OwnerScopedQueries::scopeVoucherLike(Cart::query())
+                        ->whereKey($record->getKey())
+                        ->exists();
+
+                    if (! $isVisible) {
+                        Notification::make()
+                            ->warning()
+                            ->title('Not Authorized')
+                            ->body('You cannot modify this cart.')
+                            ->icon(Heroicon::OutlinedExclamationCircle)
+                            ->send();
+
+                        return;
+                    }
+                }
 
                 if ($code === '') {
                     Notification::make()
@@ -153,6 +171,23 @@ final class CartVoucherActions
             ->modalHeading('Remove Voucher')
             ->modalDescription("Are you sure you want to remove the voucher '{$voucherCode}'?")
             ->action(function (Cart $record) use ($voucherCode): void {
+                if (OwnerScopedQueries::isEnabled()) {
+                    $isVisible = OwnerScopedQueries::scopeVoucherLike(Cart::query())
+                        ->whereKey($record->getKey())
+                        ->exists();
+
+                    if (! $isVisible) {
+                        Notification::make()
+                            ->warning()
+                            ->title('Not Authorized')
+                            ->body('You cannot modify this cart.')
+                            ->icon(Heroicon::OutlinedExclamationCircle)
+                            ->send();
+
+                        return;
+                    }
+                }
+
                 try {
                     $cartInstance = app(CartInstanceManager::class)->resolve(
                         $record->instance,
@@ -192,6 +227,19 @@ final class CartVoucherActions
      */
     private static function getAppliedVouchersInfolist(Cart $record): array
     {
+        if (OwnerScopedQueries::isEnabled()) {
+            $isVisible = OwnerScopedQueries::scopeVoucherLike(Cart::query())
+                ->whereKey($record->getKey())
+                ->exists();
+
+            if (! $isVisible) {
+                return [
+                    Placeholder::make('not_authorized')
+                        ->content('You are not authorized to view vouchers for this cart.'),
+                ];
+            }
+        }
+
         try {
             $cartInstance = app(CartInstanceManager::class)->resolve(
                 $record->instance,

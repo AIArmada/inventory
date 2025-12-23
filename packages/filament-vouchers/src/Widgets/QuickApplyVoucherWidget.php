@@ -6,6 +6,7 @@ namespace AIArmada\FilamentVouchers\Widgets;
 
 use AIArmada\FilamentCart\Models\Cart;
 use AIArmada\FilamentCart\Services\CartInstanceManager;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Exceptions\VoucherException;
 use Filament\Actions\Action;
 use Filament\Forms\Components\TextInput;
@@ -72,6 +73,23 @@ final class QuickApplyVoucherWidget extends Widget implements HasForms
                 ->send();
 
             return;
+        }
+
+        if (OwnerScopedQueries::isEnabled()) {
+            $isVisible = OwnerScopedQueries::scopeVoucherLike(Cart::query())
+                ->whereKey($this->record->getKey())
+                ->exists();
+
+            if (! $isVisible) {
+                Notification::make()
+                    ->warning()
+                    ->title('Not Authorized')
+                    ->body('You cannot modify this cart.')
+                    ->icon(Heroicon::OutlinedExclamationCircle)
+                    ->send();
+
+                return;
+            }
         }
 
         $code = mb_trim($this->voucherCode);

@@ -56,10 +56,11 @@ final class VoucherWalletResource extends Resource
         /** @var Builder<VoucherWallet> $query */
         $query = parent::getEloquentQuery();
 
-        /** @var Builder<VoucherWallet> $scoped */
-        $scoped = OwnerScopedQueries::scopeOwnerColumns($query, OwnerScopedQueries::owner(), OwnerScopedQueries::includeGlobal());
+        if (! OwnerScopedQueries::isEnabled()) {
+            return $query;
+        }
 
-        return $scoped;
+        return $query->whereIn('voucher_id', OwnerScopedQueries::voucherIds());
     }
 
     public static function getNavigationBadgeColor(): string

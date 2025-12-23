@@ -7,6 +7,7 @@ namespace AIArmada\FilamentVouchers\Resources\VoucherResource\Pages;
 use AIArmada\Cart\Conditions\ConditionTarget;
 use AIArmada\FilamentVouchers\Resources\VoucherResource;
 use AIArmada\FilamentVouchers\Support\ConditionTargetPreset;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Validation\ValidationException;
@@ -38,6 +39,9 @@ final class EditVoucher extends EditRecord
     protected function mutateFormDataBeforeSave(array $data): array
     {
         $data = parent::mutateFormDataBeforeSave($data);
+
+        $record = $this->getRecord();
+        $data = OwnerScopedQueries::enforceOwnerOnUpdate($record, $data);
 
         return $this->persistConditionTargetDefinition($data);
     }

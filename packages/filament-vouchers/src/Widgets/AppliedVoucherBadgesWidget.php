@@ -6,6 +6,7 @@ namespace AIArmada\FilamentVouchers\Widgets;
 
 use AIArmada\FilamentCart\Models\Cart;
 use AIArmada\FilamentCart\Services\CartInstanceManager;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use Akaunting\Money\Money;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -39,6 +40,16 @@ final class AppliedVoucherBadgesWidget extends Widget
     {
         if (! $this->record instanceof Cart) {
             return [];
+        }
+
+        if (OwnerScopedQueries::isEnabled()) {
+            $isVisible = OwnerScopedQueries::scopeVoucherLike(Cart::query())
+                ->whereKey($this->record->getKey())
+                ->exists();
+
+            if (! $isVisible) {
+                return [];
+            }
         }
 
         try {
@@ -105,6 +116,23 @@ final class AppliedVoucherBadgesWidget extends Widget
             ->action(function () use ($voucherCode): void {
                 if (! $this->record instanceof Cart) {
                     return;
+                }
+
+                if (OwnerScopedQueries::isEnabled()) {
+                    $isVisible = OwnerScopedQueries::scopeVoucherLike(Cart::query())
+                        ->whereKey($this->record->getKey())
+                        ->exists();
+
+                    if (! $isVisible) {
+                        Notification::make()
+                            ->warning()
+                            ->title('Not Authorized')
+                            ->body('You cannot modify this cart.')
+                            ->icon(Heroicon::OutlinedExclamationCircle)
+                            ->send();
+
+                        return;
+                    }
                 }
 
                 try {

@@ -8,6 +8,7 @@ use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use AIArmada\Vouchers\Models\VoucherUsage;
 use Carbon\Carbon;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Database\Connection;
 use Illuminate\Support\Collection;
 
 final class RedemptionTrendChart extends ChartWidget
@@ -87,16 +88,24 @@ final class RedemptionTrendChart extends ChartWidget
 
         $usageQuery = VoucherUsage::query();
 
+        /** @var Connection $connection */
+        $connection = $usageQuery->getConnection();
+        $driver = $connection->getDriverName();
+        $dateExpression = match ($driver) {
+            'sqlite' => 'date(used_at)',
+            default => 'DATE(used_at)',
+        };
+
         if (OwnerScopedQueries::isEnabled()) {
             $usageQuery->whereIn('voucher_id', OwnerScopedQueries::voucherIds());
         }
 
         /** @var Collection<string, object{date: string, count: int}> $redemptions */
         $redemptions = $usageQuery
-            ->selectRaw('DATE(used_at) as date, COUNT(*) as count')
+            ->selectRaw("{$dateExpression} as date, COUNT(*) as count")
             ->where('used_at', '>=', $startDate)
             ->where('used_at', '<=', $endDate)
-            ->groupBy('date')
+            ->groupByRaw($dateExpression)
             ->orderBy('date')
             ->get()
             ->keyBy('date');

@@ -6,6 +6,7 @@ namespace AIArmada\FilamentVouchers\Resources\VoucherResource\Pages;
 
 use AIArmada\Cart\Conditions\ConditionTarget;
 use AIArmada\FilamentVouchers\Resources\VoucherResource;
+use AIArmada\FilamentVouchers\Support\OwnerScopedQueries;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -22,6 +23,8 @@ final class CreateVoucher extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data = parent::mutateFormDataBeforeCreate($data);
+
+        $data = OwnerScopedQueries::enforceOwnerOnCreate($data);
 
         return $this->persistConditionTargetDefinition($data);
     }
