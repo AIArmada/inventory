@@ -117,6 +117,9 @@ class CampaignVariant extends Model
      */
     public function scopeOrderByConversionRate(Builder $query, string $direction = 'desc'): Builder
     {
+        $direction = mb_strtolower($direction);
+        $direction = in_array($direction, ['asc', 'desc'], true) ? $direction : 'desc';
+
         return $query->orderByRaw(
             "CASE WHEN applications > 0 THEN CAST(conversions AS FLOAT) / applications ELSE 0 END {$direction}"
         );

@@ -46,7 +46,6 @@ final class AddVoucherToWallet
                 'owner_type' => $voucher->owner_type,
                 'owner_id' => $voucher->owner_id,
                 'metadata' => $metadata,
-                'added_at' => now(),
             ]);
         });
     }

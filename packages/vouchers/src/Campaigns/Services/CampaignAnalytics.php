@@ -114,14 +114,6 @@ class CampaignAnalytics
             default => 'Y-m-d',
         };
 
-        $dbFormat = match ($granularity) {
-            'hour' => '%Y-%m-%d %H:00',
-            'day' => '%Y-%m-%d',
-            'week' => '%Y-%u',
-            'month' => '%Y-%m',
-            default => '%Y-%m-%d',
-        };
-
         // Initialize all periods with zeros
         $period = CarbonPeriod::create($from, "1 {$granularity}", $to);
         $data = [];
@@ -134,40 +126,41 @@ class CampaignAnalytics
             ];
         }
 
-        // Query event counts grouped by period
+        // Query events and group in PHP for cross-DB compatibility
         $tableName = (new CampaignEvent)->getTable();
 
         $eventsQuery = DB::table($tableName)
             ->select([
-                DB::raw("DATE_FORMAT(occurred_at, '{$dbFormat}') as period"),
+                'occurred_at',
                 'event_type',
-                DB::raw('COUNT(*) as count'),
-                DB::raw('COALESCE(SUM(value_cents), 0) as total_value'),
+                'value_cents',
             ])
             ->where("{$tableName}.campaign_id", $campaign->id)
-            ->whereBetween('occurred_at', [$from, $to])
-            ->groupBy('period', 'event_type');
+            ->whereBetween('occurred_at', [$from, $to]);
 
         $this->applyOwnerScopeToEventsQuery($eventsQuery, $tableName);
 
         $events = $eventsQuery->get();
 
         foreach ($events as $event) {
-            if (! isset($data[$event->period])) {
+            $occurredAt = Carbon::parse($event->occurred_at);
+            $periodKey = $occurredAt->format($format);
+
+            if (! isset($data[$periodKey])) {
                 continue;
             }
 
-            $type = CampaignEventType::tryFrom($event->event_type);
+            $type = CampaignEventType::tryFrom((string) $event->event_type);
             if ($type === null) {
                 continue;
             }
 
             match ($type) {
-                CampaignEventType::Impression => $data[$event->period]['impressions'] = (int) $event->count,
-                CampaignEventType::Application => $data[$event->period]['applications'] = (int) $event->count,
+                CampaignEventType::Impression => $data[$periodKey]['impressions']++,
+                CampaignEventType::Application => $data[$periodKey]['applications']++,
                 CampaignEventType::Conversion => [
-                    $data[$event->period]['conversions'] = (int) $event->count,
-                    $data[$event->period]['revenue_cents'] = (int) $event->total_value,
+                    $data[$periodKey]['conversions']++,
+                    $data[$periodKey]['revenue_cents'] += (int) ($event->value_cents ?? 0),
                 ],
                 default => null,
             };

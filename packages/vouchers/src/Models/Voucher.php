@@ -279,7 +279,7 @@ class Voucher extends Model
         // Auto-update status if depleted
         $usageLimit = $this->getAttribute('usage_limit');
 
-        if ($usageLimit && $this->usages()->count() >= $usageLimit) {
+        if ($usageLimit && $this->getTimesUsedAttribute() >= $usageLimit) {
             $this->update(['status' => VoucherStatus::Depleted]);
         }
     }
@@ -453,7 +453,9 @@ class Voucher extends Model
      */
     public function getWalletEntriesCountAttribute(): int
     {
-        return $this->walletEntries()->count();
+        $count = $this->attributes['wallet_entries_count'] ?? null;
+
+        return $count !== null ? (int) $count : $this->walletEntries()->count();
     }
 
     /**
@@ -461,7 +463,9 @@ class Voucher extends Model
      */
     public function getWalletClaimedCountAttribute(): int
     {
-        return $this->walletEntries()->where('is_claimed', true)->count();
+        $count = $this->attributes['wallet_claimed_count'] ?? null;
+
+        return $count !== null ? (int) $count : $this->walletEntries()->where('is_claimed', true)->count();
     }
 
     /**
@@ -469,7 +473,9 @@ class Voucher extends Model
      */
     public function getWalletRedeemedCountAttribute(): int
     {
-        return $this->walletEntries()->where('is_redeemed', true)->count();
+        $count = $this->attributes['wallet_redeemed_count'] ?? null;
+
+        return $count !== null ? (int) $count : $this->walletEntries()->where('is_redeemed', true)->count();
     }
 
     /**
@@ -477,7 +483,9 @@ class Voucher extends Model
      */
     public function getWalletAvailableCountAttribute(): int
     {
-        return $this->walletEntries()->where('is_redeemed', false)->count();
+        $count = $this->attributes['wallet_available_count'] ?? null;
+
+        return $count !== null ? (int) $count : $this->walletEntries()->where('is_redeemed', false)->count();
     }
 
     protected static function booted(): void

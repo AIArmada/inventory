@@ -151,3 +151,24 @@ test('voucher increment usage', function (): void {
     $voucher->refresh();
     expect($voucher->status)->toBe(VoucherStatus::Depleted);
 });
+
+test('voucher wallet count accessors prefer preloaded counts', function (): void {
+    $voucher = Voucher::create([
+        'code' => 'WALLETCOUNTS',
+        'name' => 'Wallet Counts Voucher',
+        'type' => 'fixed',
+        'value' => 10,
+        'currency' => 'MYR',
+        'status' => 'active',
+    ]);
+
+    $voucher->setAttribute('wallet_entries_count', 10);
+    $voucher->setAttribute('wallet_claimed_count', 7);
+    $voucher->setAttribute('wallet_redeemed_count', 4);
+    $voucher->setAttribute('wallet_available_count', 6);
+
+    expect($voucher->wallet_entries_count)->toBe(10)
+        ->and($voucher->wallet_claimed_count)->toBe(7)
+        ->and($voucher->wallet_redeemed_count)->toBe(4)
+        ->and($voucher->wallet_available_count)->toBe(6);
+});

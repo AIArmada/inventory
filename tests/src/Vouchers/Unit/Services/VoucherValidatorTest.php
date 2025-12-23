@@ -3,20 +3,23 @@
 declare(strict_types=1);
 
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Vouchers\Data\VoucherValidationResult;
 use AIArmada\Vouchers\Services\VoucherValidator;
 use Illuminate\Database\Eloquent\Model;
 
 describe('VoucherValidator', function (): void {
+    beforeEach(function (): void {
+        OwnerContext::clearOverride();
+        app()->forgetInstance(OwnerResolverInterface::class);
+    });
+
     describe('normalizeCode method', function (): void {
         it('uppercases code when auto_uppercase is enabled', function (): void {
             config(['vouchers.code.auto_uppercase' => true]);
             config(['vouchers.owner.enabled' => false]);
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('normalizeCode');
@@ -31,10 +34,7 @@ describe('VoucherValidator', function (): void {
             config(['vouchers.code.auto_uppercase' => false]);
             config(['vouchers.owner.enabled' => false]);
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('normalizeCode');
@@ -49,10 +49,7 @@ describe('VoucherValidator', function (): void {
             config(['vouchers.code.auto_uppercase' => true]);
             config(['vouchers.owner.enabled' => false]);
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('normalizeCode');
@@ -68,10 +65,7 @@ describe('VoucherValidator', function (): void {
         it('returns null when owner is disabled', function (): void {
             config(['vouchers.owner.enabled' => false]);
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldNotReceive('resolve');
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('resolveOwner');
@@ -89,7 +83,9 @@ describe('VoucherValidator', function (): void {
             $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
             $ownerResolver->shouldReceive('resolve')->once()->andReturn($mockOwner);
 
-            $validator = new VoucherValidator($ownerResolver);
+            app()->instance(OwnerResolverInterface::class, $ownerResolver);
+
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('resolveOwner');
@@ -113,10 +109,7 @@ describe('VoucherValidator', function (): void {
                 }
             };
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getCartTotal');
@@ -132,10 +125,7 @@ describe('VoucherValidator', function (): void {
 
             $cart = ['total' => 20000];
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getCartTotal');
@@ -151,10 +141,7 @@ describe('VoucherValidator', function (): void {
 
             $cart = 'invalid';
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getCartTotal');
@@ -170,10 +157,7 @@ describe('VoucherValidator', function (): void {
 
             $cart = ['items' => [], 'count' => 0];
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getCartTotal');
@@ -189,10 +173,7 @@ describe('VoucherValidator', function (): void {
 
             $cart = ['total' => '25000'];
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getCartTotal');
@@ -205,9 +186,8 @@ describe('VoucherValidator', function (): void {
     });
 
     describe('constructor', function (): void {
-        it('accepts owner resolver', function (): void {
-            $resolver = Mockery::mock(OwnerResolverInterface::class);
-            $validator = new VoucherValidator($resolver);
+        it('constructs', function (): void {
+            $validator = new VoucherValidator();
 
             expect($validator)->toBeInstanceOf(VoucherValidator::class);
         });
@@ -240,10 +220,7 @@ describe('VoucherValidator', function (): void {
             config(['vouchers.owner.enabled' => false]);
             Illuminate\Support\Facades\Auth::shouldReceive('user')->andReturn(null);
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getUser');
@@ -263,10 +240,7 @@ describe('VoucherValidator', function (): void {
 
             Illuminate\Support\Facades\Auth::shouldReceive('user')->andReturn($nonModelUser);
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getUser');
@@ -283,10 +257,7 @@ describe('VoucherValidator', function (): void {
             $mockUser = Mockery::mock(Model::class);
             Illuminate\Support\Facades\Auth::shouldReceive('user')->andReturn($mockUser);
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getUser');
@@ -303,10 +274,7 @@ describe('VoucherValidator', function (): void {
             config(['vouchers.owner.enabled' => false]);
             Illuminate\Support\Facades\Auth::shouldReceive('id')->andReturn(123);
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getUserIdentifier');
@@ -322,10 +290,7 @@ describe('VoucherValidator', function (): void {
             Illuminate\Support\Facades\Auth::shouldReceive('id')->andReturn(null);
             Illuminate\Support\Facades\Session::shouldReceive('getId')->andReturn('session-abc123');
 
-            $ownerResolver = Mockery::mock(OwnerResolverInterface::class);
-            $ownerResolver->shouldReceive('resolve')->andReturn(null);
-
-            $validator = new VoucherValidator($ownerResolver);
+            $validator = new VoucherValidator();
 
             $reflection = new ReflectionClass($validator);
             $method = $reflection->getMethod('getUserIdentifier');

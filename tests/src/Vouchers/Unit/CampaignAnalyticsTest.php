@@ -483,3 +483,42 @@ describe('CampaignAnalytics Campaign Comparison', function (): void {
             ->and($comparison[$campaign2->id]['revenue_cents'])->toBe(50000);
     });
 });
+
+describe('CampaignAnalytics Time Series', function (): void {
+    it('returns time series grouped by day', function (): void {
+        $from = Carbon::now()->subDays(2)->startOfDay();
+        $to = Carbon::now()->endOfDay();
+
+        CampaignEvent::create([
+            'campaign_id' => $this->campaign->id,
+            'event_type' => CampaignEventType::Impression,
+            'occurred_at' => $from->copy()->addHours(1),
+        ]);
+
+        CampaignEvent::create([
+            'campaign_id' => $this->campaign->id,
+            'event_type' => CampaignEventType::Application,
+            'voucher_code' => 'TS1',
+            'occurred_at' => $from->copy()->addHours(2),
+        ]);
+
+        CampaignEvent::create([
+            'campaign_id' => $this->campaign->id,
+            'event_type' => CampaignEventType::Conversion,
+            'voucher_code' => 'TS1',
+            'value_cents' => 50000,
+            'discount_cents' => 5000,
+            'occurred_at' => $from->copy()->addHours(3),
+        ]);
+
+        $series = $this->analytics->getTimeSeries($this->campaign, $from, $to, 'day');
+
+        $key = $from->format('Y-m-d');
+
+        expect($series)->toHaveKey($key)
+            ->and($series[$key]['impressions'])->toBe(1)
+            ->and($series[$key]['applications'])->toBe(1)
+            ->and($series[$key]['conversions'])->toBe(1)
+            ->and($series[$key]['revenue_cents'])->toBe(50000);
+    });
+});

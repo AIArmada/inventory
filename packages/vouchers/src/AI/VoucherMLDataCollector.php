@@ -9,6 +9,7 @@ use AIArmada\CommerceSupport\Support\OwnerQuery;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use JsonException;
 use RuntimeException;
 
 /**
@@ -65,8 +66,8 @@ final class VoucherMLDataCollector
                 END as discount_percentage"),
 
                 // Time features
-                DB::raw("HOUR({$voucherUsageTable}.created_at) as hour_of_day"),
-                DB::raw("DAYOFWEEK({$voucherUsageTable}.created_at) as day_of_week"),
+                DB::raw($this->sqlHourOfDay("{$voucherUsageTable}.created_at") . ' as hour_of_day'),
+                DB::raw($this->sqlDayOfWeekSunday1("{$voucherUsageTable}.created_at") . ' as day_of_week'),
 
                 // Target variable
                 DB::raw("CASE WHEN {$ordersTable}.id IS NOT NULL THEN 1 ELSE 0 END as converted"),
@@ -110,11 +111,11 @@ final class VoucherMLDataCollector
                 "{$cartsTable}.conditions_count",
 
                 // Time features
-                DB::raw("HOUR({$cartsTable}.created_at) as hour_of_day"),
-                DB::raw("DAYOFWEEK({$cartsTable}.created_at) as day_of_week"),
+                DB::raw($this->sqlHourOfDay("{$cartsTable}.created_at") . ' as hour_of_day'),
+                DB::raw($this->sqlDayOfWeekSunday1("{$cartsTable}.created_at") . ' as day_of_week'),
 
-                // Cart age (if updated_at differs from created_at)
-                DB::raw("TIMESTAMPDIFF(MINUTE, {$cartsTable}.created_at, {$cartsTable}.updated_at) as cart_age_minutes"),
+                // Cart age in minutes (portable across supported DBs)
+                DB::raw($this->sqlDiffMinutes("{$cartsTable}.created_at", "{$cartsTable}.updated_at") . ' as cart_age_minutes'),
 
                 // Target variable (1 = abandoned, 0 = converted)
                 DB::raw("CASE WHEN {$ordersTable}.id IS NULL THEN 1 ELSE 0 END as abandoned"),
@@ -124,6 +125,43 @@ final class VoucherMLDataCollector
                 "{$ordersTable}.created_at as order_created_at",
             ])
             ->get();
+    }
+
+    private function sqlHourOfDay(string $qualifiedColumn): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        return match ($driver) {
+            'pgsql' => "EXTRACT(HOUR FROM {$qualifiedColumn})",
+            'sqlite' => "CAST(STRFTIME('%H', {$qualifiedColumn}) AS INTEGER)",
+            default => "HOUR({$qualifiedColumn})",
+        };
+    }
+
+    /**
+     * Returns day-of-week as integer 1..7 with Sunday = 1.
+     */
+    private function sqlDayOfWeekSunday1(string $qualifiedColumn): string
+    {
+        $driver = DB::connection()->getDriverName();
+
+        return match ($driver) {
+            'pgsql' => "(EXTRACT(DOW FROM {$qualifiedColumn}) + 1)",
+            'sqlite' => "(CAST(STRFTIME('%w', {$qualifiedColumn}) AS INTEGER) + 1)",
+            default => "DAYOFWEEK({$qualifiedColumn})",
+        };
+    }
+
+    private function sqlDiffMinutes(string $qualifiedStartColumn, string $qualifiedEndColumn): string
+    {
+        $driver = DB::connection()->getDriverName();
+        $end = "COALESCE({$qualifiedEndColumn}, {$qualifiedStartColumn})";
+
+        return match ($driver) {
+            'pgsql' => "FLOOR(EXTRACT(EPOCH FROM ({$end} - {$qualifiedStartColumn})) / 60)",
+            'sqlite' => "CAST((JULIANDAY({$end}) - JULIANDAY({$qualifiedStartColumn})) * 24 * 60 AS INTEGER)",
+            default => "TIMESTAMPDIFF(MINUTE, {$qualifiedStartColumn}, {$end})",
+        };
     }
 
     /**
@@ -137,7 +175,7 @@ final class VoucherMLDataCollector
     {
         $vouchersTable = config('vouchers.database.tables.vouchers', 'vouchers');
         $voucherUsageTable = config('vouchers.database.tables.voucher_usage', 'voucher_usage');
-        $ordersTable = config('vouchers.database.tables.orders', 'orders');
+        $ordersTable = config('orders.database.tables.orders', 'orders');
 
         $query = DB::table($vouchersTable)
             ->leftJoin($voucherUsageTable, "{$voucherUsageTable}.voucher_id", '=', "{$vouchersTable}.id")
@@ -184,21 +222,27 @@ final class VoucherMLDataCollector
             return;
         }
 
-        $handle = fopen($filepath, 'w');
+        $directory = dirname($filepath);
+        if (! is_dir($directory)) {
+            throw new RuntimeException("Directory does not exist: {$directory}");
+        }
 
+        $handle = fopen($filepath, 'wb');
         if ($handle === false) {
             throw new RuntimeException("Cannot open file for writing: {$filepath}");
         }
 
-        // Write headers
-        fputcsv($handle, array_keys((array) $data->first()));
+        try {
+            // Write headers
+            fputcsv($handle, array_keys((array) $data->first()));
 
-        // Write data rows
-        foreach ($data as $row) {
-            fputcsv($handle, (array) $row);
+            // Write data rows
+            foreach ($data as $row) {
+                fputcsv($handle, (array) $row);
+            }
+        } finally {
+            fclose($handle);
         }
-
-        fclose($handle);
     }
 
     /**
@@ -206,10 +250,22 @@ final class VoucherMLDataCollector
      */
     public function exportToJson(Collection $data, string $filepath): void
     {
-        file_put_contents(
-            $filepath,
-            json_encode($data->toArray(), JSON_PRETTY_PRINT)
-        );
+        $directory = dirname($filepath);
+        if (! is_dir($directory)) {
+            throw new RuntimeException("Directory does not exist: {$directory}");
+        }
+
+        try {
+            $json = json_encode($data->toArray(), JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new RuntimeException('Failed to encode JSON for export.', previous: $exception);
+        }
+
+        $bytes = file_put_contents($filepath, $json, LOCK_EX);
+
+        if ($bytes === false) {
+            throw new RuntimeException("Failed to write JSON export to: {$filepath}");
+        }
     }
 
     /**

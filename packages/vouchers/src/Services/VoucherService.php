@@ -10,6 +10,7 @@ use AIArmada\Vouchers\Data\VoucherValidationResult;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Exceptions\ManualRedemptionNotAllowedException;
 use AIArmada\Vouchers\Exceptions\VoucherNotFoundException;
+use AIArmada\Vouchers\Exceptions\VoucherUsageLimitException;
 use AIArmada\Vouchers\Models\Voucher as VoucherModel;
 use AIArmada\Vouchers\Models\VoucherUsage;
 use AIArmada\Vouchers\Models\VoucherWallet;
@@ -187,13 +188,39 @@ class VoucherService
             $redeemedBy,
             $notes
         ): void {
+            /** @var VoucherModel $lockedVoucher */
+            $lockedVoucher = VoucherModel::query()
+                ->whereKey($voucher->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedVoucher->usage_limit !== null) {
+                $currentUses = VoucherUsage::where('voucher_id', $lockedVoucher->id)->count();
+                if ($currentUses >= $lockedVoucher->usage_limit) {
+                    throw VoucherUsageLimitException::globalLimit($lockedVoucher->code);
+                }
+            } else {
+                $currentUses = null;
+            }
+
+            if ($redeemedBy !== null && $lockedVoucher->usage_limit_per_user) {
+                $currentUserUses = VoucherUsage::where('voucher_id', $lockedVoucher->id)
+                    ->where('redeemed_by_type', $redeemedBy->getMorphClass())
+                    ->where('redeemed_by_id', $redeemedBy->getKey())
+                    ->count();
+
+                if ($currentUserUses >= $lockedVoucher->usage_limit_per_user) {
+                    throw VoucherUsageLimitException::userLimit($lockedVoucher->code);
+                }
+            }
+
             $payload = [
-                'voucher_id' => $voucher->id,
+                'voucher_id' => $lockedVoucher->id,
                 'discount_amount' => $discountAmount->getAmount(),
                 'currency' => $discountAmount->getCurrency()->getCurrency(),
                 'channel' => $channel,
                 'metadata' => $metadata,
-                'target_definition' => $voucher->target_definition,
+                'target_definition' => $lockedVoucher->target_definition,
                 'notes' => $notes,
                 'used_at' => now(),
             ];
@@ -205,7 +232,9 @@ class VoucherService
 
             VoucherUsage::create($payload);
 
-            $voucher->incrementUsage();
+            if ($lockedVoucher->usage_limit !== null && $currentUses !== null && ($currentUses + 1) >= $lockedVoucher->usage_limit) {
+                $lockedVoucher->update(['status' => VoucherStatus::Depleted]);
+            }
         });
     }
 
