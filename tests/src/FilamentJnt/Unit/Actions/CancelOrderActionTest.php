@@ -100,6 +100,62 @@ it('cancels an order and updates the record when authenticated', function (): vo
     expect(collect($notifications)->last()['title'])->toBe('Order Cancelled');
 });
 
+it('does not cancel when a cancellation reason is missing', function (): void {
+    /** @var User $user */
+    $user = User::query()->create([
+        'name' => 'User',
+        'email' => 'user-missing-reason@example.test',
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user);
+
+    $order = JntOrder::query()->create([
+        'order_id' => 'ORD-5',
+        'customer_code' => 'CUST',
+        'status' => 'in_transit',
+    ]);
+
+    $action = CancelOrderAction::make()->record($order);
+    $handler = $action->getActionFunction();
+
+    $handler($order, ['reason' => '', 'custom_reason' => null]);
+
+    $order->refresh();
+    expect($order->status)->not()->toBe('cancelled');
+
+    $notifications = session()->get('filament.notifications', []);
+    expect(collect($notifications)->last()['title'])->toBe('Invalid Request');
+});
+
+it('does not cancel when Other is selected without details', function (): void {
+    /** @var User $user */
+    $user = User::query()->create([
+        'name' => 'User',
+        'email' => 'user-missing-details@example.test',
+        'password' => bcrypt('password'),
+    ]);
+
+    $this->actingAs($user);
+
+    $order = JntOrder::query()->create([
+        'order_id' => 'ORD-6',
+        'customer_code' => 'CUST',
+        'status' => 'in_transit',
+    ]);
+
+    $action = CancelOrderAction::make()->record($order);
+    $handler = $action->getActionFunction();
+
+    $handler($order, ['reason' => CancellationReason::OTHER->value, 'custom_reason' => '']);
+
+    $order->refresh();
+    expect($order->status)->not()->toBe('cancelled');
+
+    $notifications = session()->get('filament.notifications', []);
+    expect(collect($notifications)->last()['title'])->toBe('Additional Details Required');
+});
+
 it('handles service exceptions and shows a failure notification', function (): void {
     /** @var User $user */
     $user = User::query()->create([

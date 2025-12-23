@@ -101,27 +101,7 @@ final class JntOrderTable
                     ->label('Status')
                     ->options(TrackingStatus::class)
                     ->query(function (Builder $query, array $data): Builder {
-                        if (empty($data['value'])) {
-                            return $query;
-                        }
-
-                        $status = TrackingStatus::from($data['value']);
-
-                        return match ($status) {
-                            TrackingStatus::Pending => $query->whereNull('tracking_number'),
-                            TrackingStatus::Delivered => $query->whereNotNull('delivered_at'),
-                            TrackingStatus::Exception => $query->where('has_problem', true),
-                            TrackingStatus::InTransit => $query->whereNull('delivered_at')
-                                ->whereNotNull('tracking_number')
-                                ->where('has_problem', false)
-                                ->whereIn('last_status_code', ['20', '30', '401', '402']),
-                            TrackingStatus::AtHub => $query->whereIn('last_status_code', ['403', '404', '405']),
-                            TrackingStatus::OutForDelivery => $query->where('last_status_code', '94'),
-                            TrackingStatus::PickedUp => $query->whereIn('last_status_code', ['10', '400']),
-                            TrackingStatus::ReturnInitiated => $query->where('last_status_code', '172'),
-                            TrackingStatus::Returned => $query->where('last_status_code', '173'),
-                            TrackingStatus::DeliveryAttempted => $query->where('last_status_code', '110'),
-                        };
+                        return self::applyNormalizedStatusFilter($query, $data['value'] ?? null);
                     }),
                 SelectFilter::make('express_type')
                     ->label('Express Type')
@@ -157,6 +137,35 @@ final class JntOrderTable
             ->defaultSort('created_at', 'desc')
             ->paginated([25, 50, 100])
             ->poll(config('filament-jnt.polling_interval', '30s'));
+    }
+
+    public static function applyNormalizedStatusFilter(Builder $query, mixed $value): Builder
+    {
+        if (! is_string($value) || $value === '') {
+            return $query;
+        }
+
+        $status = TrackingStatus::tryFrom($value);
+
+        if ($status === null) {
+            return $query;
+        }
+
+        return match ($status) {
+            TrackingStatus::Pending => $query->whereNull('tracking_number'),
+            TrackingStatus::Delivered => $query->whereNotNull('delivered_at'),
+            TrackingStatus::Exception => $query->where('has_problem', true),
+            TrackingStatus::InTransit => $query->whereNull('delivered_at')
+                ->whereNotNull('tracking_number')
+                ->where('has_problem', false)
+                ->whereIn('last_status_code', ['20', '30', '401', '402']),
+            TrackingStatus::AtHub => $query->whereIn('last_status_code', ['403', '404', '405']),
+            TrackingStatus::OutForDelivery => $query->where('last_status_code', '94'),
+            TrackingStatus::PickedUp => $query->whereIn('last_status_code', ['10', '400']),
+            TrackingStatus::ReturnInitiated => $query->where('last_status_code', '172'),
+            TrackingStatus::Returned => $query->where('last_status_code', '173'),
+            TrackingStatus::DeliveryAttempted => $query->where('last_status_code', '110'),
+        };
     }
 
     private static function getNormalizedStatus(JntOrder $order): TrackingStatus

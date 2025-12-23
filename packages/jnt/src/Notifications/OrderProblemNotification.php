@@ -47,7 +47,7 @@ class OrderProblemNotification extends Notification implements ShouldQueue
 
         // Get problem details
         if ($this->tracking->details->count() > 0) {
-            $latest = $this->tracking->details->last();
+            $latest = $this->tracking->getLatestDetail();
             if ($latest instanceof TrackingDetailData) {
                 $message->line('Issue: ' . $latest->description);
 
@@ -84,7 +84,7 @@ class OrderProblemNotification extends Notification implements ShouldQueue
         $reportedAt = null;
 
         if ($this->tracking->details->count() > 0) {
-            $latest = $this->tracking->details->last();
+            $latest = $this->tracking->getLatestDetail();
             if ($latest instanceof TrackingDetailData) {
                 $problemDescription = $latest->description;
                 $problemType = $latest->problemType;

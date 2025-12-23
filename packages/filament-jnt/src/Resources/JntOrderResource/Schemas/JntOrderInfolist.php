@@ -316,22 +316,24 @@ final class JntOrderInfolist
                 ->schema([
                     TextEntry::make('request_payload')
                         ->label('Request Payload')
-                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))
-                        ->visible(fn (JntOrder $record): bool => filled($record->request_payload))
+                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '')
+                        ->visible(fn (JntOrder $record): bool => (bool) config('filament-jnt.features.show_raw_payloads', false) && filled($record->request_payload))
                         ->columnSpanFull(),
                     TextEntry::make('response_payload')
                         ->label('Response Payload')
-                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))
-                        ->visible(fn (JntOrder $record): bool => filled($record->response_payload))
+                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '')
+                        ->visible(fn (JntOrder $record): bool => (bool) config('filament-jnt.features.show_raw_payloads', false) && filled($record->response_payload))
                         ->columnSpanFull(),
                     TextEntry::make('metadata')
                         ->label('Metadata')
-                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))
-                        ->visible(fn (JntOrder $record): bool => filled($record->metadata))
+                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '')
+                        ->visible(fn (JntOrder $record): bool => (bool) config('filament-jnt.features.show_raw_payloads', false) && filled($record->metadata))
                         ->columnSpanFull(),
                 ])
                 ->collapsible()
-                ->collapsed(),
+                ->collapsed()
+                ->visible(fn (JntOrder $record): bool => (bool) config('filament-jnt.features.show_raw_payloads', false)
+                    && (filled($record->request_payload) || filled($record->response_payload) || filled($record->metadata))),
         ]);
     }
 

@@ -14,7 +14,6 @@ use AIArmada\Jnt\Console\Commands\OrderPrintCommand;
 use AIArmada\Jnt\Console\Commands\OrderTrackCommand;
 use AIArmada\Jnt\Console\Commands\WebhookTestCommand;
 use AIArmada\Jnt\Events\JntOrderStatusChanged;
-use AIArmada\Jnt\Http\Middleware\VerifyWebhookSignature;
 use AIArmada\Jnt\Listeners\SendShipmentNotifications;
 use AIArmada\Jnt\Services\JntExpressService;
 use AIArmada\Jnt\Services\JntStatusMapper;
@@ -22,12 +21,17 @@ use AIArmada\Jnt\Services\JntTrackingService;
 use AIArmada\Jnt\Services\WebhookService;
 use AIArmada\Jnt\Shipping\JntShippingDriver;
 use AIArmada\Jnt\Support\Integrations\CartIntegrationRegistrar;
+use AIArmada\Jnt\Webhooks\JntSpatieSignatureValidator;
+use AIArmada\Jnt\Webhooks\JntWebhookProfile;
+use AIArmada\Jnt\Webhooks\JntWebhookResponse;
+use AIArmada\Jnt\Webhooks\ProcessJntWebhook;
 use AIArmada\Shipping\ShippingManager;
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\WebhookClient\Models\WebhookCall;
+use Spatie\WebhookClient\WebhookClientServiceProvider;
 
 /**
  * J&T Express Service Provider
@@ -65,8 +69,23 @@ class JntServiceProvider extends PackageServiceProvider
      */
     public function registeringPackage(): void
     {
+        $this->configureSpatieWebhookClient();
+        $this->registerSpatieWebhookClient();
         $this->registerServices();
         $this->registerOptionalIntegrations();
+    }
+
+    protected function registerSpatieWebhookClient(): void
+    {
+        if (! class_exists(WebhookClientServiceProvider::class)) {
+            return;
+        }
+
+        if (method_exists($this->app, 'getProvider') && $this->app->getProvider(WebhookClientServiceProvider::class) instanceof WebhookClientServiceProvider) {
+            return;
+        }
+
+        $this->app->register(WebhookClientServiceProvider::class);
     }
 
     /**
@@ -74,10 +93,66 @@ class JntServiceProvider extends PackageServiceProvider
      */
     public function bootingPackage(): void
     {
-        $this->registerMiddleware();
         $this->registerCartIntegration();
         $this->registerShippingDriver();
         $this->registerEventListeners();
+    }
+
+    protected function configureSpatieWebhookClient(): void
+    {
+        if (! class_exists(WebhookCall::class)) {
+            return;
+        }
+
+        /**
+         * Spatie binds the active WebhookConfig by reading the current route name.
+         * We keep the route name `jnt.webhooks.status`, so the Spatie webhook config
+         * entry must use that name to resolve correctly.
+         */
+        $configName = 'jnt.webhooks.status';
+
+        $configs = config('webhook-client.configs', []);
+
+        if (! is_array($configs)) {
+            $configs = [];
+        }
+
+        // Spatie ships an invalid default config (`process_webhook_job` = '') which will
+        // hard-fail when the WebhookClient service provider boots. Filter out invalid
+        // configs defensively.
+        $configs = array_values(array_filter($configs, static function (mixed $existingConfig): bool {
+            if (! is_array($existingConfig)) {
+                return false;
+            }
+
+            $processWebhookJob = $existingConfig['process_webhook_job'] ?? null;
+
+            return is_string($processWebhookJob) && $processWebhookJob !== '';
+        }));
+
+        foreach ($configs as $existingConfig) {
+            if (is_array($existingConfig) && ($existingConfig['name'] ?? null) === $configName) {
+                return;
+            }
+        }
+
+        $configs[] = [
+            'name' => $configName,
+            'signing_secret' => '',
+            'signature_header_name' => 'digest',
+            'signature_validator' => JntSpatieSignatureValidator::class,
+            'webhook_profile' => JntWebhookProfile::class,
+            'webhook_response' => JntWebhookResponse::class,
+            'webhook_model' => WebhookCall::class,
+            'store_headers' => [
+                'digest',
+            ],
+            'process_webhook_job' => ProcessJntWebhook::class,
+        ];
+
+        config([
+            'webhook-client.configs' => $configs,
+        ]);
     }
 
     /**
@@ -150,16 +225,6 @@ class JntServiceProvider extends PackageServiceProvider
                 )
             );
         }
-    }
-
-    /**
-     * Register package middleware.
-     */
-    protected function registerMiddleware(): void
-    {
-        /** @var Router $router */
-        $router = $this->app->make(Router::class);
-        $router->aliasMiddleware('jnt.verify.signature', VerifyWebhookSignature::class);
     }
 
     /**

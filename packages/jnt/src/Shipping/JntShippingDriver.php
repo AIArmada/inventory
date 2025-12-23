@@ -139,20 +139,22 @@ class JntShippingDriver implements ShippingDriverInterface
                 items: $items,
                 packageInfo: $packageInfo,
                 orderId: $data->reference,
-                additionalData: [
-                    'cod_amount' => $data->isCashOnDelivery() ? ($data->codAmount / 100) : 0,
+                additionalData: array_filter([
+                    'codInfo' => $data->isCashOnDelivery()
+                        ? ['codValue' => $data->codAmount / 100]
+                        : null,
                     'remark' => $data->instructions ?? '',
-                ],
+                ], static fn (mixed $value): bool => $value !== null),
             );
 
-            $trackingNumber = $orderData->billCode ?? null;
+            $trackingNumber = $orderData->trackingNumber;
 
             // Get label URL
             $labelUrl = null;
             if ($trackingNumber !== null) {
                 try {
-                    $printResponse = $this->jntService->printOrder($data->reference, $trackingNumber);
-                    $labelUrl = $printResponse['data']['url'] ?? null;
+                    $printResponse = $this->jntService->printOrder(orderId: $data->reference, trackingNumber: $trackingNumber);
+                    $labelUrl = $printResponse['url'] ?? null;
                 } catch (Throwable) {
                     // Label generation may fail, continue without it
                 }
@@ -176,12 +178,26 @@ class JntShippingDriver implements ShippingDriverInterface
     public function cancelShipment(string $trackingNumber): bool
     {
         try {
+            $orderId = null;
+
+            try {
+                $tracking = $this->jntService->trackParcel(null, $trackingNumber);
+                $orderId = $tracking->orderId;
+            } catch (Throwable) {
+                // Best-effort: cancellation can still succeed without resolving txlogisticId.
+            }
+
             $response = $this->jntService->cancelOrder(
-                orderId: $trackingNumber,
-                reason: CancellationReason::CUSTOMER_REQUEST
+                orderId: $orderId ?? $trackingNumber,
+                reason: CancellationReason::CUSTOMER_REQUEST,
+                trackingNumber: $trackingNumber,
             );
 
-            return isset($response['success']) && $response['success'];
+            if (array_key_exists('success', $response)) {
+                return (bool) $response['success'];
+            }
+
+            return true;
         } catch (Throwable) {
             return false;
         }
@@ -192,13 +208,16 @@ class JntShippingDriver implements ShippingDriverInterface
      */
     public function generateLabel(string $trackingNumber, array $options = []): LabelData
     {
+        $orderId = $options['order_id'] ?? $options['orderId'] ?? $trackingNumber;
+
         $response = $this->jntService->printOrder(
-            orderId: $trackingNumber,
-            templateName: $options['template'] ?? null
+            orderId: (string) $orderId,
+            trackingNumber: $trackingNumber,
+            templateName: $options['template'] ?? null,
         );
 
-        $labelUrl = $response['data']['url'] ?? null;
-        $labelContent = $response['data']['content'] ?? null;
+        $labelUrl = $response['url'] ?? null;
+        $labelContent = $response['content'] ?? null;
 
         return new LabelData(
             format: 'pdf',

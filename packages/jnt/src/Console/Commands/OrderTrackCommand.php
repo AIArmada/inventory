@@ -12,18 +12,23 @@ use Illuminate\Console\Command;
 
 class OrderTrackCommand extends Command
 {
-    protected $signature = 'jnt:order:track {order-id : Order ID or tracking number to track}';
+    protected $signature = 'jnt:order:track
+                          {order-id : Order ID to track}
+                          {--tracking-number : Treat the argument as a tracking number (billCode)}';
 
     protected $description = 'Track a J&T Express order';
 
     public function handle(JntExpressService $jnt): int
     {
         $orderId = $this->argument('order-id');
+        $byTrackingNumber = (bool) $this->option('tracking-number');
 
         try {
             $this->line('Tracking order: ' . $orderId);
 
-            $tracking = $jnt->trackParcel($orderId);
+            $tracking = $byTrackingNumber
+                ? $jnt->trackParcel(null, (string) $orderId)
+                : $jnt->trackParcel((string) $orderId);
 
             if ($tracking->details->count() === 0) {
                 $this->warn('No tracking information found for this order.');

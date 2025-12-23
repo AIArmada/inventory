@@ -120,7 +120,7 @@ return [
     'webhooks' => [
         'enabled' => env('JNT_WEBHOOKS_ENABLED', true),
         'route' => env('JNT_WEBHOOK_ROUTE', 'webhooks/jnt/status'),
-        'middleware' => ['api', 'jnt.verify.signature'],
+        'middleware' => ['api'],
         'log_payloads' => env('JNT_WEBHOOK_LOG_PAYLOADS', false),
         'verify_signature' => env('JNT_WEBHOOKS_VERIFY_SIGNATURE', true),
     ],

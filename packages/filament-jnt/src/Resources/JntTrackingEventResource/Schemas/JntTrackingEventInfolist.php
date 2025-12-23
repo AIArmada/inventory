@@ -179,12 +179,13 @@ final class JntTrackingEventInfolist
                 ->schema([
                     TextEntry::make('payload')
                         ->label('Payload JSON')
-                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))
-                        ->visible(fn (JntTrackingEvent $record): bool => filled($record->payload))
+                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '')
+                        ->visible(fn (JntTrackingEvent $record): bool => (bool) config('filament-jnt.features.show_raw_payloads', false) && filled($record->payload))
                         ->columnSpanFull(),
                 ])
                 ->collapsible()
-                ->collapsed(),
+                ->collapsed()
+                ->visible(fn (JntTrackingEvent $record): bool => (bool) config('filament-jnt.features.show_raw_payloads', false) && filled($record->payload)),
         ]);
     }
 

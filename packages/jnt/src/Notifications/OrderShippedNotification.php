@@ -50,7 +50,7 @@ class OrderShippedNotification extends Notification implements ShouldQueue
         }
 
         if ($this->tracking->details->count() > 0) {
-            $latest = $this->tracking->details->last();
+            $latest = $this->tracking->getLatestDetail();
             if ($latest instanceof TrackingDetailData && ($latest->scanNetworkCity !== null || $latest->scanNetworkProvince !== null)) {
                 $location = implode(', ', array_filter([
                     $latest->scanNetworkCity,
@@ -74,7 +74,7 @@ class OrderShippedNotification extends Notification implements ShouldQueue
         $location = null;
 
         if ($this->tracking->details->count() > 0) {
-            $latest = $this->tracking->details->last();
+            $latest = $this->tracking->getLatestDetail();
             if ($latest instanceof TrackingDetailData && ($latest->scanNetworkCity !== null || $latest->scanNetworkProvince !== null)) {
                 $location = implode(', ', array_filter([
                     $latest->scanNetworkCity,

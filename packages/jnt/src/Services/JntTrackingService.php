@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Services;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Jnt\Data\TrackingData;
 use AIArmada\Jnt\Data\TrackingDetailData;
 use AIArmada\Jnt\Enums\TrackingStatus;
@@ -223,7 +224,7 @@ class JntTrackingService
         $includeGlobal = (bool) config('jnt.owner.include_global', false);
 
         /** @var \Illuminate\Database\Eloquent\Builder<JntOrder> $query */
-        $query = JntOrder::query()->forOwner(owner: null, includeGlobal: $includeGlobal);
+        $query = JntOrder::query()->forOwner(owner: OwnerContext::CURRENT, includeGlobal: $includeGlobal);
 
         return $query
             ->whereNotNull('tracking_number')

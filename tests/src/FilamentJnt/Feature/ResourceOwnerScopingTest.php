@@ -6,6 +6,7 @@ use AIArmada\Commerce\Tests\FilamentJnt\FilamentJntTestCase;
 use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\Commerce\Tests\Support\OwnerResolvers\FixedOwnerResolver;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\FilamentJnt\Resources\JntOrderResource;
 use AIArmada\FilamentJnt\Resources\JntTrackingEventResource;
 use AIArmada\FilamentJnt\Resources\JntWebhookLogResource;
@@ -31,60 +32,62 @@ it('scopes Filament JNT resources to the resolved owner (including global)', fun
         'password' => 'secret',
     ]);
 
-    $globalOrder = JntOrder::query()->create([
-        'order_id' => 'ORD-GLOBAL',
-        'customer_code' => 'CUST',
-    ]);
+    OwnerContext::withOwner(null, function () use ($ownerA, $ownerB, &$globalOrder, &$globalLog, &$globalEvent, &$ownerAOrder, &$ownerBOrder, &$ownerALog, &$ownerBLog, &$ownerAEvent, &$ownerBEvent): void {
+        $globalOrder = JntOrder::query()->create([
+            'order_id' => 'ORD-GLOBAL',
+            'customer_code' => 'CUST',
+        ]);
 
-    $globalLog = JntWebhookLog::query()->create([
-        'order_id' => $globalOrder->id,
-        'tracking_number' => 'TRK-G',
-        'processing_status' => JntWebhookLog::STATUS_PENDING,
-    ]);
+        $globalLog = JntWebhookLog::query()->create([
+            'order_id' => $globalOrder->id,
+            'tracking_number' => 'TRK-G',
+            'processing_status' => JntWebhookLog::STATUS_PENDING,
+        ]);
 
-    $globalEvent = JntTrackingEvent::query()->create([
-        'order_id' => $globalOrder->id,
-        'tracking_number' => 'TRK-G',
-        'scan_type_name' => 'Global',
-    ]);
+        $globalEvent = JntTrackingEvent::query()->create([
+            'order_id' => $globalOrder->id,
+            'tracking_number' => 'TRK-G',
+            'scan_type_name' => 'Global',
+        ]);
+
+        $ownerAOrder = JntOrder::query()->create([
+            'order_id' => 'ORD-A',
+            'customer_code' => 'CUST',
+        ]);
+        $ownerAOrder->assignOwner($ownerA)->save();
+
+        $ownerBOrder = JntOrder::query()->create([
+            'order_id' => 'ORD-B',
+            'customer_code' => 'CUST',
+        ]);
+        $ownerBOrder->assignOwner($ownerB)->save();
+
+        $ownerALog = JntWebhookLog::query()->create([
+            'order_id' => $ownerAOrder->id,
+            'tracking_number' => 'TRK-A',
+            'processing_status' => JntWebhookLog::STATUS_PENDING,
+        ]);
+
+        $ownerBLog = JntWebhookLog::query()->create([
+            'order_id' => $ownerBOrder->id,
+            'tracking_number' => 'TRK-B',
+            'processing_status' => JntWebhookLog::STATUS_PENDING,
+        ]);
+
+        $ownerAEvent = JntTrackingEvent::query()->create([
+            'order_id' => $ownerAOrder->id,
+            'tracking_number' => 'TRK-A',
+            'scan_type_name' => 'Owner A',
+        ]);
+
+        $ownerBEvent = JntTrackingEvent::query()->create([
+            'order_id' => $ownerBOrder->id,
+            'tracking_number' => 'TRK-B',
+            'scan_type_name' => 'Owner B',
+        ]);
+    });
 
     app()->bind(OwnerResolverInterface::class, fn (): OwnerResolverInterface => new FixedOwnerResolver($ownerA));
-
-    $ownerAOrder = JntOrder::query()->create([
-        'order_id' => 'ORD-A',
-        'customer_code' => 'CUST',
-    ]);
-    $ownerAOrder->assignOwner($ownerA)->save();
-
-    $ownerBOrder = JntOrder::query()->create([
-        'order_id' => 'ORD-B',
-        'customer_code' => 'CUST',
-    ]);
-    $ownerBOrder->assignOwner($ownerB)->save();
-
-    $ownerALog = JntWebhookLog::query()->create([
-        'order_id' => $ownerAOrder->id,
-        'tracking_number' => 'TRK-A',
-        'processing_status' => JntWebhookLog::STATUS_PENDING,
-    ]);
-
-    $ownerBLog = JntWebhookLog::query()->create([
-        'order_id' => $ownerBOrder->id,
-        'tracking_number' => 'TRK-B',
-        'processing_status' => JntWebhookLog::STATUS_PENDING,
-    ]);
-
-    $ownerAEvent = JntTrackingEvent::query()->create([
-        'order_id' => $ownerAOrder->id,
-        'tracking_number' => 'TRK-A',
-        'scan_type_name' => 'Owner A',
-    ]);
-
-    $ownerBEvent = JntTrackingEvent::query()->create([
-        'order_id' => $ownerBOrder->id,
-        'tracking_number' => 'TRK-B',
-        'scan_type_name' => 'Owner B',
-    ]);
 
     $orders = JntOrderResource::getEloquentQuery()->pluck('id')->all();
     expect($orders)->toContain($globalOrder->id, $ownerAOrder->id)
@@ -109,42 +112,44 @@ it('can exclude global records from Filament JNT resources', function (): void {
         'password' => 'secret',
     ]);
 
-    $globalOrder = JntOrder::query()->create([
-        'order_id' => 'ORD-GLOBAL',
-        'customer_code' => 'CUST',
-    ]);
+    OwnerContext::withOwner(null, function () use ($ownerA, &$globalOrder, &$globalLog, &$globalEvent, &$ownerAOrder, &$ownerALog, &$ownerAEvent): void {
+        $globalOrder = JntOrder::query()->create([
+            'order_id' => 'ORD-GLOBAL',
+            'customer_code' => 'CUST',
+        ]);
 
-    $globalLog = JntWebhookLog::query()->create([
-        'order_id' => $globalOrder->id,
-        'tracking_number' => 'TRK-G',
-        'processing_status' => JntWebhookLog::STATUS_PENDING,
-    ]);
+        $globalLog = JntWebhookLog::query()->create([
+            'order_id' => $globalOrder->id,
+            'tracking_number' => 'TRK-G',
+            'processing_status' => JntWebhookLog::STATUS_PENDING,
+        ]);
 
-    $globalEvent = JntTrackingEvent::query()->create([
-        'order_id' => $globalOrder->id,
-        'tracking_number' => 'TRK-G',
-        'scan_type_name' => 'Global',
-    ]);
+        $globalEvent = JntTrackingEvent::query()->create([
+            'order_id' => $globalOrder->id,
+            'tracking_number' => 'TRK-G',
+            'scan_type_name' => 'Global',
+        ]);
+
+        $ownerAOrder = JntOrder::query()->create([
+            'order_id' => 'ORD-A',
+            'customer_code' => 'CUST',
+        ]);
+        $ownerAOrder->assignOwner($ownerA)->save();
+
+        $ownerALog = JntWebhookLog::query()->create([
+            'order_id' => $ownerAOrder->id,
+            'tracking_number' => 'TRK-A',
+            'processing_status' => JntWebhookLog::STATUS_PENDING,
+        ]);
+
+        $ownerAEvent = JntTrackingEvent::query()->create([
+            'order_id' => $ownerAOrder->id,
+            'tracking_number' => 'TRK-A',
+            'scan_type_name' => 'Owner A',
+        ]);
+    });
 
     app()->bind(OwnerResolverInterface::class, fn (): OwnerResolverInterface => new FixedOwnerResolver($ownerA));
-
-    $ownerAOrder = JntOrder::query()->create([
-        'order_id' => 'ORD-A',
-        'customer_code' => 'CUST',
-    ]);
-    $ownerAOrder->assignOwner($ownerA)->save();
-
-    $ownerALog = JntWebhookLog::query()->create([
-        'order_id' => $ownerAOrder->id,
-        'tracking_number' => 'TRK-A',
-        'processing_status' => JntWebhookLog::STATUS_PENDING,
-    ]);
-
-    $ownerAEvent = JntTrackingEvent::query()->create([
-        'order_id' => $ownerAOrder->id,
-        'tracking_number' => 'TRK-A',
-        'scan_type_name' => 'Owner A',
-    ]);
 
     $orders = JntOrderResource::getEloquentQuery()->pluck('id')->all();
     expect($orders)->toContain($ownerAOrder->id)

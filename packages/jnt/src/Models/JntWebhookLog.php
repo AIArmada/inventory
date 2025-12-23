@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Models;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use InvalidArgumentException;
 
 /**
  * @property string $id
@@ -50,10 +52,18 @@ final class JntWebhookLog extends Model
                 return;
             }
 
-            $order = JntOrder::query()->find($log->order_id);
+            $owner = OwnerContext::resolve();
+
+            $query = JntOrder::query();
+
+            if ($owner === null) {
+                $query->withoutOwnerScope();
+            }
+
+            $order = $query->find($log->order_id);
 
             if ($order === null) {
-                return;
+                throw new InvalidArgumentException('Invalid order_id for JntWebhookLog.');
             }
 
             $log->owner_type = $order->owner_type;

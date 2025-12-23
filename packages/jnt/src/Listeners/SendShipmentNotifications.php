@@ -146,14 +146,18 @@ class SendShipmentNotifications implements ShouldQueue
                 trackingNumber: $order->tracking_number
             );
 
-            // Build TrackingData from result
-            /** @var DataCollection<int, TrackingDetailData> $emptyDetails */
-            $emptyDetails = TrackingDetailData::collect([], DataCollection::class);
+            $details = array_map(
+                static fn (array $event): TrackingDetailData => $event['raw'],
+                $result['events']
+            );
+
+            /** @var DataCollection<int, TrackingDetailData> $detailCollection */
+            $detailCollection = new DataCollection(TrackingDetailData::class, $details);
 
             return new TrackingData(
                 trackingNumber: $result['tracking_number'],
                 orderId: $result['order_id'],
-                details: $emptyDetails
+                details: $detailCollection
             );
         } catch (Throwable) {
             return null;

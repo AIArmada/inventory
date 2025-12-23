@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AIArmada\FilamentJnt\Resources;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
+use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use UnitEnum;
 
 abstract class BaseJntResource extends Resource
@@ -26,9 +28,26 @@ abstract class BaseJntResource extends Resource
         return config('filament-jnt.resources.navigation_sort.' . static::navigationSortKey());
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return (Filament::auth()?->user() !== null) && parent::shouldRegisterNavigation();
+    }
+
     final public static function getNavigationBadge(): ?string
     {
-        $count = static::getEloquentQuery()->count();
+        if (Filament::auth()?->user() === null) {
+            return null;
+        }
+
+        $owner = (bool) config('jnt.owner.enabled', false) ? OwnerContext::resolve() : null;
+        $ownerKey = $owner instanceof Model
+            ? $owner->getMorphClass() . ':' . (string) $owner->getKey()
+            : 'none';
+
+        $includeGlobal = (bool) config('jnt.owner.include_global', false);
+        $cacheKey = 'filament-jnt:nav-badge:' . static::class . ':' . $ownerKey . ':' . ($includeGlobal ? '1' : '0');
+
+        $count = Cache::remember($cacheKey, now()->addSeconds(30), fn (): int => static::getEloquentQuery()->count());
 
         return $count > 0 ? (string) $count : null;
     }

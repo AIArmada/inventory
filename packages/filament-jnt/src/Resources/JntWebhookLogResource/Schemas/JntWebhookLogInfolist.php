@@ -75,23 +75,26 @@ final class JntWebhookLogInfolist
                         ->placeholder('—'),
                     TextEntry::make('headers')
                         ->label('Headers')
-                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))
+                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '')
                         ->visible(fn (JntWebhookLog $record): bool => filled($record->headers))
                         ->columnSpanFull(),
                 ])
                 ->collapsible()
-                ->collapsed(),
+                ->collapsed()
+                ->visible(fn (JntWebhookLog $record): bool => (bool) config('filament-jnt.features.show_raw_payloads', false)
+                    && (filled($record->digest) || filled($record->headers))),
 
             Section::make('Payload')
                 ->schema([
                     TextEntry::make('payload')
                         ->label('Payload JSON')
-                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))
+                        ->formatStateUsing(fn ($state) => json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '')
                         ->visible(fn (JntWebhookLog $record): bool => filled($record->payload))
                         ->columnSpanFull(),
                 ])
                 ->collapsible()
-                ->collapsed(),
+                ->collapsed()
+                ->visible(fn (JntWebhookLog $record): bool => (bool) config('filament-jnt.features.show_raw_payloads', false) && filled($record->payload)),
 
             Section::make('Related Order')
                 ->schema([

@@ -19,11 +19,13 @@ it('generates correct signature digest', function (): void {
 
     $digest = $method->invoke($client, $bizContent);
 
+    $expected = base64_encode(md5($bizContent . '8e88c8477d4e4939859c560192fcafbc', true));
+
     expect($digest)->toBeString()
-        ->and(mb_strlen((string) $digest))->toBeGreaterThan(0);
+        ->and($digest)->toBe($expected);
 });
 
-it('verifies webhook signature correctly', function (): void {
+it('generates a digest that does not match random strings', function (): void {
     $client = new JntClient(
         baseUrl: 'https://demoopenapi.jtexpress.my/webopenplatformapi',
         apiAccount: '640826271705595946',
@@ -38,19 +40,5 @@ it('verifies webhook signature correctly', function (): void {
 
     $digest = $method->invoke($client, $bizContent);
 
-    expect($client->verifyWebhookSignature($bizContent, $digest))->toBeTrue();
-});
-
-it('rejects invalid webhook signature', function (): void {
-    $client = new JntClient(
-        baseUrl: 'https://demoopenapi.jtexpress.my/webopenplatformapi',
-        apiAccount: '640826271705595946',
-        privateKey: '8e88c8477d4e4939859c560192fcafbc',
-        config: []
-    );
-
-    $bizContent = '{"customerCode":"ITTEST0001","txlogisticId":"TEST123"}';
-    $invalidDigest = 'invalid_digest_string';
-
-    expect($client->verifyWebhookSignature($bizContent, $invalidDigest))->toBeFalse();
+    expect($digest)->not->toBe('invalid_digest_string');
 });

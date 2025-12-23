@@ -109,9 +109,11 @@ class JntClient
 
             // Check for API-level errors
             if (isset($data['code']) && (string) $data['code'] !== '1') {
-                throw JntApiException::orderCreationFailed(
-                    $data['msg'] ?? 'API request failed',
-                    $data
+                throw new JntApiException(
+                    message: 'J&T API request failed: ' . ($data['msg'] ?? 'Unknown error'),
+                    errorCode: (string) $data['code'],
+                    apiResponse: $data,
+                    endpoint: $endpoint,
                 );
             }
 
@@ -119,13 +121,6 @@ class JntClient
         } catch (ConnectionException $connectionException) {
             throw JntNetworkException::connectionFailed($endpoint, $connectionException);
         }
-    }
-
-    public function verifyWebhookSignature(string $bizContent, string $digest): bool
-    {
-        $expectedDigest = $this->generateDigest($bizContent);
-
-        return hash_equals($expectedDigest, $digest);
     }
 
     protected function shouldRetry(mixed $exception): bool
@@ -169,11 +164,27 @@ class JntClient
         $channel = $this->config['logging']['channel'] ?? 'stack';
         $level = $this->config['logging']['level'] ?? 'info';
 
-        Log::channel($channel)->log($level, 'J&T API Response', [
+        $payload = [
             'status' => $response->status(),
             'successful' => $response->successful(),
-            'body' => mb_substr($response->body(), 0, 500),
-        ]);
+        ];
+
+        $json = $response->json();
+
+        if (is_array($json)) {
+            $payload['code'] = $json['code'] ?? null;
+            $payload['msg'] = $json['msg'] ?? null;
+
+            if (isset($json['data']) && is_array($json['data'])) {
+                $payload['data_keys'] = array_keys($json['data']);
+            }
+        } else {
+            $body = $response->body();
+            $payload['body_length'] = mb_strlen($body);
+            $payload['body_sha256'] = hash('sha256', $body);
+        }
+
+        Log::channel($channel)->log($level, 'J&T API Response', $payload);
     }
 
     /**
@@ -182,14 +193,53 @@ class JntClient
      */
     protected function maskSensitiveData(array $data): array
     {
-        $masked = $data;
+        return $this->maskSensitiveDataRecursive($data);
+    }
 
-        if (isset($masked['password'])) {
-            $masked['password'] = '***MASKED***';
-        }
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function maskSensitiveDataRecursive(array $data): array
+    {
+        $masked = [];
 
-        if (isset($masked['customerCode'])) {
-            $masked['customerCode'] = mb_substr((string) $masked['customerCode'], 0, 3) . '***';
+        foreach ($data as $key => $value) {
+            $keyString = is_string($key) ? mb_strtolower($key) : '';
+
+            if (in_array($keyString, ['password', 'private_key', 'digest', 'signature'], true)) {
+                $masked[$key] = '***MASKED***';
+                continue;
+            }
+
+            if (in_array($keyString, ['customer_code', 'customercode', 'apiaccount', 'api_account'], true)) {
+                $asString = (string) $value;
+                $masked[$key] = $asString === '' ? '' : mb_substr($asString, 0, 3) . '***';
+                continue;
+            }
+
+            if (in_array($keyString, ['phone', 'mobile', 'tel', 'telephone'], true)) {
+                $asString = preg_replace('/\D+/', '', (string) $value) ?? '';
+                $masked[$key] = $asString === '' ? '' : '***' . mb_substr($asString, -2);
+                continue;
+            }
+
+            if (in_array($keyString, ['email'], true)) {
+                $masked[$key] = '***MASKED***';
+                continue;
+            }
+
+            if (in_array($keyString, ['address', 'addr', 'postcode', 'post_code', 'postal_code'], true)) {
+                $masked[$key] = '***MASKED***';
+                continue;
+            }
+
+            if (is_array($value)) {
+                $masked[$key] = $this->maskSensitiveDataRecursive($value);
+                continue;
+            }
+
+            $masked[$key] = $value;
         }
 
         return $masked;

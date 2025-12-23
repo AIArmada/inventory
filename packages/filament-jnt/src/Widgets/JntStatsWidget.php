@@ -11,22 +11,24 @@ use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 final class JntStatsWidget extends BaseWidget
 {
     protected function getStats(): array
     {
-        $query = $this->ordersQuery();
+        $stats = Cache::remember(
+            $this->statsCacheKey(),
+            now()->addSeconds(30),
+            fn (): array => $this->calculateOrderStats()
+        );
 
-        $totalOrders = (clone $query)->count();
-        $deliveredCount = (clone $query)->whereNotNull('delivered_at')->count();
-        $inTransitCount = (clone $query)->whereNull('delivered_at')
-            ->whereNotNull('tracking_number')
-            ->where('has_problem', false)
-            ->count();
-        $problemCount = (clone $query)->where('has_problem', true)->count();
-        $pendingCount = (clone $query)->whereNull('tracking_number')->count();
-        $returningCount = (clone $query)->whereIn('last_status_code', ['172', '173'])->count();
+        $totalOrders = (int) ($stats['total'] ?? 0);
+        $deliveredCount = (int) ($stats['delivered'] ?? 0);
+        $inTransitCount = (int) ($stats['in_transit'] ?? 0);
+        $problemCount = (int) ($stats['problems'] ?? 0);
+        $pendingCount = (int) ($stats['pending'] ?? 0);
+        $returningCount = (int) ($stats['returns'] ?? 0);
 
         $deliveryRate = $totalOrders > 0
             ? round(($deliveredCount / $totalOrders) * 100, 1)
@@ -75,21 +77,55 @@ final class JntStatsWidget extends BaseWidget
      */
     private function ordersQuery(): Builder
     {
-        $owner = $this->resolveOwner();
-        $includeGlobal = (bool) config('jnt.owner.include_global', false);
-
         /** @var Builder<JntOrder> $query */
-        $query = JntOrder::query()->forOwner($owner, $includeGlobal);
+        $query = JntOrder::query();
 
-        return $query;
-    }
-
-    private function resolveOwner(): ?Model
-    {
         if (! (bool) config('jnt.owner.enabled', false)) {
-            return null;
+            return $query;
         }
 
-        return OwnerContext::resolve();
+        $owner = OwnerContext::resolve();
+        $includeGlobal = (bool) config('jnt.owner.include_global', false);
+
+        return $query->forOwner($owner, $includeGlobal);
+    }
+
+    private function statsCacheKey(): string
+    {
+        $owner = (bool) config('jnt.owner.enabled', false) ? OwnerContext::resolve() : null;
+        $ownerKey = $owner instanceof Model
+            ? $owner->getMorphClass() . ':' . (string) $owner->getKey()
+            : 'none';
+
+        $includeGlobal = (bool) config('jnt.owner.include_global', false);
+
+        return 'filament-jnt:widget:stats:' . $ownerKey . ':' . ($includeGlobal ? '1' : '0');
+    }
+
+    /**
+     * @return array{total:int, delivered:int, in_transit:int, problems:int, pending:int, returns:int}
+     */
+    private function calculateOrderStats(): array
+    {
+        $query = $this->ordersQuery();
+
+        /** @var JntOrder|null $row */
+        $row = (clone $query)
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(CASE WHEN delivered_at IS NOT NULL THEN 1 ELSE 0 END) as delivered')
+            ->selectRaw("SUM(CASE WHEN delivered_at IS NULL AND tracking_number IS NOT NULL AND has_problem = 0 THEN 1 ELSE 0 END) as in_transit")
+            ->selectRaw('SUM(CASE WHEN has_problem = 1 THEN 1 ELSE 0 END) as problems')
+            ->selectRaw('SUM(CASE WHEN tracking_number IS NULL THEN 1 ELSE 0 END) as pending')
+            ->selectRaw("SUM(CASE WHEN last_status_code IN ('172','173') THEN 1 ELSE 0 END) as returns")
+            ->first();
+
+        return [
+            'total' => (int) ($row?->getAttribute('total') ?? 0),
+            'delivered' => (int) ($row?->getAttribute('delivered') ?? 0),
+            'in_transit' => (int) ($row?->getAttribute('in_transit') ?? 0),
+            'problems' => (int) ($row?->getAttribute('problems') ?? 0),
+            'pending' => (int) ($row?->getAttribute('pending') ?? 0),
+            'returns' => (int) ($row?->getAttribute('returns') ?? 0),
+        ];
     }
 }

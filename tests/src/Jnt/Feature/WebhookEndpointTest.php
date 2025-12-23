@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-use AIArmada\Jnt\Events\TrackingStatusReceived;
 use AIArmada\Jnt\Services\WebhookService;
-use Illuminate\Support\Facades\Event;
+use AIArmada\Jnt\Webhooks\ProcessJntWebhook;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
+use Spatie\WebhookClient\Models\WebhookCall;
 
 describe('Webhook Endpoint', function (): void {
     beforeEach(function (): void {
@@ -17,7 +18,7 @@ describe('Webhook Endpoint', function (): void {
     });
 
     it('accepts valid webhook with correct signature', function (): void {
-        Event::fake();
+        Queue::fake();
 
         $bizContent = json_encode([
             'billCode' => 'JNTMY12345678',
@@ -56,11 +57,12 @@ describe('Webhook Endpoint', function (): void {
                 'requestId',
             ]);
 
-        Event::assertDispatched(TrackingStatusReceived::class);
+        Queue::assertPushed(ProcessJntWebhook::class);
+        expect(WebhookCall::query()->where('name', 'jnt.webhooks.status')->count())->toBe(1);
     });
 
     it('rejects webhook with invalid signature', function (): void {
-        Event::fake();
+        Queue::fake();
 
         $bizContent = json_encode([
             'billCode' => 'JNTMY12345678',
@@ -81,11 +83,11 @@ describe('Webhook Endpoint', function (): void {
                 'msg' => 'Invalid signature',
             ]);
 
-        Event::assertNotDispatched(TrackingStatusReceived::class);
+        Queue::assertNothingPushed();
     });
 
     it('rejects webhook without digest header', function (): void {
-        Event::fake();
+        Queue::fake();
 
         $bizContent = json_encode([
             'billCode' => 'JNTMY12345678',
@@ -102,11 +104,11 @@ describe('Webhook Endpoint', function (): void {
                 'msg' => 'Invalid signature',
             ]);
 
-        Event::assertNotDispatched(TrackingStatusReceived::class);
+        Queue::assertNothingPushed();
     });
 
     it('rejects webhook with missing bizContent', function (): void {
-        Event::fake();
+        Queue::fake();
 
         // Even with a valid signature, missing bizContent fails signature verification
         // because signature verification happens in middleware before controller
@@ -124,11 +126,11 @@ describe('Webhook Endpoint', function (): void {
                 'msg' => 'Invalid signature',
             ]);
 
-        Event::assertNotDispatched(TrackingStatusReceived::class);
+        Queue::assertNothingPushed();
     });
 
     it('rejects webhook with invalid JSON in bizContent', function (): void {
-        Event::fake();
+        Queue::fake();
 
         $bizContent = 'invalid-json';
         $signature = base64_encode(md5($bizContent . $this->privateKey, true));
@@ -145,11 +147,11 @@ describe('Webhook Endpoint', function (): void {
                 'msg' => 'Invalid payload',
             ]);
 
-        Event::assertNotDispatched(TrackingStatusReceived::class);
+        Queue::assertNothingPushed();
     });
 
     it('rejects webhook with missing billCode in bizContent', function (): void {
-        Event::fake();
+        Queue::fake();
 
         $bizContent = json_encode([
             'details' => [],
@@ -169,11 +171,11 @@ describe('Webhook Endpoint', function (): void {
                 'msg' => 'Invalid payload',
             ]);
 
-        Event::assertNotDispatched(TrackingStatusReceived::class);
+        Queue::assertNothingPushed();
     });
 
     it('handles multiple tracking details correctly', function (): void {
-        Event::fake();
+        Queue::fake();
 
         $bizContent = json_encode([
             'billCode' => 'JNTMY12345678',
@@ -220,14 +222,20 @@ describe('Webhook Endpoint', function (): void {
                 'msg' => 'success',
             ]);
 
-        Event::assertDispatched(TrackingStatusReceived::class, fn ($event): bool => $event->webhookData->billCode === 'JNTMY12345678'
-            && count($event->webhookData->details) === 3
-            && $event->getLatestStatus() === '派件');
+        Queue::assertPushed(ProcessJntWebhook::class);
+
+        $call = WebhookCall::query()->where('name', 'jnt.webhooks.status')->latest('id')->firstOrFail();
+        $decoded = json_decode((string) ($call->payload['bizContent'] ?? ''), true);
+
+        expect($decoded['billCode'] ?? null)->toBe('JNTMY12345678');
+        expect($decoded['details'] ?? null)->toBeArray();
+        expect(count($decoded['details']))->toBe(3);
+        expect($decoded['details'][2]['scanType'] ?? null)->toBe('派件');
     });
 
     it('logs webhook reception when logging is enabled', function (): void {
         Log::spy();
-        Event::fake();
+        Queue::fake();
 
         config(['jnt.webhooks.log_payloads' => true]);
 
@@ -262,7 +270,7 @@ describe('Webhook Endpoint', function (): void {
 
     it('does not log webhook when logging is disabled', function (): void {
         Log::spy();
-        Event::fake();
+        Queue::fake();
 
         config(['jnt.webhooks.log_payloads' => false]);
 
@@ -292,7 +300,7 @@ describe('Webhook Endpoint', function (): void {
 
     it('logs warnings for signature verification failures', function (): void {
         Log::spy();
-        Event::fake();
+        Queue::fake();
 
         $bizContent = json_encode([
             'billCode' => 'JNTMY12345678',
@@ -311,7 +319,7 @@ describe('Webhook Endpoint', function (): void {
     });
 
     it('handles webhook with optional txlogisticId', function (): void {
-        Event::fake();
+        Queue::fake();
 
         $bizContent = json_encode([
             'billCode' => 'JNTMY12345678',
@@ -336,11 +344,16 @@ describe('Webhook Endpoint', function (): void {
 
         $response->assertOk();
 
-        Event::assertDispatched(TrackingStatusReceived::class, fn ($event): bool => $event->webhookData->txlogisticId === null);
+        Queue::assertPushed(ProcessJntWebhook::class);
+
+        $call = WebhookCall::query()->where('name', 'jnt.webhooks.status')->latest('id')->firstOrFail();
+        $decoded = json_decode((string) ($call->payload['bizContent'] ?? ''), true);
+
+        expect($decoded['txlogisticId'] ?? null)->toBeNull();
     });
 
     it('returns unique requestId for each webhook', function (): void {
-        Event::fake();
+        Queue::fake();
 
         $bizContent = json_encode([
             'billCode' => 'JNTMY12345678',

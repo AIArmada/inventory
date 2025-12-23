@@ -17,13 +17,13 @@ class WebhookTestCommand extends Command
 
     public function handle(WebhookService $webhookService): int
     {
-        $url = $this->option('url') ?: config('jnt.webhook.url', route('jnt.webhook'));
+        $url = $this->option('url')
+            ?: config('jnt.webhook.url', route('jnt.webhooks.status'));
 
         $this->info('Testing webhook endpoint: ' . $url);
 
         // Generate sample webhook payload
         $samplePayload = [
-            'digest' => '',
             'bizContent' => json_encode([
                 'billCode' => 'TEST' . time(),
                 'txlogisticId' => 'TEST-ORDER-' . time(),
@@ -38,22 +38,42 @@ class WebhookTestCommand extends Command
         ];
 
         // Generate signature
-        $signature = $webhookService->generateSignature($samplePayload['bizContent']);
-        $samplePayload['digest'] = $signature;
+        $signature = $webhookService->generateSignature((string) $samplePayload['bizContent']);
 
         try {
             $this->line('Sending test webhook...');
 
-            $response = Http::post($url, $samplePayload);
+            $response = Http::withHeaders(['digest' => $signature])
+                ->post($url, $samplePayload);
+
+            $this->line('Status: ' . $response->status());
+
+            $json = $response->json();
+            if (is_array($json)) {
+                $code = $json['code'] ?? null;
+                $msg = $json['msg'] ?? null;
+
+                $this->line('Response summary: ' . json_encode([
+                    'code' => $code,
+                    'msg' => $msg,
+                ]));
+            } else {
+                $body = $response->body();
+
+                $this->line('Response summary: ' . json_encode([
+                    'body_length' => mb_strlen($body),
+                    'body_sha256' => hash('sha256', $body),
+                ]));
+
+                if ($this->output->isVerbose()) {
+                    $this->line('Response (truncated): ' . mb_substr($body, 0, 500));
+                }
+            }
 
             if ($response->successful()) {
                 $this->info('✓ Webhook test successful!');
-                $this->line('Status: ' . $response->status());
-                $this->line('Response: ' . $response->body());
             } else {
                 $this->error('✗ Webhook test failed!');
-                $this->line('Status: ' . $response->status());
-                $this->line('Response: ' . $response->body());
 
                 return self::FAILURE;
             }

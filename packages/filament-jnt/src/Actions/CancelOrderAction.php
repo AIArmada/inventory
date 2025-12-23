@@ -13,7 +13,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Facades\Auth;
+use Filament\Facades\Filament;
 use Throwable;
 
 final class CancelOrderAction
@@ -25,7 +25,7 @@ final class CancelOrderAction
             ->icon(Heroicon::XCircle)
             ->color('danger')
             ->requiresConfirmation()
-            ->authorize(fn (): bool => Auth::check())
+            ->authorize(fn (): bool => Filament::auth()?->check() ?? false)
             ->modalHeading('Cancel J&T Order')
             ->modalDescription('This will cancel the order with J&T Express. This action cannot be undone.')
             ->modalSubmitActionLabel('Cancel Order')
@@ -43,10 +43,33 @@ final class CancelOrderAction
                     ->visible(fn (callable $get): bool => $get('reason') === CancellationReason::OTHER->value),
             ])
             ->action(function (JntOrder $record, array $data): void {
-                if (Auth::user() === null) {
+                if (Filament::auth()?->user() === null) {
                     Notification::make()
                         ->title('Authentication Required')
                         ->body('Please sign in to cancel orders.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                $reasonValue = trim((string) ($data['reason'] ?? ''));
+                $customReason = trim((string) ($data['custom_reason'] ?? ''));
+
+                if ($reasonValue === '') {
+                    Notification::make()
+                        ->title('Invalid Request')
+                        ->body('Please select a cancellation reason.')
+                        ->danger()
+                        ->send();
+
+                    return;
+                }
+
+                if ($reasonValue === CancellationReason::OTHER->value && $customReason === '') {
+                    Notification::make()
+                        ->title('Additional Details Required')
+                        ->body('Please provide additional details for the selected cancellation reason.')
                         ->danger()
                         ->send();
 
@@ -66,11 +89,10 @@ final class CancelOrderAction
                 try {
                     $jntService = app(JntExpressService::class);
 
-                    $reasonValue = (string) ($data['reason'] ?? '');
                     $reason = CancellationReason::tryFrom($reasonValue) ?? $reasonValue;
 
-                    if ($reason === CancellationReason::OTHER && ! empty($data['custom_reason'])) {
-                        $reasonString = $data['custom_reason'];
+                    if ($reason === CancellationReason::OTHER) {
+                        $reasonString = $customReason;
                     } else {
                         $reasonString = $reason instanceof CancellationReason ? $reason->getDescription() : (string) $reason;
                     }

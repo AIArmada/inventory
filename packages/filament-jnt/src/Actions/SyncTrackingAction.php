@@ -8,9 +8,9 @@ use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Jnt\Models\JntOrder;
 use AIArmada\Jnt\Services\JntTrackingService;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Facades\Auth;
 use Throwable;
 
 final class SyncTrackingAction
@@ -22,12 +22,12 @@ final class SyncTrackingAction
             ->icon(Heroicon::ArrowPath)
             ->color('info')
             ->requiresConfirmation()
-            ->authorize(fn (): bool => Auth::check())
+            ->authorize(fn (): bool => Filament::auth()?->check() ?? false)
             ->modalHeading('Sync Tracking Information')
             ->modalDescription('This will fetch the latest tracking information from J&T Express. Continue?')
             ->modalSubmitActionLabel('Sync Now')
             ->action(function (JntOrder $record): void {
-                if (Auth::user() === null) {
+                if (Filament::auth()?->user() === null) {
                     Notification::make()
                         ->title('Authentication Required')
                         ->body('Please sign in to sync tracking.')

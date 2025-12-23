@@ -116,3 +116,29 @@ it('builds stats and respects owner scoping', function (): void {
     expect($globalDelivered)->not()->toBeNull();
     expect($stats[0]->getValue())->toBe($expectedTotal);
 });
+
+it('builds stats without owner scoping when owner mode is disabled', function (): void {
+    config()->set('jnt.owner.enabled', false);
+    config()->set('jnt.owner.include_global', false);
+
+    JntOrder::query()->create([
+        'order_id' => 'ORD-1',
+        'customer_code' => 'CUST',
+        'delivered_at' => null,
+        'has_problem' => false,
+    ]);
+
+    JntOrder::query()->create([
+        'order_id' => 'ORD-2',
+        'customer_code' => 'CUST',
+        'tracking_number' => 'TRK-2',
+        'delivered_at' => now(),
+        'has_problem' => false,
+    ]);
+
+    $widget = app(JntStatsWidget::class);
+    $stats = filamentJnt_invokeProtected($widget, 'getStats');
+
+    expect($stats)->toHaveCount(6);
+    expect($stats[0]->getValue())->toBe(2);
+});

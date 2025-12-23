@@ -84,24 +84,7 @@ final class JntTrackingEventTable
                     ->label('Status')
                     ->options(TrackingStatus::class)
                     ->query(function (Builder $query, array $data): Builder {
-                        if (empty($data['value'])) {
-                            return $query;
-                        }
-
-                        $status = TrackingStatus::from($data['value']);
-
-                        return match ($status) {
-                            TrackingStatus::Pending => $query->whereNull('scan_type_code'),
-                            TrackingStatus::Delivered => $query->where('scan_type_code', '100'),
-                            TrackingStatus::Exception => $query->whereNotNull('problem_type'),
-                            TrackingStatus::InTransit => $query->whereIn('scan_type_code', ['20', '30', '401', '402']),
-                            TrackingStatus::AtHub => $query->whereIn('scan_type_code', ['403', '404', '405']),
-                            TrackingStatus::OutForDelivery => $query->where('scan_type_code', '94'),
-                            TrackingStatus::PickedUp => $query->whereIn('scan_type_code', ['10', '400']),
-                            TrackingStatus::ReturnInitiated => $query->where('scan_type_code', '172'),
-                            TrackingStatus::Returned => $query->where('scan_type_code', '173'),
-                            TrackingStatus::DeliveryAttempted => $query->where('scan_type_code', '110'),
-                        };
+                        return self::applyNormalizedStatusFilter($query, $data['value'] ?? null);
                     }),
                 Filter::make('has_problem')
                     ->label('Has Problem')
@@ -120,5 +103,31 @@ final class JntTrackingEventTable
             ->defaultSort('scan_time', 'desc')
             ->paginated([25, 50, 100])
             ->poll(config('filament-jnt.polling_interval', '30s'));
+    }
+
+    public static function applyNormalizedStatusFilter(Builder $query, mixed $value): Builder
+    {
+        if (! is_string($value) || $value === '') {
+            return $query;
+        }
+
+        $status = TrackingStatus::tryFrom($value);
+
+        if ($status === null) {
+            return $query;
+        }
+
+        return match ($status) {
+            TrackingStatus::Pending => $query->whereNull('scan_type_code'),
+            TrackingStatus::Delivered => $query->where('scan_type_code', '100'),
+            TrackingStatus::Exception => $query->whereNotNull('problem_type'),
+            TrackingStatus::InTransit => $query->whereIn('scan_type_code', ['20', '30', '401', '402']),
+            TrackingStatus::AtHub => $query->whereIn('scan_type_code', ['403', '404', '405']),
+            TrackingStatus::OutForDelivery => $query->where('scan_type_code', '94'),
+            TrackingStatus::PickedUp => $query->whereIn('scan_type_code', ['10', '400']),
+            TrackingStatus::ReturnInitiated => $query->where('scan_type_code', '172'),
+            TrackingStatus::Returned => $query->where('scan_type_code', '173'),
+            TrackingStatus::DeliveryAttempted => $query->where('scan_type_code', '110'),
+        };
     }
 }

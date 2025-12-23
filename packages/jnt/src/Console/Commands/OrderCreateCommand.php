@@ -86,7 +86,7 @@ class OrderCreateCommand extends Command
                 ['Field', 'Value'],
                 [
                     ['Order ID', $order->orderId],
-                    ['Tracking Number', $order->txlogisticId ?? 'N/A'],
+                    ['Tracking Number', $order->trackingNumber ?? 'N/A'],
                     ['Status', 'Created'],
                 ]
             );

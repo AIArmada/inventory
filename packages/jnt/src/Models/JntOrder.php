@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Jnt\Models;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use InvalidArgumentException;
 
 /**
  * @property string $id
@@ -139,13 +141,30 @@ final class JntOrder extends Model
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
+    public function scopeForOwner(Builder $query, Model | string | null $owner = OwnerContext::CURRENT, bool $includeGlobal = false): Builder
     {
         if (! config('jnt.owner.enabled', false)) {
             return $query;
         }
 
-        $owner ??= $this->resolveOwner();
+        if ($owner === OwnerContext::CURRENT) {
+            $owner = $this->resolveOwner();
+        }
+
+        if (is_string($owner)) {
+            throw new InvalidArgumentException('Owner must be an Eloquent model, null, or omitted.');
+        }
+
+        if ($owner === null) {
+            if (! (bool) config('jnt.owner.include_global', false)) {
+                return $query->whereRaw('0 = 1');
+            }
+
+            /** @var Builder<static> $globalOnly */
+            $globalOnly = $this->baseScopeForOwner($query, null, false);
+
+            return $globalOnly;
+        }
 
         $includeGlobal = $includeGlobal && (bool) config('jnt.owner.include_global', false);
 
@@ -230,6 +249,12 @@ final class JntOrder extends Model
             }
 
             if (! config('jnt.owner.auto_assign_on_create', true)) {
+                return;
+            }
+
+            $attributes = $order->getAttributes();
+
+            if (array_key_exists('owner_type', $attributes) || array_key_exists('owner_id', $attributes)) {
                 return;
             }
 

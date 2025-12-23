@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Jnt\Webhooks;
 
 use AIArmada\CommerceSupport\Webhooks\CommerceWebhookProfile;
+use AIArmada\Jnt\Exceptions\JntValidationException;
 use Illuminate\Http\Request;
 
 /**
@@ -17,27 +18,26 @@ class JntWebhookProfile extends CommerceWebhookProfile
      */
     public function shouldProcess(Request $request): bool
     {
-        // Only process if event type is present
-        $event = $request->input('event') ?? $request->input('event_type');
+        $bizContent = $request->input('bizContent');
 
-        if (empty($event)) {
+        if (! is_string($bizContent) || $bizContent === '') {
             return false;
         }
 
-        // Process all valid J&T events
-        $validPrefixes = [
-            'shipment.',
-            'tracking.',
-            'delivery.',
-            'pickup.',
-        ];
+        $decoded = json_decode($bizContent, true);
 
-        foreach ($validPrefixes as $prefix) {
-            if (str_starts_with($event, $prefix)) {
-                return true;
-            }
+        if (! is_array($decoded)) {
+            throw JntValidationException::invalidFormat('bizContent', 'valid JSON', $bizContent);
         }
 
-        return false;
+        if (! isset($decoded['billCode'])) {
+            throw JntValidationException::requiredFieldMissing('billCode');
+        }
+
+        if (! isset($decoded['details']) || ! is_array($decoded['details'])) {
+            throw JntValidationException::invalidFieldValue('details', 'array', gettype($decoded['details'] ?? null));
+        }
+
+        return true;
     }
 }

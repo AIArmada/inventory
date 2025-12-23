@@ -12,7 +12,10 @@ use Illuminate\Console\Command;
 
 class OrderCancelCommand extends Command
 {
-    protected $signature = 'jnt:order:cancel {order-id : Order ID to cancel} {--reason= : Cancellation reason}';
+    protected $signature = 'jnt:order:cancel
+                          {order-id : Order ID to cancel}
+                          {--reason= : Cancellation reason}
+                          {--tracking-number= : Optional tracking number (billCode)}';
 
     protected $description = 'Cancel a J&T Express order';
 
@@ -20,6 +23,7 @@ class OrderCancelCommand extends Command
     {
         $orderId = $this->argument('order-id');
         $reasonInput = $this->option('reason');
+        $trackingNumber = $this->option('tracking-number');
 
         // If no reason provided, ask for it
         if (! $reasonInput) {
@@ -40,7 +44,11 @@ class OrderCancelCommand extends Command
         }
 
         try {
-            $jnt->cancelOrder($orderId, $reason);
+            if (is_string($trackingNumber) && $trackingNumber !== '') {
+                $jnt->cancelOrder((string) $orderId, $reason, $trackingNumber);
+            } else {
+                $jnt->cancelOrder((string) $orderId, $reason);
+            }
 
             $this->info('✓ Order cancelled successfully!');
 

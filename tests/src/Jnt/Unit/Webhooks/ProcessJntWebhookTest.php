@@ -14,7 +14,28 @@ use Illuminate\Support\Facades\Event;
 use Spatie\WebhookClient\Models\WebhookCall;
 
 describe('ProcessJntWebhook', function (): void {
-    it('extracts event type from scantype field', function (): void {
+    it('extracts event type from latest detail scanType when bizContent is present', function (): void {
+        $webhookCall = Mockery::mock(WebhookCall::class)->makePartial();
+
+        $processor = new ProcessJntWebhook($webhookCall);
+
+        $reflection = new ReflectionClass($processor);
+        $method = $reflection->getMethod('extractEventType');
+        $method->setAccessible(true);
+
+        $payload = [
+            'bizContent' => json_encode([
+                'billCode' => 'JNTMY123',
+                'details' => [
+                    ['scanType' => 'PICKUP'],
+                ],
+            ]),
+        ];
+
+        expect($method->invoke($processor, $payload))->toBe('PICKUP');
+    });
+
+    it('falls back to scantype/event/type fields when bizContent is missing', function (): void {
         $webhookCall = Mockery::mock(WebhookCall::class)->makePartial();
 
         $processor = new ProcessJntWebhook($webhookCall);
@@ -159,8 +180,10 @@ describe('ProcessJntWebhook', function (): void {
 
         $webhookCall = Mockery::mock(WebhookCall::class)->makePartial();
         $webhookCall->payload = [
-            'billcode' => 'UNKNOWN123',
-            'scantype' => 'TRANSIT',
+            'bizContent' => json_encode([
+                'billCode' => 'UNKNOWN123',
+                'details' => [],
+            ]),
         ];
 
         $processor = new ProcessJntWebhook($webhookCall);
@@ -169,8 +192,8 @@ describe('ProcessJntWebhook', function (): void {
         $method = $reflection->getMethod('processEvent');
         $method->setAccessible(true);
 
-        // Since there's no shipment with this billcode, it should dispatch TrackingUpdated
-        $method->invoke($processor, 'TRANSIT', ['billcode' => 'UNKNOWN123', 'scantype' => 'TRANSIT']);
+        // Since there's no shipment with this billCode, it should dispatch TrackingUpdated
+        $method->invoke($processor, 'TRANSIT', $webhookCall->payload);
 
         Event::assertDispatched(TrackingUpdated::class);
     });

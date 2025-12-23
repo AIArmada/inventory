@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\Validator;
 
 class OrderBuilder
 {
-    protected string $orderId;
+    protected ?string $orderId = null;
 
     protected ExpressType | string $expressType = 'EZ';
 
@@ -347,7 +347,7 @@ class OrderBuilder
     protected function buildValidationData(): array
     {
         $data = [
-            'order_id' => $this->orderId ?? null,
+            'order_id' => $this->orderId,
             'sender' => $this->sender,
             'receiver' => $this->receiver,
             'items' => [],

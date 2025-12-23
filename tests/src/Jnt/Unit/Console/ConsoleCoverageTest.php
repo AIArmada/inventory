@@ -29,6 +29,24 @@ describe('OrderCancelCommand', function (): void {
             ->assertExitCode(0);
     });
 
+    it('cancels order with an explicit tracking number', function (): void {
+        $jntService = Mockery::mock(JntExpressService::class);
+        $jntService->shouldReceive('cancelOrder')
+            ->once()
+            ->with('ORDER123', CancellationReason::CUSTOMER_REQUEST, 'JNTTRACK123')
+            ->andReturn(['success' => true]);
+
+        $this->instance(JntExpressService::class, $jntService);
+
+        $this->artisan('jnt:order:cancel', [
+            'order-id' => 'ORDER123',
+            '--reason' => 'customer_request',
+            '--tracking-number' => 'JNTTRACK123',
+        ])
+            ->expectsConfirmation('Cancel order ORDER123?', 'yes')
+            ->assertExitCode(0);
+    });
+
     it('cancels order by selecting reason interactively', function (): void {
         $jntService = Mockery::mock(JntExpressService::class);
         $jntService->shouldReceive('cancelOrder')
@@ -92,6 +110,22 @@ describe('OrderPrintCommand', function (): void {
             ->assertExitCode(0);
     });
 
+    it('prints waybill with an explicit tracking number', function (): void {
+        $jntService = Mockery::mock(JntExpressService::class);
+        $jntService->shouldReceive('printOrder')
+            ->once()
+            ->with('ORDER123', 'JNTTRACK123')
+            ->andReturn(['urlContent' => 'https://example.com/waybill.pdf']);
+
+        $this->instance(JntExpressService::class, $jntService);
+
+        $this->artisan('jnt:order:print', [
+            'order-id' => 'ORDER123',
+            '--tracking-number' => 'JNTTRACK123',
+        ])
+            ->assertExitCode(0);
+    });
+
     it('handles API errors gracefully', function (): void {
         $jntService = Mockery::mock(JntExpressService::class);
         $jntService->shouldReceive('printOrder')
@@ -131,6 +165,31 @@ describe('OrderTrackCommand', function (): void {
         $this->instance(JntExpressService::class, $jntService);
 
         $this->artisan('jnt:order:track', ['order-id' => 'ORDER123'])
+            ->assertExitCode(0);
+    });
+
+    it('tracks by tracking number when the flag is provided', function (): void {
+        /** @var DataCollection<int, TrackingDetailData> $details */
+        $details = TrackingDetailData::collect([], DataCollection::class);
+
+        $trackingData = new TrackingData(
+            trackingNumber: 'JNTTRACK123',
+            orderId: null,
+            details: $details,
+        );
+
+        $jntService = Mockery::mock(JntExpressService::class);
+        $jntService->shouldReceive('trackParcel')
+            ->once()
+            ->with(null, 'JNTTRACK123')
+            ->andReturn($trackingData);
+
+        $this->instance(JntExpressService::class, $jntService);
+
+        $this->artisan('jnt:order:track', [
+            'order-id' => 'JNTTRACK123',
+            '--tracking-number' => true,
+        ])
             ->assertExitCode(0);
     });
 
@@ -181,6 +240,9 @@ describe('WebhookTestCommand', function (): void {
         $this->instance(WebhookService::class, $webhookService);
 
         $this->artisan('jnt:webhook:test', ['--url' => 'http://test.com/webhook'])
+            ->expectsOutputToContain('Status: 200')
+            ->doesntExpectOutputToContain('Response: OK')
+            ->doesntExpectOutputToContain('Response: ')
             ->assertExitCode(0);
     });
 
@@ -196,6 +258,9 @@ describe('WebhookTestCommand', function (): void {
         $this->instance(WebhookService::class, $webhookService);
 
         $this->artisan('jnt:webhook:test', ['--url' => 'http://test.com/webhook'])
+            ->expectsOutputToContain('Status: 500')
+            ->doesntExpectOutputToContain('Response: Error')
+            ->doesntExpectOutputToContain('Response: ')
             ->assertExitCode(1);
     });
 });

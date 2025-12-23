@@ -6,6 +6,8 @@ use AIArmada\Jnt\Services\JntExpressService;
 use AIArmada\Jnt\Services\JntStatusMapper;
 use AIArmada\Jnt\Services\JntTrackingService;
 use AIArmada\Jnt\Shipping\JntShippingDriver;
+use AIArmada\Jnt\Data\TrackingData as JntTrackingData;
+use AIArmada\Jnt\Enums\CancellationReason;
 use AIArmada\Shipping\Contracts\ShippingDriverInterface;
 use AIArmada\Shipping\Data\AddressData;
 use AIArmada\Shipping\Data\PackageData;
@@ -233,5 +235,51 @@ describe('validateAddress', function (): void {
 
         expect($result->valid)->toBeTrue();
         expect($result->warnings)->toContain('Address validation not available for J&T Express.');
+    });
+});
+
+describe('cancelShipment', function (): void {
+    it('cancels using resolved orderId when available', function (): void {
+        $tracking = JntTrackingData::make(trackingNumber: 'JNTTRACK123', details: [], orderId: 'ORDER123');
+
+        $this->jntService->shouldReceive('trackParcel')
+            ->once()
+            ->with(null, 'JNTTRACK123')
+            ->andReturn($tracking);
+
+        $this->jntService->shouldReceive('cancelOrder')
+            ->once()
+            ->with('ORDER123', CancellationReason::CUSTOMER_REQUEST, 'JNTTRACK123')
+            ->andReturn([]);
+
+        expect($this->driver->cancelShipment('JNTTRACK123'))->toBeTrue();
+    });
+
+    it('falls back to cancelling with tracking number when orderId cannot be resolved', function (): void {
+        $this->jntService->shouldReceive('trackParcel')
+            ->once()
+            ->with(null, 'JNTTRACK123')
+            ->andThrow(new \RuntimeException('Tracking unavailable'));
+
+        $this->jntService->shouldReceive('cancelOrder')
+            ->once()
+            ->with('JNTTRACK123', CancellationReason::CUSTOMER_REQUEST, 'JNTTRACK123')
+            ->andReturn([]);
+
+        expect($this->driver->cancelShipment('JNTTRACK123'))->toBeTrue();
+    });
+
+    it('returns false when the API indicates failure', function (): void {
+        $this->jntService->shouldReceive('trackParcel')
+            ->once()
+            ->with(null, 'JNTTRACK123')
+            ->andThrow(new \RuntimeException('Tracking unavailable'));
+
+        $this->jntService->shouldReceive('cancelOrder')
+            ->once()
+            ->with('JNTTRACK123', CancellationReason::CUSTOMER_REQUEST, 'JNTTRACK123')
+            ->andReturn(['success' => false]);
+
+        expect($this->driver->cancelShipment('JNTTRACK123'))->toBeFalse();
     });
 });

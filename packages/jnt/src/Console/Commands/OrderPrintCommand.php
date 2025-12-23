@@ -12,19 +12,25 @@ use Illuminate\Console\Command;
 
 class OrderPrintCommand extends Command
 {
-    protected $signature = 'jnt:order:print {order-id : Order ID to print} {--path=storage/waybills : Directory to save PDF}';
+    protected $signature = 'jnt:order:print
+                          {order-id : Order ID to print}
+                          {--tracking-number= : Optional tracking number (billCode)}
+                          {--path=storage/waybills : Directory to save PDF}';
 
     protected $description = 'Print waybill for a J&T Express order';
 
     public function handle(JntExpressService $jnt): int
     {
         $orderId = $this->argument('order-id');
+        $trackingNumber = $this->option('tracking-number');
         $path = $this->option('path');
 
         try {
             $this->line('Printing waybill for order: ' . $orderId);
 
-            $result = $jnt->printOrder($orderId);
+            $result = (is_string($trackingNumber) && $trackingNumber !== '')
+                ? $jnt->printOrder((string) $orderId, $trackingNumber)
+                : $jnt->printOrder((string) $orderId);
 
             $waybill = PrintWaybillData::fromApiArray($result);
 

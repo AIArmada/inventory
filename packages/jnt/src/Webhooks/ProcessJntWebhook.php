@@ -22,13 +22,64 @@ use Illuminate\Support\Facades\Log;
 class ProcessJntWebhook extends CommerceWebhookProcessor
 {
     /**
-     * Extract the event type from J&T payload.
-     *
      * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>
      */
+    protected function sanitizePayloadForLogging(array $payload): array
+    {
+        $sanitized = [
+            'payload_keys' => array_keys($payload),
+        ];
+
+        $bizContent = $payload['bizContent'] ?? null;
+
+        if (is_string($bizContent) && $bizContent !== '') {
+            $sanitized['bizContent_length'] = mb_strlen($bizContent);
+            $sanitized['bizContent_sha256'] = hash('sha256', $bizContent);
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @return array<string, mixed>|null
+     */
+    protected function decodeBizContent(array $payload): ?array
+    {
+        $bizContent = $payload['bizContent'] ?? null;
+
+        if (! is_string($bizContent) || $bizContent === '') {
+            return null;
+        }
+
+        $decoded = json_decode($bizContent, true);
+
+        return is_array($decoded) ? $decoded : null;
+    }
+
     protected function extractEventType(array $payload): string
     {
-        // J&T uses different field names
+        $biz = $this->decodeBizContent($payload);
+
+        if ($biz === null) {
+            return $payload['scantype'] ?? $payload['event'] ?? $payload['type'] ?? 'tracking.update';
+        }
+
+        $details = $biz['details'] ?? null;
+
+        if (is_array($details) && $details !== []) {
+            $last = end($details);
+
+            if (is_array($last)) {
+                $scanType = $last['scanType'] ?? $last['scanTypeCode'] ?? null;
+
+                if (is_string($scanType) && $scanType !== '') {
+                    return $scanType;
+                }
+            }
+        }
+
         return $payload['scantype'] ?? $payload['event'] ?? $payload['type'] ?? 'tracking.update';
     }
 
@@ -39,20 +90,37 @@ class ProcessJntWebhook extends CommerceWebhookProcessor
      */
     protected function processEvent(string $eventType, array $payload): void
     {
-        $billcode = $payload['billcode'] ?? $payload['waybill'] ?? null;
+        $biz = $this->decodeBizContent($payload);
 
-        if (empty($billcode)) {
+        if ($biz === null) {
             Log::channel(config('jnt.logging.channel', 'stack'))
-                ->warning('J&T webhook missing billcode', [
-                    'payload' => $payload,
+                ->warning('J&T webhook missing or invalid bizContent', [
                     'webhook_call_id' => $this->webhookCall->id,
                 ]);
 
             return;
         }
 
+        $billcode = $biz['billCode'] ?? null;
+
+        if (empty($billcode)) {
+            $context = ['webhook_call_id' => $this->webhookCall->id];
+
+            $context += (bool) config('jnt.webhooks.log_payloads', false)
+                ? $this->sanitizePayloadForLogging($payload)
+                : ['payload_keys' => array_keys($payload)];
+
+            Log::channel(config('jnt.logging.channel', 'stack'))
+                ->warning('J&T webhook missing billcode', $context);
+
+            return;
+        }
+
         // Find the shipment
-        $shipment = JntOrder::where('tracking_number', $billcode)->first();
+        $shipment = JntOrder::query()
+            ->withoutOwnerScope()
+            ->where('tracking_number', $billcode)
+            ->first();
 
         if (! $shipment) {
             Log::channel(config('jnt.logging.channel', 'stack'))
@@ -62,24 +130,23 @@ class ProcessJntWebhook extends CommerceWebhookProcessor
                 ]);
 
             // Still dispatch generic tracking event
-            TrackingUpdated::dispatch($billcode, $eventType, $payload);
+            TrackingUpdated::dispatch($billcode, $eventType, $biz);
 
             return;
         }
 
         // Update shipment status
-        $newStatus = $this->mapToStatus($eventType, $payload);
+        $newStatus = $this->mapToStatus($eventType, $biz);
 
         if ($newStatus) {
-            $oldStatus = $shipment->status;
             $shipment->update(['status' => $newStatus->value]);
 
             // Dispatch specific events based on status
-            $this->dispatchStatusEvent($shipment, $newStatus, $payload);
+            $this->dispatchStatusEvent($shipment, $newStatus, $biz);
         }
 
         // Always dispatch generic tracking event
-        TrackingUpdated::dispatch($billcode, $eventType, $payload);
+        TrackingUpdated::dispatch($billcode, $eventType, $biz);
     }
 
     /**

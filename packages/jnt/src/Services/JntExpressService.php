@@ -199,15 +199,6 @@ class JntExpressService
         return TrackingData::fromApiArray($response['data']);
     }
 
-    public function verifyWebhookSignature(string $bizContent, string $digest): bool
-    {
-        if (! ($this->config['webhook']['verify_signature'] ?? true)) {
-            return true;
-        }
-
-        return $this->getClient()->verifyWebhookSignature($bizContent, $digest);
-    }
-
     /**
      * @param  array<string, mixed>  $webhookData
      * @return array<TrackingData>
