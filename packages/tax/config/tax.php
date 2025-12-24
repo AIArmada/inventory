@@ -16,7 +16,7 @@ return [
             'tax_exemptions' => 'tax_exemptions',
         ],
 
-        'json_column_type' => 'json',
+        'json_column_type' => env('TAX_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),
     ],
 
     /*

@@ -11,7 +11,7 @@ return [
     */
     'database' => [
         'table_prefix' => 'cart_',
-        'json_column_type' => 'json',
+        'json_column_type' => env('FILAMENT_CART_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),
         'tables' => [
             'snapshots' => 'cart_snapshots',
             'snapshot_items' => 'cart_snapshot_items',

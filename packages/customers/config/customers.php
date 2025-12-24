@@ -17,7 +17,7 @@ return [
             'wishlist_items' => 'wishlist_items',
             'notes' => 'customer_notes',
         ],
-        'json_column_type' => 'json',
+        'json_column_type' => env('CUSTOMERS_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),
     ],
 
     // Defaults
