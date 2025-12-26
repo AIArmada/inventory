@@ -53,7 +53,7 @@ describe('CartCollection Basic Operations', function (): void {
         $item2 = new CartItem('item-2', 'Item 2', 20.00, 1);
 
         $collection = new CartCollection([$item1, $item2]);
-        $filtered = $collection->filter(fn($item) => $item->id !== 'item-1');
+        $filtered = $collection->filter(fn ($item) => $item->id !== 'item-1');
 
         expect($filtered->count())->toBe(1);
         expect($filtered->first()->id)->toBe('item-2');
@@ -131,7 +131,7 @@ describe('CartCollection Calculations', function (): void {
         ];
 
         $collection = new CartCollection($items);
-        $subtotal = $collection->sum(fn($item) => $item->price * $item->quantity);
+        $subtotal = $collection->sum(fn ($item) => $item->price * $item->quantity);
 
         expect($subtotal)->toBe(6500);
     });
@@ -157,7 +157,7 @@ describe('CartCollection Calculations', function (): void {
         ];
 
         $collection = new CartCollection($items);
-        $expensive = $collection->filter(fn($item) => $item->price > 2000);
+        $expensive = $collection->filter(fn ($item) => $item->price > 2000);
 
         expect($expensive->count())->toBe(2);
     });
@@ -170,7 +170,7 @@ describe('CartCollection Calculations', function (): void {
         ];
 
         $collection = new CartCollection($items);
-        $sorted = $collection->sortBy(fn($item) => $item->price);
+        $sorted = $collection->sortBy(fn ($item) => $item->price);
 
         expect($sorted->first()->id)->toBe('low');
         expect($sorted->last()->id)->toBe('high');
@@ -198,7 +198,7 @@ describe('CartCollection Search and Find', function (): void {
         $item3 = new CartItem('item-3', 'Item 3', 30.00, 1, ['category' => 'electronics']);
 
         $collection = new CartCollection([$item1, $item2, $item3]);
-        $electronics = $collection->filter(fn($item) => $item->getAttribute('category') === 'electronics');
+        $electronics = $collection->filter(fn ($item) => $item->getAttribute('category') === 'electronics');
 
         expect($electronics->count())->toBe(2);
     });
@@ -234,7 +234,7 @@ describe('CartCollection Transformations', function (): void {
         ];
 
         $collection = new CartCollection($items);
-        $totals = $collection->map(fn($item) => $item->price * $item->quantity);
+        $totals = $collection->map(fn ($item) => $item->price * $item->quantity);
 
         expect($totals->toArray())->toBe([2000, 2000]);  // 1000*2, 2000*1 in cents
     });
@@ -245,7 +245,7 @@ describe('CartCollection Transformations', function (): void {
         $item3 = new CartItem('item-3', 'Item 3', 30.00, 1, ['type' => 'physical']);
 
         $collection = new CartCollection([$item1, $item2, $item3]);
-        $grouped = $collection->groupBy(fn($item) => $item->getAttribute('type'));
+        $grouped = $collection->groupBy(fn ($item) => $item->getAttribute('type'));
 
         expect($grouped->has('physical'))->toBeTrue();
         expect($grouped->has('digital'))->toBeTrue();
@@ -253,7 +253,7 @@ describe('CartCollection Transformations', function (): void {
     });
 
     it('chunks collection into smaller collections', function (): void {
-        $items = collect(range(1, 10))->map(fn($i) => new CartItem("item-{$i}", "Item {$i}", 10.00, 1));
+        $items = collect(range(1, 10))->map(fn ($i) => new CartItem("item-{$i}", "Item {$i}", 10.00, 1));
 
         $collection = new CartCollection($items->toArray());
         $chunks = $collection->chunk(3);
@@ -288,7 +288,7 @@ describe('CartCollection Aggregations', function (): void {
         ];
 
         $collection = new CartCollection($items);
-        $min = $collection->min(fn($item) => $item->price);
+        $min = $collection->min(fn ($item) => $item->price);
 
         expect($min)->toBe(1000);
     });
@@ -301,7 +301,7 @@ describe('CartCollection Aggregations', function (): void {
         ];
 
         $collection = new CartCollection($items);
-        $max = $collection->max(fn($item) => $item->price);
+        $max = $collection->max(fn ($item) => $item->price);
 
         expect($max)->toBe(5000);
     });
@@ -314,7 +314,7 @@ describe('CartCollection Aggregations', function (): void {
         ];
 
         $collection = new CartCollection($items);
-        $avg = $collection->avg(fn($item) => $item->price);
+        $avg = $collection->avg(fn ($item) => $item->price);
 
         expect($avg)->toBe(2000);
     });
@@ -327,7 +327,7 @@ describe('CartCollection Aggregations', function (): void {
 
         $collection = new CartCollection($items);
         $total = $collection->reduce(
-            fn($carry, $item) => $carry + ($item->price * $item->quantity),
+            fn ($carry, $item) => $carry + ($item->price * $item->quantity),
             0
         );
 
@@ -363,8 +363,8 @@ describe('CartCollection Edge Cases', function (): void {
         $collection = new CartCollection($items);
 
         $result = $collection
-            ->filter(fn($item) => $item->price > 500)  // > 5.00 in cents
-            ->sortBy(fn($item) => $item->price)
+            ->filter(fn ($item) => $item->price > 500)  // > 5.00 in cents
+            ->sortBy(fn ($item) => $item->price)
             ->take(2);
 
         expect($result->count())->toBe(2);
@@ -1009,14 +1009,16 @@ describe('CartCollection Condition Filtering', function (): void {
 
 describe('CartCollection Model Filtering', function (): void {
     it('filters items by model class', function (): void {
-        $product = new class {
+        $product = new class
+        {
             public static function getMorphClass(): string
             {
                 return 'Product';
             }
         };
 
-        $service = new class {
+        $service = new class
+        {
             public static function getMorphClass(): string
             {
                 return 'Service';
@@ -1040,7 +1042,8 @@ describe('CartCollection Model Filtering', function (): void {
     });
 
     it('filters items where model matches using whereModel', function (): void {
-        $product = new class {
+        $product = new class
+        {
             public static function getMorphClass(): string
             {
                 return 'App\\Models\\Product';

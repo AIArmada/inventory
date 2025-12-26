@@ -40,7 +40,8 @@ function createCartForAbandonmentTest(int $subtotalCents = 10000): Cart
 
 function createUserForAbandonmentTest(array $attributes = []): Model
 {
-    $model = new class extends Model {
+    $model = new class extends Model
+    {
         protected $guarded = [];
     };
 
@@ -256,10 +257,9 @@ describe('RuleBasedAbandonmentPredictor', function (): void {
         it('identifies device type in risk factors', function (): void {
             $cart = createCartForAbandonmentTest(10000);
 
-            $featureExtractor = new class (new CartFeatureExtractor) implements CartFeatureExtractorInterface {
-                public function __construct(private readonly CartFeatureExtractor $base)
-                {
-                }
+            $featureExtractor = new class(new CartFeatureExtractor) implements CartFeatureExtractorInterface
+            {
+                public function __construct(private readonly CartFeatureExtractor $base) {}
 
                 public function extract(Cart $cart, ?Model $user = null, ?Request $request = null): array
                 {
@@ -306,10 +306,9 @@ describe('RuleBasedAbandonmentPredictor', function (): void {
         it('identifies time patterns in risk factors', function (): void {
             $cart = createCartForAbandonmentTest(10000);
 
-            $featureExtractor = new class (new CartFeatureExtractor) implements CartFeatureExtractorInterface {
-                public function __construct(private readonly CartFeatureExtractor $base)
-                {
-                }
+            $featureExtractor = new class(new CartFeatureExtractor) implements CartFeatureExtractorInterface
+            {
+                public function __construct(private readonly CartFeatureExtractor $base) {}
 
                 public function extract(Cart $cart, ?Model $user = null, ?Request $request = null): array
                 {

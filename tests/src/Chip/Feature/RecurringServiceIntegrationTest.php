@@ -148,7 +148,7 @@ describe('RecurringService', function (): void {
                 ],
             ];
 
-            expect(fn() => $this->service->createScheduleFromPurchase(
+            expect(fn () => $this->service->createScheduleFromPurchase(
                 purchaseData: $purchaseData,
                 interval: RecurringInterval::Monthly,
             ))->toThrow(NoRecurringTokenException::class);
