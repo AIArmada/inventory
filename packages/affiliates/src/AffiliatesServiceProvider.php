@@ -35,7 +35,6 @@ final class AffiliatesServiceProvider extends PackageServiceProvider
             ->name('affiliates')
             ->hasConfigFile('affiliates')
             ->discoversMigrations()
-            ->runsMigrations()
             ->hasRoutes(['api'])
             ->hasCommands([
                 Console\Commands\ExportAffiliatePayoutCommand::class,

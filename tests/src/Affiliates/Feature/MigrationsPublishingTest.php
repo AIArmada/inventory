@@ -6,7 +6,7 @@ use AIArmada\Affiliates\AffiliatesServiceProvider;
 use Illuminate\Support\Facades\Artisan;
 
 describe('Affiliates migrations', function (): void {
-    test('are auto-run by default', function (): void {
+    test('are not auto-run by default', function (): void {
         $provider = app()->getProvider(AffiliatesServiceProvider::class);
 
         expect($provider)->not()->toBeNull();
@@ -19,7 +19,7 @@ describe('Affiliates migrations', function (): void {
         $package = $packageProperty->getValue($provider);
 
         expect(property_exists($package, 'runsMigrations'))->toBeTrue();
-        expect($package->runsMigrations)->toBeTrue();
+        expect($package->runsMigrations)->toBeFalse();
     });
 
     test('registers expected console commands', function (): void {
