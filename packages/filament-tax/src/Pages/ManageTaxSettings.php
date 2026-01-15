@@ -18,7 +18,7 @@ use UnitEnum;
 /**
  * Filament settings page for managing tax configuration.
  */
-class ManageTaxSettings extends Page
+final class ManageTaxSettings extends Page
 {
     public ?array $data = [];
 

@@ -162,7 +162,6 @@ $gateway->cancelPayment($payment->getId());
 $gateway->supports('refunds');           // true
 $gateway->supports('partial_refunds');   // true
 $gateway->supports('pre_authorization'); // true
-$gateway->supports('recurring');         // true
 $gateway->supports('webhooks');          // true
 $gateway->supports('hosted_checkout');   // true
 $gateway->supports('embedded_checkout'); // false

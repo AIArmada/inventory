@@ -8,6 +8,7 @@ use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Docs\Enums\DocType;
 use AIArmada\Docs\Enums\ResetFrequency;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -124,12 +125,12 @@ final class DocSequence extends Model
         $replacements = [
             '{PREFIX}' => $this->prefix,
             '{NUMBER}' => $paddedNumber,
-            '{YYYY}' => now()->format('Y'),
-            '{YY}' => now()->format('y'),
-            '{MM}' => now()->format('m'),
-            '{DD}' => now()->format('d'),
-            '{YYMM}' => now()->format('ym'),
-            '{YYMMDD}' => now()->format('ymd'),
+            '{YYYY}' => CarbonImmutable::now()->format('Y'),
+            '{YY}' => CarbonImmutable::now()->format('y'),
+            '{MM}' => CarbonImmutable::now()->format('m'),
+            '{DD}' => CarbonImmutable::now()->format('d'),
+            '{YYMM}' => CarbonImmutable::now()->format('ym'),
+            '{YYMMDD}' => CarbonImmutable::now()->format('ymd'),
         ];
 
         return str_replace(array_keys($replacements), array_values($replacements), $format);

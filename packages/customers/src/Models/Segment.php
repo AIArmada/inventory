@@ -8,6 +8,7 @@ use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Customers\Enums\SegmentType;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -69,7 +70,10 @@ class Segment extends Model
 
     public function getTable(): string
     {
-        return config('customers.database.tables.segments', 'customer_segments');
+        $tables = config('customers.database.tables', []);
+        $prefix = config('customers.database.table_prefix', 'customer_');
+
+        return $tables['segments'] ?? $prefix . 'segments';
     }
 
     // =========================================================================
@@ -83,9 +87,12 @@ class Segment extends Model
      */
     public function customers(): BelongsToMany
     {
+        $tables = config('customers.database.tables', []);
+        $prefix = config('customers.database.table_prefix', 'customer_');
+
         return $this->belongsToMany(
             Customer::class,
-            config('customers.database.tables.segment_customer', 'customer_segment_customer'),
+            $tables['segment_customer'] ?? $prefix . 'segment_customer',
             'segment_id',
             'customer_id'
         )->withTimestamps();
@@ -260,54 +267,33 @@ class Segment extends Model
     /**
      * Apply segment conditions to a query.
      *
-     * @param  array<int, array{field?: string|null, operator?: string, value?: mixed}>  $conditions
+     * Conditions can use either 'value_numeric' / 'value_boolean' keys (Filament form)
+     * or a single 'value' key (legacy/API). We normalize before matching.
+     *
+     * @param  array<int, array{field?: string|null, operator?: string, value?: mixed, value_numeric?: mixed, value_boolean?: mixed}>  $conditions
      */
     protected function applyConditions(Builder $query, array $conditions): void
     {
         foreach ($conditions as $condition) {
             $field = $condition['field'] ?? null;
-            $value = $condition['value'] ?? null;
+            $value = $condition['value_numeric'] ?? $condition['value_boolean'] ?? $condition['value'] ?? null;
 
             if (! $field || $value === null) {
                 continue;
             }
 
-            switch ($field) {
-                case 'lifetime_value_min':
-                    $query->where('lifetime_value', '>=', (int) $value);
-
-                    break;
-                case 'lifetime_value_max':
-                    $query->where('lifetime_value', '<=', (int) $value);
-
-                    break;
-                case 'total_orders_min':
-                    $query->where('total_orders', '>=', (int) $value);
-
-                    break;
-                case 'total_orders_max':
-                    $query->where('total_orders', '<=', (int) $value);
-
-                    break;
-                case 'last_order_days':
-                    $query->where('last_order_at', '>=', now()->subDays((int) $value));
-
-                    break;
-                case 'no_order_days':
-                    $query->where('last_order_at', '<=', now()->subDays((int) $value));
-
-                    break;
-                case 'accepts_marketing':
-                    $query->where('accepts_marketing', (bool) $value);
-
-                    break;
-                case 'is_tax_exempt':
-                    $query->where('is_tax_exempt', (bool) $value);
-
-                    break;
-                default:
-                    continue 2;
-            }
+            match ($field) {
+                'accepts_marketing' => $query->where('accepts_marketing', (bool) $value),
+                'is_tax_exempt' => $query->where('is_tax_exempt', (bool) $value),
+                'status' => $query->where('status', (string) $value),
+                'created_days_ago' => $query->where('created_at', '<=', CarbonImmutable::now()->subDays((int) $value)),
+                'last_login_days' => $query->where('last_login_at', '>=', CarbonImmutable::now()->subDays((int) $value)),
+                'no_login_days' => $query->where(function (Builder $q) use ($value): void {
+                    $q->whereNull('last_login_at')
+                        ->orWhere('last_login_at', '<=', CarbonImmutable::now()->subDays((int) $value));
+                }),
+                default => null,
+            };
         }
     }
 }

@@ -99,30 +99,32 @@ final class CartIntegrationRegistrar
             return;
         }
 
-        /** @var CartManagerInterface $cartManager */
-        $cartManager = $this->app->make('cart');
+        \Illuminate\Support\Facades\DB::transaction(function () use ($cartId, $event) {
+            /** @var CartManagerInterface $cartManager */
+            $cartManager = $this->app->make('cart');
 
-        // Retrieve cart without mutating global cart manager state
-        $cart = $cartManager->getCartInstance($cartManager->instance(), $cartId);
+            // Retrieve cart without mutating global cart manager state
+            $cart = $cartManager->getCartInstance($cartManager->instance(), $cartId);
 
-        if (! $cart->exists()) {
-            return;
-        }
+            if (! $cart->exists()) {
+                return;
+            }
 
-        // Commit inventory allocations if inventory package is present
-        if (class_exists(\AIArmada\Inventory\InventoryServiceProvider::class)) {
-            $this->commitInventoryAllocations($cartManager, $cartId, $event);
-        }
+            // Commit inventory allocations if inventory package is present
+            if (class_exists(\AIArmada\Inventory\InventoryServiceProvider::class)) {
+                $this->commitInventoryAllocations($cartManager, $cartId, $event);
+            }
 
-        // Record affiliate conversion if affiliates package is present
-        if (class_exists(\AIArmada\Affiliates\AffiliatesServiceProvider::class)) {
-            $this->recordAffiliateConversion($cart, $event);
-        }
+            // Record affiliate conversion if affiliates package is present
+            if (class_exists(\AIArmada\Affiliates\AffiliatesServiceProvider::class)) {
+                $this->recordAffiliateConversion($cart, $event);
+            }
 
-        // Clear the cart
-        if (config('cashier.cart.clear_on_success', true)) {
-            $cart->destroy();
-        }
+            // Clear the cart
+            if (config('cashier.cart.clear_on_success', true)) {
+                $cart->destroy();
+            }
+        });
     }
 
     /**

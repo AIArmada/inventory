@@ -10,7 +10,7 @@ use AIArmada\Docs\Services\DocService;
 
 test('it can generate doc numbers', function (): void {
     $service = app(DocService::class);
-    $number = $service->generateDocNumber('invoice');
+    $number = $service->generateNumber('invoice');
 
     expect($number)
         ->toBeString()
@@ -30,7 +30,7 @@ test('default strategy respects numbering format overrides', function (): void {
     config()->set('docs.types.invoice.numbering.prefix', 'BILL');
 
     try {
-        $number = $service->generateDocNumber('invoice');
+        $number = $service->generateNumber('invoice');
 
         expect($number)
             ->toBeString()
@@ -44,7 +44,7 @@ test('default strategy respects numbering format overrides', function (): void {
 test('it can create a doc', function (): void {
     $service = app(DocService::class);
 
-    $doc = $service->createDoc(DocData::from([
+    $doc = $service->create(DocData::from([
         'doc_type' => 'invoice',
         'items' => [
             [
@@ -77,7 +77,7 @@ test('it can create a doc', function (): void {
 test('it calculates totals correctly', function (): void {
     $service = app(DocService::class);
 
-    $doc = $service->createDoc(DocData::from([
+    $doc = $service->create(DocData::from([
         'items' => [
             ['name' => 'Item 1', 'quantity' => 2, 'price' => 50.00],
             ['name' => 'Item 2', 'quantity' => 3, 'price' => 30.00],
@@ -95,13 +95,13 @@ test('it calculates totals correctly', function (): void {
 test('it can update doc status', function (): void {
     $service = app(DocService::class);
 
-    $doc = $service->createDoc(DocData::from([
+    $doc = $service->create(DocData::from([
         'items' => [['name' => 'Item', 'quantity' => 1, 'price' => 100]],
     ]));
 
     expect($doc->status)->toBe(DocStatus::DRAFT);
 
-    $service->updateDocStatus($doc, DocStatus::PAID, 'Payment received');
+    $service->updateStatus($doc, DocStatus::PAID, 'Payment received');
 
     $doc->refresh();
     expect($doc->status)->toBe(DocStatus::PAID);
@@ -116,7 +116,7 @@ test('it can update doc status', function (): void {
 test('it can mark doc as paid', function (): void {
     $service = app(DocService::class);
 
-    $doc = $service->createDoc(DocData::from([
+    $doc = $service->create(DocData::from([
         'items' => [['name' => 'Item', 'quantity' => 1, 'price' => 100]],
     ]));
 
@@ -133,7 +133,7 @@ test('it can mark doc as paid', function (): void {
 test('it can check if doc is overdue', function (): void {
     $service = app(DocService::class);
 
-    $doc = $service->createDoc(DocData::from([
+    $doc = $service->create(DocData::from([
         'items' => [['name' => 'Item', 'quantity' => 1, 'price' => 100]],
         'due_date' => now()->subDay(),
     ]));
@@ -155,7 +155,7 @@ test('it uses default template when none specified', function (): void {
 
     $service = app(DocService::class);
 
-    $doc = $service->createDoc(DocData::from([
+    $doc = $service->create(DocData::from([
         'items' => [['name' => 'Item', 'quantity' => 1, 'price' => 100]],
     ]));
 
@@ -174,7 +174,7 @@ test('it can use custom template', function (): void {
 
     $service = app(DocService::class);
 
-    $doc = $service->createDoc(DocData::from([
+    $doc = $service->create(DocData::from([
         'doc_template_id' => $template->id,
         'items' => [['name' => 'Item', 'quantity' => 1, 'price' => 100]],
     ]));

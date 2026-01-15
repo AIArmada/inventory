@@ -6,23 +6,23 @@ title: Resources
 
 ## DocResource
 
-The primary resource for managing documents (invoices, receipts).
+The primary resource for managing documents (invoices, receipts, quotations, etc.).
 
 ### List View
 
 | Column | Description |
 |--------|-------------|
 | Number | Document number (searchable, copyable) |
-| Type | Invoice or Receipt badge |
+| Type | Invoice, Receipt, Quotation badge |
 | Status | Color-coded status badge |
 | Customer | Customer name (searchable) |
 | Total | Formatted amount with currency |
 | Issue Date | Document issue date |
-| Due Date | Due date (red if overdue) |
+| Due Date | Due date (highlighted if overdue) |
 
 #### Filters
 
-- **Type** - Filter by invoice or receipt
+- **Type** - Filter by document type
 - **Status** - Filter by document status
 - **Overdue** - Show only overdue documents
 - **Paid** - Show only paid documents
@@ -35,8 +35,8 @@ The form is organized into sections:
 
 **Document Information**
 - Document number (auto-generated if empty)
-- Document type (invoice/receipt)
-- Template selection
+- Document type selection
+- Template selection (scoped by owner)
 - Status, issue date, due date
 - Currency and tax rate
 
@@ -58,7 +58,7 @@ The form is organized into sections:
 - Terms and conditions
 
 **Metadata**
-- Custom key-value data
+- Custom key-value data (JSON)
 
 ### View Page
 
@@ -80,16 +80,42 @@ Displays complete document details with:
 | Download PDF | Download the PDF file |
 | Mark as Sent | Update status (for draft/pending) |
 | Mark as Paid | Record payment |
+| Record Payment | Add partial payment |
+| Send Email | Send document via email |
 | Cancel | Cancel the document |
 | Delete | Delete the document |
 
-### Relation Manager
+### Relation Managers
 
-**StatusHistoriesRelationManager** displays:
-- Status badge
+**StatusHistoriesRelationManager**
+- Status badge with color
 - Notes/reason for change
 - Who made the change
 - Timestamp
+
+**PaymentsRelationManager**
+- Payment amount and method
+- Transaction ID / reference
+- Payment date
+- Notes
+
+**EmailsRelationManager**
+- Recipient email
+- Subject and status
+- Open/click counts
+- Sent timestamp
+
+**VersionsRelationManager**
+- Version number
+- Change summary
+- Snapshot data
+- Restore action
+
+**ApprovalsRelationManager**
+- Assignee and requester
+- Status (pending/approved/rejected)
+- Comments
+- Approve/reject actions
 
 ---
 
@@ -103,7 +129,7 @@ Manage document templates with PDF configuration.
 |--------|-------------|
 | Name | Template name (searchable) |
 | Slug | Unique identifier (copyable) |
-| Type | Invoice or Receipt |
+| Type | Document type badge |
 | Default | Boolean indicator |
 | Documents | Count of documents using template |
 | Updated | Last update time |
@@ -117,10 +143,10 @@ Manage document templates with PDF configuration.
 
 **Template Information**
 - Name (auto-generates slug)
-- Slug (unique identifier)
+- Slug (unique identifier, owner-scoped)
 - Description
 - Document type
-- View name (Blade view)
+- View name (Blade view reference)
 - Default template toggle
 
 **PDF Settings**
@@ -151,9 +177,93 @@ Displays:
 
 ---
 
+## DocSequenceResource
+
+Configure automatic document number sequences.
+
+### List View
+
+| Column | Description |
+|--------|-------------|
+| Name | Sequence name |
+| Type | Document type |
+| Prefix | Number prefix (INV, QUO, etc.) |
+| Format | Full format string |
+| Reset | Reset frequency |
+| Active | Boolean indicator |
+
+### Create/Edit Form
+
+**Sequence Settings**
+- Name
+- Document type
+- Prefix (e.g., INV, QUO, CN)
+- Reset frequency (Never, Daily, Monthly, Yearly)
+
+**Number Format**
+- Format string with tokens
+- Start number
+- Increment
+- Padding (zeros)
+- Active toggle
+
+**Format Tokens:**
+- `{PREFIX}` - The sequence prefix
+- `{NUMBER}` - The sequential number
+- `{YYYY}` - 4-digit year
+- `{YY}` - 2-digit year
+- `{MM}` - 2-digit month
+- `{DD}` - 2-digit day
+- `{YYMM}` - Year+month
+- `{YYMMDD}` - Full date
+
+**Example:** `{PREFIX}-{YYMM}-{NUMBER}` → `INV-2601-000001`
+
+---
+
+## DocEmailTemplateResource
+
+Configure email templates for document communications.
+
+### List View
+
+| Column | Description |
+|--------|-------------|
+| Name | Template name |
+| Type | Document type |
+| Trigger | When email is sent |
+| Subject | Email subject preview |
+| Active | Boolean indicator |
+
+### Create/Edit Form
+
+**Template Settings**
+- Name and slug
+- Document type
+- Trigger (send, reminder, overdue, paid, created)
+- Active toggle
+
+**Email Content**
+- Subject line with variables
+- Rich text body with variables
+
+**Available Variables:**
+- `{{doc_number}}` - Document number
+- `{{doc_type}}` - Document type
+- `{{customer_name}}` - Customer name
+- `{{total}}` - Total amount
+- `{{currency}}` - Currency code
+- `{{due_date}}` - Due date
+- `{{issue_date}}` - Issue date
+- `{{company_name}}` - Company name
+
+---
+
 ## Extending Resources
 
 ### Custom Resource Class
+
+Override any resource in your application:
 
 ```php
 <?php
@@ -173,10 +283,17 @@ class DocResource extends BaseDocResource
     {
         return 'heroicon-o-currency-dollar';
     }
+    
+    public static function getNavigationLabel(): string
+    {
+        return 'Invoices';
+    }
 }
 ```
 
 ### Custom Table Configuration
+
+Add custom columns or modify existing ones:
 
 ```php
 <?php
@@ -193,8 +310,9 @@ class DocsTable extends BaseDocsTable
     {
         return parent::configure($table)
             ->columns([
-                // Add your custom columns
-                TextColumn::make('custom_field'),
+                // Merge with existing columns
+                TextColumn::make('metadata.project_id')
+                    ->label('Project'),
             ]);
     }
 }
@@ -202,13 +320,15 @@ class DocsTable extends BaseDocsTable
 
 ### Custom Form Fields
 
+Extend forms with additional fields:
+
 ```php
 <?php
 
 namespace App\Filament\Resources\DocResource\Schemas;
 
 use AIArmada\FilamentDocs\Resources\DocResource\Schemas\DocForm as BaseDocForm;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Select;
 use Filament\Schemas\Schema;
 
 class DocForm extends BaseDocForm
@@ -217,9 +337,42 @@ class DocForm extends BaseDocForm
     {
         return parent::configure($schema)
             ->schema([
-                // Extend with custom fields
-                TextInput::make('custom_field'),
+                // Add your custom fields
+                Select::make('metadata.project_id')
+                    ->label('Project')
+                    ->options(Project::pluck('name', 'id')),
             ]);
+    }
+}
+```
+
+### Custom Actions
+
+Add custom actions to view/edit pages:
+
+```php
+<?php
+
+namespace App\Filament\Resources\DocResource\Pages;
+
+use AIArmada\FilamentDocs\Resources\DocResource\Pages\ViewDoc as BaseViewDoc;
+use Filament\Actions\Action;
+
+class ViewDoc extends BaseViewDoc
+{
+    protected function getHeaderActions(): array
+    {
+        return array_merge(parent::getHeaderActions(), [
+            Action::make('export_xml')
+                ->label('Export UBL')
+                ->icon('heroicon-o-code-bracket')
+                ->action(fn () => $this->exportToUbl()),
+        ]);
+    }
+    
+    protected function exportToUbl(): void
+    {
+        // Custom UBL export logic
     }
 }
 ```

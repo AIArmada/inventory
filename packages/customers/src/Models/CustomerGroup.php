@@ -7,6 +7,7 @@ namespace AIArmada\Customers\Models;
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -64,7 +65,10 @@ class CustomerGroup extends Model
 
     public function getTable(): string
     {
-        return config('customers.database.tables.groups', 'customer_groups');
+        $tables = config('customers.database.tables', []);
+        $prefix = config('customers.database.table_prefix', 'customer_');
+
+        return $tables['groups'] ?? $prefix . 'groups';
     }
 
     // =========================================================================
@@ -88,6 +92,8 @@ class CustomerGroup extends Model
 
     /**
      * Get group admins.
+     *
+     * @return BelongsToMany<Customer, $this>
      */
     public function admins(): BelongsToMany
     {
@@ -110,7 +116,7 @@ class CustomerGroup extends Model
         $this->members()->syncWithoutDetaching([
             $customer->id => [
                 'role' => $role,
-                'joined_at' => now(),
+                'joined_at' => CarbonImmutable::now(),
             ],
         ]);
     }

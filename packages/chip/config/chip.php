@@ -122,7 +122,8 @@ return [
         'webhook_keys' => $webhookKeys,
         'verify_signature' => env('CHIP_WEBHOOK_VERIFY_SIGNATURE', true),
         'log_payloads' => env('CHIP_WEBHOOK_LOG_PAYLOADS', false),
-        'store_data' => env('CHIP_WEBHOOK_STORE_DATA', true),
+        'store_webhooks' => env('CHIP_WEBHOOK_STORE', true),
+        'deduplication' => env('CHIP_WEBHOOK_DEDUPLICATION', true),
     ],
 
     /*

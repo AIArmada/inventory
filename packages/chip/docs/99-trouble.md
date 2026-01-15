@@ -78,28 +78,6 @@ $allPurchases = Purchase::query()
 ],
 ```
 
-### Recurring Charges Failing
-
-**Symptom:** `NoRecurringTokenException` when processing recurring
-
-**Causes:**
-1. Original purchase wasn't configured for recurring
-2. Recurring token was deleted
-
-**Solutions:**
-```php
-// Ensure purchase was created with force_recurring
-$purchase = Chip::purchase()
-    ->forceRecurring(true)
-    // ...
-    ->create();
-
-// Check if token exists
-if ($purchase->recurring_token) {
-    // Token is valid
-}
-```
-
 ## PostgreSQL UUID Issues
 
 **Symptom:** `invalid input syntax for type uuid: ""`

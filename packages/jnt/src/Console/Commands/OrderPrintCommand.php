@@ -7,10 +7,10 @@ namespace AIArmada\Jnt\Console\Commands;
 use AIArmada\Jnt\Data\PrintWaybillData;
 use AIArmada\Jnt\Exceptions\JntApiException;
 use AIArmada\Jnt\Services\JntExpressService;
-use Exception;
 use Illuminate\Console\Command;
+use Throwable;
 
-class OrderPrintCommand extends Command
+final class OrderPrintCommand extends Command
 {
     protected $signature = 'jnt:order:print
                           {order-id : Order ID to print}
@@ -61,7 +61,7 @@ class OrderPrintCommand extends Command
             $this->error('API Error: ' . $e->getMessage());
 
             return self::FAILURE;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->error('Error: ' . $e->getMessage());
 
             return self::FAILURE;

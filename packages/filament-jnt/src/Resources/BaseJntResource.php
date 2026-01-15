@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentJnt\Resources;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
+use Carbon\CarbonImmutable;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,7 +48,7 @@ abstract class BaseJntResource extends Resource
         $includeGlobal = (bool) config('jnt.owner.include_global', false);
         $cacheKey = 'filament-jnt:nav-badge:' . static::class . ':' . $ownerKey . ':' . ($includeGlobal ? '1' : '0');
 
-        $count = Cache::remember($cacheKey, now()->addSeconds(30), fn (): int => static::getEloquentQuery()->count());
+        $count = Cache::remember($cacheKey, CarbonImmutable::now()->addSeconds(30), fn (): int => static::getEloquentQuery()->count());
 
         return $count > 0 ? (string) $count : null;
     }

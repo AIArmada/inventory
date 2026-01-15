@@ -12,7 +12,7 @@ use Throwable;
  * This exception includes detailed information about which fields
  * failed validation and why.
  */
-class JntValidationException extends JntException
+final class JntValidationException extends JntException
 {
     /**
      * @param  array<string, mixed>  $errors

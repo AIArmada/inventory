@@ -12,7 +12,7 @@ use Throwable;
  * This exception includes additional context about the API call,
  * such as the endpoint, error code, and raw API response.
  */
-class JntApiException extends JntException
+final class JntApiException extends JntException
 {
     public function __construct(
         string $message,

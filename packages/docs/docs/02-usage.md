@@ -10,7 +10,7 @@ Use the `DocService` to create documents:
 
 ```php
 use AIArmada\Docs\Services\DocService;
-use AIArmada\Docs\Data\DocData;
+use AIArmada\Docs\DataObjects\DocData;
 
 $docService = app(DocService::class);
 

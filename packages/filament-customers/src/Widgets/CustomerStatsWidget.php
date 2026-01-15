@@ -31,7 +31,6 @@ class CustomerStatsWidget extends BaseWidget
             ->selectRaw('SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as active_customers', [CustomerStatus::Active->value])
             ->selectRaw('SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as new_this_month', [$startOfMonth])
             ->selectRaw('SUM(CASE WHEN accepts_marketing = 1 THEN 1 ELSE 0 END) as accepts_marketing')
-            ->selectRaw('COALESCE(SUM(lifetime_value), 0) as total_ltv')
             ->selectRaw('SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as this_week', [$thisWeekStart])
             ->selectRaw('SUM(CASE WHEN created_at >= ? AND created_at < ? THEN 1 ELSE 0 END) as last_week', [$lastWeekStart, $lastWeekEnd])
             ->first();
@@ -40,11 +39,8 @@ class CustomerStatsWidget extends BaseWidget
         $activeCustomers = (int) ($stats->active_customers ?? 0);
         $newThisMonth = (int) ($stats->new_this_month ?? 0);
         $acceptsMarketing = (int) ($stats->accepts_marketing ?? 0);
-        $totalLtv = (int) ($stats->total_ltv ?? 0);
         $thisWeek = (int) ($stats->this_week ?? 0);
         $lastWeek = (int) ($stats->last_week ?? 0);
-
-        $avgLtv = $totalCustomers > 0 ? (int) ($totalLtv / $totalCustomers) : 0;
 
         $trend = $lastWeek > 0
             ? round((($thisWeek - $lastWeek) / $lastWeek) * 100)
@@ -69,11 +65,6 @@ class CustomerStatsWidget extends BaseWidget
             Stat::make('Active Customers', number_format($activeCustomers))
                 ->description('Currently active')
                 ->descriptionIcon('heroicon-m-check-circle')
-                ->color('success'),
-
-            Stat::make('Average LTV', 'RM ' . number_format($avgLtv / 100, 2))
-                ->description('Per customer')
-                ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('success'),
 
             Stat::make('Marketing Opt-In', number_format($acceptsMarketing))

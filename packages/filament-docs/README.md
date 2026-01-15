@@ -82,15 +82,24 @@ Manage document templates with:
 ```php
 // config/filament-docs.php
 return [
-    'navigation_group' => 'Documents',
+    'navigation' => [
+        'group' => 'Documents',
+    ],
+
+    'features' => [
+        'auto_generate_pdf' => true,
+    ],
+
     'resources' => [
         'navigation_sort' => [
             'docs' => 10,
             'doc_templates' => 20,
+            'sequences' => 90,
+            'email_templates' => 91,
+            'pending_approvals' => 15,
+            'aging_report' => 100,
         ],
     ],
-    'enable_pdf_preview' => true,
-    'auto_generate_pdf' => true,
 ];
 ```
 

@@ -5,39 +5,61 @@ declare(strict_types=1);
 namespace AIArmada\Docs\Services;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\Docs\Contracts\DocServiceInterface;
 use AIArmada\Docs\DataObjects\DocData;
 use AIArmada\Docs\Enums\DocStatus;
+use AIArmada\Docs\Enums\DocType;
 use AIArmada\Docs\Models\Doc;
+use AIArmada\Docs\Models\DocPayment;
 use AIArmada\Docs\Models\DocTemplate;
+use AIArmada\Docs\Models\DocVersion;
 use AIArmada\Docs\Numbering\NumberStrategyRegistry;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Spatie\LaravelPdf\Facades\Pdf;
 
-class DocService
+/**
+ * Core document management service.
+ *
+ * Handles document creation, updates, PDF generation, payments, versioning, and conversions.
+ */
+final class DocService implements DocServiceInterface
 {
     public function __construct(
-        protected NumberStrategyRegistry $numberRegistry
+        protected NumberStrategyRegistry $numberRegistry,
+        protected SequenceManager $sequenceManager,
     ) {}
 
-    public function generateDocNumber(string $docType = 'invoice'): string
+    /**
+     * Generate a document number for the given type.
+     */
+    public function generateNumber(string $docType = 'invoice'): string
     {
         return $this->numberRegistry->generate($docType);
     }
 
+    /**
+     * Resolve the storage disk for a document type.
+     */
     public function resolveStorageDiskForDocType(string $docType): string
     {
         return $this->resolveStorageDisk($docType);
     }
 
-    public function createDoc(DocData $data): Doc
+    /**
+     * Create a new document from DocData DTO.
+     */
+    public function create(DocData $data): Doc
     {
         $docType = $data->docType ?? 'invoice';
 
         // Generate doc number if not provided
-        $docNumber = $data->docNumber ?? $this->generateDocNumber($docType);
+        $docNumber = $data->docNumber ?? $this->generateNumber($docType);
 
         // Resolve current owner
         $owner = $this->resolveOwner();
@@ -83,7 +105,7 @@ class DocService
         $dueDate = $data->dueDate;
         if ($dueDate === null && $status->isPayable()) {
             $dueDays = (int) $this->resolveDefault($docType, 'due_days', 30);
-            $dueDate = now()->addDays($dueDays);
+            $dueDate = CarbonImmutable::now()->addDays($dueDays);
         }
 
         // Build doc data with owner columns if enabled
@@ -94,7 +116,7 @@ class DocService
             'docable_type' => $data->docableType,
             'docable_id' => $data->docableId,
             'status' => $status,
-            'issue_date' => $data->issueDate ?? now(),
+            'issue_date' => $data->issueDate ?? CarbonImmutable::now(),
             'due_date' => $dueDate,
             'subtotal' => $subtotal,
             'tax_amount' => $taxAmount,
@@ -129,6 +151,201 @@ class DocService
         return $doc;
     }
 
+    /**
+     * Create a new document from array data with DocType enum.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createFromType(DocType $type, array $data, ?Model $owner = null): Doc
+    {
+        return DB::transaction(function () use ($type, $data, $owner): Doc {
+            // Generate document number
+            $docNumber = $this->sequenceManager->generate($type, $owner);
+
+            $docData = array_merge($data, [
+                'doc_number' => $docNumber,
+                'doc_type' => $type->value,
+                'status' => DocStatus::DRAFT,
+                'issue_date' => $data['issue_date'] ?? CarbonImmutable::now(),
+            ]);
+
+            if ($owner) {
+                $docData['owner_type'] = $owner->getMorphClass();
+                $docData['owner_id'] = $owner->getKey();
+            }
+
+            // Calculate totals if items provided
+            if (isset($data['items'])) {
+                $totals = $this->calculateTotals($data['items'], $data['discount_amount'] ?? 0);
+                $docData = array_merge($docData, $totals);
+            }
+
+            $doc = Doc::create($docData);
+
+            // Create initial version
+            $this->createVersion($doc, 'Initial creation');
+
+            return $doc;
+        });
+    }
+
+    /**
+     * Update a document and create a version snapshot.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function update(Doc $doc, array $data): Doc
+    {
+        return DB::transaction(function () use ($doc, $data): Doc {
+            // Calculate totals if items changed
+            if (isset($data['items'])) {
+                $totals = $this->calculateTotals(
+                    $data['items'],
+                    (float) ($data['discount_amount'] ?? $doc->discount_amount)
+                );
+                $data = array_merge($data, $totals);
+            }
+
+            $doc->update($data);
+
+            // Create version snapshot
+            $this->createVersion($doc, 'Document updated');
+
+            return $doc->fresh() ?? $doc;
+        });
+    }
+
+    /**
+     * Convert a document to another type.
+     */
+    public function convert(Doc $source, DocType $targetType, ?Model $owner = null): Doc
+    {
+        $sourceType = $source->doc_type instanceof DocType
+            ? $source->doc_type
+            : DocType::tryFrom($source->doc_type);
+
+        // Validate conversion is allowed
+        $allowedSources = $targetType->getConversionSources();
+        if ($sourceType && ! in_array($sourceType, $allowedSources, true)) {
+            throw new InvalidArgumentException(
+                "Cannot convert {$sourceType->label()} to {$targetType->label()}"
+            );
+        }
+
+        // Create new document from source
+        return $this->createFromType($targetType, [
+            'docable_type' => $source->docable_type,
+            'docable_id' => $source->docable_id,
+            'doc_template_id' => $source->doc_template_id,
+            'due_date' => $source->due_date,
+            'currency' => $source->currency,
+            'notes' => $source->notes,
+            'terms' => $source->terms,
+            'customer_data' => $source->customer_data,
+            'company_data' => $source->company_data,
+            'items' => $source->items,
+            'metadata' => array_merge($source->metadata ?? [], [
+                'converted_from' => [
+                    'doc_id' => $source->id,
+                    'doc_number' => $source->doc_number,
+                    'doc_type' => $source->doc_type,
+                ],
+            ]),
+        ], $owner);
+    }
+
+    /**
+     * Record a payment against a document.
+     *
+     * @param  array<string, mixed>  $paymentData
+     */
+    public function recordPayment(Doc $doc, array $paymentData): DocPayment
+    {
+        return DB::transaction(function () use ($doc, $paymentData): DocPayment {
+            $ownerAttributes = [];
+            if (config('docs.owner.enabled', false)) {
+                $ownerAttributes = [
+                    'owner_type' => $doc->owner_type,
+                    'owner_id' => $doc->owner_id,
+                ];
+            }
+
+            $payment = $doc->payments()->create(array_merge($paymentData, [
+                'paid_at' => $paymentData['paid_at'] ?? CarbonImmutable::now(),
+                'currency' => $paymentData['currency'] ?? $doc->currency,
+            ], $ownerAttributes));
+
+            // Update document status based on payments
+            $totalPaid = $doc->payments()->sum('amount');
+            $docTotal = (float) $doc->total;
+
+            if ($totalPaid >= $docTotal) {
+                $doc->markAsPaid("Payment recorded: {$payment->amount}");
+            } elseif ($totalPaid > 0) {
+                $doc->update(['status' => DocStatus::PARTIALLY_PAID]);
+                $doc->statusHistories()->create(array_merge([
+                    'status' => DocStatus::PARTIALLY_PAID,
+                    'notes' => "Partial payment recorded: {$payment->amount}",
+                ], $ownerAttributes));
+            }
+
+            return $payment;
+        });
+    }
+
+    /**
+     * Clone a document.
+     */
+    public function clone(Doc $source, ?Model $owner = null): Doc
+    {
+        $val = $source->doc_type;
+        $type = ($val instanceof DocType ? $val : DocType::tryFrom($val)) ?? DocType::Invoice;
+
+        return $this->createFromType($type, [
+            'docable_type' => $source->docable_type,
+            'docable_id' => $source->docable_id,
+            'doc_template_id' => $source->doc_template_id,
+            'due_date' => CarbonImmutable::now()->addDays(config('docs.defaults.due_days', 30)),
+            'currency' => $source->currency,
+            'notes' => $source->notes,
+            'terms' => $source->terms,
+            'customer_data' => $source->customer_data,
+            'company_data' => $source->company_data,
+            'items' => $source->items,
+            'metadata' => array_merge($source->metadata ?? [], [
+                'cloned_from' => $source->id,
+            ]),
+        ], $owner);
+    }
+
+    /**
+     * Create a version snapshot.
+     */
+    public function createVersion(Doc $doc, ?string $summary = null): DocVersion
+    {
+        $nextVersion = $doc->versions()->max('version_number') + 1;
+
+        $ownerAttributes = [];
+        if (config('docs.owner.enabled', false)) {
+            $ownerAttributes = [
+                'owner_type' => $doc->owner_type,
+                'owner_id' => $doc->owner_id,
+            ];
+        }
+
+        return $doc->versions()->create(array_merge([
+            'version_number' => $nextVersion,
+            'snapshot' => $doc->toArray(),
+            'change_summary' => $summary,
+            'changed_by' => auth()->id(),
+        ], $ownerAttributes));
+    }
+
+    /**
+     * Generate a PDF for a document.
+     *
+     * @return string The relative path to the stored PDF (or raw PDF content if $save is false)
+     */
     public function generatePdf(Doc $doc, bool $save = true): string
     {
         // Load the polymorphic relationship to access ticket/order data
@@ -199,6 +416,84 @@ class DocService
     }
 
     /**
+     * Download or retrieve PDF path for a document.
+     *
+     * @return string The relative path to the PDF
+     */
+    public function downloadPdf(Doc $doc): string
+    {
+        $docType = $doc->doc_type ?? 'invoice';
+
+        if ($doc->pdf_path && Storage::disk($this->resolveStorageDisk($docType))->exists($doc->pdf_path)) {
+            return $doc->pdf_path;
+        }
+
+        return $this->generatePdf($doc);
+    }
+
+    /**
+     * Mark a document as sent (typically after emailing).
+     */
+    public function markAsSent(Doc $doc, ?string $notes = null): void
+    {
+        $doc->markAsSent($notes);
+    }
+
+    /**
+     * Update a document's status with audit trail.
+     */
+    public function updateStatus(Doc $doc, DocStatus $status, ?string $notes = null): void
+    {
+        $oldStatus = $doc->status;
+
+        $doc->update(['status' => $status]);
+
+        $ownerAttributes = [];
+        if (config('docs.owner.enabled', false)) {
+            $ownerAttributes = [
+                'owner_type' => $doc->owner_type,
+                'owner_id' => $doc->owner_id,
+            ];
+        }
+
+        // Record status change
+        $doc->statusHistories()->create(array_merge([
+            'status' => $status,
+            'notes' => $notes ?? "Status changed from {$oldStatus->label()} to {$status->label()}",
+        ], $ownerAttributes));
+    }
+
+    /**
+     * Calculate document totals from items.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array{subtotal: float, tax_amount: float, total: float}
+     */
+    public function calculateTotals(array $items, float $discountAmount = 0): array
+    {
+        $subtotal = 0;
+        $taxAmount = 0;
+
+        foreach ($items as $item) {
+            $qty = (float) ($item['quantity'] ?? 1);
+            // Support both 'price' and 'unit_price' keys
+            $price = (float) ($item['unit_price'] ?? $item['price'] ?? 0);
+            $itemTax = (float) ($item['tax_amount'] ?? 0);
+
+            $subtotal += $qty * $price;
+            $taxAmount += $itemTax;
+        }
+
+        $total = $subtotal + $taxAmount - $discountAmount;
+
+        return [
+            'subtotal' => round($subtotal, 2),
+            'tax_amount' => round($taxAmount, 2),
+            'total' => round(max(0, $total), 2),
+        ];
+    }
+
+    /**
      * Get template query builder scoped to the document's owner columns.
      *
      * @return Builder<DocTemplate>
@@ -227,45 +522,6 @@ class DocService
         }
 
         return $query->whereNull('owner_type')->whereNull('owner_id');
-    }
-
-    public function downloadPdf(Doc $doc): string
-    {
-        $docType = $doc->doc_type ?? 'invoice';
-
-        if ($doc->pdf_path && Storage::disk($this->resolveStorageDisk($docType))->exists($doc->pdf_path)) {
-            return $doc->pdf_path;
-        }
-
-        return $this->generatePdf($doc);
-    }
-
-    public function emailDoc(Doc $doc, string $email): void
-    {
-        // This would integrate with your mail system
-        // Implementation depends on your mail setup
-        $doc->markAsSent();
-    }
-
-    public function updateDocStatus(Doc $doc, DocStatus $status, ?string $notes = null): void
-    {
-        $oldStatus = $doc->status;
-
-        $doc->update(['status' => $status]);
-
-        $ownerAttributes = [];
-        if (config('docs.owner.enabled', false)) {
-            $ownerAttributes = [
-                'owner_type' => $doc->owner_type,
-                'owner_id' => $doc->owner_id,
-            ];
-        }
-
-        // Record status change
-        $doc->statusHistories()->create(array_merge([
-            'status' => $status,
-            'notes' => $notes ?? "Status changed from {$oldStatus->label()} to {$status->label()}",
-        ], $ownerAttributes));
     }
 
     /**
@@ -312,7 +568,7 @@ class DocService
     }
 
     /**
-     * Calculate subtotal from items
+     * Calculate subtotal from items (simple sum).
      *
      * @param  array<int, array<string, mixed>>  $items
      */
@@ -322,7 +578,7 @@ class DocService
 
         foreach ($items as $item) {
             $quantity = $item['quantity'] ?? 1;
-            $price = $item['price'] ?? 0;
+            $price = $item['price'] ?? $item['unit_price'] ?? 0;
             $subtotal += $quantity * $price;
         }
 

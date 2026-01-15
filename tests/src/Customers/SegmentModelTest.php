@@ -52,12 +52,12 @@ describe('Segment Model', function (): void {
                 'name' => 'Conditonal ' . uniqid(),
                 'slug' => 'conditional-' . uniqid(),
                 'conditions' => [
-                    ['field' => 'lifetime_value_min', 'value' => 1000],
+                    ['field' => 'accepts_marketing', 'value' => true],
                 ],
             ]);
 
             expect($segment->conditions)->toBeArray()
-                ->and($segment->conditions[0]['field'])->toBe('lifetime_value_min');
+                ->and($segment->conditions[0]['field'])->toBe('accepts_marketing');
         });
     });
 
@@ -146,30 +146,30 @@ describe('Segment Model', function (): void {
                 'slug' => 'matching-' . uniqid(),
                 'is_automatic' => true,
                 'conditions' => [
-                    ['field' => 'lifetime_value_min', 'value' => 1000],
+                    ['field' => 'accepts_marketing', 'value' => true],
                 ],
             ]);
 
             Customer::create([
-                'first_name' => 'High',
-                'last_name' => 'Value',
-                'email' => 'high-value-' . uniqid() . '@example.com',
+                'first_name' => 'Marketing',
+                'last_name' => 'Yes',
+                'email' => 'marketing-yes-' . uniqid() . '@example.com',
                 'status' => CustomerStatus::Active,
-                'lifetime_value' => 5000,
+                'accepts_marketing' => true,
             ]);
 
             Customer::create([
-                'first_name' => 'Low',
-                'last_name' => 'Value',
-                'email' => 'low-value-' . uniqid() . '@example.com',
+                'first_name' => 'Marketing',
+                'last_name' => 'No',
+                'email' => 'marketing-no-' . uniqid() . '@example.com',
                 'status' => CustomerStatus::Active,
-                'lifetime_value' => 100,
+                'accepts_marketing' => false,
             ]);
 
             $matching = $segment->getMatchingCustomers();
 
             expect($matching)->toBeInstanceOf(Illuminate\Support\Collection::class)
-                ->and($matching->every(fn ($c) => $c->lifetime_value >= 1000))->toBeTrue();
+                ->and($matching->every(fn ($c) => $c->accepts_marketing === true))->toBeTrue();
         });
 
         it('returns attached customers for manual segment', function (): void {
@@ -202,16 +202,16 @@ describe('Segment Model', function (): void {
                 'slug' => 'rebuild-' . uniqid(),
                 'is_automatic' => true,
                 'conditions' => [
-                    ['field' => 'lifetime_value_min', 'value' => 1000],
+                    ['field' => 'accepts_marketing', 'value' => true],
                 ],
             ]);
 
             Customer::create([
                 'first_name' => 'Rebuild',
-                'last_name' => 'High',
-                'email' => 'rebuild-high-' . uniqid() . '@example.com',
+                'last_name' => 'Test',
+                'email' => 'rebuild-test-' . uniqid() . '@example.com',
                 'status' => CustomerStatus::Active,
-                'lifetime_value' => 5000,
+                'accepts_marketing' => true,
             ]);
 
             $count = $segment->rebuildCustomerList();
@@ -364,44 +364,13 @@ describe('Segment Model', function (): void {
                 'slug' => 'no-value-' . uniqid(),
                 'is_automatic' => true,
                 'conditions' => [
-                    ['field' => 'lifetime_value_min'], // No value
+                    ['field' => 'accepts_marketing'], // No value
                 ],
             ]);
 
             $matching = $segment->getMatchingCustomers();
 
             expect($matching)->toBeInstanceOf(Illuminate\Support\Collection::class);
-        });
-
-        it('handles total_orders_max condition', function (): void {
-            $segment = Segment::create([
-                'name' => 'Orders Max ' . uniqid(),
-                'slug' => 'orders-max-' . uniqid(),
-                'is_automatic' => true,
-                'conditions' => [
-                    ['field' => 'total_orders_max', 'value' => 5],
-                ],
-            ]);
-
-            Customer::create([
-                'first_name' => 'Low',
-                'last_name' => 'Orders',
-                'email' => 'low-orders-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'total_orders' => 2,
-            ]);
-
-            Customer::create([
-                'first_name' => 'High',
-                'last_name' => 'Orders',
-                'email' => 'high-orders-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'total_orders' => 10,
-            ]);
-
-            $matching = $segment->getMatchingCustomers();
-
-            expect($matching->every(fn ($c) => $c->total_orders <= 5))->toBeTrue();
         });
 
         it('handles is_tax_exempt condition', function (): void {

@@ -4,6 +4,71 @@ title: Configuration
 
 # Configuration
 
+## Plugin Configuration (Fluent API)
+
+Configure the plugin directly in your panel provider using the fluent API:
+
+```php
+use AIArmada\FilamentDocs\FilamentDocsPlugin;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        ->plugins([
+            FilamentDocsPlugin::make()
+                // Navigation
+                ->navigationGroup('Billing')
+                ->navigationSort(5)
+                
+                // Disable specific pages
+                ->agingReportEnabled(false)
+                ->pendingApprovalsEnabled(false)
+                
+                // Disable specific widgets
+                ->docStatsWidgetEnabled(false)
+                ->quickActionsWidgetEnabled(false)
+                ->recentDocumentsWidgetEnabled(false)
+                ->revenueChartWidgetEnabled(false)
+                ->statusBreakdownWidgetEnabled(false),
+        ]);
+}
+```
+
+### Available Configuration Methods
+
+| Method | Description | Default |
+|--------|-------------|---------|
+| `navigationGroup(string)` | Set navigation group | `'Documents'` (from config) |
+| `navigationSort(int)` | Set navigation sort order | `null` |
+| `docResource(string)` | Use custom DocResource class | `DocResource::class` |
+| `agingReportEnabled(bool)` | Enable/disable Aging Report page | `true` |
+| `pendingApprovalsEnabled(bool)` | Enable/disable Pending Approvals page | `true` |
+| `docStatsWidgetEnabled(bool)` | Enable/disable stats widget | `true` |
+| `quickActionsWidgetEnabled(bool)` | Enable/disable quick actions widget | `true` |
+| `recentDocumentsWidgetEnabled(bool)` | Enable/disable recent documents widget | `true` |
+| `revenueChartWidgetEnabled(bool)` | Enable/disable revenue chart widget | `true` |
+| `statusBreakdownWidgetEnabled(bool)` | Enable/disable status breakdown widget | `true` |
+
+### Custom DocResource
+
+Extend the built-in resource with custom behavior:
+
+```php
+use AIArmada\FilamentDocs\Resources\DocResource;
+
+class CustomDocResource extends DocResource
+{
+    public static function getNavigationLabel(): string
+    {
+        return 'Invoices';
+    }
+}
+
+// In your panel provider:
+FilamentDocsPlugin::make()
+    ->docResource(CustomDocResource::class)
+```
+
 ## Publishing Configuration
 
 ```bash

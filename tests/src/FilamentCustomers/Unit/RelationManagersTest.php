@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use AIArmada\FilamentCustomers\Resources\CustomerResource\RelationManagers\AddressesRelationManager;
 use AIArmada\FilamentCustomers\Resources\CustomerResource\RelationManagers\NotesRelationManager;
-use AIArmada\FilamentCustomers\Resources\CustomerResource\RelationManagers\WishlistsRelationManager;
 use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Schemas\Schema;
 use Filament\Support\Contracts\TranslatableContentDriver;
@@ -50,7 +49,7 @@ if (! function_exists('filamentCustomers_makeSchemaLivewire')) {
 it('builds relation manager schemas', function (): void {
     $livewire = filamentCustomers_makeSchemaLivewire();
 
-    foreach ([AddressesRelationManager::class, NotesRelationManager::class, WishlistsRelationManager::class] as $managerClass) {
+    foreach ([AddressesRelationManager::class, NotesRelationManager::class] as $managerClass) {
         /** @var \Filament\Resources\RelationManagers\RelationManager $manager */
         $manager = new $managerClass($livewire);
 

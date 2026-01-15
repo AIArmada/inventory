@@ -50,6 +50,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Billing Portal
+    |--------------------------------------------------------------------------
+    */
+    'billing' => [
+        'billable_model' => null,
+        'panel_id' => 'billing',
+        'features' => [
+            'subscriptions' => true,
+            'payment_methods' => true,
+            'invoices' => true,
+        ],
+        'invoice' => [
+            'vendor_name' => null,
+            'product_name' => 'Subscription',
+        ],
+        'redirects' => [
+            'after_payment_method_added' => null,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Resources
     |--------------------------------------------------------------------------
     */

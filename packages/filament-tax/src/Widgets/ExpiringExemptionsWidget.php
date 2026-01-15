@@ -12,7 +12,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
 
-class ExpiringExemptionsWidget extends BaseWidget
+final class ExpiringExemptionsWidget extends BaseWidget
 {
     protected static ?string $heading = 'Expiring Exemptions (30 Days)';
 

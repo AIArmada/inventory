@@ -12,12 +12,12 @@ use AIArmada\Jnt\Exceptions\JntApiException;
 use AIArmada\Jnt\Exceptions\JntNetworkException;
 use AIArmada\Jnt\Exceptions\JntValidationException;
 use AIArmada\Jnt\Services\JntExpressService;
-use Exception;
 use Illuminate\Console\Command;
+use Throwable;
 
 use function Laravel\Prompts\text;
 
-class OrderCreateCommand extends Command
+final class OrderCreateCommand extends Command
 {
     protected $signature = 'jnt:order:create
                           {--order-id= : Order ID}
@@ -118,7 +118,7 @@ class OrderCreateCommand extends Command
             }
 
             return self::FAILURE;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->error('Unexpected Error: ' . $e->getMessage());
 
             return self::FAILURE;

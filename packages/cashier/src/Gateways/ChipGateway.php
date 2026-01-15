@@ -22,6 +22,7 @@ use AIArmada\Cashier\Gateways\Chip\ChipSubscriptionBuilder;
 use AIArmada\CashierChip\Cashier as CashierChip;
 use AIArmada\Chip\Services\ChipCollectService;
 use Illuminate\Support\Collection;
+use SensitiveParameter;
 use Throwable;
 
 /**
@@ -106,7 +107,7 @@ class ChipGateway extends AbstractGateway
      *
      * @param  array<string, mixed>  $options
      */
-    public function charge(BillableContract $billable, int $amount, ?string $paymentMethod = null, array $options = []): PaymentContract
+    public function charge(BillableContract $billable, int $amount, #[SensitiveParameter] ?string $paymentMethod = null, array $options = []): PaymentContract
     {
         $payment = $billable->charge($amount, $paymentMethod, $options);
 
@@ -150,7 +151,12 @@ class ChipGateway extends AbstractGateway
             $purchase = $this->client()->getPurchase($sessionId);
 
             return new Chip\ChipCheckout($purchase);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to retrieve CHIP checkout', [
+                'session_id' => $sessionId,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }
@@ -169,7 +175,12 @@ class ChipGateway extends AbstractGateway
             }
 
             return new ChipSubscription($subscription);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to retrieve CHIP subscription', [
+                'subscription_id' => $subscriptionId,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }
@@ -183,7 +194,12 @@ class ChipGateway extends AbstractGateway
             $purchase = $this->client()->getPurchase($paymentId);
 
             return new ChipPayment(new \AIArmada\CashierChip\Payment($purchase));
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to retrieve CHIP payment', [
+                'payment_id' => $paymentId,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }
@@ -198,7 +214,12 @@ class ChipGateway extends AbstractGateway
             $purchase = $this->client()->getPurchase($invoiceId);
 
             return new Chip\ChipInvoice($purchase);
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to retrieve CHIP invoice', [
+                'invoice_id' => $invoiceId,
+                'error' => $e->getMessage(),
+            ]);
+
             return null;
         }
     }
@@ -326,7 +347,11 @@ class ChipGateway extends AbstractGateway
                 $publicKey,
                 OPENSSL_ALGO_SHA256
             ) === 1;
-        } catch (Throwable) {
+        } catch (Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('CHIP webhook verification failed', [
+                'error' => $e->getMessage(),
+            ]);
+
             return false;
         }
     }

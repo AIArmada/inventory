@@ -7,8 +7,10 @@ namespace AIArmada\FilamentTax\Resources\TaxExemptionResource\Schemas;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\Customers\Models\Customer;
 use AIArmada\Customers\Models\CustomerGroup;
+use AIArmada\Tax\Enums\ExemptionStatus;
 use AIArmada\Tax\Models\TaxExemption;
 use AIArmada\Tax\Support\TaxOwnerScope;
+use Carbon\CarbonImmutable;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
@@ -179,7 +181,7 @@ final class TaxExemptionForm
                             ->schema([
                                 DatePicker::make('starts_at')
                                     ->label('Effective From')
-                                    ->default(now())
+                                    ->default(CarbonImmutable::now())
                                     ->native(false),
 
                                 DatePicker::make('expires_at')
@@ -198,12 +200,8 @@ final class TaxExemptionForm
                             ->schema([
                                 Select::make('status')
                                     ->label('Status')
-                                    ->options([
-                                        'pending' => 'Pending Review',
-                                        'approved' => 'Approved',
-                                        'rejected' => 'Rejected',
-                                    ])
-                                    ->default('pending')
+                                    ->options(ExemptionStatus::class)
+                                    ->default(ExemptionStatus::Pending)
                                     ->required(),
 
                                 Placeholder::make('status_info')
@@ -217,15 +215,15 @@ final class TaxExemptionForm
                                             return '⚠️ Expired on ' . $record->expires_at->format('d M Y');
                                         }
 
-                                        if ($record->expires_at?->isBefore(now()->addDays(30))) {
+                                        if ($record->expires_at?->isBefore(CarbonImmutable::now()->addDays(30))) {
                                             return '⏰ Expiring in ' . $record->expires_at->diffForHumans();
                                         }
 
-                                        if ($record->status === 'approved') {
+                                        if ($record->status === ExemptionStatus::Approved) {
                                             return '✅ Active & Approved';
                                         }
 
-                                        if ($record->status === 'rejected') {
+                                        if ($record->status === ExemptionStatus::Rejected) {
                                             return '❌ Rejected';
                                         }
 

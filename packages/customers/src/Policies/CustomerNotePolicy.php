@@ -9,7 +9,7 @@ use AIArmada\Customers\Models\CustomerNote;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Database\Eloquent\Model;
 
-class CustomerNotePolicy
+final class CustomerNotePolicy
 {
     use HandlesAuthorization;
 

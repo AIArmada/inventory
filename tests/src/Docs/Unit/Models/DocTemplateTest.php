@@ -39,7 +39,7 @@ test('doc template set as default logic', function (): void {
 
 test('doc template set as default respects owner', function (): void {
     config(['docs.owner.enabled' => true]);
-    $migration = require __DIR__ . '/../../../../../packages/docs/database/migrations/2025_12_02_000000_add_owner_columns_to_docs_tables.php';
+    $migration = require __DIR__ . '/../../../../../packages/docs/database/migrations/2000_06_01_000003_add_owner_columns_to_docs_tables.php';
     $migration->up();
 
     // Global default

@@ -7,11 +7,10 @@ namespace AIArmada\FilamentChip\Pages;
 use AIArmada\Chip\Data\DashboardMetrics;
 use AIArmada\Chip\Services\LocalAnalyticsService;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Contracts\View\View;
-use Illuminate\Support\Carbon;
 
 class AnalyticsDashboardPage extends Page
 {
@@ -52,8 +51,8 @@ class AnalyticsDashboardPage extends Page
     public function loadMetrics(): void
     {
         $service = app(LocalAnalyticsService::class);
-        $endDate = Carbon::now();
-        $startDate = $endDate->copy()->subDays((int) $this->period);
+        $endDate = CarbonImmutable::now();
+        $startDate = $endDate->subDays((int) $this->period);
 
         $this->metrics = $service->getDashboardMetrics($startDate, $endDate);
         $this->revenueTrend = $service->getRevenueTrend($startDate, $endDate, 'day');

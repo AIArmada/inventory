@@ -6,6 +6,7 @@ namespace AIArmada\FilamentJnt\Widgets;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Jnt\Models\JntOrder;
+use Carbon\CarbonImmutable;
 use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -19,7 +20,7 @@ final class JntStatsWidget extends BaseWidget
     {
         $stats = Cache::remember(
             $this->statsCacheKey(),
-            now()->addSeconds(30),
+            CarbonImmutable::now()->addSeconds(30),
             fn (): array => $this->calculateOrderStats()
         );
 

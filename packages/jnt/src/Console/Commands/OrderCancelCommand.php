@@ -7,10 +7,10 @@ namespace AIArmada\Jnt\Console\Commands;
 use AIArmada\Jnt\Enums\CancellationReason;
 use AIArmada\Jnt\Exceptions\JntApiException;
 use AIArmada\Jnt\Services\JntExpressService;
-use Exception;
 use Illuminate\Console\Command;
+use Throwable;
 
-class OrderCancelCommand extends Command
+final class OrderCancelCommand extends Command
 {
     protected $signature = 'jnt:order:cancel
                           {order-id : Order ID to cancel}
@@ -57,7 +57,7 @@ class OrderCancelCommand extends Command
             $this->error('API Error: ' . $e->getMessage());
 
             return self::FAILURE;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->error('Error: ' . $e->getMessage());
 
             return self::FAILURE;

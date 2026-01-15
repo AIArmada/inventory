@@ -482,6 +482,21 @@ final class PurchaseBuilder
     }
 
     /**
+     * Set an idempotency key to prevent duplicate purchases.
+     *
+     * If a purchase with this key already exists, the API will return
+     * the existing purchase instead of creating a new one.
+     *
+     * Recommended format: "order-{order_id}" or use a UUID.
+     */
+    public function idempotencyKey(string $key): self
+    {
+        $this->data['idempotency_key'] = $key;
+
+        return $this;
+    }
+
+    /**
      * Get the built data array (for inspection)
      *
      * @return array<string, mixed>

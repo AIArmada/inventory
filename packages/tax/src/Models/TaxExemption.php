@@ -7,6 +7,7 @@ namespace AIArmada\Tax\Models;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Tax\Database\Factories\TaxExemptionFactory;
+use AIArmada\Tax\Enums\ExemptionStatus;
 use AIArmada\Tax\Support\TaxOwnerScope;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -29,7 +30,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
  * @property string $reason
  * @property string|null $certificate_number
  * @property string|null $document_path
- * @property string $status
+ * @property ExemptionStatus $status
  * @property string|null $rejection_reason
  * @property \Carbon\CarbonInterface|null $verified_at
  * @property string|null $verified_by
@@ -72,6 +73,7 @@ class TaxExemption extends Model
      * @var array<string, string>
      */
     protected $casts = [
+        'status' => ExemptionStatus::class,
         'verified_at' => 'datetime',
         'starts_at' => 'datetime',
         'expires_at' => 'datetime',
@@ -81,7 +83,7 @@ class TaxExemption extends Model
      * @var array<string, mixed>
      */
     protected $attributes = [
-        'status' => 'pending',
+        'status' => ExemptionStatus::Pending,
     ];
 
     protected static function booted(): void
@@ -170,7 +172,7 @@ class TaxExemption extends Model
     {
         $now = now();
 
-        return $query->where('status', 'approved')
+        return $query->where('status', ExemptionStatus::Approved)
             ->where(function ($q) use ($now): void {
                 $q->whereNull('expires_at')
                     ->orWhere('expires_at', '>=', $now);
@@ -187,7 +189,7 @@ class TaxExemption extends Model
      */
     public function scopePending(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->where('status', 'pending');
+        return $query->where('status', ExemptionStatus::Pending);
     }
 
     /**
@@ -196,7 +198,16 @@ class TaxExemption extends Model
      */
     public function scopeApproved(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
-        return $query->where('status', 'approved');
+        return $query->where('status', ExemptionStatus::Approved);
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
+     */
+    public function scopeRejected(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        return $query->where('status', ExemptionStatus::Rejected);
     }
 
     /**
@@ -222,7 +233,7 @@ class TaxExemption extends Model
 
     public function isActive(): bool
     {
-        if ($this->status !== 'approved') {
+        if ($this->status !== ExemptionStatus::Approved) {
             return false;
         }
 
@@ -244,17 +255,17 @@ class TaxExemption extends Model
 
     public function isPending(): bool
     {
-        return $this->status === 'pending';
+        return $this->status === ExemptionStatus::Pending;
     }
 
     public function isApproved(): bool
     {
-        return $this->status === 'approved';
+        return $this->status === ExemptionStatus::Approved;
     }
 
     public function isRejected(): bool
     {
-        return $this->status === 'rejected';
+        return $this->status === ExemptionStatus::Rejected;
     }
 
     /**
@@ -272,7 +283,7 @@ class TaxExemption extends Model
 
     public function approve(): self
     {
-        $this->status = 'approved';
+        $this->status = ExemptionStatus::Approved;
         $this->verified_at = now();
         $this->save();
 
@@ -281,7 +292,7 @@ class TaxExemption extends Model
 
     public function reject(string $reason): self
     {
-        $this->status = 'rejected';
+        $this->status = ExemptionStatus::Rejected;
         $this->rejection_reason = $reason;
         $this->save();
 

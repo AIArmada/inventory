@@ -6,6 +6,7 @@ return [
 
     // Database
     'database' => [
+        'table_prefix' => 'customer_',
         'tables' => [
             'customers' => 'customers',
             'addresses' => 'customer_addresses',
@@ -13,23 +14,9 @@ return [
             'segment_customer' => 'customer_segment_customer',
             'groups' => 'customer_groups',
             'group_members' => 'customer_group_members',
-            'wishlists' => 'wishlists',
-            'wishlist_items' => 'wishlist_items',
             'notes' => 'customer_notes',
         ],
         'json_column_type' => env('CUSTOMERS_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),
-    ],
-
-    // Defaults
-    'defaults' => [
-        'wallet' => [
-            'currency' => 'MYR',
-            'max_balance' => 100000_00, // In cents: RM 100,000
-            'min_topup' => 10_00, // In cents: RM 10
-        ],
-        'wishlists' => [
-            'max_items_per_wishlist' => 100,
-        ],
     ],
 
     // Features
@@ -42,13 +29,6 @@ return [
 
         'segments' => [
             'auto_assign' => true,
-        ],
-        'wallet' => [
-            'enabled' => true,
-        ],
-        'wishlists' => [
-            'enabled' => true,
-            'allow_public' => true,
         ],
     ],
 

@@ -160,8 +160,8 @@ describe('Segment Model', function (): void {
 
     it('can store JSON conditions', function (): void {
         $conditions = [
-            ['field' => 'lifetime_value_min', 'value' => 10000],
-            ['field' => 'total_orders_min', 'value' => 5],
+            ['field' => 'accepts_marketing', 'value' => true],
+            ['field' => 'is_tax_exempt', 'value' => false],
         ];
 
         $segment = Segment::create([

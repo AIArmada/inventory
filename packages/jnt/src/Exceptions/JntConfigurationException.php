@@ -12,7 +12,7 @@ use Throwable;
  * This exception helps identify configuration issues during setup
  * or runtime operations.
  */
-class JntConfigurationException extends JntException
+final class JntConfigurationException extends JntException
 {
     public function __construct(
         string $message,

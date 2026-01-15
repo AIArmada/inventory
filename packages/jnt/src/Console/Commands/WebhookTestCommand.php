@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace AIArmada\Jnt\Console\Commands;
 
 use AIArmada\Jnt\Services\WebhookService;
-use Exception;
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
-class WebhookTestCommand extends Command
+final class WebhookTestCommand extends Command
 {
     protected $signature = 'jnt:webhook:test {--url= : Webhook URL to test}';
 
@@ -29,7 +30,7 @@ class WebhookTestCommand extends Command
                 'txlogisticId' => 'TEST-ORDER-' . time(),
                 'details' => [
                     [
-                        'scanTime' => now()->toIso8601String(),
+                        'scanTime' => CarbonImmutable::now()->toIso8601String(),
                         'scanType' => 'collect',
                         'desc' => 'Package collected - Test webhook',
                     ],
@@ -79,7 +80,7 @@ class WebhookTestCommand extends Command
             }
 
             return self::SUCCESS;
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
             $this->error('Error: ' . $exception->getMessage());
 
             return self::FAILURE;

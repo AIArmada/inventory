@@ -53,9 +53,9 @@ it('applyToOwnedQuery returns global-only rows when no owner is resolved and mod
         'status' => 'active',
         'accepts_marketing' => false,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 0,
-        'total_orders' => 0,
+        
+        
+        
         'owner_type' => null,
         'owner_id' => null,
     ]);
@@ -67,9 +67,9 @@ it('applyToOwnedQuery returns global-only rows when no owner is resolved and mod
         'status' => 'active',
         'accepts_marketing' => false,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 0,
-        'total_orders' => 0,
+        
+        
+        
         'owner_type' => $ownerA->getMorphClass(),
         'owner_id' => $ownerA->getKey(),
     ]);
@@ -112,9 +112,9 @@ it('applyToOwnedQuery returns only owner rows when owner is resolved and model h
         'status' => 'active',
         'accepts_marketing' => 0,
         'is_tax_exempt' => 0,
-        'wallet_balance' => 0,
-        'lifetime_value' => 0,
-        'total_orders' => 0,
+        
+        
+        
         'owner_type' => null,
         'owner_id' => null,
         'created_at' => now(),
@@ -128,9 +128,9 @@ it('applyToOwnedQuery returns only owner rows when owner is resolved and model h
         'status' => 'active',
         'accepts_marketing' => false,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 0,
-        'total_orders' => 0,
+        
+        
+        
         'owner_type' => $ownerA->getMorphClass(),
         'owner_id' => $ownerA->getKey(),
     ]);
@@ -142,9 +142,9 @@ it('applyToOwnedQuery returns only owner rows when owner is resolved and model h
         'status' => 'active',
         'accepts_marketing' => false,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 0,
-        'total_orders' => 0,
+        
+        
+        
         'owner_type' => $ownerB->getMorphClass(),
         'owner_id' => $ownerB->getKey(),
     ]);

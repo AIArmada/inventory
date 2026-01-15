@@ -7,7 +7,7 @@ namespace AIArmada\CashierChip;
 use AIArmada\CashierChip\Contracts\BillableContract;
 use AIArmada\Chip\Data\ProductData;
 use AIArmada\Chip\Data\PurchaseData;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Contracts\View\View;
@@ -65,7 +65,7 @@ class Invoice implements Arrayable, Jsonable, JsonSerializable
     /**
      * Get the invoice date.
      */
-    public function date(): ?Carbon
+    public function date(): ?CarbonImmutable
     {
         return $this->purchase->getCreatedAt();
     }
@@ -73,7 +73,7 @@ class Invoice implements Arrayable, Jsonable, JsonSerializable
     /**
      * Get the invoice due date.
      */
-    public function dueDate(): ?Carbon
+    public function dueDate(): ?CarbonImmutable
     {
         return $this->purchase->getDueDate();
     }

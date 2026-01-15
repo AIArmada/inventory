@@ -7,6 +7,7 @@ namespace AIArmada\Docs\Models;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -24,8 +25,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read DocWorkflow $workflow
  */
-class DocWorkflowStep extends Model
+final class DocWorkflowStep extends Model
 {
+    use HasFactory;
     use HasOwner;
     use HasOwnerScopeConfig;
     use HasUuids;

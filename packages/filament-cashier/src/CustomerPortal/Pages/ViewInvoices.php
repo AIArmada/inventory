@@ -6,10 +6,11 @@ namespace AIArmada\FilamentCashier\CustomerPortal\Pages;
 
 use AIArmada\FilamentCashier\Support\GatewayDetector;
 use BackedEnum;
-use Exception;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 final class ViewInvoices extends Page
 {
@@ -59,8 +60,8 @@ final class ViewInvoices extends Page
                         'download_url' => $invoice->invoicePdf(),
                     ]);
                 }
-            } catch (Exception) {
-                // Silently fail if API is not configured
+            } catch (Throwable $e) {
+                Log::debug('Failed to retrieve Stripe invoices', ['error' => $e->getMessage()]);
             }
         }
 
@@ -74,17 +75,30 @@ final class ViewInvoices extends Page
                         'id' => $invoice->id,
                         'gateway' => 'chip',
                         'number' => $invoice->number ?? $invoice->id,
-                        'amount' => 'RM ' . number_format(($invoice->amount ?? 0) / 100, 2),
+                        'amount' => $this->formatAmount(($invoice->amount ?? 0), 'MYR'),
                         'date' => $invoice->created_at?->format('M d, Y') ?? 'N/A',
                         'status' => $invoice->status ?? 'unknown',
                         'download_url' => $invoice->pdf_url ?? null,
                     ]);
                 }
-            } catch (Exception) {
-                // Silently fail if API is not configured
+            } catch (Throwable $e) {
+                Log::debug('Failed to retrieve CHIP invoices', ['error' => $e->getMessage()]);
             }
         }
 
         return $invoices->sortByDesc('date')->values();
+    }
+
+    private function formatAmount(int $amountInCents, string $currency): string
+    {
+        $symbol = match ($currency) {
+            'MYR' => 'RM',
+            'USD' => '$',
+            'EUR' => '€',
+            'GBP' => '£',
+            default => $currency . ' ',
+        };
+
+        return $symbol . number_format($amountInCents / 100, 2);
     }
 }

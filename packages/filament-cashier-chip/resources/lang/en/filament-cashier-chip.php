@@ -9,6 +9,19 @@ return [
         'customers' => 'Customers',
         'invoices' => 'Invoices',
         'dashboard' => 'Billing Dashboard',
+        'payment_methods' => 'Payment Methods',
+    ],
+
+    'subscriptions' => [
+        'title' => 'Subscriptions',
+    ],
+
+    'payment_methods' => [
+        'title' => 'Payment Methods',
+    ],
+
+    'invoices' => [
+        'title' => 'Invoices',
     ],
 
     'subscription' => [

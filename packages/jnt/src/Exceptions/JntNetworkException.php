@@ -12,7 +12,7 @@ use Throwable;
  * This exception handles HTTP-level errors such as timeouts,
  * connection failures, and server errors.
  */
-class JntNetworkException extends JntException
+final class JntNetworkException extends JntException
 {
     public function __construct(
         string $message,

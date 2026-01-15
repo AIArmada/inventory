@@ -6,6 +6,8 @@ namespace AIArmada\Docs\Models;
 
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
+use AIArmada\Docs\Enums\EmailStatus;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,7 +24,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $recipient_name
  * @property string $subject
  * @property string $body
- * @property string $status
+ * @property EmailStatus $status
  * @property Carbon|null $sent_at
  * @property Carbon|null $opened_at
  * @property Carbon|null $clicked_at
@@ -89,7 +91,7 @@ final class DocEmail extends Model
         $this->increment('open_count');
 
         if (! $this->opened_at) {
-            $this->update(['opened_at' => now()]);
+            $this->update(['opened_at' => CarbonImmutable::now()]);
         }
     }
 
@@ -98,13 +100,13 @@ final class DocEmail extends Model
         $this->increment('click_count');
 
         if (! $this->clicked_at) {
-            $this->update(['clicked_at' => now()]);
+            $this->update(['clicked_at' => CarbonImmutable::now()]);
         }
     }
 
     public function isSent(): bool
     {
-        return $this->status === 'sent';
+        return $this->status === EmailStatus::Sent;
     }
 
     public function isOpened(): bool
@@ -118,6 +120,7 @@ final class DocEmail extends Model
     protected function casts(): array
     {
         return [
+            'status' => EmailStatus::class,
             'sent_at' => 'datetime',
             'opened_at' => 'datetime',
             'clicked_at' => 'datetime',

@@ -33,39 +33,7 @@ return [
     */
     'default_currency' => 'MYR',
 
-    // When enabled, the Filament UI forces CHIP models to be owner-scoped.
-    // This prevents cross-tenant reads/writes even if chip.owner.enabled is false by default.
     'enforce_owner_scoping' => true,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Billing Portal
-    |--------------------------------------------------------------------------
-    */
-    'billing' => [
-        'enabled' => env('CHIP_BILLING_PORTAL_ENABLED', true),
-        'panel_id' => 'billing',
-        'path' => 'billing',
-        'brand_name' => env('CHIP_BILLING_BRAND_NAME', 'Billing Portal'),
-        'primary_color' => env('CHIP_BILLING_PRIMARY_COLOR', '#6366f1'),
-        'login_enabled' => env('CHIP_BILLING_LOGIN_ENABLED', true),
-        'auth_guard' => 'web',
-        'allowed_roles' => [],
-        'billable_model' => null,
-        'features' => [
-            'subscriptions' => true,
-            'payment_methods' => true,
-            'invoices' => true,
-        ],
-        'redirects' => [
-            'after_payment_method_added' => null,
-            'after_subscription_cancelled' => null,
-        ],
-        'invoice' => [
-            'vendor_name' => null,
-            'product_name' => 'Subscription',
-        ],
-    ],
 
     /*
     |--------------------------------------------------------------------------
@@ -78,11 +46,8 @@ return [
             'payments' => 20,
             'clients' => 30,
             'bank_accounts' => 40,
-            'webhooks' => 50,
-            'send_instructions' => 60,
-            'send_limits' => 70,
-            'send_webhooks' => 80,
-            'company_statements' => 90,
+            'send_instructions' => 50,
+            'company_statements' => 60,
         ],
     ],
 ];

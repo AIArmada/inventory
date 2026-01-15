@@ -1,3 +1,7 @@
+---
+title: Testing Credentials
+---
+
 # Testing Credentials Auto-Configuration
 
 ## Overview

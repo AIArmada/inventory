@@ -74,7 +74,10 @@ class Address extends Model
 
     public function getTable(): string
     {
-        return config('customers.database.tables.addresses', 'customer_addresses');
+        $tables = config('customers.database.tables', []);
+        $prefix = config('customers.database.table_prefix', 'customer_');
+
+        return $tables['addresses'] ?? $prefix . 'addresses';
     }
 
     // =========================================================================

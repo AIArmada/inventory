@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\Customers\Models\Customer;
 use AIArmada\FilamentCustomers\Widgets\CustomerStatsWidget;
-use AIArmada\FilamentCustomers\Widgets\TopCustomersWidget;
+use AIArmada\FilamentCustomers\Widgets\RecentCustomersWidget;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -62,9 +62,6 @@ it('CustomerStatsWidget is owner-scoped for counts and aggregates', function ():
         'status' => 'active',
         'accepts_marketing' => true,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 500_00,
-        'total_orders' => 1,
         'created_at' => Carbon::now()->subDays(2),
         'owner_type' => $ownerA->getMorphClass(),
         'owner_id' => $ownerA->getKey(),
@@ -77,9 +74,6 @@ it('CustomerStatsWidget is owner-scoped for counts and aggregates', function ():
         'status' => 'active',
         'accepts_marketing' => true,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 999_00,
-        'total_orders' => 2,
         'created_at' => Carbon::now()->subDays(2),
         'owner_type' => $ownerB->getMorphClass(),
         'owner_id' => $ownerB->getKey(),
@@ -98,13 +92,11 @@ it('CustomerStatsWidget is owner-scoped for counts and aggregates', function ():
     })();
 
     $total = collect($stats)->first(fn ($stat) => $stat->getLabel() === 'Total Customers');
-    $avg = collect($stats)->first(fn ($stat) => $stat->getLabel() === 'Average LTV');
 
     expect($total?->getValue())->toBe('1');
-    expect($avg?->getValue())->toContain('RM');
 });
 
-it('TopCustomersWidget query is owner-scoped', function (): void {
+it('RecentCustomersWidget query is owner-scoped', function (): void {
     $ownerA = filamentCustomers_makeOwner('00000000-0000-0000-0000-00000000000a');
     $ownerB = filamentCustomers_makeOwner('00000000-0000-0000-0000-00000000000b');
 
@@ -125,9 +117,6 @@ it('TopCustomersWidget query is owner-scoped', function (): void {
         'status' => 'active',
         'accepts_marketing' => true,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 10_000_00,
-        'total_orders' => 50,
         'owner_type' => $ownerA->getMorphClass(),
         'owner_id' => $ownerA->getKey(),
     ]);
@@ -139,14 +128,11 @@ it('TopCustomersWidget query is owner-scoped', function (): void {
         'status' => 'active',
         'accepts_marketing' => true,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 20_000_00,
-        'total_orders' => 70,
         'owner_type' => $ownerB->getMorphClass(),
         'owner_id' => $ownerB->getKey(),
     ]);
 
-    $widget = new TopCustomersWidget;
+    $widget = new RecentCustomersWidget;
     $tableLivewire = Mockery::mock(HasTable::class);
 
     $table = $widget->table(Table::make($tableLivewire));

@@ -13,7 +13,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
  * This rule ensures that package dimensions (length, width, height) are within
  * the acceptable range for the J&T Express API (0.01 to 999.99 cm).
  */
-class DimensionInCentimeters implements ValidationRule
+final class DimensionInCentimeters implements ValidationRule
 {
     /**
      * Run the validation rule.

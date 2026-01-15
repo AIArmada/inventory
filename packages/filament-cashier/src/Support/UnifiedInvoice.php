@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCashier\Support;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 
 /**
  * Unified Invoice DTO - normalizes invoice data across gateways.
@@ -19,9 +19,9 @@ final readonly class UnifiedInvoice
         public int $amount,
         public string $currency,
         public InvoiceStatus $status,
-        public Carbon $date,
-        public ?Carbon $dueDate,
-        public ?Carbon $paidAt,
+        public CarbonImmutable $date,
+        public ?CarbonImmutable $dueDate,
+        public ?CarbonImmutable $paidAt,
         public ?string $pdfUrl,
         public object $original,
     ) {}
@@ -31,6 +31,9 @@ final readonly class UnifiedInvoice
      */
     public static function fromStripe(object $invoice, string $userId): self
     {
+        $invoiceDate = $invoice->date();
+        $dueDate = $invoice->dueDate();
+
         return new self(
             id: $invoice->id,
             gateway: 'stripe',
@@ -39,9 +42,9 @@ final readonly class UnifiedInvoice
             amount: (int) $invoice->rawTotal(),
             currency: mb_strtoupper($invoice->currency ?? 'USD'),
             status: self::normalizeStripeStatus($invoice),
-            date: $invoice->date(),
-            dueDate: $invoice->dueDate(),
-            paidAt: $invoice->paid ? Carbon::createFromTimestamp($invoice->asStripeInvoice()->status_transitions?->paid_at ?? time()) : null,
+            date: $invoiceDate instanceof CarbonImmutable ? $invoiceDate : CarbonImmutable::parse($invoiceDate),
+            dueDate: $dueDate instanceof CarbonImmutable ? $dueDate : ($dueDate ? CarbonImmutable::parse($dueDate) : null),
+            paidAt: $invoice->paid ? CarbonImmutable::createFromTimestamp($invoice->asStripeInvoice()->status_transitions?->paid_at ?? time()) : null,
             pdfUrl: $invoice->invoicePdf(),
             original: $invoice,
         );
@@ -62,9 +65,9 @@ final readonly class UnifiedInvoice
             amount: (int) ($invoice->amount ?? 0),
             currency: 'MYR',
             status: self::normalizeChipStatus($invoice),
-            date: $createdAt instanceof Carbon ? $createdAt : Carbon::parse($createdAt),
+            date: $createdAt instanceof CarbonImmutable ? $createdAt : CarbonImmutable::parse($createdAt),
             dueDate: null,
-            paidAt: isset($invoice->paid_at) ? Carbon::parse($invoice->paid_at) : null,
+            paidAt: isset($invoice->paid_at) ? CarbonImmutable::parse($invoice->paid_at) : null,
             pdfUrl: $invoice->pdf_url ?? null,
             original: $invoice,
         );

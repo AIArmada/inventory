@@ -59,9 +59,9 @@ it('scopes CustomerResource query to the resolved owner', function (): void {
         'status' => 'active',
         'accepts_marketing' => true,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 0,
-        'total_orders' => 0,
+        
+        
+        
         'owner_type' => $ownerA->getMorphClass(),
         'owner_id' => $ownerA->getKey(),
     ]);
@@ -73,9 +73,9 @@ it('scopes CustomerResource query to the resolved owner', function (): void {
         'status' => 'active',
         'accepts_marketing' => true,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 0,
-        'total_orders' => 0,
+        
+        
+        
         'owner_type' => $ownerB->getMorphClass(),
         'owner_id' => $ownerB->getKey(),
     ]);

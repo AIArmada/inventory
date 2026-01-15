@@ -21,9 +21,15 @@ final class CustomersOwnerScope
     }
 
     /**
+     * Apply owner scoping to a query.
+     *
+     * Filament surfaces default to owner-only (no global rows) for security.
+     * To include global rows (owner=null), explicitly pass $includeGlobal = true.
+     *
      * @template TModel of Model
      *
      * @param  Builder<TModel>  $query
+     * @param  bool  $includeGlobal  When true, includes rows with owner=null (global rows)
      * @return Builder<TModel>
      */
     public static function applyToOwnedQuery(Builder $query, bool $includeGlobal = false): Builder
@@ -33,10 +39,6 @@ final class CustomersOwnerScope
         }
 
         $owner = self::resolveOwner();
-        // Filament surfaces must be owner-only by default.
-        // If no owner is resolved, we treat rows with owner=null as global-only.
-        // If an owner is resolved, we never implicitly include global rows.
-        $includeGlobal = false;
 
         return OwnerQuery::applyToEloquentBuilder($query, $owner, $includeGlobal);
     }

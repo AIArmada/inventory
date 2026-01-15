@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentCashier\Support;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
@@ -21,10 +21,10 @@ use Illuminate\Support\Facades\DB;
  * @property-read string $currency
  * @property-read int $quantity
  * @property-read SubscriptionStatus $status
- * @property-read Carbon|null $trialEndsAt
- * @property-read Carbon|null $endsAt
- * @property-read Carbon|null $nextBillingDate
- * @property-read Carbon $createdAt
+ * @property-read CarbonImmutable|null $trialEndsAt
+ * @property-read CarbonImmutable|null $endsAt
+ * @property-read CarbonImmutable|null $nextBillingDate
+ * @property-read CarbonImmutable $createdAt
  * @property-read Model $original
  */
 final readonly class UnifiedSubscription
@@ -39,10 +39,10 @@ final readonly class UnifiedSubscription
         public string $currency,
         public int $quantity,
         public SubscriptionStatus $status,
-        public ?Carbon $trialEndsAt,
-        public ?Carbon $endsAt,
-        public ?Carbon $nextBillingDate,
-        public Carbon $createdAt,
+        public ?CarbonImmutable $trialEndsAt,
+        public ?CarbonImmutable $endsAt,
+        public ?CarbonImmutable $nextBillingDate,
+        public CarbonImmutable $createdAt,
         public Model $original,
     ) {}
 
@@ -51,6 +51,10 @@ final readonly class UnifiedSubscription
      */
     public static function fromStripe(Model $subscription): self
     {
+        $trialEndsAt = $subscription->getAttribute('trial_ends_at');
+        $endsAt = $subscription->getAttribute('ends_at');
+        $createdAt = $subscription->getAttribute('created_at');
+
         return new self(
             id: (string) $subscription->getKey(),
             gateway: 'stripe',
@@ -61,10 +65,10 @@ final readonly class UnifiedSubscription
             currency: 'USD',
             quantity: (int) ($subscription->getAttribute('quantity') ?? 1),
             status: self::normalizeStripeStatus($subscription),
-            trialEndsAt: $subscription->getAttribute('trial_ends_at'),
-            endsAt: $subscription->getAttribute('ends_at'),
+            trialEndsAt: $trialEndsAt ? CarbonImmutable::parse($trialEndsAt) : null,
+            endsAt: $endsAt ? CarbonImmutable::parse($endsAt) : null,
             nextBillingDate: self::calculateStripeNextBilling($subscription),
-            createdAt: $subscription->getAttribute('created_at'),
+            createdAt: CarbonImmutable::parse($createdAt),
             original: $subscription,
         );
     }
@@ -74,6 +78,11 @@ final readonly class UnifiedSubscription
      */
     public static function fromChip(Model $subscription): self
     {
+        $trialEndsAt = $subscription->getAttribute('trial_ends_at');
+        $endsAt = $subscription->getAttribute('ends_at');
+        $nextBillingAt = $subscription->getAttribute('next_billing_at');
+        $createdAt = $subscription->getAttribute('created_at');
+
         return new self(
             id: (string) $subscription->getKey(),
             gateway: 'chip',
@@ -84,10 +93,10 @@ final readonly class UnifiedSubscription
             currency: 'MYR',
             quantity: (int) ($subscription->getAttribute('quantity') ?? 1),
             status: self::normalizeChipStatus($subscription),
-            trialEndsAt: $subscription->getAttribute('trial_ends_at'),
-            endsAt: $subscription->getAttribute('ends_at'),
-            nextBillingDate: $subscription->getAttribute('next_billing_at') ?? null,
-            createdAt: $subscription->getAttribute('created_at'),
+            trialEndsAt: $trialEndsAt ? CarbonImmutable::parse($trialEndsAt) : null,
+            endsAt: $endsAt ? CarbonImmutable::parse($endsAt) : null,
+            nextBillingDate: $nextBillingAt ? CarbonImmutable::parse($nextBillingAt) : null,
+            createdAt: CarbonImmutable::parse($createdAt),
             original: $subscription,
         );
     }
@@ -342,7 +351,7 @@ final readonly class UnifiedSubscription
         };
     }
 
-    private static function calculateStripeNextBilling(Model $subscription): ?Carbon
+    private static function calculateStripeNextBilling(Model $subscription): ?CarbonImmutable
     {
         // If subscription has ends_at, no next billing
         if ($subscription->getAttribute('ends_at') !== null) {
@@ -352,15 +361,15 @@ final readonly class UnifiedSubscription
         // If on trial, next billing is after trial
         $trialEndsAt = $subscription->getAttribute('trial_ends_at');
 
-        if ($trialEndsAt instanceof Carbon && $trialEndsAt->isFuture()) {
-            return $trialEndsAt;
+        if ($trialEndsAt !== null && CarbonImmutable::parse($trialEndsAt)->isFuture()) {
+            return CarbonImmutable::parse($trialEndsAt);
         }
 
         // Try to get from Stripe API metadata if available
         $currentPeriodEnd = $subscription->getAttribute('current_period_end');
 
         if (is_int($currentPeriodEnd)) {
-            return Carbon::createFromTimestamp($currentPeriodEnd);
+            return CarbonImmutable::createFromTimestamp($currentPeriodEnd);
         }
 
         return null;

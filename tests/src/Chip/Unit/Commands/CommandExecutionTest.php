@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use AIArmada\Chip\Commands\AggregateMetricsCommand;
 use AIArmada\Chip\Commands\CleanWebhooksCommand;
-use AIArmada\Chip\Commands\ProcessRecurringCommand;
 use AIArmada\Chip\Commands\RetryWebhooksCommand;
 
 /**
@@ -75,23 +74,6 @@ describe('Command classes structure', function (): void {
             $command = new CleanWebhooksCommand;
             $option = $command->getDefinition()->getOption('status');
             expect($option->getDefault())->toBe('processed');
-        });
-    });
-
-    describe('ProcessRecurringCommand', function (): void {
-        it('has correct name', function (): void {
-            $command = new ProcessRecurringCommand;
-            expect($command->getName())->toBe('chip:process-recurring');
-        });
-
-        it('has description', function (): void {
-            $command = new ProcessRecurringCommand;
-            expect($command->getDescription())->not()->toBeEmpty();
-        });
-
-        it('has dry-run option', function (): void {
-            $command = new ProcessRecurringCommand;
-            expect($command->getDefinition()->hasOption('dry-run'))->toBeTrue();
         });
     });
 

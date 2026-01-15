@@ -34,7 +34,7 @@ it('FilamentCustomersPlugin registers resources and widgets', function (): void 
         ->once()
         ->with([
             AIArmada\FilamentCustomers\Widgets\CustomerStatsWidget::class,
-            AIArmada\FilamentCustomers\Widgets\TopCustomersWidget::class,
+            AIArmada\FilamentCustomers\Widgets\RecentCustomersWidget::class,
         ])
         ->andReturnSelf();
 

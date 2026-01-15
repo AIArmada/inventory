@@ -8,6 +8,8 @@
         {{ $this->createQuotationAction }}
         {{ $this->createCreditNoteAction }}
         {{ $this->createReceiptAction }}
+        {{ $this->createDeliveryNoteAction }}
+        {{ $this->createProformaInvoiceAction }}
         {{ $this->viewReportsAction }}
     </div>
 

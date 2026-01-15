@@ -89,17 +89,17 @@ class Checkout implements Arrayable, Jsonable, JsonSerializable, Responsable
                 $price = max(0, (int) ($product['price'] ?? 0));
                 $discount = max(0, (int) ($product['discount'] ?? 0));
 
-                $builder->addProduct(
-                    (string) ($product['name'] ?? ''),
-                    $price,
-                    $quantity,
-                    $discount
+                $builder->addProductCents(
+                    name: (string) ($product['name'] ?? ''),
+                    priceInCents: $price,
+                    quantity: $quantity,
+                    discountInCents: $discount
                 );
             }
         } else {
-            $builder->addProduct(
-                $options['reference'] ?? 'Payment',
-                $amount
+            $builder->addProductCents(
+                name: $options['reference'] ?? 'Payment',
+                priceInCents: $amount
             );
         }
 

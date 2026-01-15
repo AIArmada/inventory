@@ -159,18 +159,20 @@ final class CartCheckoutBuilder
      */
     public function process(): CheckoutContract
     {
-        // Validate stock if configured
-        if ($this->validateStock) {
-            $this->performStockValidation();
-        }
+        return \Illuminate\Support\Facades\DB::transaction(function () {
+            // Validate stock if configured
+            if ($this->validateStock) {
+                $this->performStockValidation();
+            }
 
-        // Allocate inventory if configured
-        if ($this->allocateInventory) {
-            $this->performInventoryAllocation();
-        }
+            // Allocate inventory if configured
+            if ($this->allocateInventory) {
+                $this->performInventoryAllocation();
+            }
 
-        // Build and create the checkout session
-        return $this->createCheckoutSession();
+            // Build and create the checkout session
+            return $this->createCheckoutSession();
+        });
     }
 
     /**

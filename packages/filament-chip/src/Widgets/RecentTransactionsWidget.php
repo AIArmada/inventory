@@ -6,6 +6,7 @@ namespace AIArmada\FilamentChip\Widgets;
 
 use AIArmada\Chip\Models\Purchase;
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -61,9 +62,16 @@ final class RecentTransactionsWidget extends BaseWidget
             ->actions([
                 Action::make('view')
                     ->icon('heroicon-o-eye')
-                    ->url(fn (Purchase $record): string => route('filament.admin.resources.purchases.view', ['record' => $record]))
+                    ->url(fn (Purchase $record): string => $this->getResourceViewUrl($record))
                     ->openUrlInNewTab(),
             ])
             ->paginated(false);
+    }
+
+    private function getResourceViewUrl(Purchase $record): string
+    {
+        $panelId = Filament::getCurrentPanel()?->getId() ?? 'admin';
+
+        return route("filament.{$panelId}.resources.purchases.view", ['record' => $record]);
     }
 }

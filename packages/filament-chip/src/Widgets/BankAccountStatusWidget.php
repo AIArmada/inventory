@@ -71,11 +71,10 @@ final class BankAccountStatusWidget extends ChartWidget
      */
     private function getStatusCounts(): array
     {
-        $active = BankAccount::query()->forOwner()->whereIn('status', ['active', 'approved'])->count();
-        $pending = BankAccount::query()->forOwner()->whereIn('status', ['pending', 'verifying'])->count();
-        $rejected = BankAccount::query()->forOwner()->whereIn('status', ['rejected', 'disabled'])->count();
-        $other = BankAccount::query()
-            ->forOwner()
+        $active = $this->scopedQuery(BankAccount::query())->whereIn('status', ['active', 'approved'])->count();
+        $pending = $this->scopedQuery(BankAccount::query())->whereIn('status', ['pending', 'verifying'])->count();
+        $rejected = $this->scopedQuery(BankAccount::query())->whereIn('status', ['rejected', 'disabled'])->count();
+        $other = $this->scopedQuery(BankAccount::query())
             ->where(function ($query): void {
                 $query->whereNotIn('status', ['active', 'approved', 'pending', 'verifying', 'rejected', 'disabled'])
                     ->orWhereNull('status');
@@ -88,5 +87,20 @@ final class BankAccountStatusWidget extends ChartWidget
             'Rejected' => $rejected,
             'Other' => $other,
         ];
+    }
+
+    /**
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<TModel>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<TModel>
+     */
+    private function scopedQuery(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    {
+        if (method_exists($query->getModel(), 'scopeForOwner')) {
+            return $query->forOwner(); // @phpstan-ignore method.notFound
+        }
+
+        return $query;
     }
 }

@@ -6,8 +6,8 @@ namespace AIArmada\Cashier;
 
 use AIArmada\Cashier\Concerns\ManagesGateway;
 use AIArmada\Cashier\Contracts\SubscriptionContract;
-use Exception;
 use Illuminate\Support\Collection;
+use Throwable;
 
 /**
  * Unified Billable trait for multi-gateway payment support.
@@ -62,7 +62,7 @@ trait Billable // @phpstan-ignore trait.unused
             try {
                 $gatewaySubscriptions = $this->gateway($gateway)->subscriptions($this);
                 $subscriptions = $subscriptions->merge($gatewaySubscriptions);
-            } catch (Exception) {
+            } catch (Throwable) {
                 // Gateway not available, skip
             }
         }
@@ -81,7 +81,7 @@ trait Billable // @phpstan-ignore trait.unused
                 if ($subscription) {
                     return $subscription;
                 }
-            } catch (Exception) {
+            } catch (Throwable) {
                 // Gateway not available, skip
             }
         }
@@ -114,7 +114,7 @@ trait Billable // @phpstan-ignore trait.unused
                 if ($subscription && $subscription->onTrial()) {
                     return true;
                 }
-            } catch (Exception) {
+            } catch (Throwable) {
                 // Gateway not available, skip
             }
         }

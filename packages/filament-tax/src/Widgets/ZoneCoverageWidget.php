@@ -9,7 +9,7 @@ use AIArmada\Tax\Support\TaxOwnerScope;
 use Filament\Widgets\Widget;
 use Illuminate\Support\Collection;
 
-class ZoneCoverageWidget extends Widget
+final class ZoneCoverageWidget extends Widget
 {
     protected string $view = 'filament-tax::widgets.zone-coverage';
 

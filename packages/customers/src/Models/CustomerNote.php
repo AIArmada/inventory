@@ -58,7 +58,10 @@ class CustomerNote extends Model
 
     public function getTable(): string
     {
-        return config('customers.database.tables.notes', 'customer_notes');
+        $tables = config('customers.database.tables', []);
+        $prefix = config('customers.database.table_prefix', 'customer_');
+
+        return $tables['notes'] ?? $prefix . 'notes';
     }
 
     // =========================================================================

@@ -7,6 +7,7 @@ namespace AIArmada\FilamentDocs\Resources\DocResource\Schemas;
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Models\DocTemplate;
+use Carbon\CarbonImmutable;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
@@ -90,7 +91,7 @@ final class DocForm
 
                                 DatePicker::make('issue_date')
                                     ->label('Issue Date')
-                                    ->default(now())
+                                    ->default(CarbonImmutable::now())
                                     ->required(),
 
                                 DatePicker::make('due_date')
@@ -104,7 +105,8 @@ final class DocForm
                                     ->label('Currency')
                                     ->default((string) config('docs.defaults.currency', 'MYR'))
                                     ->maxLength(3)
-                                    ->required(),
+                                    ->required()
+                                    ->live(),
 
                                 TextInput::make('tax_rate')
                                     ->label('Tax Rate')
@@ -176,7 +178,7 @@ final class DocForm
                                         TextInput::make('price')
                                             ->label('Unit Price')
                                             ->numeric()
-                                            ->prefix('$')
+                                            ->prefix(fn (Get $get): string => $get('../../currency') ?? config('docs.defaults.currency', 'MYR'))
                                             ->required(),
                                     ]),
 
@@ -188,10 +190,8 @@ final class DocForm
                             ->collapsible()
                             ->cloneable()
                             ->reorderable()
-                            ->itemLabel(
-                                fn (array $state): string => ($state['name'] ?? 'New Item') .
-                                (isset($state['quantity'], $state['price']) ? ' - ' . $state['quantity'] . ' × $' . number_format((float) $state['price'], 2) : '')
-                            )
+                            ->itemLabel(fn (array $state, Get $get): string => ($state['name'] ?? 'New Item') .
+                                (isset($state['quantity'], $state['price']) ? ' - ' . $state['quantity'] . ' × ' . ($get('currency') ?? config('docs.defaults.currency', 'MYR')) . ' ' . number_format((float) $state['price'], 2) : ''))
                             ->columnSpanFull()
                             ->defaultItems(1),
                     ]),
@@ -203,25 +203,25 @@ final class DocForm
                                 TextInput::make('subtotal')
                                     ->label('Subtotal')
                                     ->numeric()
-                                    ->prefix('$')
+                                    ->prefix(fn (Get $get): string => $get('currency') ?? config('docs.defaults.currency', 'MYR'))
                                     ->helperText('Auto-calculated if empty'),
 
                                 TextInput::make('tax_amount')
                                     ->label('Tax Amount')
                                     ->numeric()
-                                    ->prefix('$')
+                                    ->prefix(fn (Get $get): string => $get('currency') ?? config('docs.defaults.currency', 'MYR'))
                                     ->helperText('Auto-calculated if empty'),
 
                                 TextInput::make('discount_amount')
                                     ->label('Discount')
                                     ->numeric()
-                                    ->prefix('$')
+                                    ->prefix(fn (Get $get): string => $get('currency') ?? config('docs.defaults.currency', 'MYR'))
                                     ->default(0),
 
                                 TextInput::make('total')
                                     ->label('Total')
                                     ->numeric()
-                                    ->prefix('$')
+                                    ->prefix(fn (Get $get): string => $get('currency') ?? config('docs.defaults.currency', 'MYR'))
                                     ->helperText('Auto-calculated if empty'),
                             ]),
                     ])

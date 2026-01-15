@@ -6,8 +6,10 @@ namespace AIArmada\FilamentDocs\Pages;
 
 use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Models\Doc;
+use AIArmada\FilamentDocs\Resources\DocResource;
 use AIArmada\FilamentDocs\Support\DocsOwnerScope;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -81,7 +83,7 @@ final class AgingReportPage extends Page implements HasTable
                         }
 
                         return $record->due_date->isPast()
-                            ? $record->due_date->diffInDays(now())
+                            ? $record->due_date->diffInDays(CarbonImmutable::now())
                             : 0;
                     })
                     ->badge()
@@ -107,7 +109,7 @@ final class AgingReportPage extends Page implements HasTable
                         }
 
                         $days = $record->due_date->isPast()
-                            ? $record->due_date->diffInDays(now())
+                            ? $record->due_date->diffInDays(CarbonImmutable::now())
                             : 0;
 
                         if ($days === 0) {
@@ -152,11 +154,11 @@ final class AgingReportPage extends Page implements HasTable
                         }
 
                         return match ($data['value']) {
-                            'current' => $query->where('due_date', '>=', now()),
-                            '1-30' => $query->whereBetween('due_date', [now()->subDays(30), now()->subDay()]),
-                            '31-60' => $query->whereBetween('due_date', [now()->subDays(60), now()->subDays(31)]),
-                            '61-90' => $query->whereBetween('due_date', [now()->subDays(90), now()->subDays(61)]),
-                            '90+' => $query->where('due_date', '<', now()->subDays(90)),
+                            'current' => $query->where('due_date', '>=', CarbonImmutable::now()),
+                            '1-30' => $query->whereBetween('due_date', [CarbonImmutable::now()->subDays(30), CarbonImmutable::now()->subDay()]),
+                            '31-60' => $query->whereBetween('due_date', [CarbonImmutable::now()->subDays(60), CarbonImmutable::now()->subDays(31)]),
+                            '61-90' => $query->whereBetween('due_date', [CarbonImmutable::now()->subDays(90), CarbonImmutable::now()->subDays(61)]),
+                            '90+' => $query->where('due_date', '<', CarbonImmutable::now()->subDays(90)),
                             default => $query,
                         };
                     }),
@@ -169,7 +171,7 @@ final class AgingReportPage extends Page implements HasTable
             ->defaultSort('due_date', 'asc')
             ->recordActions([
                 Action::make('view')
-                    ->url(fn (Doc $record): string => route('filament.admin.resources.docs.view', $record))
+                    ->url(fn (Doc $record): string => DocResource::getUrl('view', ['record' => $record]))
                     ->icon('heroicon-o-eye'),
             ]);
     }
@@ -202,7 +204,7 @@ final class AgingReportPage extends Page implements HasTable
 
         foreach ($docs as $doc) {
             $days = $doc->due_date->isPast()
-                ? $doc->due_date->diffInDays(now())
+                ? $doc->due_date->diffInDays(CarbonImmutable::now())
                 : 0;
             $bucket = match (true) {
                 $days === 0 => 'current',

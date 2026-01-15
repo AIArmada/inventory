@@ -8,6 +8,7 @@ use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Customers\Events\CustomerSegmentChanged;
 use AIArmada\Customers\Models\Customer;
 use AIArmada\Customers\Models\Segment;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -19,7 +20,7 @@ use Illuminate\Support\Collection;
  * - Manually managing segment membership
  * - Bulk rebuilding segment memberships
  */
-class SegmentationService
+final class SegmentationService
 {
     /**
      * Rebuild all automatic segments.
@@ -233,7 +234,7 @@ class SegmentationService
     /**
      * Get segment statistics.
      *
-     * @return array<string, mixed>
+     * @return array{customer_count: int, active_count: int, marketing_opted_in: int, marketing_opted_in_percentage: float, tax_exempt_count: int}
      */
     public function getSegmentStats(Segment $segment): array
     {
@@ -242,54 +243,59 @@ class SegmentationService
         if ($customers->isEmpty()) {
             return [
                 'customer_count' => 0,
-                'total_lifetime_value' => 0,
-                'average_lifetime_value' => 0,
-                'total_orders' => 0,
-                'average_orders' => 0,
+                'active_count' => 0,
                 'marketing_opted_in' => 0,
-                'marketing_opted_in_percentage' => 0,
+                'marketing_opted_in_percentage' => 0.0,
+                'tax_exempt_count' => 0,
             ];
         }
 
-        $totalLtv = $customers->sum('lifetime_value');
-        $totalOrders = $customers->sum('total_orders');
+        $activeCount = $customers->where('status', 'active')->count();
         $marketingOptedIn = $customers->where('accepts_marketing', true)->count();
+        $taxExemptCount = $customers->where('is_tax_exempt', true)->count();
 
         return [
             'customer_count' => $customers->count(),
-            'total_lifetime_value' => $totalLtv,
-            'average_lifetime_value' => (int) ($totalLtv / $customers->count()),
-            'total_orders' => $totalOrders,
-            'average_orders' => round($totalOrders / $customers->count(), 2),
+            'active_count' => $activeCount,
             'marketing_opted_in' => $marketingOptedIn,
             'marketing_opted_in_percentage' => round(($marketingOptedIn / $customers->count()) * 100, 1),
+            'tax_exempt_count' => $taxExemptCount,
         ];
     }
 
     /**
      * Evaluate a single condition against a customer.
      *
+     * Conditions can use 'value_numeric', 'value_boolean', 'value_status' keys (Filament form)
+     * or a single 'value' key (legacy/API). We normalize before matching.
+     *
      * @param  array<string, mixed>  $condition
      */
     protected function evaluateCondition(Customer $customer, array $condition): bool
     {
         $field = $condition['field'] ?? null;
-        $value = $condition['value'] ?? null;
 
-        if (! $field || $value === null) {
+        if ($field === null) {
+            return true;
+        }
+
+        $value = $condition['value_numeric']
+            ?? $condition['value_boolean']
+            ?? $condition['value_status']
+            ?? $condition['value']
+            ?? null;
+
+        if ($value === null) {
             return true;
         }
 
         return match ($field) {
-            'lifetime_value_min' => $customer->lifetime_value >= $value,
-            'lifetime_value_max' => $customer->lifetime_value <= $value,
-            'total_orders_min' => $customer->total_orders >= $value,
-            'total_orders_max' => $customer->total_orders <= $value,
-            'last_order_days' => $customer->last_order_at && $customer->last_order_at->gte(now()->subDays($value)),
-            'no_order_days' => ! $customer->last_order_at || $customer->last_order_at->lte(now()->subDays($value)),
             'accepts_marketing' => $customer->accepts_marketing === (bool) $value,
             'is_tax_exempt' => $customer->is_tax_exempt === (bool) $value,
             'status' => $customer->status->value === $value,
+            'created_days_ago' => $customer->created_at && $customer->created_at->lte(CarbonImmutable::now()->subDays((int) $value)),
+            'last_login_days' => $customer->last_login_at && $customer->last_login_at->gte(CarbonImmutable::now()->subDays((int) $value)),
+            'no_login_days' => ! $customer->last_login_at || $customer->last_login_at->lte(CarbonImmutable::now()->subDays((int) $value)),
             default => false,
         };
     }

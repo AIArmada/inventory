@@ -13,7 +13,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
  * This rule ensures that phone numbers conform to the J&T Express API requirements.
  * Phone numbers must be numeric and between 10 and 15 digits in length.
  */
-class PhoneNumber implements ValidationRule
+final class PhoneNumber implements ValidationRule
 {
     /**
      * Run the validation rule.

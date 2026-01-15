@@ -6,6 +6,7 @@ namespace AIArmada\FilamentChip\Widgets;
 
 use AIArmada\Chip\Models\SendInstruction;
 use Filament\Actions\ViewAction;
+use Filament\Facades\Filament;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -22,8 +23,11 @@ final class RecentPayoutsWidget extends BaseWidget
     {
         return $table
             ->query(
-                SendInstruction::query()
-                    ->forOwner()
+                tap(SendInstruction::query(), function ($query): void {
+                    if (method_exists($query->getModel(), 'scopeForOwner')) {
+                        $query->forOwner();
+                    }
+                })
                     ->with('bankAccount')
                     ->latest('created_at')
                     ->limit(10)
@@ -59,12 +63,19 @@ final class RecentPayoutsWidget extends BaseWidget
             ])
             ->actions([
                 ViewAction::make()
-                    ->url(fn (SendInstruction $record): string => route('filament.admin.resources.send-instructions.view', ['record' => $record]))
+                    ->url(fn (SendInstruction $record): string => $this->getResourceViewUrl($record))
                     ->openUrlInNewTab(),
             ])
             ->paginated(false)
             ->emptyStateHeading('No recent payouts')
             ->emptyStateDescription('Payouts created via CHIP Send will appear here.')
             ->emptyStateIcon('heroicon-o-banknotes');
+    }
+
+    private function getResourceViewUrl(SendInstruction $record): string
+    {
+        $panelId = Filament::getCurrentPanel()?->getId() ?? 'admin';
+
+        return route("filament.{$panelId}.resources.send-instructions.view", ['record' => $record]);
     }
 }

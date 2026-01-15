@@ -11,7 +11,7 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 
-class JntOrderStatusChanged
+final class JntOrderStatusChanged
 {
     use Dispatchable;
     use InteractsWithSockets;

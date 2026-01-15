@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AIArmada\FilamentDocs\Widgets;
 
 use AIArmada\Docs\Enums\DocType;
+use AIArmada\FilamentDocs\Pages\AgingReportPage;
+use AIArmada\FilamentDocs\Resources\DocResource;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -29,7 +31,7 @@ final class QuickActionsWidget extends Widget implements HasActions, HasForms
             ->label('New Invoice')
             ->icon('heroicon-o-document-plus')
             ->color('primary')
-            ->url(fn () => route('filament.admin.resources.docs.create', ['type' => DocType::Invoice->value]));
+            ->url(fn (): string => DocResource::getUrl('create', ['type' => DocType::Invoice->value]));
     }
 
     public function createQuotationAction(): Action
@@ -38,7 +40,7 @@ final class QuickActionsWidget extends Widget implements HasActions, HasForms
             ->label('New Quotation')
             ->icon('heroicon-o-document-magnifying-glass')
             ->color('info')
-            ->url(fn () => route('filament.admin.resources.docs.create', ['type' => DocType::Quotation->value]));
+            ->url(fn (): string => DocResource::getUrl('create', ['type' => DocType::Quotation->value]));
     }
 
     public function createCreditNoteAction(): Action
@@ -47,7 +49,7 @@ final class QuickActionsWidget extends Widget implements HasActions, HasForms
             ->label('New Credit Note')
             ->icon('heroicon-o-document-minus')
             ->color('danger')
-            ->url(fn () => route('filament.admin.resources.docs.create', ['type' => DocType::CreditNote->value]));
+            ->url(fn (): string => DocResource::getUrl('create', ['type' => DocType::CreditNote->value]));
     }
 
     public function createReceiptAction(): Action
@@ -56,7 +58,25 @@ final class QuickActionsWidget extends Widget implements HasActions, HasForms
             ->label('New Receipt')
             ->icon('heroicon-o-receipt-percent')
             ->color('success')
-            ->url(fn () => route('filament.admin.resources.docs.create', ['type' => DocType::Receipt->value]));
+            ->url(fn (): string => DocResource::getUrl('create', ['type' => DocType::Receipt->value]));
+    }
+
+    public function createDeliveryNoteAction(): Action
+    {
+        return Action::make('createDeliveryNote')
+            ->label('New Delivery Note')
+            ->icon('heroicon-o-truck')
+            ->color('gray')
+            ->url(fn (): string => DocResource::getUrl('create', ['type' => DocType::DeliveryNote->value]));
+    }
+
+    public function createProformaInvoiceAction(): Action
+    {
+        return Action::make('createProformaInvoice')
+            ->label('New Proforma Invoice')
+            ->icon('heroicon-o-document-text')
+            ->color('gray')
+            ->url(fn (): string => DocResource::getUrl('create', ['type' => DocType::ProformaInvoice->value]));
     }
 
     public function viewReportsAction(): Action
@@ -65,6 +85,6 @@ final class QuickActionsWidget extends Widget implements HasActions, HasForms
             ->label('Aging Report')
             ->icon('heroicon-o-chart-bar')
             ->color('warning')
-            ->url(fn () => route('filament.admin.pages.aging-report'));
+            ->url(fn (): string => AgingReportPage::getUrl());
     }
 }

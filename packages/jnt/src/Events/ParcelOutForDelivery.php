@@ -12,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 /**
  * Event fired when parcel is out for delivery.
  */
-class ParcelOutForDelivery
+final class ParcelOutForDelivery
 {
     use Dispatchable;
     use InteractsWithSockets;

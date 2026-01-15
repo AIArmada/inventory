@@ -204,7 +204,7 @@ Control JSON column types for the documents:
 
 ```php
 use AIArmada\Docs\Services\DocService;
-use AIArmada\Docs\Data\DocData;
+use AIArmada\Docs\DataObjects\DocData;
 use AIArmada\Docs\Enums\DocStatus;
 
 $docService = app(DocService::class);

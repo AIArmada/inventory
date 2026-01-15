@@ -8,18 +8,24 @@ Filament admin panel integration for the AIArmada Docs package.
 
 ## Overview
 
-This package provides Filament resources for managing documents and templates created by the `aiarmada/docs` package. It includes:
+This package provides a complete Filament admin interface for managing documents (invoices, quotations, receipts) with full PDF generation, email integration, and multi-tenancy support. It includes:
 
-- **DocResource** - Manage invoices, receipts, and other documents
-- **DocTemplateResource** - Create and configure document templates
-- **Status History** - Track all status changes for audit purposes
-- **PDF Actions** - Generate and download PDFs directly from the panel
+- **DocResource** - Full CRUD for invoices, quotations, receipts with PDF/email
+- **DocTemplateResource** - Configure templates with PDF settings
+- **DocSequenceResource** - Manage automatic document numbering
+- **DocEmailTemplateResource** - Email templates with variables
+- **Reporting Pages** - Aging report and pending approvals
+- **Dashboard Widgets** - Stats, charts, quick actions, recent documents
 
 ## Table of Contents
 
-1. [Installation](01-installation.md) - Setup and panel registration
-2. [Resources](02-resources.md) - DocResource and DocTemplateResource details
-3. [Configuration](03-configuration.md) - Customization options
+1. [Overview](00-overview.md) - Architecture and core concepts
+2. [Installation](01-installation.md) - Setup and panel registration
+3. [Resources](02-resources.md) - All resources in detail
+4. [Configuration](03-configuration.md) - Plugin configuration
+5. [Pages & Widgets](04-pages-widgets.md) - Reports and dashboard widgets
+6. [Customization](05-customization.md) - Extending and customizing
+7. [Troubleshooting](99-troubleshooting.md) - Common issues and solutions
 
 ## Quick Start
 
@@ -34,7 +40,9 @@ public function panel(Panel $panel): Panel
 {
     return $panel
         ->plugins([
-            FilamentDocsPlugin::make(),
+            FilamentDocsPlugin::make()
+                ->navigationGroup('Billing')
+                ->docStatsWidgetEnabled(true),
         ]);
 }
 ```
@@ -47,6 +55,20 @@ public function panel(Panel $panel): Panel
 | Laravel | 12.0+ |
 | Filament | 5.0+ |
 | aiarmada/docs | Required |
+| aiarmada/commerce-support | Required |
+
+## Features at a Glance
+
+| Feature | Description |
+|---------|-------------|
+| Documents | Full CRUD with line items, customer info, amounts |
+| Templates | PDF settings, custom views, per-type defaults |
+| Sequences | Auto-numbering with prefix/format/reset options |
+| Email | Templates with variable substitution |
+| PDF | Generate, preview, download directly from panel |
+| Multi-tenancy | Full owner scoping via HasOwner trait |
+| Widgets | Stats, revenue chart, status breakdown, recent docs |
+| Reports | Aging report, pending approvals pages |
 
 ## Support
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Docs\Enums;
 
+use Carbon\CarbonImmutable;
+
 /**
  * Reset frequency for document sequence numbers.
  */
@@ -41,9 +43,9 @@ enum ResetFrequency: string
     {
         return match ($this) {
             self::Never => 'all',
-            self::Daily => now()->format('Y-m-d'),
-            self::Monthly => now()->format('Y-m'),
-            self::Yearly => now()->format('Y'),
+            self::Daily => CarbonImmutable::now()->format('Y-m-d'),
+            self::Monthly => CarbonImmutable::now()->format('Y-m'),
+            self::Yearly => CarbonImmutable::now()->format('Y'),
         };
     }
 

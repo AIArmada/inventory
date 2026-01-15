@@ -5,7 +5,8 @@ declare(strict_types=1);
 use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Enums\DocType;
 use AIArmada\Docs\Models\Doc;
-use AIArmada\Docs\Services\DocumentService;
+use AIArmada\Docs\Numbering\NumberStrategyRegistry;
+use AIArmada\Docs\Services\DocService;
 use AIArmada\Docs\Services\SequenceManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -13,10 +14,11 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->sequenceManager = new SequenceManager;
-    $this->service = new DocumentService($this->sequenceManager);
+    $this->numberRegistry = new NumberStrategyRegistry;
+    $this->service = new DocService($this->numberRegistry, $this->sequenceManager);
 });
 
-test('can create a document', function (): void {
+test('can create a document from type', function (): void {
     $data = [
         'issue_date' => now(),
         'currency' => 'USD',
@@ -29,7 +31,7 @@ test('can create a document', function (): void {
         ],
     ];
 
-    $doc = $this->service->create(DocType::Invoice, $data);
+    $doc = $this->service->createFromType(DocType::Invoice, $data);
 
     expect($doc)
         ->toBeInstanceOf(Doc::class)

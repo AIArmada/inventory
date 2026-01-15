@@ -12,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 /**
  * Event fired when parcel is in transit.
  */
-class ParcelInTransit
+final class ParcelInTransit
 {
     use Dispatchable;
     use InteractsWithSockets;

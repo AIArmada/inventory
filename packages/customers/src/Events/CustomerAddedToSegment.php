@@ -9,7 +9,7 @@ use AIArmada\Customers\Models\Segment;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CustomerAddedToSegment
+final class CustomerAddedToSegment
 {
     use Dispatchable;
     use SerializesModels;

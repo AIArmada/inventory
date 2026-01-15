@@ -9,6 +9,7 @@ use AIArmada\Docs\Enums\DocType;
 use AIArmada\Docs\Models\DocEmailTemplate;
 use AIArmada\FilamentDocs\Support\DocsOwnerScope;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -176,7 +177,7 @@ final class DocEmailTemplateResource extends Resource
                     ->action(function (DocEmailTemplate $record): void {
                         $new = $record->replicate();
                         $new->name = $record->name . ' (Copy)';
-                        $new->slug = $record->slug . '-copy-' . now()->timestamp;
+                        $new->slug = $record->slug . '-copy-' . CarbonImmutable::now()->timestamp;
                         $new->save();
                     }),
             ])

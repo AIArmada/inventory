@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\Docs;
 
+use AIArmada\Docs\Contracts\DocServiceInterface;
 use AIArmada\Docs\Services\DocService;
+use AIArmada\Docs\Services\SequenceManager;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -24,8 +26,19 @@ final class DocsServiceProvider extends PackageServiceProvider
         // Numbering registry
         $this->app->singleton(Numbering\NumberStrategyRegistry::class, Numbering\ConfiguredNumberStrategyRegistry::class);
 
-        // Register Doc Service
-        $this->app->singleton(DocService::class);
+        // Sequence manager
+        $this->app->singleton(SequenceManager::class);
+
+        // Register Doc Service (with both dependencies)
+        $this->app->singleton(DocService::class, function ($app) {
+            return new DocService(
+                $app->make(Numbering\NumberStrategyRegistry::class),
+                $app->make(SequenceManager::class),
+            );
+        });
+
+        // Bind interface to implementation
+        $this->app->alias(DocService::class, DocServiceInterface::class);
         $this->app->alias(DocService::class, 'doc');
     }
 
@@ -36,6 +49,8 @@ final class DocsServiceProvider extends PackageServiceProvider
     {
         return [
             DocService::class,
+            DocServiceInterface::class,
+            SequenceManager::class,
             'doc',
             Numbering\NumberStrategyRegistry::class,
         ];

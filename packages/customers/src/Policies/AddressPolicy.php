@@ -9,7 +9,7 @@ use AIArmada\Customers\Models\Address;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Database\Eloquent\Model;
 
-class AddressPolicy
+final class AddressPolicy
 {
     use HandlesAuthorization;
 

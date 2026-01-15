@@ -6,11 +6,11 @@ namespace AIArmada\FilamentCustomers\Resources;
 
 use AIArmada\Customers\Enums\CustomerStatus;
 use AIArmada\Customers\Models\Customer;
-use AIArmada\Customers\Policies\CustomerPolicy;
 use AIArmada\FilamentCustomers\Resources\CustomerResource\Pages;
 use AIArmada\FilamentCustomers\Resources\CustomerResource\RelationManagers;
 use AIArmada\FilamentCustomers\Support\CustomersOwnerScope;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Filament\Forms;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
@@ -18,11 +18,10 @@ use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Filament\Support\Enums\TextSize;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 
 class CustomerResource extends Resource
@@ -79,7 +78,18 @@ class CustomerResource extends Resource
                                     ->label('Email')
                                     ->email()
                                     ->required()
-                                    ->unique(ignoreRecord: true)
+                                    ->unique(ignoreRecord: true, modifyRuleUsing: function ($rule) {
+                                        $owner = CustomersOwnerScope::resolveOwner();
+                                        if ($owner !== null) {
+                                            return $rule
+                                                ->where('owner_type', $owner->getMorphClass())
+                                                ->where('owner_id', $owner->getKey());
+                                        }
+
+                                        return $rule
+                                            ->whereNull('owner_type')
+                                            ->whereNull('owner_id');
+                                    })
                                     ->maxLength(255),
 
                                 Forms\Components\TextInput::make('phone')
@@ -125,18 +135,6 @@ class CustomerResource extends Resource
                                     ->default('active'),
                             ]),
 
-                        Section::make('Wallet')
-                            ->schema([
-                                Forms\Components\TextInput::make('wallet_balance')
-                                    ->label('Balance')
-                                    ->numeric()
-                                    ->prefix('RM')
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->formatStateUsing(fn ($state) => $state / 100)
-                                    ->helperText('Use actions to add/deduct credit'),
-                            ]),
-
                         Section::make('Segments')
                             ->schema([
                                 Forms\Components\Select::make('segments')
@@ -173,36 +171,23 @@ class CustomerResource extends Resource
                     ->formatStateUsing(fn ($state) => $state->label())
                     ->color(fn ($state) => $state->color()),
 
-                Tables\Columns\TextColumn::make('lifetime_value')
-                    ->label('LTV')
-                    ->money('MYR', divideBy: 100)
-                    ->sortable()
-                    ->alignEnd(),
-
-                Tables\Columns\TextColumn::make('total_orders')
-                    ->label('Orders')
-                    ->numeric()
-                    ->sortable()
-                    ->alignEnd(),
-
-                Tables\Columns\TextColumn::make('wallet_balance')
-                    ->label('Credit')
-                    ->money('MYR', divideBy: 100)
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
                 Tables\Columns\IconColumn::make('accepts_marketing')
                     ->label('Marketing')
                     ->boolean()
                     ->toggleable(),
+
+                Tables\Columns\IconColumn::make('is_tax_exempt')
+                    ->label('Tax Exempt')
+                    ->boolean()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('segments.name')
                     ->label('Segments')
                     ->badge()
                     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('last_order_at')
-                    ->label('Last Order')
+                Tables\Columns\TextColumn::make('last_login_at')
+                    ->label('Last Login')
                     ->dateTime('d M Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -236,50 +221,13 @@ class CustomerResource extends Resource
                     ->multiple()
                     ->preload(),
 
-                Tables\Filters\Filter::make('high_value')
-                    ->label('High Value (LTV > RM 1,000)')
-                    ->query(fn ($query) => $query->where('lifetime_value', '>=', 1000_00)),
-
                 Tables\Filters\Filter::make('recent')
                     ->label('Active (Last 30 days)')
-                    ->query(fn ($query) => $query->where('last_login_at', '>=', now()->subDays(30))),
+                    ->query(fn ($query) => $query->where('last_login_at', '>=', CarbonImmutable::now()->subDays(30))),
             ])
             ->actions([
                 \Filament\Actions\ViewAction::make(),
                 \Filament\Actions\EditAction::make(),
-                \Filament\Actions\Action::make('add_credit')
-                    ->label('Add Credit')
-                    ->icon('heroicon-o-plus-circle')
-                    ->color('success')
-                    ->modalHeading('Add Store Credit')
-                    ->form([
-                        Forms\Components\TextInput::make('amount')
-                            ->label('Amount (RM)')
-                            ->numeric()
-                            ->required()
-                            ->minValue(0.01)
-                            ->prefix('RM'),
-
-                        Forms\Components\Textarea::make('reason')
-                            ->label('Reason')
-                            ->rows(2),
-                    ])
-                    ->action(function (Customer $record, array $data): void {
-                        $user = Auth::user();
-                        abort_unless($user !== null, 403);
-
-                        $policy = new CustomerPolicy;
-                        abort_unless($policy->update($user, $record), 403);
-
-                        $amountInCents = (int) ($data['amount'] * 100);
-                        $record->addCredit($amountInCents, $data['reason'] ?? null);
-
-                        \Filament\Notifications\Notification::make()
-                            ->success()
-                            ->title('Credit Added')
-                            ->body("RM {$data['amount']} added to wallet.")
-                            ->send();
-                    }),
             ])
             ->bulkActions([
                 \Filament\Actions\BulkActionGroup::make([
@@ -287,15 +235,27 @@ class CustomerResource extends Resource
                     \Filament\Actions\BulkAction::make('opt_in_marketing')
                         ->label('Opt-In Marketing')
                         ->icon('heroicon-o-bell')
-                        ->action(
-                            fn (\Illuminate\Support\Collection $records) => $records->each->optInMarketing()
-                        ),
+                        ->action(function (\Illuminate\Support\Collection $records): void {
+                            $user = \Filament\Facades\Filament::auth()->user();
+                            abort_unless($user !== null, 403);
+
+                            $records->each(function (Customer $record) use ($user): void {
+                                Gate::forUser($user)->authorize('update', $record);
+                                $record->optInMarketing();
+                            });
+                        }),
                     \Filament\Actions\BulkAction::make('opt_out_marketing')
                         ->label('Opt-Out Marketing')
                         ->icon('heroicon-o-bell-slash')
-                        ->action(
-                            fn (\Illuminate\Support\Collection $records) => $records->each->optOutMarketing()
-                        ),
+                        ->action(function (\Illuminate\Support\Collection $records): void {
+                            $user = \Filament\Facades\Filament::auth()->user();
+                            abort_unless($user !== null, 403);
+
+                            $records->each(function (Customer $record) use ($user): void {
+                                Gate::forUser($user)->authorize('update', $record);
+                                $record->optOutMarketing();
+                            });
+                        }),
                 ]),
             ]);
     }
@@ -322,38 +282,34 @@ class CustomerResource extends Resource
                     ])
                     ->columns(4),
 
-                Section::make('Value Metrics')
+                Section::make('Preferences')
                     ->schema([
-                        TextEntry::make('lifetime_value')
-                            ->label('Lifetime Value')
-                            ->money('MYR', divideBy: 100)
-                            ->size(TextSize::Large),
-                        TextEntry::make('total_orders')
-                            ->label('Total Orders')
-                            ->numeric()
-                            ->size(TextSize::Large),
-                        TextEntry::make('average_order_value')
-                            ->label('AOV')
-                            ->getStateUsing(fn ($record) => $record->getAverageOrderValue())
-                            ->money('MYR', divideBy: 100)
-                            ->size(TextSize::Large),
-                        TextEntry::make('wallet_balance')
-                            ->label('Wallet Balance')
-                            ->money('MYR', divideBy: 100)
-                            ->size(TextSize::Large),
+                        TextEntry::make('accepts_marketing')
+                            ->label('Accepts Marketing')
+                            ->formatStateUsing(fn ($state) => $state ? 'Yes' : 'No')
+                            ->badge()
+                            ->color(fn ($state) => $state ? 'success' : 'gray'),
+                        TextEntry::make('is_tax_exempt')
+                            ->label('Tax Exempt')
+                            ->formatStateUsing(fn ($state) => $state ? 'Yes' : 'No')
+                            ->badge()
+                            ->color(fn ($state) => $state ? 'warning' : 'gray'),
+                        TextEntry::make('tax_exempt_reason')
+                            ->label('Tax Exempt Reason')
+                            ->placeholder('N/A'),
                     ])
-                    ->columns(4),
+                    ->columns(3),
 
                 Section::make('Activity')
                     ->schema([
-                        TextEntry::make('last_order_at')
-                            ->label('Last Order')
-                            ->dateTime()
-                            ->placeholder('No orders yet'),
                         TextEntry::make('last_login_at')
                             ->label('Last Login')
                             ->dateTime()
                             ->placeholder('Never'),
+                        TextEntry::make('email_verified_at')
+                            ->label('Email Verified')
+                            ->dateTime()
+                            ->placeholder('Not verified'),
                         TextEntry::make('created_at')
                             ->label('Customer Since')
                             ->dateTime(),
@@ -374,7 +330,6 @@ class CustomerResource extends Resource
     {
         return [
             RelationManagers\AddressesRelationManager::class,
-            RelationManagers\WishlistsRelationManager::class,
             RelationManagers\NotesRelationManager::class,
         ];
     }

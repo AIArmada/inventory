@@ -6,8 +6,10 @@ namespace AIArmada\FilamentTax\Resources\TaxExemptionResource\Tables;
 
 use AIArmada\FilamentTax\Actions\DownloadTaxExemptionCertificateAction;
 use AIArmada\FilamentTax\Support\FilamentTaxAuthz;
+use AIArmada\Tax\Enums\ExemptionStatus;
 use AIArmada\Tax\Models\TaxExemption;
 use AIArmada\Tax\Support\TaxOwnerScope;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
@@ -53,12 +55,8 @@ final class TaxExemptionsTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'approved' => 'success',
-                        'pending' => 'warning',
-                        'rejected' => 'danger',
-                        default => 'gray',
-                    }),
+                    ->formatStateUsing(fn (ExemptionStatus $state): string => $state->label())
+                    ->color(fn (ExemptionStatus $state): string => $state->color()),
 
                 TextColumn::make('starts_at')
                     ->label('Valid From')
@@ -80,7 +78,7 @@ final class TaxExemptionsTable
                             return 'danger';
                         }
 
-                        if ($record->expires_at->isBefore(now()->addDays(30))) {
+                        if ($record->expires_at->isBefore(CarbonImmutable::now()->addDays(30))) {
                             return 'warning';
                         }
 
@@ -95,7 +93,7 @@ final class TaxExemptionsTable
                             return 'heroicon-o-x-circle';
                         }
 
-                        if ($record->expires_at->isBefore(now()->addDays(30))) {
+                        if ($record->expires_at->isBefore(CarbonImmutable::now()->addDays(30))) {
                             return 'heroicon-o-exclamation-triangle';
                         }
 
@@ -114,19 +112,15 @@ final class TaxExemptionsTable
 
                 SelectFilter::make('status')
                     ->label('Status')
-                    ->options([
-                        'pending' => 'Pending',
-                        'approved' => 'Approved',
-                        'rejected' => 'Rejected',
-                    ]),
+                    ->options(ExemptionStatus::class),
 
                 Filter::make('expiring_soon')
                     ->label('Expiring in 30 days')
                     ->query(
                         fn ($query) => $query
                             ->whereNotNull('expires_at')
-                            ->where('expires_at', '>=', now())
-                            ->where('expires_at', '<=', now()->addDays(30))
+                            ->where('expires_at', '>=', CarbonImmutable::now())
+                            ->where('expires_at', '<=', CarbonImmutable::now()->addDays(30))
                     )
                     ->toggle(),
 
@@ -135,7 +129,7 @@ final class TaxExemptionsTable
                     ->query(
                         fn ($query) => $query
                             ->whereNotNull('expires_at')
-                            ->where('expires_at', '<', now())
+                            ->where('expires_at', '<', CarbonImmutable::now())
                     )
                     ->toggle(),
             ])
@@ -167,7 +161,7 @@ final class TaxExemptionsTable
                             ->label('Approve')
                             ->icon(Heroicon::OutlinedCheckBadge)
                             ->color('success')
-                            ->visible(fn (TaxExemption $record): bool => $record->status === 'pending')
+                            ->visible(fn (TaxExemption $record): bool => $record->status === ExemptionStatus::Pending)
                             ->requiresConfirmation()
                             ->action(fn (TaxExemption $record) => $record->approve())
                             ->successNotificationTitle('Exemption approved'),

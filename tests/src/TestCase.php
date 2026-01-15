@@ -1193,8 +1193,6 @@ abstract class TestCase extends Orchestra
         Schema::dropIfExists('customer_segment');
         Schema::dropIfExists('customer_customer_group');
         Schema::dropIfExists('customer_notes');
-        Schema::dropIfExists('wishlist_items');
-        Schema::dropIfExists('wishlists');
         Schema::dropIfExists('customer_addresses');
         Schema::dropIfExists('customer_segments');
         Schema::dropIfExists('customer_groups');
@@ -1211,11 +1209,7 @@ abstract class TestCase extends Orchestra
             $table->string('status')->default('active');
             $table->boolean('accepts_marketing')->default(false);
             $table->boolean('is_tax_exempt')->default(false);
-            $table->integer('wallet_balance')->default(0);
-            $table->integer('lifetime_value')->default(0);
-            $table->integer('total_orders')->default(0);
             $table->timestamp('email_verified_at')->nullable();
-            $table->timestamp('last_order_at')->nullable();
             $table->timestamp('last_login_at')->nullable();
             $table->nullableUuidMorphs('owner');
             $table->json('metadata')->nullable();
@@ -1301,34 +1295,6 @@ abstract class TestCase extends Orchestra
             $table->json('metadata')->nullable();
             $table->timestamps();
             $table->softDeletes();
-        });
-
-        Schema::create('wishlists', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->uuid('customer_id');
-            $table->nullableUuidMorphs('owner');
-            $table->string('name')->default('My Wishlist');
-            $table->text('description')->nullable();
-            $table->boolean('is_public')->default(false);
-            $table->string('share_token', 64)->unique();
-            $table->boolean('is_default')->default(false);
-            $table->json('metadata')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::create('wishlist_items', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->uuid('wishlist_id');
-            $table->nullableUuidMorphs('owner');
-            $table->string('product_type');
-            $table->uuid('product_id');
-            $table->boolean('notified_on_sale')->default(false);
-            $table->boolean('notified_in_stock')->default(false);
-            $table->timestamp('added_at')->nullable();
-            $table->integer('priority')->default(0);
-            $table->text('notes')->nullable();
-            $table->json('metadata')->nullable();
-            $table->timestamps();
         });
 
         Schema::create('customer_notes', function (Blueprint $table): void {

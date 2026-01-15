@@ -67,8 +67,6 @@ Chip::capturePurchase(string $id, ?int $amount = null): Purchase
 Chip::releasePurchase(string $id): Purchase
 Chip::markPurchaseAsPaid(string $id, ?int $paidOn = null): Purchase
 Chip::resendInvoice(string $id): Purchase
-Chip::chargePurchase(string $id, string $recurringToken): Purchase
-Chip::deleteRecurringToken(string $id): void
 Chip::getPaymentMethods(array $filters = []): array
 
 // Clients
@@ -78,9 +76,6 @@ Chip::listClients(array $filters = []): array
 Chip::updateClient(string $id, array $data): Client
 Chip::partialUpdateClient(string $id, array $data): Client
 Chip::deleteClient(string $id): void
-Chip::listClientRecurringTokens(string $clientId): array
-Chip::getClientRecurringToken(string $clientId, string $tokenId): array
-Chip::deleteClientRecurringToken(string $clientId, string $tokenId): void
 
 // Account
 Chip::getAccountBalance(): array

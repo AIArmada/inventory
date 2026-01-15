@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 use AIArmada\Chip\Commands\AggregateMetricsCommand;
 use AIArmada\Chip\Commands\CleanWebhooksCommand;
-use AIArmada\Chip\Commands\ProcessRecurringCommand;
 use AIArmada\Chip\Commands\RetryWebhooksCommand;
-use AIArmada\Chip\Models\RecurringCharge;
-use AIArmada\Chip\Models\RecurringSchedule;
 use AIArmada\Chip\Models\Webhook;
 use AIArmada\Chip\Services\MetricsAggregator;
-use AIArmada\Chip\Services\RecurringService;
 use AIArmada\Chip\Webhooks\WebhookRetryManager;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Carbon\CarbonImmutable;
@@ -187,119 +183,6 @@ describe('CleanWebhooksCommand', function (): void {
         $this->artisan(CleanWebhooksCommand::class, ['--status' => 'all', '--dry-run' => true])
             ->expectsOutputToContain('Found 1 webhook(s)')
             ->assertSuccessful();
-    });
-});
-
-describe('ProcessRecurringCommand', function (): void {
-    it('shows message when no schedules are due', function (): void {
-        $service = Mockery::mock(RecurringService::class);
-        $service->shouldReceive('getDueSchedules')
-            ->once()
-            ->andReturn(new EloquentCollection);
-
-        $this->app->instance(RecurringService::class, $service);
-
-        $this->artisan(ProcessRecurringCommand::class)
-            ->expectsOutput('No recurring schedules are due for processing.')
-            ->assertSuccessful();
-    });
-
-    it('shows table in dry-run mode', function (): void {
-        $mockSchedule = Mockery::mock(RecurringSchedule::class)->shouldIgnoreMissing();
-        $mockSchedule->shouldReceive('getAttribute')->with('id')->andReturn('schedule-123');
-        $mockSchedule->shouldReceive('getAttribute')->with('chip_client_id')->andReturn('client-123');
-        $mockSchedule->shouldReceive('getAttribute')->with('amount_minor')->andReturn(10000);
-        $mockSchedule->shouldReceive('getAttribute')->with('currency')->andReturn('MYR');
-        $mockSchedule->shouldReceive('getAttribute')->with('next_charge_at')->andReturn(now()->addDay());
-        $mockSchedule->shouldReceive('offsetGet')->andReturnUsing(fn ($key) => match ($key) {
-            'id' => 'schedule-123',
-            'chip_client_id' => 'client-123',
-            'amount_minor' => 10000,
-            'currency' => 'MYR',
-            'next_charge_at' => now()->addDay(),
-            default => null,
-        });
-        // Allow magic property access
-        $mockSchedule->id = 'schedule-123';
-        $mockSchedule->chip_client_id = 'client-123';
-        $mockSchedule->amount_minor = 10000;
-        $mockSchedule->currency = 'MYR';
-        $mockSchedule->next_charge_at = now()->addDay();
-
-        $service = Mockery::mock(RecurringService::class);
-        $service->shouldReceive('getDueSchedules')
-            ->once()
-            ->andReturn(new EloquentCollection([$mockSchedule]));
-
-        $this->app->instance(RecurringService::class, $service);
-
-        $this->artisan(ProcessRecurringCommand::class, ['--dry-run' => true])
-            ->expectsOutputToContain('Found 1 schedule(s) due for processing')
-            ->expectsOutput('Dry run mode - no charges will be processed.')
-            ->assertSuccessful();
-    });
-
-    it('processes due schedules and reports result', function (): void {
-        $mockSchedule = Mockery::mock(RecurringSchedule::class)->shouldIgnoreMissing();
-        $mockSchedule->shouldReceive('getAttribute')->with('id')->andReturn('schedule-123');
-        $mockSchedule->shouldReceive('getAttribute')->andReturnUsing(fn ($key) => match ($key) {
-            'id' => 'schedule-123',
-            'chip_client_id' => 'client-123',
-            'amount_minor' => 10000,
-            'currency' => 'MYR',
-            'next_charge_at' => now()->addDay(),
-            default => null,
-        });
-        $mockSchedule->id = 'schedule-123';
-
-        $mockCharge = Mockery::mock(RecurringCharge::class);
-        $mockCharge->shouldReceive('isSuccess')->andReturn(true);
-        $mockCharge->shouldReceive('getAmountFormatted')->andReturn('MYR 100.00');
-
-        $service = Mockery::mock(RecurringService::class);
-        $service->shouldReceive('getDueSchedules')
-            ->once()
-            ->andReturn(new EloquentCollection([$mockSchedule]));
-        $service->shouldReceive('processCharge')
-            ->once()
-            ->with($mockSchedule)
-            ->andReturn($mockCharge);
-
-        $this->app->instance(RecurringService::class, $service);
-
-        $this->artisan(ProcessRecurringCommand::class)
-            ->expectsOutputToContain('Found 1 schedule(s)')
-            ->expectsOutputToContain('Processing schedule schedule-123')
-            ->expectsOutputToContain('Charge succeeded')
-            ->expectsOutput('Processing complete: 1 succeeded, 0 failed.')
-            ->assertSuccessful();
-    });
-
-    it('handles processing exceptions', function (): void {
-        $mockSchedule = Mockery::mock(RecurringSchedule::class)->shouldIgnoreMissing();
-        $mockSchedule->shouldReceive('getAttribute')->andReturnUsing(fn ($key) => match ($key) {
-            'id' => 'schedule-123',
-            'chip_client_id' => 'client-123',
-            'amount_minor' => 10000,
-            'currency' => 'MYR',
-            'next_charge_at' => now()->addDay(),
-            default => null,
-        });
-        $mockSchedule->id = 'schedule-123';
-
-        $service = Mockery::mock(RecurringService::class);
-        $service->shouldReceive('getDueSchedules')
-            ->once()
-            ->andReturn(new EloquentCollection([$mockSchedule]));
-        $service->shouldReceive('processCharge')
-            ->once()
-            ->andThrow(new Exception('API failure'));
-
-        $this->app->instance(RecurringService::class, $service);
-
-        $this->artisan(ProcessRecurringCommand::class)
-            ->expectsOutput('Processing complete: 0 succeeded, 1 failed.')
-            ->assertFailed();
     });
 });
 

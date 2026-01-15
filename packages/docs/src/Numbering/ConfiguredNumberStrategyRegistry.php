@@ -8,7 +8,7 @@ use AIArmada\Docs\Numbering\Contracts\DocumentNumberStrategy;
 use AIArmada\Docs\Numbering\Strategies\DefaultNumberStrategy;
 use Illuminate\Support\Str;
 
-class ConfiguredNumberStrategyRegistry extends NumberStrategyRegistry
+final class ConfiguredNumberStrategyRegistry extends NumberStrategyRegistry
 {
     public function __construct()
     {

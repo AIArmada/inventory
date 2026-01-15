@@ -7,6 +7,7 @@ namespace AIArmada\Docs\Models;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Docs\Enums\DocStatus;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -181,7 +182,7 @@ final class Doc extends Model
 
         $this->update([
             'status' => DocStatus::PAID,
-            'paid_at' => now(),
+            'paid_at' => CarbonImmutable::now(),
         ]);
 
         $ownerAttributes = [];

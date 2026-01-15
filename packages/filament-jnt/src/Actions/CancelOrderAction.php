@@ -8,6 +8,7 @@ use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Jnt\Enums\CancellationReason;
 use AIArmada\Jnt\Models\JntOrder;
 use AIArmada\Jnt\Services\JntExpressService;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Select;
@@ -105,7 +106,7 @@ final class CancelOrderAction
 
                     $record->update([
                         'status' => 'cancelled',
-                        'cancelled_at' => now(),
+                        'cancelled_at' => CarbonImmutable::now(),
                         'cancellation_reason' => $reasonString,
                     ]);
 

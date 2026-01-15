@@ -8,7 +8,9 @@ use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Support\OwnerQuery;
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Models\DocApproval;
+use AIArmada\FilamentDocs\Resources\DocResource;
 use BackedEnum;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -23,7 +25,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
-class PendingApprovalsPage extends Page implements HasTable
+final class PendingApprovalsPage extends Page implements HasTable
 {
     use InteractsWithTable;
 
@@ -90,7 +92,7 @@ class PendingApprovalsPage extends Page implements HasTable
                     ->label(__('Document'))
                     ->searchable()
                     ->sortable()
-                    ->url(fn (DocApproval $record): string => route('filament.admin.resources.docs.view', $record->doc_id)),
+                    ->url(fn (DocApproval $record): string => DocResource::getUrl('view', ['record' => $record->doc_id])),
 
                 TextColumn::make('doc.doc_type')
                     ->label(__('Type'))
@@ -148,7 +150,7 @@ class PendingApprovalsPage extends Page implements HasTable
 
                         $record->update([
                             'status' => 'approved',
-                            'approved_at' => now(),
+                            'approved_at' => CarbonImmutable::now(),
                             'comments' => $data['comments'] ?? null,
                         ]);
 
@@ -174,7 +176,7 @@ class PendingApprovalsPage extends Page implements HasTable
 
                         $record->update([
                             'status' => 'rejected',
-                            'rejected_at' => now(),
+                            'rejected_at' => CarbonImmutable::now(),
                             'comments' => $data['comments'],
                         ]);
 
@@ -187,7 +189,7 @@ class PendingApprovalsPage extends Page implements HasTable
                 Action::make('view_document')
                     ->label(__('View'))
                     ->icon('heroicon-o-eye')
-                    ->url(fn (DocApproval $record): string => route('filament.admin.resources.docs.view', $record->doc_id)),
+                    ->url(fn (DocApproval $record): string => DocResource::getUrl('view', ['record' => $record->doc_id])),
             ])
             ->defaultSort('created_at', 'desc')
             ->emptyStateHeading(__('No Pending Approvals'))

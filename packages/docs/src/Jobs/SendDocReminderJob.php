@@ -8,7 +8,7 @@ use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Services\DocEmailService;
-use Exception;
+use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,8 +18,9 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
-class SendDocReminderJob implements ShouldQueue
+final class SendDocReminderJob implements ShouldQueue
 {
     use Dispatchable;
     use InteractsWithQueue;
@@ -35,9 +36,8 @@ class SendDocReminderJob implements ShouldQueue
         public int $daysBeforeDue = 3,
         public int $daysAfterOverdue = 1,
         public ?string $ownerType = null,
-        public string|int|null $ownerId = null,
-    ) {
-    }
+        public string | int | null $ownerId = null,
+    ) {}
 
     public function handle(DocEmailService $emailService): void
     {
@@ -78,7 +78,7 @@ class SendDocReminderJob implements ShouldQueue
         $doc = $this->getScopedDocsQuery()->find($docId);
         $recipientEmail = $this->getRecipientEmail($doc);
 
-        if (!$doc || !$recipientEmail) {
+        if (! $doc || ! $recipientEmail) {
             Log::warning('SendDocReminderJob: Document not found or has no recipient email', [
                 'doc_id' => $docId,
             ]);
@@ -86,7 +86,7 @@ class SendDocReminderJob implements ShouldQueue
             return;
         }
 
-        if (!$this->shouldSendReminder($doc)) {
+        if (! $this->shouldSendReminder($doc)) {
             return;
         }
 
@@ -97,7 +97,7 @@ class SendDocReminderJob implements ShouldQueue
                 'doc_id' => $doc->id,
                 'doc_number' => $doc->doc_number,
             ]);
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             Log::error('SendDocReminderJob: Failed to send reminder', [
                 'doc_id' => $doc->id,
                 'error' => $e->getMessage(),
@@ -115,7 +115,7 @@ class SendDocReminderJob implements ShouldQueue
             $recipientEmail = $this->getRecipientEmail($doc);
             $recipientName = $this->getRecipientName($doc);
 
-            if (!$recipientEmail) {
+            if (! $recipientEmail) {
                 continue;
             }
 
@@ -126,16 +126,16 @@ class SendDocReminderJob implements ShouldQueue
                     recipientName: $recipientName,
                     template: $emailService->findTemplate($doc, 'due_soon'),
                     variables: [
-                        'days_until_due' => $doc->due_date?->diffInDays(now()),
+                        'days_until_due' => $doc->due_date?->diffInDays(CarbonImmutable::now()),
                     ],
                 );
 
                 Log::info('SendDocReminderJob: Due soon reminder sent', [
                     'doc_id' => $doc->id,
                     'doc_number' => $doc->doc_number,
-                    'days_until_due' => $doc->due_date?->diffInDays(now()),
+                    'days_until_due' => $doc->due_date?->diffInDays(CarbonImmutable::now()),
                 ]);
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 Log::error('SendDocReminderJob: Failed to send due soon reminder', [
                     'doc_id' => $doc->id,
                     'error' => $e->getMessage(),
@@ -151,7 +151,7 @@ class SendDocReminderJob implements ShouldQueue
         foreach ($docs as $doc) {
             $recipientEmail = $this->getRecipientEmail($doc);
 
-            if (!$recipientEmail) {
+            if (! $recipientEmail) {
                 continue;
             }
 
@@ -161,9 +161,9 @@ class SendDocReminderJob implements ShouldQueue
                 Log::info('SendDocReminderJob: Overdue reminder sent', [
                     'doc_id' => $doc->id,
                     'doc_number' => $doc->doc_number,
-                    'days_overdue' => $doc->due_date?->diffInDays(now()),
+                    'days_overdue' => $doc->due_date?->diffInDays(CarbonImmutable::now()),
                 ]);
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 Log::error('SendDocReminderJob: Failed to send overdue reminder', [
                     'doc_id' => $doc->id,
                     'error' => $e->getMessage(),
@@ -177,7 +177,7 @@ class SendDocReminderJob implements ShouldQueue
      */
     protected function getDocsDueSoon(): Collection
     {
-        $dueDate = now()->addDays($this->daysBeforeDue);
+        $dueDate = CarbonImmutable::now()->addDays($this->daysBeforeDue);
 
         return $this->getScopedDocsQuery()
             ->whereIn('status', [DocStatus::SENT, DocStatus::PENDING])
@@ -192,7 +192,7 @@ class SendDocReminderJob implements ShouldQueue
      */
     protected function getOverdueDocs(): Collection
     {
-        $overdueDate = now()->subDays($this->daysAfterOverdue);
+        $overdueDate = CarbonImmutable::now()->subDays($this->daysAfterOverdue);
 
         return $this->getScopedDocsQuery()
             ->where('status', DocStatus::OVERDUE)
@@ -209,7 +209,7 @@ class SendDocReminderJob implements ShouldQueue
     {
         $query = Doc::query();
 
-        if (!config('docs.owner.enabled', false)) {
+        if (! config('docs.owner.enabled', false)) {
             return $query;
         }
 
@@ -226,7 +226,7 @@ class SendDocReminderJob implements ShouldQueue
             return false;
         }
 
-        if (!config('docs.owner.enabled', false)) {
+        if (! config('docs.owner.enabled', false)) {
             return false;
         }
 
@@ -268,7 +268,7 @@ class SendDocReminderJob implements ShouldQueue
         }
     }
 
-    private function normalizeOwnerValue(mixed $value): string|int|null
+    private function normalizeOwnerValue(mixed $value): string | int | null
     {
         if ($value === null || $value === '') {
             return null;
@@ -293,7 +293,7 @@ class SendDocReminderJob implements ShouldQueue
 
     protected function getRecipientEmail(?Doc $doc): ?string
     {
-        if (!$doc) {
+        if (! $doc) {
             return null;
         }
 
@@ -304,7 +304,7 @@ class SendDocReminderJob implements ShouldQueue
 
     protected function getRecipientName(?Doc $doc): ?string
     {
-        if (!$doc) {
+        if (! $doc) {
             return null;
         }
 

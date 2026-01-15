@@ -6,6 +6,7 @@ namespace AIArmada\FilamentDocs\Resources\DocResource\RelationManagers;
 
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Models\DocPayment;
+use Carbon\CarbonImmutable;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -37,14 +38,11 @@ final class PaymentsRelationManager extends RelationManager
                     ->prefix(fn () => config('docs.defaults.currency', 'MYR')),
 
                 Select::make('payment_method')
-                    ->options([
-                        'cash' => 'Cash',
+                    ->options(config('docs.payment_methods', [
                         'bank_transfer' => 'Bank Transfer',
+                        'cash' => 'Cash',
                         'credit_card' => 'Credit Card',
-                        'cheque' => 'Cheque',
-                        'online' => 'Online Payment',
-                        'other' => 'Other',
-                    ])
+                    ]))
                     ->required(),
 
                 TextInput::make('reference')
@@ -56,7 +54,7 @@ final class PaymentsRelationManager extends RelationManager
 
                 DateTimePicker::make('paid_at')
                     ->label('Payment Date')
-                    ->default(now())
+                    ->default(CarbonImmutable::now())
                     ->required(),
 
                 Textarea::make('notes')

@@ -7,17 +7,19 @@ namespace AIArmada\FilamentTax;
 use Filament\Contracts\Plugin;
 use Filament\Panel;
 
-class FilamentTaxPlugin implements Plugin
+final class FilamentTaxPlugin implements Plugin
 {
-    protected bool $hasZones = true;
+    protected ?bool $hasZones = null;
 
-    protected bool $hasClasses = true;
+    protected ?bool $hasClasses = null;
 
-    protected bool $hasRates = true;
+    protected ?bool $hasRates = null;
 
-    protected bool $hasExemptions = true;
+    protected ?bool $hasExemptions = null;
 
-    protected bool $hasWidgets = true;
+    protected ?bool $hasWidgets = null;
+
+    protected ?bool $hasSettingsPage = null;
 
     public static function make(): static
     {
@@ -87,36 +89,49 @@ class FilamentTaxPlugin implements Plugin
         return $this;
     }
 
+    /**
+     * Enable/disable settings page.
+     */
+    public function settingsPage(bool $condition = true): static
+    {
+        $this->hasSettingsPage = $condition;
+
+        return $this;
+    }
+
     public function register(Panel $panel): void
     {
         $resources = [];
         $widgets = [];
         $pages = [];
 
-        if ($this->hasZones) {
+        /** @var array<string, bool> $features */
+        $features = config('filament-tax.features', []);
+
+        if ($this->hasZones ?? ($features['zones'] ?? true)) {
             $resources[] = Resources\TaxZoneResource::class;
         }
 
-        if ($this->hasClasses) {
+        if ($this->hasClasses ?? ($features['classes'] ?? true)) {
             $resources[] = Resources\TaxClassResource::class;
         }
 
-        if ($this->hasRates) {
+        if ($this->hasRates ?? ($features['rates'] ?? true)) {
             $resources[] = Resources\TaxRateResource::class;
         }
 
-        if ($this->hasExemptions) {
+        if ($this->hasExemptions ?? ($features['exemptions'] ?? true)) {
             $resources[] = Resources\TaxExemptionResource::class;
         }
 
-        if ($this->hasWidgets) {
+        if ($this->hasWidgets ?? ($features['widgets'] ?? true)) {
             $widgets[] = Widgets\TaxStatsWidget::class;
             $widgets[] = Widgets\ExpiringExemptionsWidget::class;
             $widgets[] = Widgets\ZoneCoverageWidget::class;
         }
 
-        // Only register settings page if spatie settings plugin is available
-        if (class_exists(\Filament\Pages\SettingsPage::class)) {
+        $shouldShowSettings = $this->hasSettingsPage ?? ($features['settings_page'] ?? true);
+        if ($shouldShowSettings && class_exists(\Filament\Pages\SettingsPage::class)) {
             $pages[] = Pages\ManageTaxSettings::class;
         }
 

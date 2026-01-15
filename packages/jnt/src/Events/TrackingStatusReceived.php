@@ -26,7 +26,7 @@ use Illuminate\Queue\SerializesModels;
  *     ],
  * ];
  */
-class TrackingStatusReceived
+final class TrackingStatusReceived
 {
     use Dispatchable;
     use InteractsWithSockets;

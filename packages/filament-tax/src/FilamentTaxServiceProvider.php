@@ -13,6 +13,7 @@ final class FilamentTaxServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('filament-tax')
+            ->hasConfigFile()
             ->hasViews('filament-tax')
             ->hasTranslations();
     }

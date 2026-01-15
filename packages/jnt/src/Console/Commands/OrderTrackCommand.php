@@ -7,10 +7,10 @@ namespace AIArmada\Jnt\Console\Commands;
 use AIArmada\Jnt\Exceptions\JntApiException;
 use AIArmada\Jnt\Exceptions\JntNetworkException;
 use AIArmada\Jnt\Services\JntExpressService;
-use Exception;
 use Illuminate\Console\Command;
+use Throwable;
 
-class OrderTrackCommand extends Command
+final class OrderTrackCommand extends Command
 {
     protected $signature = 'jnt:order:track
                           {order-id : Order ID to track}
@@ -59,7 +59,7 @@ class OrderTrackCommand extends Command
             $this->error('API Error: ' . $e->getMessage());
 
             return self::FAILURE;
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->error('Error: ' . $e->getMessage());
 
             return self::FAILURE;

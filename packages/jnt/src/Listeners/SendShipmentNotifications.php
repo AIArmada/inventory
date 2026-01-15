@@ -14,6 +14,7 @@ use AIArmada\Jnt\Notifications\OrderDeliveredNotification;
 use AIArmada\Jnt\Notifications\OrderProblemNotification;
 use AIArmada\Jnt\Notifications\OrderShippedNotification;
 use AIArmada\Jnt\Services\JntTrackingService;
+use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
 use Spatie\LaravelData\DataCollection;
@@ -126,7 +127,7 @@ class SendShipmentNotifications implements ShouldQueue
             ),
             TrackingStatus::OutForDelivery => new OrderShippedNotification(
                 tracking: $trackingData,
-                estimatedDelivery: now()->format('Y-m-d')
+                estimatedDelivery: CarbonImmutable::now()->format('Y-m-d')
             ),
             TrackingStatus::Delivered => new OrderDeliveredNotification(
                 tracking: $trackingData
@@ -179,6 +180,6 @@ class SendShipmentNotifications implements ShouldQueue
         // Calculate from default days since JntOrder doesn't have estimated_delivery_at
         $days = config('jnt.shipping.default_estimated_days', 3);
 
-        return now()->addDays($days)->format('Y-m-d');
+        return CarbonImmutable::now()->addDays($days)->format('Y-m-d');
     }
 }

@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace AIArmada\FilamentCashier\CustomerPortal\Widgets;
 
 use AIArmada\FilamentCashier\Support\GatewayDetector;
-use Exception;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 final class PaymentMethodsPreviewWidget extends Widget
 {
@@ -41,8 +42,8 @@ final class PaymentMethodsPreviewWidget extends Widget
                         'is_default' => true,
                     ];
                 }
-            } catch (Exception) {
-                // Silently fail
+            } catch (Throwable $e) {
+                Log::debug('Failed to retrieve Stripe payment method', ['error' => $e->getMessage()]);
             }
         }
 
@@ -57,8 +58,8 @@ final class PaymentMethodsPreviewWidget extends Widget
                         'is_default' => true,
                     ];
                 }
-            } catch (Exception) {
-                // Silently fail
+            } catch (Throwable $e) {
+                Log::debug('Failed to retrieve CHIP payment method', ['error' => $e->getMessage()]);
             }
         }
 

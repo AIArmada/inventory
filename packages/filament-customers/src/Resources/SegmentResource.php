@@ -107,27 +107,36 @@ class SegmentResource extends Resource
                                         Forms\Components\Select::make('field')
                                             ->label('Field')
                                             ->options([
-                                                'lifetime_value_min' => 'Minimum Lifetime Value',
-                                                'lifetime_value_max' => 'Maximum Lifetime Value',
-                                                'total_orders_min' => 'Minimum Total Orders',
-                                                'total_orders_max' => 'Maximum Total Orders',
-                                                'last_order_days' => 'Ordered in Last X Days',
-                                                'no_order_days' => 'No Order for X Days',
                                                 'accepts_marketing' => 'Accepts Marketing',
                                                 'is_tax_exempt' => 'Tax Exempt',
+                                                'status' => 'Customer Status',
+                                                'created_days_ago' => 'Customer for X Days',
+                                                'last_login_days' => 'Logged in Last X Days',
+                                                'no_login_days' => 'No Login for X Days',
                                             ])
                                             ->required()
                                             ->live(),
 
-                                        Forms\Components\TextInput::make('value')
+                                        Forms\Components\TextInput::make('value_numeric')
                                             ->label('Value')
                                             ->required()
                                             ->numeric()
-                                            ->visible(fn (Get $get) => ! in_array($get('field'), ['accepts_marketing', 'is_tax_exempt'])),
+                                            ->visible(fn (Get $get) => in_array($get('field'), ['created_days_ago', 'last_login_days', 'no_login_days']))
+                                            ->dehydratedWhenHidden(),
 
-                                        Forms\Components\Toggle::make('value')
+                                        Forms\Components\Toggle::make('value_boolean')
                                             ->label('Value')
-                                            ->visible(fn (Get $get) => in_array($get('field'), ['accepts_marketing', 'is_tax_exempt'])),
+                                            ->visible(fn (Get $get) => in_array($get('field'), ['accepts_marketing', 'is_tax_exempt']))
+                                            ->dehydratedWhenHidden(),
+
+                                        Forms\Components\Select::make('value_status')
+                                            ->label('Status')
+                                            ->options(
+                                                collect(\AIArmada\Customers\Enums\CustomerStatus::cases())
+                                                    ->mapWithKeys(fn ($status) => [$status->value => $status->label()])
+                                            )
+                                            ->visible(fn (Get $get) => $get('field') === 'status')
+                                            ->dehydratedWhenHidden(),
                                     ])
                                     ->columns(2)
                                     ->addActionLabel('Add Condition')

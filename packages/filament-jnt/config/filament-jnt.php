@@ -28,6 +28,10 @@ return [
     |--------------------------------------------------------------------------
     */
     'features' => [
+        'orders' => true,
+        'tracking_events' => true,
+        'webhook_logs' => true,
+        'widgets' => true,
         'show_raw_payloads' => false,
     ],
 

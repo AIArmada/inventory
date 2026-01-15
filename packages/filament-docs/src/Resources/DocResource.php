@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentDocs\Resources;
 
+use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Models\Doc;
 use AIArmada\FilamentDocs\Resources\DocResource\Pages\CreateDoc;
 use AIArmada\FilamentDocs\Resources\DocResource\Pages\EditDoc;
@@ -80,14 +81,20 @@ final class DocResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        $count = static::getEloquentQuery()->count();
+        $count = static::getEloquentQuery()
+            ->whereIn('status', [DocStatus::PENDING, DocStatus::OVERDUE])
+            ->count();
 
         return $count > 0 ? (string) $count : null;
     }
 
     public static function getNavigationBadgeColor(): string
     {
-        return 'primary';
+        $overdueCount = static::getEloquentQuery()
+            ->where('status', DocStatus::OVERDUE)
+            ->count();
+
+        return $overdueCount > 0 ? 'danger' : 'warning';
     }
 
     public static function getNavigationGroup(): string | UnitEnum | null

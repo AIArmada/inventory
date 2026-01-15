@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Docs\Numbering\Strategies;
 
 use AIArmada\Docs\Numbering\Contracts\DocumentNumberStrategy;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 
 /**
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
  * - separator (default: -)
  * - suffix_length (default: 6)
  */
-class DefaultNumberStrategy implements DocumentNumberStrategy
+final class DefaultNumberStrategy implements DocumentNumberStrategy
 {
     public function generate(string $docType): string
     {
@@ -37,7 +38,7 @@ class DefaultNumberStrategy implements DocumentNumberStrategy
         $separator = array_key_exists('separator', $format) ? (string) $format['separator'] : '-';
         $suffixLength = (int) ($format['suffix_length'] ?? 6);
 
-        $year = now()->format($yearFormat);
+        $year = CarbonImmutable::now()->format($yearFormat);
         $suffix = $this->generateSuffix($suffixLength);
 
         return sprintf('%s%s%s%s', $prefix, $year, $separator, $suffix);

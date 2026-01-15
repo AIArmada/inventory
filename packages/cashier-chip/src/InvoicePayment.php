@@ -103,7 +103,7 @@ class InvoicePayment implements Arrayable, Jsonable, JsonSerializable
     /**
      * Get the date when the payment was made.
      */
-    public function date(): ?\Carbon\Carbon
+    public function date(): ?\Carbon\CarbonImmutable
     {
         return $this->purchase->payment?->getPaidAt();
     }

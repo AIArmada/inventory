@@ -54,8 +54,11 @@ final class PayoutAmountWidget extends ChartWidget
         $start = Carbon::now()->subDays(29)->startOfDay();
         $end = Carbon::now()->endOfDay();
 
-        $daily = SendInstruction::query()
-            ->forOwner()
+        $daily = tap(SendInstruction::query(), function ($query): void {
+            if (method_exists($query->getModel(), 'scopeForOwner')) {
+                $query->forOwner();
+            }
+        })
             ->whereIn('state', ['completed', 'processed'])
             ->whereBetween('created_at', [$start, $end])
             ->selectRaw('DATE(created_at) as day, SUM(amount) as total')

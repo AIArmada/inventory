@@ -13,7 +13,7 @@ use Illuminate\Queue\SerializesModels;
 /**
  * Event fired when a customer's segment membership changes.
  */
-class CustomerSegmentChanged
+final class CustomerSegmentChanged
 {
     use Dispatchable;
     use InteractsWithSockets;

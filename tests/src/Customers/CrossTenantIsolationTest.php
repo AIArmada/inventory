@@ -7,7 +7,6 @@ use AIArmada\Customers\Enums\CustomerStatus;
 use AIArmada\Customers\Models\Address;
 use AIArmada\Customers\Models\Customer;
 use AIArmada\Customers\Models\Segment;
-use AIArmada\Customers\Models\Wishlist;
 use AIArmada\Customers\Services\SegmentationService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -33,7 +32,7 @@ it('does not match customers across tenant boundary', function (): void {
         'last_name' => 'Customer',
         'email' => 'a-' . uniqid() . '@example.com',
         'status' => CustomerStatus::Active,
-        'lifetime_value' => 2_000_00,
+        'accepts_marketing' => true,
         'owner_type' => $ownerA->getMorphClass(),
         'owner_id' => $ownerA->getKey(),
     ]);
@@ -43,20 +42,20 @@ it('does not match customers across tenant boundary', function (): void {
         'last_name' => 'Customer',
         'email' => 'b-' . uniqid() . '@example.com',
         'status' => CustomerStatus::Active,
-        'lifetime_value' => 2_000_00,
+        'accepts_marketing' => true,
         'owner_type' => $ownerB->getMorphClass(),
         'owner_id' => $ownerB->getKey(),
     ]);
 
     $segmentA = Segment::query()->create([
-        'name' => 'High LTV A',
-        'slug' => 'high-ltv-a-' . uniqid(),
+        'name' => 'Marketing Segment A',
+        'slug' => 'marketing-segment-a-' . uniqid(),
         'is_active' => true,
         'is_automatic' => true,
         'owner_type' => $ownerA->getMorphClass(),
         'owner_id' => $ownerA->getKey(),
         'conditions' => [
-            ['field' => 'lifetime_value_min', 'value' => 1_000_00],
+            ['field' => 'accepts_marketing', 'value' => true],
         ],
     ]);
 
@@ -76,7 +75,6 @@ it('prevents cross-tenant segment membership changes', function (): void {
         'last_name' => 'Customer',
         'email' => 'b2-' . uniqid() . '@example.com',
         'status' => CustomerStatus::Active,
-        'lifetime_value' => 2_000_00,
         'owner_type' => $ownerB->getMorphClass(),
         'owner_id' => $ownerB->getKey(),
     ]);
@@ -99,7 +97,7 @@ it('prevents cross-tenant segment membership changes', function (): void {
     expect($customerB->segments()->whereKey($segmentA->getKey())->exists())->toBeFalse();
 });
 
-it('enforces owner scoping for addresses and wishlists', function (): void {
+it('enforces owner scoping for addresses', function (): void {
     $ownerA = CustomersTestOwner::query()->create(['name' => 'Owner A']);
     $ownerB = CustomersTestOwner::query()->create(['name' => 'Owner B']);
 
@@ -129,11 +127,6 @@ it('enforces owner scoping for addresses and wishlists', function (): void {
             'postcode' => '50000',
             'country' => 'MY',
         ]);
-
-        Wishlist::query()->create([
-            'customer_id' => $customerA->id,
-            'name' => 'Owner A Wishlist',
-        ]);
     });
 
     OwnerContext::withOwner($ownerB, function () use ($customerB): void {
@@ -144,16 +137,10 @@ it('enforces owner scoping for addresses and wishlists', function (): void {
             'postcode' => '50000',
             'country' => 'MY',
         ]);
-
-        Wishlist::query()->create([
-            'customer_id' => $customerB->id,
-            'name' => 'Owner B Wishlist',
-        ]);
     });
 
     OwnerContext::withOwner($ownerA, function () use ($customerB): void {
-        expect(Address::query()->count())->toBe(1)
-            ->and(Wishlist::query()->count())->toBe(1);
+        expect(Address::query()->count())->toBe(1);
 
         expect(fn () => Address::query()->create([
             'customer_id' => $customerB->id,
@@ -161,11 +148,6 @@ it('enforces owner scoping for addresses and wishlists', function (): void {
             'city' => 'KL',
             'postcode' => '50000',
             'country' => 'MY',
-        ]))->toThrow(InvalidArgumentException::class);
-
-        expect(fn () => Wishlist::query()->create([
-            'customer_id' => $customerB->id,
-            'name' => 'Cross-tenant wishlist',
         ]))->toThrow(InvalidArgumentException::class);
     });
 });

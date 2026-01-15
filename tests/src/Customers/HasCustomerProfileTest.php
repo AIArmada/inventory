@@ -98,68 +98,6 @@ describe('HasCustomerProfile Trait', function (): void {
         });
     });
 
-    describe('getWalletBalance Method', function (): void {
-        it('returns 0 when no profile exists', function (): void {
-            $user = TestUserWithProfile::create([
-                'name' => 'No Wallet',
-                'email' => 'no-wallet-' . uniqid() . '@example.com',
-                'password' => 'password',
-            ]);
-
-            expect($user->getWalletBalance())->toBe(0);
-        });
-
-        it('returns wallet balance when profile exists', function (): void {
-            $user = TestUserWithProfile::create([
-                'name' => 'Has Wallet',
-                'email' => 'has-wallet-' . uniqid() . '@example.com',
-                'password' => 'password',
-            ]);
-
-            Customer::create([
-                'user_id' => $user->id,
-                'first_name' => 'Has',
-                'last_name' => 'Wallet',
-                'email' => $user->email,
-                'status' => CustomerStatus::Active,
-                'wallet_balance' => 5000,
-            ]);
-
-            expect($user->getWalletBalance())->toBe(5000);
-        });
-    });
-
-    describe('getLifetimeValue Method', function (): void {
-        it('returns 0 when no profile exists', function (): void {
-            $user = TestUserWithProfile::create([
-                'name' => 'No LTV',
-                'email' => 'no-ltv-' . uniqid() . '@example.com',
-                'password' => 'password',
-            ]);
-
-            expect($user->getLifetimeValue())->toBe(0);
-        });
-
-        it('returns lifetime value when profile exists', function (): void {
-            $user = TestUserWithProfile::create([
-                'name' => 'Has LTV',
-                'email' => 'has-ltv-' . uniqid() . '@example.com',
-                'password' => 'password',
-            ]);
-
-            Customer::create([
-                'user_id' => $user->id,
-                'first_name' => 'Has',
-                'last_name' => 'LTV',
-                'email' => $user->email,
-                'status' => CustomerStatus::Active,
-                'lifetime_value' => 10000,
-            ]);
-
-            expect($user->getLifetimeValue())->toBe(10000);
-        });
-    });
-
     describe('acceptsMarketing Method', function (): void {
         it('returns false when no profile exists', function (): void {
             $user = TestUserWithProfile::create([

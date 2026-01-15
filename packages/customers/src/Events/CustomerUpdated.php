@@ -8,7 +8,7 @@ use AIArmada\Customers\Models\Customer;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CustomerUpdated
+final class CustomerUpdated
 {
     use Dispatchable;
     use SerializesModels;

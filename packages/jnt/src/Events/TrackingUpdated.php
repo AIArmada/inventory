@@ -11,7 +11,7 @@ use Illuminate\Queue\SerializesModels;
 /**
  * Event fired when tracking is updated.
  */
-class TrackingUpdated
+final class TrackingUpdated
 {
     use Dispatchable;
     use InteractsWithSockets;

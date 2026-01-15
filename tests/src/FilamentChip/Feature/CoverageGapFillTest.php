@@ -8,11 +8,6 @@ use AIArmada\Chip\Services\ChipSendService;
 use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\FilamentChip\Actions\PurchaseExporter;
 use AIArmada\FilamentChip\Actions\SendInstructionExporter;
-use AIArmada\FilamentChip\Concerns\InteractsWithBillable;
-use AIArmada\FilamentChip\Pages\Billing\BillingDashboard;
-use AIArmada\FilamentChip\Pages\Billing\Invoices;
-use AIArmada\FilamentChip\Pages\Billing\PaymentMethods;
-use AIArmada\FilamentChip\Pages\Billing\Subscriptions;
 use AIArmada\FilamentChip\Resources\BankAccountResource\Pages\CreateBankAccount;
 use AIArmada\FilamentChip\Resources\BankAccountResource\Pages\ListBankAccounts;
 use AIArmada\FilamentChip\Resources\BankAccountResource\Pages\ViewBankAccount;
@@ -24,15 +19,12 @@ use AIArmada\FilamentChip\Resources\PaymentResource\Pages\ListPayments;
 use AIArmada\FilamentChip\Resources\PaymentResource\Pages\ViewPayment;
 use AIArmada\FilamentChip\Resources\PurchaseResource\Pages\ListPurchases;
 use AIArmada\FilamentChip\Resources\PurchaseResource\Pages\ViewPurchase;
-use AIArmada\FilamentChip\Resources\RecurringScheduleResource\Pages\ListRecurringSchedules;
 use AIArmada\FilamentChip\Resources\SendInstructionResource\Pages\CreateSendInstruction;
 use AIArmada\FilamentChip\Resources\SendInstructionResource\Pages\ListSendInstructions;
 use AIArmada\FilamentChip\Resources\SendInstructionResource\Pages\ViewSendInstruction;
 use Filament\Actions\Exports\Models\Export;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
-use Symfony\Component\HttpFoundation\Response;
 
 beforeEach(function (): void {
     filament()->setCurrentPanel('test');
@@ -45,11 +37,6 @@ beforeEach(function (): void {
         $table->string('password');
         $table->timestamps();
     });
-
-    Route::get('/billing/payment-methods', fn () => 'ok')->name('filament.billing.pages.payment-methods');
-
-    config()->set('filament-chip.billing.panel_id', 'billing');
-    config()->set('filament-chip.billing.billable_model', User::class);
 });
 
 it('covers exporters notification bodies and column definitions', function (): void {
@@ -70,175 +57,6 @@ it('covers exporters notification bodies and column definitions', function (): v
     expect(SendInstructionExporter::getCompletedNotificationBody($export))->toContain('10')->toContain('2');
 });
 
-it('covers InteractsWithBillable helper methods', function (): void {
-    $user = User::create([
-        'name' => 'Billable',
-        'email' => 'billable@example.com',
-        'password' => bcrypt('secret'),
-    ]);
-
-    $this->actingAs($user);
-
-    $host = new class
-    {
-        use InteractsWithBillable;
-
-        public function publicGetBillable(): ?\Illuminate\Database\Eloquent\Model
-        {
-            return $this->getBillable();
-        }
-
-        public function publicGetPaymentMethods(): \Illuminate\Support\Collection
-        {
-            return $this->getPaymentMethods();
-        }
-
-        public function publicGetDefaultPaymentMethod(): mixed
-        {
-            return $this->getDefaultPaymentMethod();
-        }
-
-        public function publicBillableHasMethod(string $method): bool
-        {
-            return $this->billableHasMethod($method);
-        }
-
-        public function publicGetBillingPanelId(): string
-        {
-            return $this->getBillingPanelId();
-        }
-
-        public function publicBillingRoute(string $name, array $parameters = []): string
-        {
-            return $this->billingRoute($name, $parameters);
-        }
-    };
-
-    expect($host->publicGetBillable())->toBeInstanceOf(User::class);
-    expect($host->publicGetPaymentMethods())->toBeEmpty();
-    expect($host->publicGetDefaultPaymentMethod())->toBeNull();
-    expect($host->publicBillableHasMethod('subscriptions'))->toBeFalse();
-    expect($host->publicGetBillingPanelId())->toBe('billing');
-    expect($host->publicBillingRoute('pages.payment-methods'))->toContain('/billing/payment-methods');
-});
-
-it('covers billing pages by stubbing the billable model methods', function (): void {
-    $billable = new class extends \Illuminate\Database\Eloquent\Model
-    {
-        protected $table = 'users';
-
-        public function setupPaymentMethodUrl(array $params): string
-        {
-            return 'https://example.test/setup?' . http_build_query($params);
-        }
-
-        public function updateDefaultPaymentMethod(string $id): void {}
-
-        public function deletePaymentMethod(string $id): void {}
-
-        public function paymentMethods(): \Illuminate\Support\Collection
-        {
-            return collect([['id' => 'pm_1']]);
-        }
-
-        public function defaultPaymentMethod(): array
-        {
-            return ['id' => 'pm_1'];
-        }
-
-        public function invoices(bool $includePending = true): \Illuminate\Support\Collection
-        {
-            return collect([['id' => 'in_1', 'status' => 'paid']]);
-        }
-
-        public function findInvoice(string $id): ?object
-        {
-            return new class
-            {
-                public function download(array $data): Response
-                {
-                    return response('ok');
-                }
-            };
-        }
-
-        public function subscriptions(): object
-        {
-            $subscription = new class
-            {
-                public string $id = 'sub_1';
-
-                public function cancel(): void {}
-
-                public function resume(): void {}
-            };
-
-            return new class($subscription)
-            {
-                public function __construct(private object $subscription) {}
-
-                public function find(string $id): ?object
-                {
-                    return $id === 'sub_1' ? $this->subscription : null;
-                }
-
-                public function whereIn(string $column, array $values): self
-                {
-                    return $this;
-                }
-
-                public function onGracePeriod(): self
-                {
-                    return $this;
-                }
-
-                public function active(): self
-                {
-                    return $this;
-                }
-
-                public function get(): \Illuminate\Support\Collection
-                {
-                    return collect([$this->subscription]);
-                }
-            };
-        }
-    };
-
-    $methods = Mockery::mock(PaymentMethods::class)->makePartial();
-    $methods->shouldAllowMockingProtectedMethods();
-    $methods->shouldReceive('getBillable')->andReturn($billable);
-
-    expect($methods->getViewData())->toHaveKeys(['billable', 'paymentMethods', 'defaultPaymentMethod']);
-    expect($methods->getAddPaymentMethodUrl())->toContain('success_url')->toContain('cancel_url');
-
-    $methods->setAsDefault('pm_1');
-    $methods->deletePaymentMethod('pm_1');
-
-    $subs = Mockery::mock(Subscriptions::class)->makePartial();
-    $subs->shouldAllowMockingProtectedMethods();
-    $subs->shouldReceive('getBillable')->andReturn($billable);
-
-    expect($subs->getViewData())->toHaveKeys(['billable', 'subscriptions', 'cancelledSubscriptions']);
-    $subs->cancelSubscription('sub_1');
-    $subs->resumeSubscription('sub_1');
-    $subs->formatAmount(12345);
-
-    $invoices = Mockery::mock(Invoices::class)->makePartial();
-    $invoices->shouldAllowMockingProtectedMethods();
-    $invoices->shouldReceive('getBillable')->andReturn($billable);
-
-    expect($invoices->getViewData())->toHaveKeys(['billable', 'invoices']);
-    expect($invoices->downloadInvoice('in_1'))->toBeInstanceOf(Response::class);
-
-    $dash = Mockery::mock(BillingDashboard::class)->makePartial();
-    $dash->shouldAllowMockingProtectedMethods();
-    $dash->shouldReceive('getBillable')->andReturn($billable);
-
-    expect($dash->getViewData())->toHaveKeys(['billable', 'subscriptions', 'paymentMethods', 'defaultPaymentMethod', 'invoices']);
-    $dash->formatAmount(100);
-});
-
 it('covers resource pages and read-only list base class', function (): void {
     $readOnly = new class extends ReadOnlyListRecords
     {
@@ -257,7 +75,6 @@ it('covers resource pages and read-only list base class', function (): void {
     expect((new ViewPayment)->getTitle())->toBe('Payment Details');
 
     expect((new ListCompanyStatements)->getTitle())->toBeString();
-    expect((new ListRecurringSchedules)->getTitle())->toBeString();
 
     $purchaseRecord = new class extends \Illuminate\Database\Eloquent\Model
     {

@@ -6,11 +6,9 @@ use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\Customers\Models\Address;
 use AIArmada\Customers\Models\Customer;
 use AIArmada\Customers\Models\CustomerNote;
-use AIArmada\Customers\Models\Wishlist;
 use AIArmada\FilamentCustomers\Resources\CustomerResource\Pages\ViewCustomer;
 use AIArmada\FilamentCustomers\Resources\CustomerResource\RelationManagers\AddressesRelationManager;
 use AIArmada\FilamentCustomers\Resources\CustomerResource\RelationManagers\NotesRelationManager;
-use AIArmada\FilamentCustomers\Resources\CustomerResource\RelationManagers\WishlistsRelationManager;
 use Filament\Actions\Action;
 use Filament\Tables\Table;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -31,9 +29,6 @@ it('custom relation manager actions require authentication (abort 403)', functio
         'status' => 'active',
         'accepts_marketing' => false,
         'is_tax_exempt' => false,
-        'wallet_balance' => 0,
-        'lifetime_value' => 0,
-        'total_orders' => 0,
     ]);
 
     $address = Address::query()->create([
@@ -52,14 +47,6 @@ it('custom relation manager actions require authentication (abort 403)', functio
         'content' => 'Pinned note',
         'is_internal' => true,
         'is_pinned' => false,
-    ]);
-
-    $wishlist = Wishlist::query()->create([
-        'customer_id' => $customer->getKey(),
-        'name' => 'Public Wishlist',
-        'description' => null,
-        'is_public' => true,
-        'is_default' => false,
     ]);
 
     $addressesRm = new AddressesRelationManager;
@@ -84,20 +71,8 @@ it('custom relation manager actions require authentication (abort 403)', functio
     $pin->livewire($notesRm);
     $pin->record($note);
 
-    $wishlistsRm = new WishlistsRelationManager;
-    $wishlistsRm->ownerRecord = $customer;
-    $wishlistsRm->pageClass = ViewCustomer::class;
-
-    $wishlistsTable = $wishlistsRm->table(Table::make($wishlistsRm));
-
-    /** @var Action $copyLink */
-    $copyLink = $wishlistsTable->getAction('copy_link');
-    $copyLink->livewire($wishlistsRm);
-    $copyLink->record($wishlist);
-
     \Illuminate\Support\Facades\Auth::logout();
 
     expect(fn (): mixed => $setBilling->call())->toThrow(HttpException::class);
     expect(fn (): mixed => $pin->call())->toThrow(HttpException::class);
-    expect(fn (): mixed => $copyLink->call())->toThrow(HttpException::class);
 });

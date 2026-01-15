@@ -6,6 +6,7 @@ namespace AIArmada\Jnt\Cart;
 
 use AIArmada\Cart\Cart;
 use AIArmada\Jnt\Data\AddressData;
+use Carbon\CarbonImmutable;
 
 /**
  * Calculates J&T Express shipping rates for cart contents.
@@ -44,7 +45,7 @@ class JntShippingCalculator
             'amount' => $rate,
             'weight_kg' => $totalWeight / 1000, // Convert grams to kg
             'estimated_days' => $this->getEstimatedDays($destination),
-            'calculated_at' => now()->toISOString(),
+            'calculated_at' => CarbonImmutable::now()->toISOString(),
             'cart_weight' => $totalWeight,
             'quote_id' => uniqid('jnt_quote_', true),
         ];

@@ -7,8 +7,9 @@ namespace AIArmada\CashierChip\Concerns;
 use AIArmada\CashierChip\Cashier;
 use AIArmada\CashierChip\PaymentMethod;
 use AIArmada\Chip\Data\PurchaseData;
-use Exception;
 use Illuminate\Support\Collection;
+use SensitiveParameter;
+use Throwable;
 
 trait ManagesPaymentMethods // @phpstan-ignore trait.unused
 {
@@ -37,7 +38,7 @@ trait ManagesPaymentMethods // @phpstan-ignore trait.unused
     /**
      * Get a specific recurring token by ID.
      */
-    public function findPaymentMethod(string $paymentMethodId): ?PaymentMethod
+    public function findPaymentMethod(#[SensitiveParameter] string $paymentMethodId): ?PaymentMethod
     {
         if (! $this->hasChipId()) {
             return null;
@@ -47,7 +48,7 @@ trait ManagesPaymentMethods // @phpstan-ignore trait.unused
             $token = Cashier::chip()->getClientRecurringToken($this->chip_id, $paymentMethodId);
 
             return new PaymentMethod($this, $token);
-        } catch (Exception $e) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -83,7 +84,7 @@ trait ManagesPaymentMethods // @phpstan-ignore trait.unused
     /**
      * Update the default payment method for the customer.
      */
-    public function updateDefaultPaymentMethod(string $paymentMethodId): self
+    public function updateDefaultPaymentMethod(#[SensitiveParameter] string $paymentMethodId): self
     {
         $paymentMethod = $this->findPaymentMethod($paymentMethodId);
 
@@ -122,7 +123,7 @@ trait ManagesPaymentMethods // @phpstan-ignore trait.unused
     /**
      * Delete a payment method from the customer.
      */
-    public function deletePaymentMethod(string $paymentMethodId): void
+    public function deletePaymentMethod(#[SensitiveParameter] string $paymentMethodId): void
     {
         if (! $this->hasChipId()) {
             return;

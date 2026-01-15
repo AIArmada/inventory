@@ -6,6 +6,9 @@ namespace AIArmada\Tax\Services;
 
 use AIArmada\Tax\Contracts\TaxCalculatorInterface;
 use AIArmada\Tax\Data\TaxResultData;
+use AIArmada\Tax\Events\TaxCalculated;
+use AIArmada\Tax\Events\TaxExemptionApplied;
+use AIArmada\Tax\Events\TaxZoneResolved;
 use AIArmada\Tax\Exceptions\TaxZoneNotFoundException;
 use AIArmada\Tax\Models\TaxExemption;
 use AIArmada\Tax\Models\TaxRate;
@@ -38,11 +41,15 @@ class TaxCalculator implements TaxCalculatorInterface
         // Check for exemption first
         $exemption = $this->checkExemption($context);
         if ($exemption) {
+            TaxExemptionApplied::dispatch($exemption, $amountInCents, $zoneId, $context);
+
             return $this->createExemptResult($exemption, $zoneId);
         }
 
         // Resolve zone
         $zone = $this->resolveZone($zoneId, $context);
+
+        TaxZoneResolved::dispatch($zone, $zoneId, $context);
 
         // Get applicable rates (including compound)
         $rates = $this->getRates($taxClass, $zone, $context['is_shipping'] ?? false);
@@ -55,7 +62,7 @@ class TaxCalculator implements TaxCalculatorInterface
         $pricesIncludeTax = $this->getPricesIncludeTax();
         $result = $this->calculateWithRates($amountInCents, $rates, $pricesIncludeTax);
 
-        return new TaxResultData(
+        $taxResult = new TaxResultData(
             taxAmount: $result['total'],
             rateId: $result['primary_rate']->id,
             rateName: $result['primary_rate']->name,
@@ -65,6 +72,10 @@ class TaxCalculator implements TaxCalculatorInterface
             includedInPrice: $pricesIncludeTax,
             breakdown: $result['breakdown'],
         );
+
+        TaxCalculated::dispatch($taxResult, $amountInCents, $taxClass, $zoneId, $context);
+
+        return $taxResult;
     }
 
     /**

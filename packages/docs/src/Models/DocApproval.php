@@ -6,6 +6,7 @@ namespace AIArmada\Docs\Models;
 
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -106,7 +107,7 @@ final class DocApproval extends Model
     {
         $this->update([
             'status' => 'approved',
-            'approved_at' => now(),
+            'approved_at' => CarbonImmutable::now(),
             'comments' => $comments,
         ]);
     }
@@ -115,7 +116,7 @@ final class DocApproval extends Model
     {
         $this->update([
             'status' => 'rejected',
-            'rejected_at' => now(),
+            'rejected_at' => CarbonImmutable::now(),
             'comments' => $comments,
         ]);
     }

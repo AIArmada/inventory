@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Enums\DocType;
+use AIArmada\Docs\Enums\EmailStatus;
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Models\DocEmail;
 use AIArmada\Docs\Models\DocEmailTemplate;
@@ -14,6 +15,10 @@ beforeEach(function (): void {
     Doc::query()->delete();
     DocEmail::query()->delete();
     DocEmailTemplate::query()->delete();
+
+    // Disable email queueing for tests
+    config()->set('docs.email.queue_enabled', false);
+    config()->set('docs.email.attach_pdf', false);
 
     // Register tracking routes for tests
     Route::get('/docs/track/open/{token}', fn () => response()->noContent())->name('docs.track.open');
@@ -41,7 +46,7 @@ test('it can send document email', function (): void {
         ->toBeInstanceOf(DocEmail::class)
         ->and($email->recipient_email)->toBe('customer@example.com')
         ->and($email->recipient_name)->toBe('John Doe')
-        ->and($email->status)->toBe('sent');
+        ->and($email->status)->toBe(EmailStatus::Sent);
 });
 
 test('it uses template when available', function (): void {
@@ -167,7 +172,7 @@ test('it generates tracking pixel url', function (): void {
         'recipient_email' => 'track@example.com',
         'subject' => 'Test',
         'body' => 'Test body',
-        'status' => 'sent',
+        'status' => EmailStatus::Sent,
     ]);
 
     $emailService = app(DocEmailService::class);
@@ -184,7 +189,7 @@ test('it generates tracked link url', function (): void {
         'recipient_email' => 'track@example.com',
         'subject' => 'Test',
         'body' => 'Test body',
-        'status' => 'sent',
+        'status' => EmailStatus::Sent,
     ]);
 
     $emailService = app(DocEmailService::class);
@@ -202,7 +207,7 @@ test('doc can have multiple emails', function (): void {
         'recipient_email' => 'first@example.com',
         'subject' => 'First',
         'body' => 'Body',
-        'status' => 'sent',
+        'status' => EmailStatus::Sent,
     ]);
 
     DocEmail::create([
@@ -210,7 +215,7 @@ test('doc can have multiple emails', function (): void {
         'recipient_email' => 'second@example.com',
         'subject' => 'Second',
         'body' => 'Body',
-        'status' => 'sent',
+        'status' => EmailStatus::Sent,
     ]);
 
     $doc->refresh();
@@ -226,13 +231,13 @@ test('email tracks sent timestamp', function (): void {
         'recipient_email' => 'test@example.com',
         'subject' => 'Test',
         'body' => 'Body',
-        'status' => 'queued',
+        'status' => EmailStatus::Queued,
     ]);
 
     expect($email->sent_at)->toBeNull();
 
     $email->update([
-        'status' => 'sent',
+        'status' => EmailStatus::Sent,
         'sent_at' => now(),
     ]);
 
@@ -247,7 +252,7 @@ test('email tracks opened timestamp', function (): void {
         'recipient_email' => 'test@example.com',
         'subject' => 'Test',
         'body' => 'Body',
-        'status' => 'sent',
+        'status' => EmailStatus::Sent,
         'sent_at' => now(),
     ]);
 

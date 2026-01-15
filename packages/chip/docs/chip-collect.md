@@ -132,30 +132,6 @@ $purchase = Chip::markPurchaseAsPaid('pur_abc123');
 $purchase = Chip::resendInvoice('pur_abc123');
 ```
 
-## Recurring Payments
-
-### Create with Token
-
-```php
-$purchase = Chip::purchase()
-    ->customer('customer@example.com')
-    ->addProductCents('Subscription', 9900)
-    ->forceRecurring(true)
-    ->create();
-```
-
-### Charge Token
-
-```php
-$purchase = Chip::chargePurchase('pur_abc123', $recurringToken);
-```
-
-### Delete Token
-
-```php
-Chip::deleteRecurringToken('pur_abc123');
-```
-
 ## Clients
 
 ```php
@@ -176,11 +152,6 @@ $client = Chip::updateClient('cli_abc123', ['full_name' => 'Jane Doe']);
 
 // Delete
 Chip::deleteClient('cli_abc123');
-
-// Recurring tokens
-$tokens = Chip::listClientRecurringTokens('cli_abc123');
-$token = Chip::getClientRecurringToken('cli_abc123', 'tok_xyz');
-Chip::deleteClientRecurringToken('cli_abc123', 'tok_xyz');
 ```
 
 ## Payment Methods

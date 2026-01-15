@@ -13,7 +13,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
  * This rule ensures that prices and monetary values are within the acceptable range
  * for the J&T Express API (0.01 to 999,999.99).
  */
-class MonetaryValue implements ValidationRule
+final class MonetaryValue implements ValidationRule
 {
     /**
      * Run the validation rule.

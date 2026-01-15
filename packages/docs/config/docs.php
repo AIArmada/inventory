@@ -35,10 +35,32 @@ return [
         'due_days' => env('DOCS_DUE_DAYS', 30),
     ],
 
+    /* Payment Methods */
+    'payment_methods' => [
+        'bank_transfer' => 'Bank Transfer',
+        'cash' => 'Cash',
+        'credit_card' => 'Credit Card',
+        'check' => 'Check',
+        'e_wallet' => 'E-Wallet',
+        'other' => 'Other',
+    ],
+
     /* Features */
     'owner' => [
         'enabled' => env('DOCS_OWNER_ENABLED', false),
         'include_global' => env('DOCS_OWNER_INCLUDE_GLOBAL', false),
+    ],
+
+    /* Email */
+    'email' => [
+        'queue_enabled' => env('DOCS_EMAIL_QUEUE_ENABLED', true),
+        'queue' => env('DOCS_EMAIL_QUEUE', 'default'),
+        'attach_pdf' => env('DOCS_EMAIL_ATTACH_PDF', true),
+        'from_address' => env('DOCS_EMAIL_FROM_ADDRESS'),
+        'from_name' => env('DOCS_EMAIL_FROM_NAME'),
+        'tracking' => [
+            'enabled' => env('DOCS_EMAIL_TRACKING_ENABLED', true),
+        ],
     ],
 
     /* Integrations */
@@ -60,6 +82,13 @@ return [
                 'prefix' => 'INV',
             ],
         ],
+        'quotation' => [
+            'default_template' => 'doc-default',
+            'numbering' => [
+                'strategy' => DefaultNumberStrategy::class,
+                'prefix' => 'QUO',
+            ],
+        ],
         'receipt' => [
             'default_template' => 'doc-default',
             'numbering' => [
@@ -72,6 +101,20 @@ return [
             'numbering' => [
                 'strategy' => DefaultNumberStrategy::class,
                 'prefix' => 'CN',
+            ],
+        ],
+        'delivery_note' => [
+            'default_template' => 'doc-default',
+            'numbering' => [
+                'strategy' => DefaultNumberStrategy::class,
+                'prefix' => 'DN',
+            ],
+        ],
+        'proforma_invoice' => [
+            'default_template' => 'doc-default',
+            'numbering' => [
+                'strategy' => DefaultNumberStrategy::class,
+                'prefix' => 'PI',
             ],
         ],
     ],

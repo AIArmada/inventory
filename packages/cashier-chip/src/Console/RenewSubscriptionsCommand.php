@@ -10,11 +10,12 @@ use AIArmada\CashierChip\Events\SubscriptionRenewalFailed;
 use AIArmada\CashierChip\Events\SubscriptionRenewed;
 use AIArmada\CashierChip\Subscription;
 use AIArmada\CommerceSupport\Support\OwnerContext;
-use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use Throwable;
 
 /**
  * Command to process subscription renewals for CHIP.
@@ -154,7 +155,21 @@ class RenewSubscriptionsCommand extends Command
             }
 
             try {
-                $payment = $this->chargeSubscription($subscription);
+                $payment = DB::transaction(function () use ($subscription) {
+                    $payment = $this->chargeSubscription($subscription);
+
+                    if ($payment && $payment->isSucceeded()) {
+                        $subscription->forceFill([
+                            'chip_status' => Subscription::STATUS_ACTIVE,
+                            'next_billing_at' => now()->add(
+                                $subscription->billing_interval ?? 'month',
+                                $subscription->billing_interval_count ?? 1
+                            ),
+                        ])->save();
+                    }
+
+                    return $payment;
+                });
 
                 if ($payment && $payment->isSucceeded()) {
                     $this->info('  ✓ Renewed successfully');
@@ -166,7 +181,7 @@ class RenewSubscriptionsCommand extends Command
                     $this->markAsPastDue($subscription);
                     $failed++;
                 }
-            } catch (Exception $e) {
+            } catch (Throwable $e) {
                 $this->error("  ✗ Failed: {$e->getMessage()}");
                 Log::error('Subscription renewal failed', [
                     'subscription_id' => $subscription->id,

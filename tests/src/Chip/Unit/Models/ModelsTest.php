@@ -2,17 +2,12 @@
 
 declare(strict_types=1);
 
-use AIArmada\Chip\Enums\ChargeStatus;
-use AIArmada\Chip\Enums\RecurringInterval;
-use AIArmada\Chip\Enums\RecurringStatus;
 use AIArmada\Chip\Models\BankAccount;
 use AIArmada\Chip\Models\Client;
 use AIArmada\Chip\Models\CompanyStatement;
 use AIArmada\Chip\Models\DailyMetric;
 use AIArmada\Chip\Models\Payment;
 use AIArmada\Chip\Models\Purchase;
-use AIArmada\Chip\Models\RecurringCharge;
-use AIArmada\Chip\Models\RecurringSchedule;
 use AIArmada\Chip\Models\SendInstruction;
 use AIArmada\Chip\Models\SendLimit;
 use AIArmada\Chip\Models\SendWebhook;
@@ -35,8 +30,8 @@ describe('ChipModel base class', function (): void {
         $client = new Client;
         expect($client->getTable())->toBe('chip_clients');
 
-        $schedule = new RecurringSchedule;
-        expect($schedule->getTable())->toBe('chip_recurring_schedules');
+        $webhook = new Webhook;
+        expect($webhook->getTable())->toBe('chip_webhooks');
     });
 
     it('uses guarded property', function (): void {
@@ -334,133 +329,6 @@ describe('Webhook model', function (): void {
         expect($casts['headers'])->toBe('array');
         expect($casts['verified'])->toBe('boolean');
         expect($casts['processed'])->toBe('boolean');
-    });
-});
-
-describe('RecurringSchedule model', function (): void {
-    it('has charges relationship', function (): void {
-        $schedule = new RecurringSchedule;
-        expect($schedule->charges())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\HasMany::class);
-    });
-
-    it('has subscriber morphTo relationship', function (): void {
-        $schedule = new RecurringSchedule;
-        expect($schedule->subscriber())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\MorphTo::class);
-    });
-
-    it('can check status helpers', function (): void {
-        $schedule = new RecurringSchedule;
-        $schedule->forceFill(['status' => RecurringStatus::Active, 'interval' => RecurringInterval::Monthly, 'interval_count' => 1]);
-
-        expect($schedule->isActive())->toBeTrue();
-        expect($schedule->isPaused())->toBeFalse();
-        expect($schedule->isCancelled())->toBeFalse();
-        expect($schedule->isFailed())->toBeFalse();
-
-        $schedule->forceFill(['status' => RecurringStatus::Paused, 'interval' => RecurringInterval::Monthly, 'interval_count' => 1]);
-        expect($schedule->isPaused())->toBeTrue();
-
-        $schedule->forceFill(['status' => RecurringStatus::Cancelled, 'interval' => RecurringInterval::Monthly, 'interval_count' => 1]);
-        expect($schedule->isCancelled())->toBeTrue();
-
-        $schedule->forceFill(['status' => RecurringStatus::Failed, 'interval' => RecurringInterval::Monthly, 'interval_count' => 1]);
-        expect($schedule->isFailed())->toBeTrue();
-    });
-
-    it('can check if due', function (): void {
-        $schedule = new RecurringSchedule;
-        $schedule->forceFill([
-            'status' => RecurringStatus::Active,
-            'next_charge_at' => now()->subDay(),
-            'interval' => RecurringInterval::Monthly,
-            'interval_count' => 1,
-        ]);
-
-        expect($schedule->isDue())->toBeTrue();
-
-        $schedule->forceFill(['next_charge_at' => now()->addDay()]);
-        expect($schedule->isDue())->toBeFalse();
-
-        $schedule->forceFill(['status' => RecurringStatus::Paused]);
-        expect($schedule->isDue())->toBeFalse();
-    });
-
-    it('can calculate next charge date', function (): void {
-        $schedule = new RecurringSchedule;
-        $schedule->forceFill([
-            'interval' => RecurringInterval::Daily,
-            'interval_count' => 1,
-            'last_charged_at' => null,
-        ]);
-
-        $nextCharge = $schedule->calculateNextChargeDate();
-        expect($nextCharge)->toBeInstanceOf(Carbon\CarbonImmutable::class);
-
-        $schedule->forceFill([
-            'interval' => RecurringInterval::Weekly,
-            'interval_count' => 2,
-        ]);
-        $nextChargeWeekly = $schedule->calculateNextChargeDate();
-        expect($nextChargeWeekly)->toBeInstanceOf(Carbon\CarbonImmutable::class);
-
-        $schedule->forceFill([
-            'interval' => RecurringInterval::Monthly,
-            'interval_count' => 1,
-        ]);
-        $nextChargeMonthly = $schedule->calculateNextChargeDate();
-        expect($nextChargeMonthly)->toBeInstanceOf(Carbon\CarbonImmutable::class);
-
-        $schedule->forceFill([
-            'interval' => RecurringInterval::Yearly,
-            'interval_count' => 1,
-        ]);
-        $nextChargeYearly = $schedule->calculateNextChargeDate();
-        expect($nextChargeYearly)->toBeInstanceOf(Carbon\CarbonImmutable::class);
-    });
-
-    it('can format amount', function (): void {
-        $schedule = new RecurringSchedule;
-        $schedule->forceFill([
-            'amount_minor' => 10000,
-            'currency' => 'MYR',
-            'interval' => RecurringInterval::Monthly,
-            'interval_count' => 1,
-        ]);
-
-        expect($schedule->getAmountFormatted())->toBe('100.00 MYR');
-    });
-});
-
-describe('RecurringCharge model', function (): void {
-    it('has schedule relationship', function (): void {
-        $charge = new RecurringCharge;
-        expect($charge->schedule())->toBeInstanceOf(Illuminate\Database\Eloquent\Relations\BelongsTo::class);
-    });
-
-    it('can check status helpers', function (): void {
-        $charge = new RecurringCharge;
-        $charge->forceFill(['status' => ChargeStatus::Success, 'attempted_at' => now()]);
-
-        expect($charge->isSuccess())->toBeTrue();
-        expect($charge->isFailed())->toBeFalse();
-        expect($charge->isPending())->toBeFalse();
-
-        $charge->forceFill(['status' => ChargeStatus::Failed, 'attempted_at' => now()]);
-        expect($charge->isFailed())->toBeTrue();
-
-        $charge->forceFill(['status' => ChargeStatus::Pending, 'attempted_at' => now()]);
-        expect($charge->isPending())->toBeTrue();
-    });
-
-    it('can format amount', function (): void {
-        $charge = new RecurringCharge;
-        $charge->forceFill([
-            'amount_minor' => 5000,
-            'currency' => 'USD',
-            'attempted_at' => now(),
-        ]);
-
-        expect($charge->getAmountFormatted())->toBe('50.00 USD');
     });
 });
 

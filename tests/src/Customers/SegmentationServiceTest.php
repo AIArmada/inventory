@@ -56,7 +56,7 @@ describe('SegmentationService', function (): void {
                 'slug' => 'auto-rebuild-' . uniqid(),
                 'is_automatic' => true,
                 'conditions' => [
-                    ['field' => 'lifetime_value_min', 'value' => 100],
+                    ['field' => 'accepts_marketing', 'value' => true],
                 ],
             ]);
 
@@ -65,7 +65,7 @@ describe('SegmentationService', function (): void {
                 'last_name' => 'Event',
                 'email' => 'rebuild-event-' . uniqid() . '@example.com',
                 'status' => CustomerStatus::Active,
-                'lifetime_value' => 500,
+                'accepts_marketing' => true,
             ]);
 
             $count = $this->service->rebuildSegment($segment);
@@ -84,7 +84,7 @@ describe('SegmentationService', function (): void {
                 'is_automatic' => true,
                 'is_active' => true,
                 'conditions' => [
-                    ['field' => 'lifetime_value_min', 'value' => 100],
+                    ['field' => 'accepts_marketing', 'value' => true],
                 ],
             ]);
 
@@ -93,7 +93,7 @@ describe('SegmentationService', function (): void {
                 'last_name' => 'Me',
                 'email' => 'evaluate-' . uniqid() . '@example.com',
                 'status' => CustomerStatus::Active,
-                'lifetime_value' => 500,
+                'accepts_marketing' => true,
             ]);
 
             $this->service->evaluateCustomer($customer);
@@ -144,66 +144,6 @@ describe('SegmentationService', function (): void {
             expect($this->service->customerMatchesSegment($customer, $segment))->toBeFalse();
         });
 
-        it('matches lifetime_value_min condition', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'LTV',
-                'last_name' => 'Min',
-                'email' => 'ltv-min-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'lifetime_value' => 5000,
-            ]);
-
-            $segment = Segment::create([
-                'name' => 'LTV Min ' . uniqid(),
-                'slug' => 'ltv-min-' . uniqid(),
-                'conditions' => [
-                    ['field' => 'lifetime_value_min', 'value' => 1000],
-                ],
-            ]);
-
-            expect($this->service->customerMatchesSegment($customer, $segment))->toBeTrue();
-        });
-
-        it('matches lifetime_value_max condition', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'LTV',
-                'last_name' => 'Max',
-                'email' => 'ltv-max-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'lifetime_value' => 5000,
-            ]);
-
-            $segment = Segment::create([
-                'name' => 'LTV Max ' . uniqid(),
-                'slug' => 'ltv-max-' . uniqid(),
-                'conditions' => [
-                    ['field' => 'lifetime_value_max', 'value' => 10000],
-                ],
-            ]);
-
-            expect($this->service->customerMatchesSegment($customer, $segment))->toBeTrue();
-        });
-
-        it('matches total_orders_min condition', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Orders',
-                'last_name' => 'Min',
-                'email' => 'orders-min-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'total_orders' => 5,
-            ]);
-
-            $segment = Segment::create([
-                'name' => 'Orders Min ' . uniqid(),
-                'slug' => 'orders-min-' . uniqid(),
-                'conditions' => [
-                    ['field' => 'total_orders_min', 'value' => 3],
-                ],
-            ]);
-
-            expect($this->service->customerMatchesSegment($customer, $segment))->toBeTrue();
-        });
-
         it('matches accepts_marketing condition', function (): void {
             $customer = Customer::create([
                 'first_name' => 'Marketing',
@@ -218,6 +158,26 @@ describe('SegmentationService', function (): void {
                 'slug' => 'marketing-' . uniqid(),
                 'conditions' => [
                     ['field' => 'accepts_marketing', 'value' => true],
+                ],
+            ]);
+
+            expect($this->service->customerMatchesSegment($customer, $segment))->toBeTrue();
+        });
+
+        it('matches is_tax_exempt condition', function (): void {
+            $customer = Customer::create([
+                'first_name' => 'Tax',
+                'last_name' => 'Exempt',
+                'email' => 'tax-exempt-' . uniqid() . '@example.com',
+                'status' => CustomerStatus::Active,
+                'is_tax_exempt' => true,
+            ]);
+
+            $segment = Segment::create([
+                'name' => 'Tax Exempt ' . uniqid(),
+                'slug' => 'tax-exempt-' . uniqid(),
+                'conditions' => [
+                    ['field' => 'is_tax_exempt', 'value' => true],
                 ],
             ]);
 
@@ -243,40 +203,60 @@ describe('SegmentationService', function (): void {
             expect($this->service->customerMatchesSegment($customer, $segment))->toBeTrue();
         });
 
-        it('matches last_order_days condition', function (): void {
+        it('matches created_days_ago condition', function (): void {
             $customer = Customer::create([
-                'first_name' => 'Recent',
-                'last_name' => 'Order',
-                'email' => 'recent-order-' . uniqid() . '@example.com',
+                'first_name' => 'Old',
+                'last_name' => 'Customer',
+                'email' => 'old-customer-' . uniqid() . '@example.com',
                 'status' => CustomerStatus::Active,
-                'last_order_at' => now()->subDays(5),
+                'created_at' => now()->subDays(10),
             ]);
 
             $segment = Segment::create([
-                'name' => 'Recent Order ' . uniqid(),
-                'slug' => 'recent-order-' . uniqid(),
+                'name' => 'Veteran ' . uniqid(),
+                'slug' => 'veteran-' . uniqid(),
                 'conditions' => [
-                    ['field' => 'last_order_days', 'value' => 10],
+                    ['field' => 'created_days_ago', 'value' => 7],
                 ],
             ]);
 
             expect($this->service->customerMatchesSegment($customer, $segment))->toBeTrue();
         });
 
-        it('matches no_order_days condition', function (): void {
+        it('matches last_login_days condition', function (): void {
             $customer = Customer::create([
-                'first_name' => 'No',
-                'last_name' => 'Order',
-                'email' => 'no-order-' . uniqid() . '@example.com',
+                'first_name' => 'Recent',
+                'last_name' => 'Login',
+                'email' => 'recent-login-' . uniqid() . '@example.com',
                 'status' => CustomerStatus::Active,
-                'last_order_at' => now()->subDays(60),
+                'last_login_at' => now()->subDays(5),
             ]);
 
             $segment = Segment::create([
-                'name' => 'Lapsed ' . uniqid(),
-                'slug' => 'lapsed-' . uniqid(),
+                'name' => 'Recent Login ' . uniqid(),
+                'slug' => 'recent-login-' . uniqid(),
                 'conditions' => [
-                    ['field' => 'no_order_days', 'value' => 30],
+                    ['field' => 'last_login_days', 'value' => 10],
+                ],
+            ]);
+
+            expect($this->service->customerMatchesSegment($customer, $segment))->toBeTrue();
+        });
+
+        it('matches no_login_days condition', function (): void {
+            $customer = Customer::create([
+                'first_name' => 'Inactive',
+                'last_name' => 'User',
+                'email' => 'inactive-' . uniqid() . '@example.com',
+                'status' => CustomerStatus::Active,
+                'last_login_at' => now()->subDays(60),
+            ]);
+
+            $segment = Segment::create([
+                'name' => 'Inactive ' . uniqid(),
+                'slug' => 'inactive-' . uniqid(),
+                'conditions' => [
+                    ['field' => 'no_login_days', 'value' => 30],
                 ],
             ]);
 
@@ -337,8 +317,6 @@ describe('SegmentationService', function (): void {
                 'last_name' => 'One',
                 'email' => 'stats-one-' . uniqid() . '@example.com',
                 'status' => CustomerStatus::Active,
-                'lifetime_value' => 1000,
-                'total_orders' => 5,
                 'accepts_marketing' => true,
             ]);
 
@@ -347,8 +325,6 @@ describe('SegmentationService', function (): void {
                 'last_name' => 'Two',
                 'email' => 'stats-two-' . uniqid() . '@example.com',
                 'status' => CustomerStatus::Active,
-                'lifetime_value' => 2000,
-                'total_orders' => 10,
                 'accepts_marketing' => false,
             ]);
 
@@ -358,10 +334,6 @@ describe('SegmentationService', function (): void {
             $stats = $this->service->getSegmentStats($segment);
 
             expect($stats['customer_count'])->toBe(2)
-                ->and($stats['total_lifetime_value'])->toBe(3000)
-                ->and($stats['average_lifetime_value'])->toBe(1500)
-                ->and($stats['total_orders'])->toBe(15)
-                ->and($stats['average_orders'])->toBe(7.5)
                 ->and($stats['marketing_opted_in'])->toBe(1)
                 ->and($stats['marketing_opted_in_percentage'])->toBe(50.0);
         });
@@ -375,8 +347,7 @@ describe('SegmentationService', function (): void {
             $stats = $this->service->getSegmentStats($segment);
 
             expect($stats['customer_count'])->toBe(0)
-                ->and($stats['total_lifetime_value'])->toBe(0)
-                ->and($stats['average_lifetime_value'])->toBe(0);
+                ->and($stats['marketing_opted_in'])->toBe(0);
         });
     });
 });

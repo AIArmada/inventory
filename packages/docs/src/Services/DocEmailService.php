@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace AIArmada\Docs\Services;
 
+use AIArmada\Docs\Enums\EmailStatus;
+use AIArmada\Docs\Mail\DocMail;
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Models\DocEmail;
 use AIArmada\Docs\Models\DocEmailTemplate;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Mail;
 use Throwable;
 
 /**
@@ -55,7 +59,7 @@ final class DocEmailService
             'recipient_name' => $recipientName,
             'subject' => $subject,
             'body' => $body,
-            'status' => 'queued',
+            'status' => EmailStatus::Queued,
         ], $ownerAttributes));
 
         // Queue the email
@@ -72,7 +76,7 @@ final class DocEmailService
         $template = $this->findTemplate($doc, 'reminder');
 
         return $this->send($doc, $recipientEmail, null, $template, [
-            'days_overdue' => $doc->due_date?->diffInDays(now()),
+            'days_overdue' => $doc->due_date?->diffInDays(CarbonImmutable::now()),
         ]);
     }
 
@@ -227,12 +231,30 @@ final class DocEmailService
      */
     private function queueEmail(DocEmail $email, Doc $doc): void
     {
-        // In a real implementation, this would queue a mailable
-        // For now, we'll mark it as sent
-        $email->update([
-            'status' => 'sent',
-            'sent_at' => now(),
-        ]);
+        try {
+            $mailable = new DocMail(
+                docEmail: $email,
+                doc: $doc,
+                attachPdf: config('docs.email.attach_pdf', true),
+            );
+
+            if (config('docs.email.queue_enabled', true)) {
+                Mail::queue($mailable);
+            } else {
+                Mail::send($mailable);
+                $email->update([
+                    'status' => EmailStatus::Sent,
+                    'sent_at' => CarbonImmutable::now(),
+                ]);
+            }
+        } catch (Throwable $e) {
+            $email->update([
+                'status' => EmailStatus::Failed,
+                'failure_reason' => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
     }
 
     /**

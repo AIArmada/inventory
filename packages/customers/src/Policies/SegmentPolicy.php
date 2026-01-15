@@ -9,7 +9,7 @@ use AIArmada\Customers\Models\Segment;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Database\Eloquent\Model;
 
-class SegmentPolicy
+final class SegmentPolicy
 {
     use HandlesAuthorization;
 

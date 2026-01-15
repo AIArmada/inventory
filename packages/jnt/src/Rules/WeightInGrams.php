@@ -13,7 +13,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
  * This rule ensures that item weights are within the acceptable range
  * for the J&T Express API (1 to 999,999 grams).
  */
-class WeightInGrams implements ValidationRule
+final class WeightInGrams implements ValidationRule
 {
     /**
      * Run the validation rule.

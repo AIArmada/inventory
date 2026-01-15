@@ -22,6 +22,7 @@ use AIArmada\Cashier\Gateways\Stripe\StripeSubscription;
 use AIArmada\Cashier\Gateways\Stripe\StripeSubscriptionBuilder;
 use Illuminate\Support\Collection;
 use Laravel\Cashier\Cashier;
+use SensitiveParameter;
 use Stripe\StripeClient;
 use Stripe\Webhook;
 use Throwable;
@@ -110,7 +111,7 @@ class StripeGateway extends AbstractGateway
      *
      * @param  array<string, mixed>  $options
      */
-    public function charge(BillableContract $billable, int $amount, ?string $paymentMethod = null, array $options = []): PaymentContract
+    public function charge(BillableContract $billable, int $amount, #[SensitiveParameter] ?string $paymentMethod = null, array $options = []): PaymentContract
     {
         $payment = $billable->charge($amount, $paymentMethod, $options);
 

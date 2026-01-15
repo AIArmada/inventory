@@ -6,6 +6,7 @@ use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Numbering\NumberStrategyRegistry;
 use AIArmada\Docs\Services\DocService;
+use AIArmada\Docs\Services\SequenceManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Browsershot\Browsershot;
@@ -17,7 +18,8 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     config()->set('docs.storage.disk', 'docs');
     $this->numberRegistry = new NumberStrategyRegistry;
-    $this->service = new DocService($this->numberRegistry);
+    $this->sequenceManager = new SequenceManager;
+    $this->service = new DocService($this->numberRegistry, $this->sequenceManager);
 });
 
 test('generatePdf creates and stores pdf', function (): void {
@@ -128,12 +130,12 @@ test('downloadPdf generates pdf if missing', function (): void {
     expect($path)->toBe('docs/INV-002.pdf');
 });
 
-test('emailDoc marks doc as sent', function (): void {
+test('markAsSent marks doc as sent', function (): void {
     $doc = Doc::factory()->create([
         'status' => DocStatus::DRAFT,
     ]);
 
-    $this->service->emailDoc($doc, 'test@example.com');
+    $this->service->markAsSent($doc, 'Sent to test@example.com');
 
     expect($doc->fresh()->status)->toBe(DocStatus::SENT);
 });

@@ -12,6 +12,7 @@ use AIArmada\Jnt\Events\JntOrderStatusChanged;
 use AIArmada\Jnt\Models\JntOrder;
 use AIArmada\Jnt\Models\JntTrackingEvent;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -167,7 +168,7 @@ class JntTrackingService
                 $latestDetail = $trackingData->details->first();
                 $order->last_status_code = $latestDetail->scanTypeCode;
                 $order->last_status = $latestDetail->description;
-                $order->last_tracked_at = now();
+                $order->last_tracked_at = CarbonImmutable::now();
 
                 // Check if this is a problem event
                 if ($latestDetail->problemType !== null || $currentStatus === TrackingStatus::Exception) {
@@ -232,7 +233,7 @@ class JntTrackingService
                 ->whereNull('delivered_at')
                 ->where(function ($query): void {
                     $query->whereNull('last_tracked_at')
-                        ->orWhere('last_tracked_at', '<', now()->subHours(1));
+                        ->orWhere('last_tracked_at', '<', CarbonImmutable::now()->subHours(1));
                 })
                 ->orderBy('last_tracked_at', 'asc')
                 ->limit($limit)
@@ -270,7 +271,7 @@ class JntTrackingService
             ->whereNull('delivered_at')
             ->where(function ($query): void {
                 $query->whereNull('last_tracked_at')
-                    ->orWhere('last_tracked_at', '<', now()->subHours(1));
+                    ->orWhere('last_tracked_at', '<', CarbonImmutable::now()->subHours(1));
             })
             ->orderBy('last_tracked_at', 'asc')
             ->limit($limit)

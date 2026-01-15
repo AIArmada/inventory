@@ -24,19 +24,12 @@ return new class extends Migration
             // Basic info
             $table->string('first_name');
             $table->string('last_name');
-            $table->string('email')->unique();
+            $table->string('email');
             $table->string('phone')->nullable();
             $table->string('company')->nullable();
 
             // Status
             $table->string('status')->default('active');
-
-            // Wallet / Store Credit (in cents)
-            $table->unsignedBigInteger('wallet_balance')->default(0);
-
-            // Lifetime value tracking
-            $table->unsignedBigInteger('lifetime_value')->default(0);
-            $table->unsignedInteger('total_orders')->default(0);
 
             // Preferences
             $table->boolean('accepts_marketing')->default(true);
@@ -45,7 +38,6 @@ return new class extends Migration
 
             // Timestamps
             $table->timestamp('email_verified_at')->nullable();
-            $table->timestamp('last_order_at')->nullable();
             $table->timestamp('last_login_at')->nullable();
 
             // Metadata
@@ -53,10 +45,10 @@ return new class extends Migration
 
             $table->timestamps();
 
-            // Indexes
+            // Indexes - email unique per owner for multitenancy
+            $table->unique(['owner_type', 'owner_id', 'email'], 'customers_owner_email_unique');
             $table->index(['status', 'accepts_marketing']);
-            $table->index('lifetime_value');
-            $table->index('last_order_at');
+            $table->index('last_login_at');
         });
     }
 

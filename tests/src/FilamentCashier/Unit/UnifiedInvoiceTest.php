@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\FilamentCashier\Support\InvoiceStatus;
 use AIArmada\FilamentCashier\Support\UnifiedInvoice;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 
 it('can format amount in USD correctly', function (): void {
     $original = new stdClass;
@@ -18,9 +18,9 @@ it('can format amount in USD correctly', function (): void {
         amount: 2999,
         currency: 'USD',
         status: InvoiceStatus::Paid,
-        date: Carbon::now(),
+        date: CarbonImmutable::now(),
         dueDate: null,
-        paidAt: Carbon::now(),
+        paidAt: CarbonImmutable::now(),
         pdfUrl: null,
         original: $original
     );
@@ -42,8 +42,8 @@ it('can format amount in MYR correctly', function (): void {
         amount: 5000,
         currency: 'MYR',
         status: InvoiceStatus::Open,
-        date: Carbon::now(),
-        dueDate: Carbon::now()->addDays(30),
+        date: CarbonImmutable::now(),
+        dueDate: CarbonImmutable::now()->addDays(30),
         paidAt: null,
         pdfUrl: null,
         original: $original
@@ -66,9 +66,9 @@ it('returns gateway config', function (): void {
         amount: 2999,
         currency: 'USD',
         status: InvoiceStatus::Paid,
-        date: Carbon::now(),
+        date: CarbonImmutable::now(),
         dueDate: null,
-        paidAt: Carbon::now(),
+        paidAt: CarbonImmutable::now(),
         pdfUrl: null,
         original: $original
     );
@@ -91,9 +91,9 @@ it('can have a pdf url', function (): void {
         amount: 2999,
         currency: 'USD',
         status: InvoiceStatus::Paid,
-        date: Carbon::now(),
+        date: CarbonImmutable::now(),
         dueDate: null,
-        paidAt: Carbon::now(),
+        paidAt: CarbonImmutable::now(),
         pdfUrl: 'https://example.com/invoice.pdf',
         original: $original
     );
@@ -113,9 +113,9 @@ it('can have null pdf url', function (): void {
         amount: 2999,
         currency: 'USD',
         status: InvoiceStatus::Paid,
-        date: Carbon::now(),
+        date: CarbonImmutable::now(),
         dueDate: null,
-        paidAt: Carbon::now(),
+        paidAt: CarbonImmutable::now(),
         pdfUrl: null,
         original: $original
     );
@@ -135,8 +135,8 @@ it('can be open without paid date', function (): void {
         amount: 2999,
         currency: 'USD',
         status: InvoiceStatus::Open,
-        date: Carbon::now(),
-        dueDate: Carbon::now()->addDays(30),
+        date: CarbonImmutable::now(),
+        dueDate: CarbonImmutable::now()->addDays(30),
         paidAt: null,
         pdfUrl: null,
         original: $original
@@ -159,7 +159,7 @@ it('can be void', function (): void {
         amount: 2999,
         currency: 'USD',
         status: InvoiceStatus::Void,
-        date: Carbon::now(),
+        date: CarbonImmutable::now(),
         dueDate: null,
         paidAt: null,
         pdfUrl: null,
@@ -181,7 +181,7 @@ it('formats non-USD currencies with correct symbols', function (): void {
         amount: 1234,
         currency: 'EUR',
         status: InvoiceStatus::Paid,
-        date: Carbon::now(),
+        date: CarbonImmutable::now(),
         dueDate: null,
         paidAt: null,
         pdfUrl: null,
@@ -196,7 +196,7 @@ it('formats non-USD currencies with correct symbols', function (): void {
         amount: 1234,
         currency: 'GBP',
         status: InvoiceStatus::Paid,
-        date: Carbon::now(),
+        date: CarbonImmutable::now(),
         dueDate: null,
         paidAt: null,
         pdfUrl: null,
@@ -211,7 +211,7 @@ it('formats non-USD currencies with correct symbols', function (): void {
         amount: 1234,
         currency: 'JPY',
         status: InvoiceStatus::Paid,
-        date: Carbon::now(),
+        date: CarbonImmutable::now(),
         dueDate: null,
         paidAt: null,
         pdfUrl: null,

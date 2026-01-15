@@ -23,8 +23,6 @@ return new class extends Migration
             'send_webhooks',
             'company_statements',
             'daily_metrics',
-            'recurring_schedules',
-            'recurring_charges',
         ];
 
         foreach ($tables as $suffix) {

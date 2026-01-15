@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace AIArmada\Jnt\Console\Commands;
 
 use AIArmada\Jnt\Services\JntExpressService;
-use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
-class ConfigCheckCommand extends Command
+final class ConfigCheckCommand extends Command
 {
     protected $signature = 'jnt:config:check';
 
@@ -212,7 +212,7 @@ class ConfigCheckCommand extends Command
                 'success' => true,
                 'message' => 'API endpoint is reachable',
             ];
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
             return [
                 'success' => false,
                 'message' => $exception->getMessage(),

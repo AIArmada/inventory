@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\FilamentCashier\Support\SubscriptionStatus;
 use AIArmada\FilamentCashier\Support\UnifiedSubscription;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 it('can format amount in USD correctly', function (): void {
@@ -24,7 +24,7 @@ it('can format amount in USD correctly', function (): void {
         trialEndsAt: null,
         endsAt: null,
         nextBillingDate: null,
-        createdAt: Carbon::now(),
+        createdAt: CarbonImmutable::now(),
         original: $model
     );
 
@@ -50,7 +50,7 @@ it('can format amount in MYR correctly', function (): void {
         trialEndsAt: null,
         endsAt: null,
         nextBillingDate: null,
-        createdAt: Carbon::now(),
+        createdAt: CarbonImmutable::now(),
         original: $model
     );
 
@@ -75,7 +75,7 @@ it('returns gateway config', function (): void {
         trialEndsAt: null,
         endsAt: null,
         nextBillingDate: null,
-        createdAt: Carbon::now(),
+        createdAt: CarbonImmutable::now(),
         original: $model
     );
 
@@ -101,7 +101,7 @@ it('returns billing cycle as monthly by default', function (): void {
         trialEndsAt: null,
         endsAt: null,
         nextBillingDate: null,
-        createdAt: Carbon::now(),
+        createdAt: CarbonImmutable::now(),
         original: $model
     );
 
@@ -126,7 +126,7 @@ it('identifies yearly billing cycle from plan name', function (): void {
         trialEndsAt: null,
         endsAt: null,
         nextBillingDate: null,
-        createdAt: Carbon::now(),
+        createdAt: CarbonImmutable::now(),
         original: $model
     );
 
@@ -151,7 +151,7 @@ it('detects subscription needs attention when past due', function (): void {
         trialEndsAt: null,
         endsAt: null,
         nextBillingDate: null,
-        createdAt: Carbon::now(),
+        createdAt: CarbonImmutable::now(),
         original: $model
     );
 
@@ -174,7 +174,7 @@ it('detects subscription does not need attention when active', function (): void
         trialEndsAt: null,
         endsAt: null,
         nextBillingDate: null,
-        createdAt: Carbon::now(),
+        createdAt: CarbonImmutable::now(),
         original: $model
     );
 
@@ -202,7 +202,7 @@ it('calculates stripe amount from loaded items without calling items()', functio
         'quantity' => 1,
         'trial_ends_at' => null,
         'ends_at' => null,
-        'created_at' => Carbon::now(),
+        'created_at' => CarbonImmutable::now(),
     ]);
 
     $stripeSubscription->setRelation('items', collect([
@@ -240,7 +240,7 @@ it('calculates chip amount from loaded items without calling items()', function 
         'trial_ends_at' => null,
         'ends_at' => null,
         'next_billing_at' => null,
-        'created_at' => Carbon::now(),
+        'created_at' => CarbonImmutable::now(),
         'status' => 'active',
     ]);
 

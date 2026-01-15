@@ -9,6 +9,7 @@ use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Services\DocService;
 use AIArmada\FilamentDocs\Actions\RecordPaymentAction;
 use AIArmada\FilamentDocs\Exports\DocExporter;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\BulkAction;
@@ -109,7 +110,7 @@ final class DocsTable
                     ->label('Overdue')
                     ->query(
                         fn (Builder $query): Builder => $query
-                            ->where('due_date', '<', now())
+                            ->where('due_date', '<', CarbonImmutable::now())
                             ->whereNotIn('status', [DocStatus::PAID->value, DocStatus::CANCELLED->value])
                     ),
 
@@ -124,8 +125,8 @@ final class DocsTable
                 Filter::make('this_month')
                     ->label('This Month')
                     ->query(
-                        fn (Builder $query): Builder => $query->whereMonth('issue_date', now()->month)
-                            ->whereYear('issue_date', now()->year)
+                        fn (Builder $query): Builder => $query->whereMonth('issue_date', CarbonImmutable::now()->month)
+                            ->whereYear('issue_date', CarbonImmutable::now()->year)
                     ),
             ])
             ->headerActions([

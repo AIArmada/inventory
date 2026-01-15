@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace AIArmada\FilamentCashierChip;
 
 use AIArmada\FilamentCashierChip\Pages\BillingDashboard;
+use AIArmada\FilamentCashierChip\Pages\Invoices;
+use AIArmada\FilamentCashierChip\Pages\PaymentMethods;
+use AIArmada\FilamentCashierChip\Pages\Subscriptions;
 use AIArmada\FilamentCashierChip\Resources\CustomerResource;
 use AIArmada\FilamentCashierChip\Resources\InvoiceResource;
 use AIArmada\FilamentCashierChip\Resources\SubscriptionResource;
@@ -29,6 +32,8 @@ final class FilamentCashierChipPlugin implements Plugin
     private bool $hasDashboardWidgets = true;
 
     private bool $hasBillingDashboard = true;
+
+    private bool $hasBillingPortal = true;
 
     public static function make(): static
     {
@@ -106,6 +111,16 @@ final class FilamentCashierChipPlugin implements Plugin
         return $this->billingDashboard($enabled);
     }
 
+    /**
+     * Enable or disable the billing portal pages (subscriptions, payment methods, invoices).
+     */
+    public function billingPortal(bool $enabled = true): static
+    {
+        $this->hasBillingPortal = $enabled;
+
+        return $this;
+    }
+
     public function register(Panel $panel): void
     {
         $resources = [];
@@ -150,6 +165,18 @@ final class FilamentCashierChipPlugin implements Plugin
 
         if ($this->hasBillingDashboard) {
             $pages[] = BillingDashboard::class;
+        }
+
+        if ($this->hasBillingPortal) {
+            if (config('filament-cashier-chip.billing.features.subscriptions', true)) {
+                $pages[] = Subscriptions::class;
+            }
+            if (config('filament-cashier-chip.billing.features.payment_methods', true)) {
+                $pages[] = PaymentMethods::class;
+            }
+            if (config('filament-cashier-chip.billing.features.invoices', true)) {
+                $pages[] = Invoices::class;
+            }
         }
 
         $panel

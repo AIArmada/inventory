@@ -9,7 +9,9 @@ use AIArmada\CashierChip\Checkout;
 use AIArmada\CashierChip\Exceptions\IncompletePayment;
 use AIArmada\CashierChip\Payment;
 use AIArmada\Chip\Data\PurchaseData;
-use Exception;
+use Illuminate\Support\Facades\RateLimiter;
+use SensitiveParameter;
+use Throwable;
 
 trait PerformsCharges // @phpstan-ignore trait.unused
 {
@@ -20,14 +22,29 @@ trait PerformsCharges // @phpstan-ignore trait.unused
      *
      * @throws IncompletePayment
      */
-    public function charge(int $amount, ?string $recurringToken = null, array $options = []): Payment
+    public function charge(int $amount, #[SensitiveParameter] ?string $recurringToken = null, array $options = []): Payment
     {
+        $rateLimitKey = 'cashier-chip:charge:' . ($this->chip_id ?? $this->getKey());
+        $executed = RateLimiter::attempt(
+            key: $rateLimitKey,
+            maxAttempts: (int) config('cashier-chip.rate_limits.charges_per_minute', 30),
+            callback: fn (): bool => true,
+            decaySeconds: 60
+        );
+
+        if (! $executed) {
+            throw new IncompletePayment(
+                new Payment(\AIArmada\Chip\Data\PurchaseData::from(['id' => 'rate_limited', 'status' => 'failed'])),
+                'Rate limit exceeded. Please wait before making another charge.'
+            );
+        }
+
         $builder = Cashier::chip()->purchase()
             ->currency($this->preferredCurrency());
 
         // Add the product
         $productName = $options['product_name'] ?? 'One-time charge';
-        $builder->addProduct($productName, $amount);
+        $builder->addProductCents($productName, $amount);
 
         // Add customer details
         if ($this->hasChipId()) {
@@ -104,7 +121,7 @@ trait PerformsCharges // @phpstan-ignore trait.unused
 
         // Add the product
         $productName = $options['product_name'] ?? 'Payment';
-        $builder->addProduct($productName, $amount);
+        $builder->addProductCents($productName, $amount);
 
         // Add customer details
         if ($this->hasChipId()) {
@@ -158,7 +175,7 @@ trait PerformsCharges // @phpstan-ignore trait.unused
             $purchase = Cashier::chip()->getPurchase($id);
 
             return new Payment($purchase);
-        } catch (Exception $e) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -170,7 +187,7 @@ trait PerformsCharges // @phpstan-ignore trait.unused
      *
      * @throws IncompletePayment
      */
-    public function chargeWithRecurringToken(int $amount, ?string $recurringToken = null, array $options = []): Payment
+    public function chargeWithRecurringToken(int $amount, #[SensitiveParameter] ?string $recurringToken = null, array $options = []): Payment
     {
         // Use the charge method which already supports recurring tokens
         return $this->charge($amount, $recurringToken, $options);

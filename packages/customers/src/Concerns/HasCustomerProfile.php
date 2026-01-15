@@ -79,22 +79,6 @@ trait HasCustomerProfile
     }
 
     /**
-     * Get the customer's wallet balance.
-     */
-    public function getWalletBalance(): int
-    {
-        return $this->customerProfile?->wallet_balance ?? 0;
-    }
-
-    /**
-     * Get the customer's lifetime value.
-     */
-    public function getLifetimeValue(): int
-    {
-        return $this->customerProfile?->lifetime_value ?? 0;
-    }
-
-    /**
      * Check if customer accepts marketing.
      */
     public function acceptsMarketing(): bool

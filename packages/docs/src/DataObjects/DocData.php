@@ -7,7 +7,7 @@ namespace AIArmada\Docs\DataObjects;
 use AIArmada\Docs\Enums\DocStatus;
 use DateTimeInterface;
 
-class DocData
+final class DocData
 {
     /**
      * @param  array<int, array<string, mixed>>  $items

@@ -13,7 +13,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
  * This rule ensures that postal codes conform to the Malaysian postal code format
  * required by the J&T Express API. Postal codes must be exactly 5 digits.
  */
-class MalaysianPostalCode implements ValidationRule
+final class MalaysianPostalCode implements ValidationRule
 {
     /**
      * Run the validation rule.

@@ -86,98 +86,6 @@ describe('Customer Model', function (): void {
         });
     });
 
-    describe('Customer Wallet', function (): void {
-        it('can add credit to wallet', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Wallet',
-                'last_name' => 'Test',
-                'email' => 'wallet-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'wallet_balance' => 0,
-            ]);
-
-            $customer->addCredit(1000);
-
-            expect($customer->wallet_balance)->toBe(1000);
-        });
-
-        it('can deduct credit from wallet', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Wallet',
-                'last_name' => 'Test',
-                'email' => 'wallet2-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'wallet_balance' => 5000,
-            ]);
-
-            $customer->deductCredit(2000);
-
-            expect($customer->wallet_balance)->toBe(3000);
-        });
-
-        it('can check wallet balance', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Wallet',
-                'last_name' => 'Test',
-                'email' => 'wallet3-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'wallet_balance' => 1000,
-            ]);
-
-            expect($customer->hasWalletBalance(500))->toBeTrue()
-                ->and($customer->hasWalletBalance(2000))->toBeFalse();
-        });
-    });
-
-    describe('Customer Order Statistics', function (): void {
-        it('can record an order', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Order',
-                'last_name' => 'Test',
-                'email' => 'order-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'total_orders' => 0,
-                'lifetime_value' => 0,
-            ]);
-
-            $customer->recordOrder(5000);
-
-            expect($customer->total_orders)->toBe(1)
-                ->and($customer->lifetime_value)->toBe(5000);
-        });
-
-        it('can accumulate multiple orders', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Order',
-                'last_name' => 'Test',
-                'email' => 'order2-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'total_orders' => 0,
-                'lifetime_value' => 0,
-            ]);
-
-            $customer->recordOrder(2000);
-            $customer->recordOrder(3000);
-            $customer->recordOrder(5000);
-
-            expect($customer->total_orders)->toBe(3)
-                ->and($customer->lifetime_value)->toBe(10000);
-        });
-
-        it('can calculate average order value', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Order',
-                'last_name' => 'Test',
-                'email' => 'order3-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-                'total_orders' => 4,
-                'lifetime_value' => 10000,
-            ]);
-
-            expect($customer->getAverageOrderValue())->toBe(2500);
-        });
-    });
-
     describe('Customer Scopes', function (): void {
         it('can filter active customers', function (): void {
             Customer::create(['first_name' => 'Active', 'last_name' => 'One', 'email' => 'a1-' . uniqid() . '@test.com', 'status' => CustomerStatus::Active]);
@@ -193,5 +101,4 @@ describe('Customer Model', function (): void {
             expect(Customer::where('accepts_marketing', true)->count())->toBeGreaterThanOrEqual(1);
         });
     });
-
 });

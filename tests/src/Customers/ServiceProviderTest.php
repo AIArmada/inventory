@@ -5,16 +5,14 @@ declare(strict_types=1);
 use AIArmada\Customers\CustomersServiceProvider;
 use AIArmada\Customers\Models\Address;
 use AIArmada\Customers\Models\Customer;
+use AIArmada\Customers\Models\CustomerGroup;
 use AIArmada\Customers\Models\CustomerNote;
 use AIArmada\Customers\Models\Segment;
-use AIArmada\Customers\Models\Wishlist;
-use AIArmada\Customers\Models\WishlistItem;
 use AIArmada\Customers\Policies\AddressPolicy;
+use AIArmada\Customers\Policies\CustomerGroupPolicy;
 use AIArmada\Customers\Policies\CustomerNotePolicy;
 use AIArmada\Customers\Policies\CustomerPolicy;
 use AIArmada\Customers\Policies\SegmentPolicy;
-use AIArmada\Customers\Policies\WishlistItemPolicy;
-use AIArmada\Customers\Policies\WishlistPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -29,11 +27,9 @@ describe('CustomersServiceProvider', function (): void {
 
     describe('register Method', function (): void {
         it('merges config', function (): void {
-            // Config should be merged when provider is registered
             $provider = new CustomersServiceProvider(app());
             $provider->register();
 
-            // Check that config is available
             expect(config('customers'))->toBeArray();
         });
     });
@@ -44,7 +40,6 @@ describe('CustomersServiceProvider', function (): void {
             $provider->register();
             $provider->boot();
 
-            // If we get here without exception, boot worked
             expect(true)->toBeTrue();
         });
 
@@ -53,7 +48,6 @@ describe('CustomersServiceProvider', function (): void {
             $provider->register();
             $provider->boot();
 
-            // Verify translations namespace is registered
             $translator = app('translator');
             $namespaces = $translator->getLoader()->namespaces();
 
@@ -69,8 +63,7 @@ describe('CustomersServiceProvider', function (): void {
             expect(Gate::getPolicyFor(Segment::class))->toBeInstanceOf(SegmentPolicy::class);
             expect(Gate::getPolicyFor(Address::class))->toBeInstanceOf(AddressPolicy::class);
             expect(Gate::getPolicyFor(CustomerNote::class))->toBeInstanceOf(CustomerNotePolicy::class);
-            expect(Gate::getPolicyFor(Wishlist::class))->toBeInstanceOf(WishlistPolicy::class);
-            expect(Gate::getPolicyFor(WishlistItem::class))->toBeInstanceOf(WishlistItemPolicy::class);
+            expect(Gate::getPolicyFor(CustomerGroup::class))->toBeInstanceOf(CustomerGroupPolicy::class);
         });
     });
 
@@ -80,7 +73,6 @@ describe('CustomersServiceProvider', function (): void {
             $provider->register();
             $provider->boot();
 
-            // Get all publishable paths
             $paths = ServiceProvider::pathsToPublish(CustomersServiceProvider::class, 'customers-config');
 
             expect($paths)->toBeArray()

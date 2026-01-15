@@ -7,8 +7,9 @@ namespace AIArmada\CashierChip\Concerns;
 use AIArmada\CashierChip\Cashier;
 use AIArmada\CashierChip\Invoice;
 use AIArmada\Chip\Data\PurchaseData;
-use Exception;
 use Illuminate\Support\Collection;
+use RuntimeException;
+use Throwable;
 
 trait ManagesInvoices // @phpstan-ignore trait.unused
 {
@@ -66,7 +67,7 @@ trait ManagesInvoices // @phpstan-ignore trait.unused
             }
 
             return new Invoice($this, $purchase);
-        } catch (Exception $e) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -113,7 +114,7 @@ trait ManagesInvoices // @phpstan-ignore trait.unused
         $tabs = $this->tabs;
 
         if (empty($tabs)) {
-            throw new Exception('No items to invoice.');
+            throw new RuntimeException('No items to invoice.');
         }
 
         $builder = Cashier::chip()->purchase()

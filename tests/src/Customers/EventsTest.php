@@ -7,8 +7,6 @@ use AIArmada\Customers\Events\CustomerAddedToSegment;
 use AIArmada\Customers\Events\CustomerCreated;
 use AIArmada\Customers\Events\CustomerSegmentChanged;
 use AIArmada\Customers\Events\CustomerUpdated;
-use AIArmada\Customers\Events\WalletCreditAdded;
-use AIArmada\Customers\Events\WalletCreditDeducted;
 use AIArmada\Customers\Models\Customer;
 use AIArmada\Customers\Models\Segment;
 
@@ -85,66 +83,6 @@ describe('Customer Events', function (): void {
                 ->and($addedEvent->segment)->toBe($segment)
                 ->and($addedEvent->action)->toBe('added')
                 ->and($removedEvent->action)->toBe('removed');
-        });
-    });
-
-    describe('WalletCreditAdded', function (): void {
-        it('can be instantiated with customer and amount', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Wallet',
-                'last_name' => 'Added',
-                'email' => 'wallet-added-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-            ]);
-
-            $event = new WalletCreditAdded($customer, 5000);
-
-            expect($event->customer)->toBe($customer)
-                ->and($event->amountInCents)->toBe(5000)
-                ->and($event->reason)->toBeNull();
-        });
-
-        it('accepts optional reason', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Wallet',
-                'last_name' => 'Reason',
-                'email' => 'wallet-reason-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-            ]);
-
-            $event = new WalletCreditAdded($customer, 5000, 'Reward for loyalty');
-
-            expect($event->reason)->toBe('Reward for loyalty');
-        });
-    });
-
-    describe('WalletCreditDeducted', function (): void {
-        it('can be instantiated with customer and amount', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Wallet',
-                'last_name' => 'Deducted',
-                'email' => 'wallet-deducted-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-            ]);
-
-            $event = new WalletCreditDeducted($customer, 2000);
-
-            expect($event->customer)->toBe($customer)
-                ->and($event->amountInCents)->toBe(2000)
-                ->and($event->reason)->toBeNull();
-        });
-
-        it('accepts optional reason', function (): void {
-            $customer = Customer::create([
-                'first_name' => 'Wallet',
-                'last_name' => 'Deduct Reason',
-                'email' => 'wallet-deduct-reason-' . uniqid() . '@example.com',
-                'status' => CustomerStatus::Active,
-            ]);
-
-            $event = new WalletCreditDeducted($customer, 2000, 'Order payment');
-
-            expect($event->reason)->toBe('Order payment');
         });
     });
 });

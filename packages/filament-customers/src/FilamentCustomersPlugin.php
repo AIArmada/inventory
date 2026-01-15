@@ -37,7 +37,7 @@ class FilamentCustomersPlugin implements Plugin
             ])
             ->widgets([
                 Widgets\CustomerStatsWidget::class,
-                Widgets\TopCustomersWidget::class,
+                Widgets\RecentCustomersWidget::class,
             ]);
     }
 

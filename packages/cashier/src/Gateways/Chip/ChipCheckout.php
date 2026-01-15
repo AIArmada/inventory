@@ -42,7 +42,7 @@ class ChipCheckout implements CheckoutContract
      */
     public function url(): string
     {
-        return $this->purchase->checkoutUrl ?? '';
+        return $this->purchase->getCheckoutUrl() ?? '';
     }
 
     /**
@@ -58,7 +58,7 @@ class ChipCheckout implements CheckoutContract
      */
     public function successUrl(): string
     {
-        return $this->purchase->successCallback ?? '';
+        return $this->purchase->success_callback ?? '';
     }
 
     /**
@@ -66,7 +66,7 @@ class ChipCheckout implements CheckoutContract
      */
     public function cancelUrl(): string
     {
-        return $this->purchase->cancelCallback ?? $this->purchase->failureCallback ?? '';
+        return $this->purchase->cancel_redirect ?? $this->purchase->failure_redirect ?? '';
     }
 
     /**

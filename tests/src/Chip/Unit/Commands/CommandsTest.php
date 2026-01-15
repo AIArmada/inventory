@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 use AIArmada\Chip\Commands\AggregateMetricsCommand;
 use AIArmada\Chip\Commands\CleanWebhooksCommand;
-use AIArmada\Chip\Commands\ProcessRecurringCommand;
 use AIArmada\Chip\Commands\RetryWebhooksCommand;
 use AIArmada\Chip\Services\MetricsAggregator;
-use AIArmada\Chip\Services\RecurringService;
 use AIArmada\Chip\Webhooks\WebhookRetryManager;
 
 describe('AggregateMetricsCommand', function (): void {
@@ -33,20 +31,6 @@ describe('CleanWebhooksCommand', function (): void {
 
     it('has description', function (): void {
         $command = new CleanWebhooksCommand;
-
-        expect($command->getDescription())->not->toBeEmpty();
-    });
-});
-
-describe('ProcessRecurringCommand', function (): void {
-    it('has correct signature', function (): void {
-        $command = new ProcessRecurringCommand;
-
-        expect($command->getName())->toBe('chip:process-recurring');
-    });
-
-    it('has description', function (): void {
-        $command = new ProcessRecurringCommand;
 
         expect($command->getDescription())->not->toBeEmpty();
     });
@@ -93,20 +77,6 @@ describe('CleanWebhooksCommand execution', function (): void {
         $this->artisan('chip:clean-webhooks', ['--dry-run' => true])
             ->assertSuccessful();
     })->skip('Requires database');
-});
-
-describe('ProcessRecurringCommand execution', function (): void {
-    it('shows message when no schedules due', function (): void {
-        $service = Mockery::mock(RecurringService::class);
-        $service->shouldReceive('getDueSchedules')
-            ->once()
-            ->andReturn(collect([]));
-
-        $this->app->instance(RecurringService::class, $service);
-
-        $this->artisan('chip:process-recurring')
-            ->assertSuccessful();
-    })->skip('Requires service binding');
 });
 
 describe('RetryWebhooksCommand execution', function (): void {

@@ -2,47 +2,87 @@
 title: Overview
 ---
 
-# CHIP for Laravel
+# CHIP Payment Gateway Package
 
-Laravel 12 integration for [CHIP](https://docs.chip-in.asia/) payment platform – **CHIP Collect** (payments) and **CHIP Send** (disbursements).
+A comprehensive Laravel integration for the [CHIP](https://chip-in.asia) payment gateway, providing both **Collect** (payment collection) and **Send** (payout) functionality for Malaysian businesses.
 
 ## What is CHIP?
 
-CHIP is a Malaysian payment gateway that provides:
-
-- **CHIP Collect** - Accept payments via FPX, credit cards, e-wallets, and BNPL
-- **CHIP Send** - Send payouts and disbursements to bank accounts
+CHIP is a Malaysian fintech payment gateway that offers:
+- **FPX** (Financial Process Exchange) - Direct bank transfers
+- **Credit/Debit Cards** - Visa, Mastercard, Maestro
+- **E-Wallets** - DuitNow, Touch 'n Go, GrabPay, ShopeePay
+- **Payouts** - Send money to bank accounts (CHIP Send)
 
 ## Package Features
 
-- **Fully independent** – works standalone without requiring other commerce packages
-- **Seamless integration** – auto-integrates with Cart when installed together
-- **Universal Gateway** – implements `PaymentGatewayInterface` for provider switching
-- **Complete API coverage** – purchases, refunds, subscriptions, payouts, webhooks
-- **Laravel DX** – facades, fluent builders, typed data objects, events
-- **Production ready** – PHP 8.4, PHPStan level 6, comprehensive test suite
-- **Secure** – webhook signature verification, sensitive data masking
+### Payment Collection (CHIP Collect)
+- Create and manage purchases with a fluent builder API
+- Process one-time payments
+- Pre-authorization and capture flows
+- Full and partial refunds
+- Real-time webhook handling with signature verification
+- Client/customer management with saved payment methods
+- Idempotency support for preventing duplicate payments
+
+### Payouts (CHIP Send)
+- Create payout instructions to Malaysian bank accounts
+- Manage recipient bank accounts
+- Track payout status and history
+- Webhook notifications for payout events
+
+### Enterprise Features
+- **Multi-tenancy Support**: Owner-scoped data with configurable isolation
+- **Analytics**: Local analytics service with revenue metrics
+- **Health Checks**: Built-in gateway health monitoring
+- **Audit Trail**: Full audit logging via commerce-support integration
+- **Testing Utilities**: Webhook simulation and testing helpers
+- **Webhook Deduplication**: Automatic duplicate webhook prevention
 
 ## Architecture
 
-The package is built with clean architecture principles:
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Your Laravel App                        │
+├─────────────────────────────────────────────────────────────┤
+│  Facades          │  Services           │  Gateway          │
+│  ├─ Chip          │  ├─ ChipCollect     │  └─ ChipGateway   │
+│  └─ ChipSend      │  ├─ ChipSend        │      (implements  │
+│                   │  ├─ Webhook         │   PaymentGateway  │
+│                   │  └─ Analytics       │     Interface)    │
+├─────────────────────────────────────────────────────────────┤
+│  Clients          │  Builders           │  Events           │
+│  ├─ CollectClient │  └─ PurchaseBuilder │  ├─ PurchasePaid  │
+│  └─ SendClient    │                     │  ├─ Refunded      │
+│                   │                     │  └─ 20+ more...   │
+├─────────────────────────────────────────────────────────────┤
+│                      CHIP API (gate.chip-in.asia)           │
+└─────────────────────────────────────────────────────────────┘
+```
 
+## Quick Start
+
+```php
+use AIArmada\Chip\Facades\Chip;
+
+// Create a simple purchase
+$purchase = Chip::purchase()
+    ->email('customer@example.com')
+    ->addProductCents('Premium Plan', 9900) // RM 99.00
+    ->successUrl(route('payment.success'))
+    ->failureUrl(route('payment.failed'))
+    ->create();
+
+// Redirect customer to payment page
+return redirect($purchase->checkout_url);
 ```
-aiarmada/chip
-├── Actions/         # Single-purpose action classes
-├── Builders/        # Fluent API builders (PurchaseBuilder)
-├── Clients/         # HTTP API clients (Collect, Send)
-├── Commands/        # Artisan commands
-├── Data/            # Spatie Data DTOs
-├── Enums/           # Type-safe enums
-├── Events/          # Laravel events for all webhook types
-├── Exceptions/      # Custom exceptions
-├── Facades/         # Laravel facades (Chip, ChipSend)
-├── Gateways/        # PaymentGatewayInterface implementation
-├── Models/          # Eloquent models with owner scoping
-├── Services/        # Business logic services
-└── Webhooks/        # Webhook handling pipeline
-```
+
+## Requirements
+
+- PHP 8.4+
+- Laravel 12.x
+- CHIP merchant account with API credentials
+- `aiarmada/commerce-support` package
 
 ## Multi-tenancy Support
 
@@ -53,9 +93,17 @@ Full multi-tenancy support via `commerce-support`:
 - Brand ID to owner mapping for webhooks
 - Greppable opt-out via `withoutOwnerScope()`
 
+## Related Packages
+
+| Package | Description |
+|---------|-------------|
+| `aiarmada/filament-chip` | Filament admin panel for CHIP data |
+| `aiarmada/cashier-chip` | Stripe Cashier-like subscription billing |
+| `aiarmada/commerce-support` | Shared commerce contracts and utilities |
+
 ## Quick Links
 
-- [Installation](02-install.md)
-- [Configuration](03-config.md)
+- [Installation](02-installation.md)
+- [Configuration](03-configuration.md)
 - [Usage Guide](04-usage.md)
-- [Troubleshooting](99-trouble.md)
+- [Troubleshooting](99-troubleshooting.md)

@@ -7,6 +7,7 @@ namespace AIArmada\Jnt\Models;
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -143,7 +144,7 @@ final class JntWebhookLog extends Model
     {
         $this->update([
             'processing_status' => self::STATUS_PROCESSED,
-            'processed_at' => now(),
+            'processed_at' => CarbonImmutable::now(),
         ]);
     }
 
@@ -155,7 +156,7 @@ final class JntWebhookLog extends Model
         $this->update([
             'processing_status' => self::STATUS_FAILED,
             'processing_error' => $error,
-            'processed_at' => now(),
+            'processed_at' => CarbonImmutable::now(),
         ]);
     }
 

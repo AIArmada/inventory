@@ -7,6 +7,7 @@ namespace AIArmada\Docs\Services;
 use AIArmada\Docs\Enums\DocType;
 use AIArmada\Docs\Enums\ResetFrequency;
 use AIArmada\Docs\Models\DocSequence;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -101,7 +102,7 @@ final class SequenceManager
             $padding = config('docs.numbering.format.suffix_length', 6);
             $number = mb_str_pad('1', $padding, '0', STR_PAD_LEFT);
 
-            return $prefix . '-' . now()->format('ym') . '-' . $number;
+            return $prefix . '-' . CarbonImmutable::now()->format('ym') . '-' . $number;
         }
 
         return $sequence->previewNextNumber();

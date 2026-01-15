@@ -55,7 +55,7 @@ class HandleSubscriptionChargeFailure
                 'chip_status' => 'past_due',
             ])->save();
 
-            $reason = $purchase->failure_reason ?? 'Subscription charge failed';
+            $reason = $payload['failure_reason'] ?? $payload['error_message'] ?? 'Subscription charge failed';
 
             SubscriptionRenewalFailed::dispatch($subscription, $reason);
         }

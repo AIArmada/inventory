@@ -7,6 +7,7 @@ namespace AIArmada\FilamentDocs\Actions;
 use AIArmada\Docs\Enums\DocStatus;
 use AIArmada\Docs\Models\Doc;
 use AIArmada\Docs\Models\DocPayment;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
@@ -68,17 +69,12 @@ final class RecordPaymentAction
             Select::make('payment_method')
                 ->label('Payment Method')
                 ->required()
-                ->options([
+                ->options(config('docs.payment_methods', [
                     'bank_transfer' => 'Bank Transfer',
                     'cash' => 'Cash',
                     'credit_card' => 'Credit Card',
-                    'debit_card' => 'Debit Card',
-                    'cheque' => 'Cheque',
-                    'online_payment' => 'Online Payment',
-                    'ewallet' => 'E-Wallet',
-                    'other' => 'Other',
-                ])
-                ->default('bank_transfer'),
+                ]))
+                ->default(array_key_first(config('docs.payment_methods', ['bank_transfer' => 'Bank Transfer']))),
 
             TextInput::make('reference')
                 ->label('Reference / Transaction ID')
@@ -87,8 +83,8 @@ final class RecordPaymentAction
             DateTimePicker::make('paid_at')
                 ->label('Payment Date')
                 ->required()
-                ->default(now())
-                ->maxDate(now()),
+                ->default(CarbonImmutable::now())
+                ->maxDate(CarbonImmutable::now()),
 
             Textarea::make('notes')
                 ->label('Notes')

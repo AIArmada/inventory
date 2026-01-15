@@ -20,6 +20,6 @@ final class CreateDoc extends CreateRecord
 
         $data['generate_pdf'] = $data['generate_pdf'] ?? (bool) config('filament-docs.features.auto_generate_pdf', true);
 
-        return $docService->createDoc(DocData::from($data));
+        return $docService->create(DocData::from($data));
     }
 }
