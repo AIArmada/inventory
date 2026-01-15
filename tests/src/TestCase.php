@@ -631,6 +631,7 @@ abstract class TestCase extends Orchestra
         Schema::create('cart_events', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('cart_id')->index();
+            $table->nullableUuidMorphs('owner');
             $table->string('event_type', 100)->index();
             $table->uuid('event_id')->unique();
             $table->json('payload');

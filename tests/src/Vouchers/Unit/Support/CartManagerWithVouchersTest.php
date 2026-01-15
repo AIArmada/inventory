@@ -138,26 +138,6 @@ describe('CartManagerWithVouchers', function (): void {
         });
     });
 
-    describe('session methods', function (): void {
-        it('delegates session() to base manager', function (): void {
-            $storage = Mockery::mock(StorageInterface::class);
-            $this->baseManager->shouldReceive('session')->with('custom-key')->once()->andReturn($storage);
-
-            $wrapper = new CartManagerWithVouchers($this->baseManager);
-
-            expect($wrapper->session('custom-key'))->toBe($storage);
-        });
-
-        it('delegates session() with null key', function (): void {
-            $storage = Mockery::mock(StorageInterface::class);
-            $this->baseManager->shouldReceive('session')->with(null)->once()->andReturn($storage);
-
-            $wrapper = new CartManagerWithVouchers($this->baseManager);
-
-            expect($wrapper->session())->toBe($storage);
-        });
-    });
-
     describe('getById', function (): void {
         it('returns null when cart not found', function (): void {
             $this->baseManager->shouldReceive('getById')->with('nonexistent')->once()->andReturn(null);

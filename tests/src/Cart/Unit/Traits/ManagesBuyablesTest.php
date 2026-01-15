@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Contracts\BuyableInterface;
 use AIArmada\Cart\Exceptions\ProductNotPurchasableException;
-use AIArmada\Cart\Testing\InMemoryStorage;
+use Tests\Support\Cart\InMemoryStorage;
 use Akaunting\Money\Money;
 
 /**

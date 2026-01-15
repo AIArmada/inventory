@@ -127,8 +127,8 @@ enum VoucherType: string
             self::Fixed => 'success',
             self::FreeShipping => 'info',
             self::BuyXGetY => 'warning',
-            self::Tiered => 'purple',
-            self::Bundle => 'pink',
+            self::Tiered => 'violet',
+            self::Bundle => 'rose',
             self::Cashback => 'amber',
         };
     }

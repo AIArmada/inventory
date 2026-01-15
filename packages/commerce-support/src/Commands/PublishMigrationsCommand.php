@@ -49,7 +49,7 @@ final class PublishMigrationsCommand extends Command
         $migrationPath = database_path('migrations');
 
         // Ensure migrations directory exists
-        if (!$dryRun && !$files->isDirectory($migrationPath)) {
+        if (! $dryRun && ! $files->isDirectory($migrationPath)) {
             $files->makeDirectory($migrationPath, 0755, true);
         }
 
@@ -110,7 +110,7 @@ final class PublishMigrationsCommand extends Command
         $sourceFileName = basename($sourceFile);
         $targetFile = $migrationPath . '/' . $sourceFileName;
 
-        if ($files->exists($targetFile) && !$force) {
+        if ($files->exists($targetFile) && ! $force) {
             $this->components->twoColumnDetail(
                 "Skipping file [{$sourceFileName}]",
                 '<fg=yellow;options=bold>EXISTS</>'
@@ -149,7 +149,7 @@ final class PublishMigrationsCommand extends Command
         $allPaths = [];
 
         foreach ($available as $providerClass => $tags) {
-            if (!in_array($tag, $tags, true)) {
+            if (! in_array($tag, $tags, true)) {
                 continue;
             }
 
@@ -167,7 +167,7 @@ final class PublishMigrationsCommand extends Command
     {
         $migrationTags = array_values(array_filter(
             ServiceProvider::publishableGroups(),
-            static fn(string $group): bool => str_ends_with($group, '-migrations')
+            static fn (string $group): bool => str_ends_with($group, '-migrations')
         ));
 
         if ($migrationTags === []) {
@@ -180,7 +180,7 @@ final class PublishMigrationsCommand extends Command
         $providers = ServiceProvider::publishableProviders();
 
         foreach ($providers as $providerClass) {
-            if (!str_starts_with($providerClass, 'AIArmada\\')) {
+            if (! str_starts_with($providerClass, 'AIArmada\\')) {
                 continue;
             }
 
@@ -250,7 +250,7 @@ final class PublishMigrationsCommand extends Command
             return $allTags;
         }
 
-        if (!$this->input->isInteractive()) {
+        if (! $this->input->isInteractive()) {
             $this->components->warn('Non-interactive session: use --all or --tags=...');
 
             return [];

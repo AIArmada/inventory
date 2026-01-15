@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Cart\Storage;
 
 use AIArmada\Cart\Exceptions\CartConflictException;
+use Closure;
 use DateTimeInterface;
 use Illuminate\Database\ConnectionInterface as Database;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use JsonException;
+use JsonSerializable;
 use RuntimeException;
 use stdClass;
 
@@ -414,168 +416,6 @@ final readonly class DatabaseStorage implements StorageInterface
         return now()->isAfter($expiresAt);
     }
 
-    // =========================================================================
-    // AI & Analytics Methods (Phase 0.2)
-    // =========================================================================
-
-    /**
-     * Get last activity timestamp for engagement tracking.
-     */
-    public function getLastActivityAt(string $identifier, string $instance): ?string
-    {
-        return $this->getTimestampColumn($identifier, $instance, 'last_activity_at');
-    }
-
-    /**
-     * Update last activity timestamp.
-     */
-    public function touchLastActivity(string $identifier, string $instance): void
-    {
-        $this->updateTimestampColumn($identifier, $instance, 'last_activity_at', now()->toDateTimeString());
-    }
-
-    /**
-     * Get checkout started timestamp.
-     */
-    public function getCheckoutStartedAt(string $identifier, string $instance): ?string
-    {
-        return $this->getTimestampColumn($identifier, $instance, 'checkout_started_at');
-    }
-
-    /**
-     * Mark checkout as started for conversion funnel tracking.
-     */
-    public function markCheckoutStarted(string $identifier, string $instance): void
-    {
-        $this->updateTimestampColumn($identifier, $instance, 'checkout_started_at', now()->toDateTimeString());
-    }
-
-    /**
-     * Get checkout abandoned timestamp.
-     */
-    public function getCheckoutAbandonedAt(string $identifier, string $instance): ?string
-    {
-        return $this->getTimestampColumn($identifier, $instance, 'checkout_abandoned_at');
-    }
-
-    /**
-     * Mark checkout as abandoned for recovery tracking.
-     */
-    public function markCheckoutAbandoned(string $identifier, string $instance): void
-    {
-        $this->updateTimestampColumn($identifier, $instance, 'checkout_abandoned_at', now()->toDateTimeString());
-    }
-
-    /**
-     * Get number of recovery attempts made.
-     */
-    public function getRecoveryAttempts(string $identifier, string $instance): int
-    {
-        $attempts = $this->baseQuery($identifier, $instance)->value('recovery_attempts');
-
-        return $attempts !== null ? (int) $attempts : 0;
-    }
-
-    /**
-     * Increment recovery attempts counter.
-     */
-    public function incrementRecoveryAttempts(string $identifier, string $instance): void
-    {
-        $this->baseQuery($identifier, $instance)->increment('recovery_attempts');
-    }
-
-    /**
-     * Get recovered at timestamp.
-     */
-    public function getRecoveredAt(string $identifier, string $instance): ?string
-    {
-        return $this->getTimestampColumn($identifier, $instance, 'recovered_at');
-    }
-
-    /**
-     * Mark cart as recovered (user returned after abandonment).
-     */
-    public function markRecovered(string $identifier, string $instance): void
-    {
-        $this->updateTimestampColumn($identifier, $instance, 'recovered_at', now()->toDateTimeString());
-    }
-
-    /**
-     * Clear all abandonment tracking data (checkout started, abandoned, recovery).
-     */
-    public function clearAbandonmentTracking(string $identifier, string $instance): void
-    {
-        $this->baseQuery($identifier, $instance)->update([
-            'checkout_started_at' => null,
-            'checkout_abandoned_at' => null,
-            'recovery_attempts' => 0,
-            'recovered_at' => null,
-            'updated_at' => now(),
-        ]);
-    }
-
-    // =========================================================================
-    // Event Sourcing Methods (Phase 0.3)
-    // =========================================================================
-
-    /**
-     * Get current event stream position for replay.
-     */
-    public function getEventStreamPosition(string $identifier, string $instance): int
-    {
-        $position = $this->baseQuery($identifier, $instance)->value('event_stream_position');
-
-        return $position !== null ? (int) $position : 0;
-    }
-
-    /**
-     * Update event stream position after recording events.
-     */
-    public function setEventStreamPosition(string $identifier, string $instance, int $position): void
-    {
-        $this->baseQuery($identifier, $instance)->update([
-            'event_stream_position' => $position,
-            'updated_at' => now(),
-        ]);
-    }
-
-    /**
-     * Get aggregate schema version for migrations.
-     */
-    public function getAggregateVersion(string $identifier, string $instance): string
-    {
-        $version = $this->baseQuery($identifier, $instance)->value('aggregate_version');
-
-        return $version ?? '1.0';
-    }
-
-    /**
-     * Update aggregate schema version.
-     */
-    public function setAggregateVersion(string $identifier, string $instance, string $version): void
-    {
-        $this->baseQuery($identifier, $instance)->update([
-            'aggregate_version' => $version,
-            'updated_at' => now(),
-        ]);
-    }
-
-    /**
-     * Get last snapshot timestamp.
-     */
-    public function getSnapshotAt(string $identifier, string $instance): ?string
-    {
-        return $this->getTimestampColumn($identifier, $instance, 'snapshot_at');
-    }
-
-    /**
-     * Update snapshot timestamp after taking a snapshot.
-     */
-    public function markSnapshotTaken(string $identifier, string $instance): void
-    {
-        $this->updateTimestampColumn($identifier, $instance, 'snapshot_at', now()->toDateTimeString());
-    }
-
     /**
      * Calculate the expiration timestamp based on TTL.
      */
@@ -658,6 +498,9 @@ final readonly class DatabaseStorage implements StorageInterface
             throw new InvalidArgumentException("Cart cannot contain more than {$maxItems} items");
         }
 
+        // Validate serializability before checking size
+        $this->validateSerializable($data, $type);
+
         // Check data size limit
         try {
             $jsonSize = mb_strlen(json_encode($data, JSON_THROW_ON_ERROR));
@@ -672,6 +515,71 @@ final readonly class DatabaseStorage implements StorageInterface
     }
 
     /**
+     * Validate that all values in an array are JSON-serializable.
+     *
+     * Prevents storing closures, resources, or other non-serializable types
+     * that would fail silently during json_encode.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  string  $type  The data type being validated (for error messages)
+     * @param  string  $path  The current path in the data structure (for nested arrays)
+     *
+     * @throws InvalidArgumentException When non-serializable values are found
+     */
+    private function validateSerializable(array $data, string $type, string $path = ''): void
+    {
+        foreach ($data as $key => $value) {
+            $currentPath = $path === '' ? (string) $key : "{$path}.{$key}";
+
+            if ($value === null || is_scalar($value)) {
+                continue;
+            }
+
+            if (is_array($value)) {
+                $this->validateSerializable($value, $type, $currentPath);
+
+                continue;
+            }
+
+            if (is_object($value)) {
+                // Allow objects that implement JsonSerializable or have toArray/toJson methods
+                if ($value instanceof JsonSerializable) {
+                    continue;
+                }
+
+                if (method_exists($value, 'toArray') || method_exists($value, 'toJson')) {
+                    continue;
+                }
+
+                // Reject closures explicitly
+                if ($value instanceof Closure) {
+                    throw new InvalidArgumentException(
+                        "Cart {$type} contains a Closure at '{$currentPath}' which cannot be serialized. " .
+                        'Use a factory key pattern or convert closures to serializable data before storage.'
+                    );
+                }
+
+                // Reject other non-serializable objects
+                throw new InvalidArgumentException(
+                    sprintf(
+                        "Cart %s contains non-serializable object of type '%s' at '%s'. " .
+                        'Objects must implement JsonSerializable or have toArray()/toJson() methods.',
+                        $type,
+                        $value::class,
+                        $currentPath
+                    )
+                );
+            }
+
+            if (is_resource($value)) {
+                throw new InvalidArgumentException(
+                    "Cart {$type} contains a resource at '{$currentPath}' which cannot be serialized."
+                );
+            }
+        }
+    }
+
+    /**
      * Retrieve and decode JSON column data
      *
      * @return array<string, mixed>
@@ -681,34 +589,6 @@ final readonly class DatabaseStorage implements StorageInterface
         $result = $this->baseQuery($identifier, $instance)->value($column);
 
         return $this->decodeData($result, $column, []);
-    }
-
-    /**
-     * Retrieve a timestamp column value
-     */
-    private function getTimestampColumn(string $identifier, string $instance, string $column): ?string
-    {
-        /** @var stdClass|null $cart */
-        $cart = $this->baseQuery($identifier, $instance)->first([$column]);
-
-        if (! $cart || ! $cart->{$column}) {
-            return null;
-        }
-
-        return $cart->{$column} instanceof DateTimeInterface
-            ? $cart->{$column}->format('c')
-            : (string) $cart->{$column};
-    }
-
-    /**
-     * Update a timestamp column value
-     */
-    private function updateTimestampColumn(string $identifier, string $instance, string $column, ?string $value): void
-    {
-        $this->baseQuery($identifier, $instance)->update([
-            $column => $value,
-            'updated_at' => now(),
-        ]);
     }
 
     /**

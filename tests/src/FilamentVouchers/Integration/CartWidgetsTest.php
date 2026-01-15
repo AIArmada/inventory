@@ -8,7 +8,6 @@ use AIArmada\Commerce\Tests\TestCase;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentCart\Models\Cart;
 use AIArmada\FilamentCart\Services\CartInstanceManager;
-use AIArmada\FilamentVouchers\Widgets\AIInsightsWidget;
 use AIArmada\FilamentVouchers\Widgets\AppliedVoucherBadgesWidget;
 use AIArmada\FilamentVouchers\Widgets\AppliedVouchersWidget;
 use AIArmada\FilamentVouchers\Widgets\QuickApplyVoucherWidget;
@@ -73,11 +72,6 @@ it('covers cart-related widgets and voucher suggestions', function (): void {
         'allows_manual_redemption' => true,
         'starts_at' => now()->subDay(),
     ]);
-
-    $ai = app(AIInsightsWidget::class);
-    $aiData = new ReflectionMethod(AIInsightsWidget::class, 'getViewData');
-    $aiData->setAccessible(true);
-    expect($aiData->invoke($ai))->toHaveKey('enabled');
 
     $tableWidget = app(AppliedVouchersWidget::class);
     $tableWidget->record = $cart;

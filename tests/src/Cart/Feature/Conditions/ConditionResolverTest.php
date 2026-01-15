@@ -7,13 +7,10 @@ use AIArmada\Cart\Conditions\CartCondition;
 use AIArmada\Cart\Contracts\CartConditionConvertible;
 use AIArmada\Cart\Exceptions\InvalidCartConditionException;
 use AIArmada\Cart\Services\CartConditionResolver;
-use AIArmada\Cart\Storage\SessionStorage;
-use Illuminate\Session\ArraySessionHandler;
-use Illuminate\Session\Store;
+use Tests\Support\Cart\InMemoryStorage;
 
 beforeEach(function (): void {
-    $sessionStore = new Store('testing', new ArraySessionHandler(120));
-    $this->storage = new SessionStorage($sessionStore);
+    $this->storage = new InMemoryStorage;
     $this->resolver = app(CartConditionResolver::class);
     $this->resolver->clear();
     $this->cart = new Cart($this->storage, 'condition_resolver_test', conditionResolver: $this->resolver);

@@ -13,8 +13,6 @@ return [
             'prices' => 'prices',
             'price_lists' => 'price_lists',
             'price_tiers' => 'price_tiers',
-            'promotions' => 'promotions',
-            'promotionables' => 'promotionables',
         ],
 
         'json_column_type' => env('PRICING_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'json')),

@@ -5,24 +5,12 @@ declare(strict_types=1);
 use AIArmada\Cart\Conditions\CartCondition;
 use AIArmada\Cart\Services\CartConditionResolver;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
-use AIArmada\Vouchers\AI\CartFeatureExtractor;
-use AIArmada\Vouchers\AI\Contracts\AbandonmentPredictorInterface;
-use AIArmada\Vouchers\AI\Contracts\CartFeatureExtractorInterface;
-use AIArmada\Vouchers\AI\Contracts\ConversionPredictorInterface;
-use AIArmada\Vouchers\AI\Contracts\DiscountOptimizerInterface;
-use AIArmada\Vouchers\AI\Contracts\VoucherMatcherInterface;
-use AIArmada\Vouchers\AI\Optimizers\RuleBasedDiscountOptimizer;
-use AIArmada\Vouchers\AI\Optimizers\RuleBasedVoucherMatcher;
-use AIArmada\Vouchers\AI\Predictors\RuleBasedAbandonmentPredictor;
-use AIArmada\Vouchers\AI\Predictors\RuleBasedConversionPredictor;
-use AIArmada\Vouchers\AI\VoucherMLDataCollector;
 use AIArmada\Vouchers\Conditions\VoucherCondition;
 use AIArmada\Vouchers\Data\VoucherData;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
 use AIArmada\Vouchers\Events\VoucherApplied;
 use AIArmada\Vouchers\Listeners\IncrementVoucherAppliedCount;
-use AIArmada\Vouchers\Models\Voucher;
 use AIArmada\Vouchers\Services\VoucherService;
 use AIArmada\Vouchers\Services\VoucherValidator;
 use AIArmada\Vouchers\Support\AffiliateIntegrationRegistrar;
@@ -76,54 +64,6 @@ describe('VoucherServiceProvider', function (): void {
         });
     });
 
-    describe('AI services registration', function (): void {
-        it('registers CartFeatureExtractor as singleton', function (): void {
-            $extractor1 = app(CartFeatureExtractor::class);
-            $extractor2 = app(CartFeatureExtractor::class);
-
-            expect($extractor1)->toBeInstanceOf(CartFeatureExtractor::class)
-                ->and($extractor1)->toBe($extractor2);
-        });
-
-        it('registers CartFeatureExtractorInterface with concrete class', function (): void {
-            $extractor = app(CartFeatureExtractorInterface::class);
-
-            expect($extractor)->toBeInstanceOf(CartFeatureExtractor::class);
-        });
-
-        it('registers VoucherMLDataCollector as singleton', function (): void {
-            $collector1 = app(VoucherMLDataCollector::class);
-            $collector2 = app(VoucherMLDataCollector::class);
-
-            expect($collector1)->toBeInstanceOf(VoucherMLDataCollector::class)
-                ->and($collector1)->toBe($collector2);
-        });
-
-        it('registers ConversionPredictorInterface with rule-based implementation', function (): void {
-            $predictor = app(ConversionPredictorInterface::class);
-
-            expect($predictor)->toBeInstanceOf(RuleBasedConversionPredictor::class);
-        });
-
-        it('registers AbandonmentPredictorInterface with rule-based implementation', function (): void {
-            $predictor = app(AbandonmentPredictorInterface::class);
-
-            expect($predictor)->toBeInstanceOf(RuleBasedAbandonmentPredictor::class);
-        });
-
-        it('registers DiscountOptimizerInterface with rule-based implementation', function (): void {
-            $optimizer = app(DiscountOptimizerInterface::class);
-
-            expect($optimizer)->toBeInstanceOf(RuleBasedDiscountOptimizer::class);
-        });
-
-        it('registers VoucherMatcherInterface with rule-based implementation', function (): void {
-            $matcher = app(VoucherMatcherInterface::class);
-
-            expect($matcher)->toBeInstanceOf(RuleBasedVoucherMatcher::class);
-        });
-    });
-
     describe('provides method', function (): void {
         it('returns list of provided services', function (): void {
             $provider = new AIArmada\Vouchers\VoucherServiceProvider(app());
@@ -131,12 +71,7 @@ describe('VoucherServiceProvider', function (): void {
 
             expect($provides)->toContain(VoucherService::class)
                 ->and($provides)->toContain(VoucherValidator::class)
-                ->and($provides)->toContain(ConversionPredictorInterface::class)
-                ->and($provides)->toContain(AbandonmentPredictorInterface::class)
-                ->and($provides)->toContain(DiscountOptimizerInterface::class)
-                ->and($provides)->toContain(VoucherMatcherInterface::class)
-                ->and($provides)->toContain(CartFeatureExtractorInterface::class)
-                ->and($provides)->toContain(VoucherMLDataCollector::class)
+                ->and($provides)->toContain(VoucherRulesFactory::class)
                 ->and($provides)->toContain(AffiliateIntegrationRegistrar::class)
                 ->and($provides)->toContain('voucher');
         });
@@ -190,7 +125,6 @@ describe('VoucherServiceProvider', function (): void {
 
             $result = $resolver->resolve($payload);
 
-            // Should return null since voucher doesn't exist
             expect($result)->toBeNull();
         });
 

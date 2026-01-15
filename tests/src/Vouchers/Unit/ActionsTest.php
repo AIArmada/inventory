@@ -5,13 +5,11 @@ declare(strict_types=1);
 use AIArmada\Vouchers\Actions\AddVoucherToWallet;
 use AIArmada\Vouchers\Actions\CreateVoucher;
 use AIArmada\Vouchers\Actions\RecordVoucherUsage;
-use AIArmada\Vouchers\Actions\ValidateVoucher;
 use AIArmada\Vouchers\Enums\VoucherType;
 use AIArmada\Vouchers\Exceptions\VoucherNotFoundException;
 use AIArmada\Vouchers\Models\Voucher;
 use AIArmada\Vouchers\Models\VoucherUsage;
 use AIArmada\Vouchers\Models\VoucherWallet;
-use AIArmada\Vouchers\Services\VoucherValidator;
 use Akaunting\Money\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -352,14 +350,5 @@ describe('RecordVoucherUsage Action', function (): void {
 
         $voucher->refresh();
         expect($voucher->applied_count)->toBe(6);
-    });
-});
-
-describe('ValidateVoucher Action', function (): void {
-    it('returns correct action job', function (): void {
-        $validator = Mockery::mock(VoucherValidator::class);
-        $action = new ValidateVoucher($validator);
-
-        expect($action)->toBeInstanceOf(ValidateVoucher::class);
     });
 });

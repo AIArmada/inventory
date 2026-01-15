@@ -10,7 +10,12 @@ use InvalidArgumentException;
  * Interface for creating rule closures for dynamic conditions.
  *
  * This enables persistence of dynamic conditions by storing their metadata
- * and reconstructing the rule closures when needed.
+ * and reconstructing the rule closures when needed. Useful for:
+ * - Inventory availability checks
+ * - Customer eligibility rules
+ * - Time-based conditions
+ * - Cart value thresholds
+ * - Product/category restrictions
  */
 interface RulesFactoryInterface
 {

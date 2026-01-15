@@ -7,8 +7,7 @@ namespace AIArmada\CommerceSupport\Contracts\Events;
 /**
  * Interface for cart-specific events.
  *
- * Extends the base commerce event interface with cart-specific methods
- * for event sourcing, replay, and analytics.
+ * Extends the base commerce event interface with cart-specific methods.
  */
 interface CartEventInterface extends CommerceEventInterface
 {
@@ -32,22 +31,4 @@ interface CartEventInterface extends CommerceEventInterface
      * @return string|null Cart primary key UUID
      */
     public function getCartId(): ?string;
-
-    /**
-     * Get the aggregate version at the time of this event.
-     *
-     * Used for event sourcing and optimistic concurrency control.
-     *
-     * @return int Aggregate version number
-     */
-    public function getAggregateVersion(): int;
-
-    /**
-     * Check if this event should be persisted to the event store.
-     *
-     * Some events may be transient and not need persistence.
-     *
-     * @return bool True if event should be stored
-     */
-    public function shouldPersist(): bool;
 }

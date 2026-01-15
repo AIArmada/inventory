@@ -8,7 +8,7 @@ function cartPerformanceMigrationPath(): string
 {
     $repoRoot = dirname(__DIR__, 4);
 
-    return $repoRoot.'/packages/cart/database/migrations/2025_12_02_000003_add_performance_indexes_to_carts_table.php';
+    return $repoRoot.'/packages/cart/database/migrations/2000_02_01_000006_add_performance_indexes_to_carts_table.php';
 }
 
 it('does not use NOW() in PostgreSQL index predicates', function (): void {

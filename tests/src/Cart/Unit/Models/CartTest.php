@@ -11,12 +11,10 @@ use AIArmada\Cart\Exceptions\InvalidCartItemException;
 use AIArmada\Cart\Exceptions\UnknownModelException;
 use AIArmada\Cart\Models\CartItem;
 use AIArmada\Cart\Storage\DatabaseStorage;
-use AIArmada\Cart\Storage\SessionStorage;
 use Illuminate\Events\Dispatcher;
-use Illuminate\Session\ArraySessionHandler;
-use Illuminate\Session\Store;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Tests\Support\Cart\InMemoryStorage;
 
 beforeEach(function (): void {
     // Ensure events dispatcher is available
@@ -26,10 +24,8 @@ beforeEach(function (): void {
         });
     }
 
-    // Initialize session and database storage with proper connections
-    // Use array session store for testing
-    $sessionStore = new Store('testing', new ArraySessionHandler(120));
-    $this->sessionStorage = new SessionStorage($sessionStore);
+    // Use InMemoryStorage for most tests
+    $this->inMemoryStorage = new InMemoryStorage;
 
     // Only initialize database storage if db is available (some tests don't need it)
     if (app()->bound('db')) {
@@ -45,9 +41,9 @@ beforeEach(function (): void {
         $this->databaseStorage = null; // Skip database tests if db not bound
     }
 
-    // Initialize cart with session storage for most tests
+    // Initialize cart with InMemoryStorage for most tests
     $this->cart = new Cart(
-        $this->sessionStorage,
+        $this->inMemoryStorage,
         'bulletproof_test',
         new Dispatcher,
         'bulletproof_test',
@@ -130,7 +126,7 @@ describe('Cart instantiation', function (): void {
     it('works without events when disabled', function (): void {
         // Don't use Event::fake() in basic test environment, create cart without events
         $cartWithoutEvents = new Cart(
-            $this->sessionStorage,
+            $this->inMemoryStorage,
             'no_events_test',
             app('events'),
             'no_events_test',
@@ -149,7 +145,7 @@ describe('Adding items', function (): void {
 
         // Recreate cart with the fake event dispatcher
         $cart = new Cart(
-            $this->sessionStorage,
+            $this->inMemoryStorage,
             'test_with_events',
             app('events'),
             'test_with_events',
@@ -320,7 +316,7 @@ describe('Cart operations and management', function (): void {
 
         // Create cart with fake events
         $cart = new Cart(
-            $this->sessionStorage,
+            $this->inMemoryStorage,
             'update_test',
             app('events'),
             'update_test',
@@ -356,7 +352,7 @@ describe('Cart operations and management', function (): void {
 
         // Create cart with fake events
         $cart = new Cart(
-            $this->sessionStorage,
+            $this->inMemoryStorage,
             'remove_test',
             app('events'),
             'remove_test',
@@ -383,7 +379,7 @@ describe('Cart operations and management', function (): void {
 
         // Create cart with fake events
         $cart = new Cart(
-            storage: $this->sessionStorage,
+            storage: $this->inMemoryStorage,
             events: app('events'),
             identifier: 'clear_test',
             instanceName: 'clear_test',
@@ -742,7 +738,7 @@ describe('Storage layer tests', function (): void {
 
         // Create a new cart instance with same storage to test persistence
         $newCart = new Cart(
-            $this->sessionStorage,
+            $this->inMemoryStorage,
             'bulletproof_test',
             app('events'),
             'bulletproof_test',
@@ -788,7 +784,7 @@ describe('Storage layer tests', function (): void {
 
     it('isolates different cart instances', function (): void {
         $cart1 = new Cart(
-            $this->sessionStorage,
+            $this->inMemoryStorage,
             'isolation_test_1',
             app('events'),
             'isolation_test_1',
@@ -796,7 +792,7 @@ describe('Storage layer tests', function (): void {
         );
 
         $cart2 = new Cart(
-            $this->sessionStorage,
+            $this->inMemoryStorage,
             'isolation_test_2',
             app('events'),
             'isolation_test_2',
@@ -1028,7 +1024,7 @@ describe('Price normalization', function (): void {
     it('respects decimal configuration', function (): void {
         // Create cart with specific decimal configuration
         $cart = new Cart(
-            $this->sessionStorage,
+            $this->inMemoryStorage,
             'decimal_test',
             app('events'),
             'decimal_test',

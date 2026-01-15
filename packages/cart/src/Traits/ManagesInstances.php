@@ -81,9 +81,7 @@ trait ManagesInstances
         $this->storage->forget($identifier, $instance);
 
         // Dispatch CartDestroyed event
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new CartDestroyed($identifier, $instance));
-        }
+        $this->dispatchEvent(new CartDestroyed($identifier, $instance));
     }
 
     /**
@@ -124,9 +122,7 @@ trait ManagesInstances
         $this->invalidatePipelineCache();
 
         // Dispatch CartCleared event
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new CartCleared($this));
-        }
+        $this->dispatchEvent(new CartCleared($this));
 
         return true;
     }

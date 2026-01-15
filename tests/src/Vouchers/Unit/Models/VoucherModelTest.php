@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use AIArmada\Vouchers\Campaigns\Models\Campaign;
-use AIArmada\Vouchers\Campaigns\Models\CampaignVariant;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
 use AIArmada\Vouchers\Models\Voucher;
@@ -53,22 +51,6 @@ describe('Voucher Model', function (): void {
                 ->and($relation->getRelated())->toBeInstanceOf(VoucherTransaction::class);
         });
 
-        it('defines campaign relationship as BelongsTo', function (): void {
-            $voucher = new Voucher;
-            $relation = $voucher->campaign();
-
-            expect($relation)->toBeInstanceOf(BelongsTo::class)
-                ->and($relation->getRelated())->toBeInstanceOf(Campaign::class);
-        });
-
-        it('defines campaignVariant relationship as BelongsTo', function (): void {
-            $voucher = new Voucher;
-            $relation = $voucher->campaignVariant();
-
-            expect($relation)->toBeInstanceOf(BelongsTo::class)
-                ->and($relation->getRelated())->toBeInstanceOf(CampaignVariant::class);
-        });
-
         it('defines affiliate relationship as BelongsTo', function (): void {
             $voucher = new Voucher;
             $relation = $voucher->affiliate();
@@ -90,22 +72,6 @@ describe('Voucher Model', function (): void {
             $voucher->affiliate_id = 'affiliate-123';
 
             expect($voucher->belongsToAffiliate())->toBeTrue();
-        });
-    });
-
-    describe('belongsToCampaign', function (): void {
-        it('returns false when campaign_id is null', function (): void {
-            $voucher = new Voucher;
-            $voucher->campaign_id = null;
-
-            expect($voucher->belongsToCampaign())->toBeFalse();
-        });
-
-        it('returns true when campaign_id is set', function (): void {
-            $voucher = new Voucher;
-            $voucher->campaign_id = 'campaign-123';
-
-            expect($voucher->belongsToCampaign())->toBeTrue();
         });
     });
 
@@ -380,6 +346,127 @@ describe('Voucher Model', function (): void {
 
             expect($method->isProtected())->toBeTrue()
                 ->and($method->isStatic())->toBeTrue();
+        });
+    });
+
+    describe('cascade delete', function (): void {
+        it('deletes usages when voucher is deleted', function (): void {
+            $voucher = Voucher::create([
+                'name' => 'Cascade Test Voucher',
+                'code' => 'CASCADE-USAGE-' . uniqid(),
+                'type' => VoucherType::Percentage,
+                'value' => 1000,
+                'currency' => 'MYR',
+                'status' => VoucherStatus::Active,
+            ]);
+
+            $voucher->usages()->create([
+                'discount_amount' => 1000,
+                'currency' => 'MYR',
+                'channel' => 'automatic',
+                'used_at' => now(),
+            ]);
+
+            expect(VoucherUsage::where('voucher_id', $voucher->id)->count())->toBe(1);
+
+            $voucher->delete();
+
+            expect(VoucherUsage::where('voucher_id', $voucher->id)->count())->toBe(0);
+        });
+
+        it('deletes wallet entries when voucher is deleted', function (): void {
+            $voucher = Voucher::create([
+                'name' => 'Cascade Test Voucher',
+                'code' => 'CASCADE-WALLET-' . uniqid(),
+                'type' => VoucherType::Fixed,
+                'value' => 5000,
+                'currency' => 'MYR',
+                'status' => VoucherStatus::Active,
+            ]);
+
+            $voucher->walletEntries()->create([
+                'holder_type' => 'App\\Models\\User',
+                'holder_id' => 'user-123',
+                'is_claimed' => false,
+                'is_redeemed' => false,
+            ]);
+
+            expect(VoucherWallet::where('voucher_id', $voucher->id)->count())->toBe(1);
+
+            $voucher->delete();
+
+            expect(VoucherWallet::where('voucher_id', $voucher->id)->count())->toBe(0);
+        });
+
+        it('deletes transactions when voucher is deleted', function (): void {
+            $voucher = Voucher::create([
+                'name' => 'Cascade Test Voucher',
+                'code' => 'CASCADE-TX-' . uniqid(),
+                'type' => VoucherType::Fixed,
+                'value' => 5000,
+                'currency' => 'MYR',
+                'status' => VoucherStatus::Active,
+            ]);
+
+            $voucher->transactions()->create([
+                'walletable_type' => 'App\\Models\\User',
+                'walletable_id' => 'user-123',
+                'amount' => 1000,
+                'balance' => 1000,
+                'type' => 'credit',
+                'currency' => 'MYR',
+            ]);
+
+            expect(VoucherTransaction::where('voucher_id', $voucher->id)->count())->toBe(1);
+
+            $voucher->delete();
+
+            expect(VoucherTransaction::where('voucher_id', $voucher->id)->count())->toBe(0);
+        });
+
+        it('deletes all related records in a single delete operation', function (): void {
+            $voucher = Voucher::create([
+                'name' => 'Cascade All Test',
+                'code' => 'CASCADE-ALL-' . uniqid(),
+                'type' => VoucherType::Percentage,
+                'value' => 1500,
+                'currency' => 'MYR',
+                'status' => VoucherStatus::Active,
+            ]);
+
+            $voucher->usages()->create([
+                'discount_amount' => 500,
+                'currency' => 'MYR',
+                'channel' => 'automatic',
+                'used_at' => now(),
+            ]);
+
+            $voucher->walletEntries()->create([
+                'holder_type' => 'App\\Models\\User',
+                'holder_id' => 'user-456',
+                'is_claimed' => true,
+                'claimed_at' => now(),
+                'is_redeemed' => false,
+            ]);
+
+            $voucher->transactions()->create([
+                'walletable_type' => 'App\\Models\\User',
+                'walletable_id' => 'user-456',
+                'amount' => 500,
+                'balance' => 500,
+                'type' => 'credit',
+                'currency' => 'MYR',
+            ]);
+
+            expect(VoucherUsage::where('voucher_id', $voucher->id)->count())->toBe(1)
+                ->and(VoucherWallet::where('voucher_id', $voucher->id)->count())->toBe(1)
+                ->and(VoucherTransaction::where('voucher_id', $voucher->id)->count())->toBe(1);
+
+            $voucher->delete();
+
+            expect(VoucherUsage::where('voucher_id', $voucher->id)->count())->toBe(0)
+                ->and(VoucherWallet::where('voucher_id', $voucher->id)->count())->toBe(0)
+                ->and(VoucherTransaction::where('voucher_id', $voucher->id)->count())->toBe(0);
         });
     });
 });

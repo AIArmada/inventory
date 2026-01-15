@@ -7,24 +7,13 @@ use AIArmada\Commerce\Tests\Support\OwnerResolvers\FixedOwnerResolver;
 use AIArmada\Commerce\Tests\TestCase;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
 use AIArmada\FilamentVouchers\Models\Voucher as FilamentVoucher;
-use AIArmada\FilamentVouchers\Resources\CampaignResource;
-use AIArmada\FilamentVouchers\Resources\FraudSignalResource;
-use AIArmada\FilamentVouchers\Resources\GiftCardResource;
 use AIArmada\FilamentVouchers\Resources\VoucherResource;
 use AIArmada\FilamentVouchers\Resources\VoucherUsageResource;
 use AIArmada\FilamentVouchers\Resources\VoucherWalletResource;
-use AIArmada\Vouchers\Campaigns\Enums\CampaignStatus;
-use AIArmada\Vouchers\Campaigns\Models\Campaign;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
-use AIArmada\Vouchers\Fraud\Enums\FraudRiskLevel;
-use AIArmada\Vouchers\Fraud\Enums\FraudSignalType;
-use AIArmada\Vouchers\Fraud\Models\VoucherFraudSignal;
-use AIArmada\Vouchers\GiftCards\Enums\GiftCardStatus;
-use AIArmada\Vouchers\GiftCards\Models\GiftCard;
 use AIArmada\Vouchers\Models\VoucherUsage;
 use AIArmada\Vouchers\Models\VoucherWallet;
-use Illuminate\Support\Str;
 
 uses(TestCase::class);
 
@@ -123,91 +112,6 @@ it('scopes Filament Vouchers resources to the resolved owner (including global)'
         'is_redeemed' => false,
     ]);
 
-    $globalCampaign = Campaign::query()->create([
-        'name' => 'Global Campaign',
-        'slug' => 'global-campaign',
-        'status' => CampaignStatus::Active->value,
-    ]);
-
-    $ownerACampaign = Campaign::query()->create([
-        'name' => 'Owner A Campaign',
-        'slug' => 'a-campaign',
-        'status' => CampaignStatus::Active->value,
-    ]);
-    $ownerACampaign->assignOwner($ownerA)->save();
-
-    $ownerBCampaign = Campaign::query()->create([
-        'name' => 'Owner B Campaign',
-        'slug' => 'b-campaign',
-        'status' => CampaignStatus::Active->value,
-    ]);
-    $ownerBCampaign->assignOwner($ownerB)->save();
-
-    $globalGiftCard = GiftCard::query()->create([
-        'code' => 'GC-GLOBAL',
-        'initial_balance' => 1000,
-        'current_balance' => 1000,
-        'currency' => 'USD',
-        'status' => GiftCardStatus::Active->value,
-    ]);
-
-    $ownerAGiftCard = GiftCard::query()->create([
-        'code' => 'GC-A',
-        'initial_balance' => 1000,
-        'current_balance' => 1000,
-        'currency' => 'USD',
-        'status' => GiftCardStatus::Active->value,
-    ]);
-    $ownerAGiftCard->assignOwner($ownerA)->save();
-
-    $ownerBGiftCard = GiftCard::query()->create([
-        'code' => 'GC-B',
-        'initial_balance' => 1000,
-        'current_balance' => 1000,
-        'currency' => 'USD',
-        'status' => GiftCardStatus::Active->value,
-    ]);
-    $ownerBGiftCard->assignOwner($ownerB)->save();
-
-    $globalFraud = VoucherFraudSignal::query()->create([
-        'voucher_id' => $globalVoucher->id,
-        'voucher_code' => $globalVoucher->code,
-        'signal_type' => FraudSignalType::IpAddressAnomaly->value,
-        'score' => 0.9,
-        'risk_level' => FraudRiskLevel::High->value,
-        'message' => 'Global signal',
-        'detector' => 'test',
-        'was_blocked' => false,
-        'reviewed' => false,
-        'user_id' => (string) Str::uuid(),
-    ]);
-
-    $ownerAFraud = VoucherFraudSignal::query()->create([
-        'voucher_id' => $ownerAVoucher->id,
-        'voucher_code' => $ownerAVoucher->code,
-        'signal_type' => FraudSignalType::IpAddressAnomaly->value,
-        'score' => 0.9,
-        'risk_level' => FraudRiskLevel::High->value,
-        'message' => 'Owner A signal',
-        'detector' => 'test',
-        'was_blocked' => false,
-        'reviewed' => false,
-        'user_id' => (string) Str::uuid(),
-    ]);
-
-    $ownerBFraud = VoucherFraudSignal::query()->create([
-        'voucher_id' => $ownerBVoucher->id,
-        'voucher_code' => $ownerBVoucher->code,
-        'signal_type' => FraudSignalType::IpAddressAnomaly->value,
-        'score' => 0.9,
-        'risk_level' => FraudRiskLevel::High->value,
-        'message' => 'Owner B signal',
-        'detector' => 'test',
-        'was_blocked' => false,
-        'reviewed' => false,
-        'user_id' => (string) Str::uuid(),
-    ]);
-
     $vouchers = VoucherResource::getEloquentQuery()->pluck('id')->all();
     expect($vouchers)->toContain($globalVoucher->id, $ownerAVoucher->id)
         ->not->toContain($ownerBVoucher->id);
@@ -219,18 +123,6 @@ it('scopes Filament Vouchers resources to the resolved owner (including global)'
     $wallets = VoucherWalletResource::getEloquentQuery()->pluck('id')->all();
     expect($wallets)->toContain($globalWallet->id)
         ->not->toContain($ownerBWallet->id);
-
-    $campaigns = CampaignResource::getEloquentQuery()->pluck('id')->all();
-    expect($campaigns)->toContain($globalCampaign->id, $ownerACampaign->id)
-        ->not->toContain($ownerBCampaign->id);
-
-    $giftCards = GiftCardResource::getEloquentQuery()->pluck('id')->all();
-    expect($giftCards)->toContain($globalGiftCard->id, $ownerAGiftCard->id)
-        ->not->toContain($ownerBGiftCard->id);
-
-    $signals = FraudSignalResource::getEloquentQuery()->pluck('id')->all();
-    expect($signals)->toContain($globalFraud->id, $ownerAFraud->id)
-        ->not->toContain($ownerBFraud->id);
 });
 
 it('can exclude global records from Filament Vouchers resources', function (): void {
@@ -284,62 +176,6 @@ it('can exclude global records from Filament Vouchers resources', function (): v
         'used_at' => now()->subMinutes(5),
     ]);
 
-    $globalCampaign = Campaign::query()->create([
-        'name' => 'Global Campaign 2',
-        'slug' => 'global-campaign-2',
-        'status' => CampaignStatus::Active->value,
-    ]);
-
-    $ownerACampaign = Campaign::query()->create([
-        'name' => 'Owner A Campaign 2',
-        'slug' => 'a-campaign-2',
-        'status' => CampaignStatus::Active->value,
-    ]);
-    $ownerACampaign->assignOwner($ownerA)->save();
-
-    $globalGiftCard = GiftCard::query()->create([
-        'code' => 'GC-GLOBAL-2',
-        'initial_balance' => 1000,
-        'current_balance' => 1000,
-        'currency' => 'USD',
-        'status' => GiftCardStatus::Active->value,
-    ]);
-
-    $ownerAGiftCard = GiftCard::query()->create([
-        'code' => 'GC-A-2',
-        'initial_balance' => 1000,
-        'current_balance' => 1000,
-        'currency' => 'USD',
-        'status' => GiftCardStatus::Active->value,
-    ]);
-    $ownerAGiftCard->assignOwner($ownerA)->save();
-
-    $globalFraud = VoucherFraudSignal::query()->create([
-        'voucher_id' => $globalVoucher->id,
-        'voucher_code' => $globalVoucher->code,
-        'signal_type' => FraudSignalType::IpAddressAnomaly->value,
-        'score' => 0.9,
-        'risk_level' => FraudRiskLevel::High->value,
-        'message' => 'Global signal 2',
-        'detector' => 'test',
-        'was_blocked' => false,
-        'reviewed' => false,
-        'user_id' => (string) Str::uuid(),
-    ]);
-
-    $ownerAFraud = VoucherFraudSignal::query()->create([
-        'voucher_id' => $ownerAVoucher->id,
-        'voucher_code' => $ownerAVoucher->code,
-        'signal_type' => FraudSignalType::IpAddressAnomaly->value,
-        'score' => 0.9,
-        'risk_level' => FraudRiskLevel::High->value,
-        'message' => 'Owner A signal 2',
-        'detector' => 'test',
-        'was_blocked' => false,
-        'reviewed' => false,
-        'user_id' => (string) Str::uuid(),
-    ]);
-
     $vouchers = VoucherResource::getEloquentQuery()->pluck('id')->all();
     expect($vouchers)->toContain($ownerAVoucher->id)
         ->not->toContain($globalVoucher->id);
@@ -347,16 +183,4 @@ it('can exclude global records from Filament Vouchers resources', function (): v
     $usages = VoucherUsageResource::getEloquentQuery()->pluck('id')->all();
     expect($usages)->toContain($ownerAUsage->id)
         ->not->toContain($globalUsage->id);
-
-    $campaigns = CampaignResource::getEloquentQuery()->pluck('id')->all();
-    expect($campaigns)->toContain($ownerACampaign->id)
-        ->not->toContain($globalCampaign->id);
-
-    $giftCards = GiftCardResource::getEloquentQuery()->pluck('id')->all();
-    expect($giftCards)->toContain($ownerAGiftCard->id)
-        ->not->toContain($globalGiftCard->id);
-
-    $signals = FraudSignalResource::getEloquentQuery()->pluck('id')->all();
-    expect($signals)->toContain($ownerAFraud->id)
-        ->not->toContain($globalFraud->id);
 });

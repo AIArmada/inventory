@@ -71,20 +71,20 @@ it('exposes structured target definitions for vouchers', function (): void {
 it('supports overriding the target definition via voucher metadata', function (): void {
     $voucherData = VoucherData::fromArray([
         'id' => 22,
-        'code' => 'SHIPALL',
-        'name' => 'Shipping Voucher',
+        'code' => 'ITEMSVOUCHER',
+        'name' => 'Items Voucher',
         'type' => VoucherType::Percentage->value,
         'value' => 5,
         'currency' => 'USD',
         'status' => VoucherStatus::Active->value,
-        'target_definition' => conditionTargetDefinition('shipments@shipping/per-group'),
+        'target_definition' => conditionTargetDefinition('items@item_discount/per-item'),
     ]);
 
     $voucherCondition = new VoucherCondition($voucherData, dynamic: false);
 
     $target = $voucherCondition->toCartCondition()->getTargetDefinition();
 
-    expect($target->scope->value)->toBe('shipments')
-        ->and($target->phase->value)->toBe('shipping')
-        ->and($target->application->value)->toBe('per-group');
+    expect($target->scope->value)->toBe('items')
+        ->and($target->phase->value)->toBe('item_discount')
+        ->and($target->application->value)->toBe('per-item');
 });

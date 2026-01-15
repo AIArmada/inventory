@@ -1,14 +1,17 @@
 # Filament Vouchers
 
-> Filament 4 plugin for managing vouchers powered by the `aiarmada/vouchers` package.
+> Filament v5 admin panel plugin for managing vouchers powered by the `aiarmada/vouchers` package.
 
 ## Features
 
-- **Complete Voucher Management** – create, edit, view, and delete vouchers with a rich Filament UI.
-- **Usage Tracking** – monitor redemptions, discounts applied, and user activity.
-- **Dashboard Widgets** – stats overview, cart metrics, wallet stats, and usage timelines.
-- **Cart Integration** – seamless voucher application when `aiarmada/filament-cart` is installed.
-- **Multi-Tenant Support** – assign vouchers to specific owners (vendors, stores, teams).
+- **Complete Voucher Management** – create, edit, view, and delete vouchers with a rich Filament UI
+- **Usage Tracking** – monitor redemptions, discounts applied, and user activity
+- **Wallet System** – allow users to save vouchers for later use
+- **Dashboard Widgets** – stats overview, redemption trends, and usage timelines
+- **Cart Integration** – seamless voucher application when `aiarmada/filament-cart` is installed
+- **Multi-Tenant Support** – owner-scoped resources for marketplace scenarios
+- **Targeting Configuration** – define preset targeting rules for vouchers
+- **Stacking Rules** – configure how vouchers combine with each other
 
 ## Installation
 
@@ -102,12 +105,14 @@ The plugin provides these dashboard widgets:
 | Widget | Description |
 |--------|-------------|
 | `VoucherStatsWidget` | Overview stats (total, active, upcoming, redemptions) |
+| `RedemptionTrendChart` | Redemption trends over time |
 | `VoucherCartStatsWidget` | Cart-specific voucher metrics |
 | `VoucherWalletStatsWidget` | Wallet entry statistics |
 | `VoucherUsageTimelineWidget` | Redemption timeline for a voucher |
 | `AppliedVoucherBadgesWidget` | Shows applied vouchers on a cart |
 | `QuickApplyVoucherWidget` | Inline voucher application form |
 | `VoucherSuggestionsWidget` | Smart voucher suggestions for carts |
+| `AppliedVouchersWidget` | Table of applied vouchers on a cart |
 
 ---
 
@@ -172,9 +177,13 @@ When configured, a searchable owner selector appears in the voucher form.
 
 ## Documentation
 
-- [Configuration Reference](docs/configuration.md) – All configuration options
-- [Widgets](docs/widgets.md) – Available widgets and customization
-- [Cart Integration](docs/cart-integration.md) – Voucher-cart integration guide
+- [Overview](docs/01-overview.md) – Package introduction and quick start
+- [Installation](docs/02-installation.md) – Installation guide
+- [Configuration](docs/03-configuration.md) – All configuration options
+- [Usage](docs/04-usage.md) – Resources, pages, and actions
+- [Widgets](docs/05-widgets.md) – Available widgets and customization
+- [Cart Integration](docs/06-cart-integration.md) – Voucher-cart integration guide
+- [Troubleshooting](docs/99-troubleshooting.md) – Common issues and solutions
 
 ---
 

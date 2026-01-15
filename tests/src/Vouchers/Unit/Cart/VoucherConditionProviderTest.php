@@ -41,15 +41,18 @@ function createCartForVoucherConditionTest(array $metadata = []): Cart
 
 /**
  * Creates a VoucherData object for testing.
+ *
+ * Note: For percentages, value is in basis points (1000 = 10%, 1250 = 12.5%).
+ * For fixed amounts, value is in cents (1000 = $10.00).
  */
 function createVoucherData(
     string $id = 'voucher-123',
     string $code = 'SAVE10',
     VoucherType $type = VoucherType::Percentage,
-    float $value = 10.00,
+    int $value = 1000,
     ?string $description = 'Save 10%',
-    ?float $minCartValue = null,
-    ?float $maxDiscount = null,
+    ?int $minCartValue = null,
+    ?int $maxDiscount = null,
     ?string $currency = 'USD'
 ): VoucherData {
     return VoucherData::fromArray([
@@ -148,7 +151,7 @@ describe('VoucherConditionProvider getConditionsFor', function (): void {
         $voucher = createVoucherData(
             code: 'SAVE10',
             type: VoucherType::Percentage,
-            value: 10.00,
+            value: 1000, // 10% = 1000 basis points
         );
 
         $this->voucherService->shouldReceive('find')
@@ -175,7 +178,7 @@ describe('VoucherConditionProvider getConditionsFor', function (): void {
         $voucher = createVoucherData(
             code: 'FIXED20',
             type: VoucherType::Fixed,
-            value: 20.00,
+            value: 2000, // $20.00 = 2000 cents
         );
 
         $this->voucherService->shouldReceive('find')
@@ -191,7 +194,7 @@ describe('VoucherConditionProvider getConditionsFor', function (): void {
         $conditions = $this->provider->getConditionsFor($cart);
 
         expect($conditions)->toHaveCount(1);
-        expect($conditions[0]->getValue())->toBe('-20');
+        expect($conditions[0]->getValue())->toBe('-2000');
     });
 
     it('creates condition for free shipping voucher', function (): void {
@@ -199,7 +202,7 @@ describe('VoucherConditionProvider getConditionsFor', function (): void {
         $voucher = createVoucherData(
             code: 'FREESHIP',
             type: VoucherType::FreeShipping,
-            value: 0.00,
+            value: 0,
         );
 
         $this->voucherService->shouldReceive('find')
@@ -220,8 +223,8 @@ describe('VoucherConditionProvider getConditionsFor', function (): void {
 
     it('handles multiple voucher codes', function (): void {
         $cart = createCartForVoucherConditionTest(['voucher_codes' => ['SAVE10', 'FIXED5']]);
-        $voucher1 = createVoucherData(code: 'SAVE10', type: VoucherType::Percentage, value: 10.00);
-        $voucher2 = createVoucherData(code: 'FIXED5', type: VoucherType::Fixed, value: 5.00);
+        $voucher1 = createVoucherData(code: 'SAVE10', type: VoucherType::Percentage, value: 1000); // 10%
+        $voucher2 = createVoucherData(code: 'FIXED5', type: VoucherType::Fixed, value: 500); // $5.00
 
         $this->voucherService->shouldReceive('find')
             ->with('SAVE10')
@@ -254,10 +257,10 @@ describe('VoucherConditionProvider getConditionsFor', function (): void {
             id: 'voucher-abc',
             code: 'TEST',
             type: VoucherType::Percentage,
-            value: 15.00,
+            value: 1500, // 15% = 1500 basis points
             description: 'Test discount',
-            minCartValue: 50.00,
-            maxDiscount: 100.00,
+            minCartValue: 5000, // $50.00 = 5000 cents
+            maxDiscount: 10000, // $100.00 = 10000 cents
             currency: 'EUR'
         );
 
@@ -279,14 +282,14 @@ describe('VoucherConditionProvider getConditionsFor', function (): void {
         expect($attributes['voucher_code'])->toBe('TEST');
         expect($attributes['voucher_type'])->toBe('percentage');
         expect($attributes['description'])->toBe('Test discount');
-        expect($attributes['min_cart_value'])->toBe(50.00);
-        expect($attributes['max_discount'])->toBe(100.00);
+        expect($attributes['min_cart_value'])->toBe(5000);
+        expect($attributes['max_discount'])->toBe(10000);
         expect($attributes['currency'])->toBe('EUR');
     });
 
     it('sets correct target for percentage voucher', function (): void {
         $cart = createCartForVoucherConditionTest(['voucher_codes' => ['PERCENT']]);
-        $voucher = createVoucherData(code: 'PERCENT', type: VoucherType::Percentage, value: 10.00);
+        $voucher = createVoucherData(code: 'PERCENT', type: VoucherType::Percentage, value: 1000); // 10%
 
         $this->voucherService->shouldReceive('find')
             ->with('PERCENT')
@@ -309,7 +312,7 @@ describe('VoucherConditionProvider getConditionsFor', function (): void {
 
     it('sets correct target for free shipping voucher', function (): void {
         $cart = createCartForVoucherConditionTest(['voucher_codes' => ['SHIP']]);
-        $voucher = createVoucherData(code: 'SHIP', type: VoucherType::FreeShipping, value: 0.00);
+        $voucher = createVoucherData(code: 'SHIP', type: VoucherType::FreeShipping, value: 0);
 
         $this->voucherService->shouldReceive('find')
             ->with('SHIP')
@@ -405,7 +408,7 @@ describe('VoucherConditionProvider edge cases', function (): void {
         // Since we can't create an "unknown" VoucherType, we rely on the
         // pattern matching - all enum values are covered, but this tests
         // the behavior if somehow an unhandled type exists
-        $voucher = createVoucherData(code: 'UNKNOWN', type: VoucherType::Fixed, value: 10.00);
+        $voucher = createVoucherData(code: 'UNKNOWN', type: VoucherType::Fixed, value: 1000); // $10.00
 
         $this->voucherService->shouldReceive('find')
             ->with('UNKNOWN')
@@ -426,9 +429,9 @@ describe('VoucherConditionProvider edge cases', function (): void {
     it('processes mixed valid and invalid vouchers', function (): void {
         $cart = createCartForVoucherConditionTest(['voucher_codes' => ['VALID', 'INVALID', 'NOTFOUND']]);
 
-        $validVoucher = createVoucherData(code: 'VALID', type: VoucherType::Percentage, value: 10.00);
+        $validVoucher = createVoucherData(code: 'VALID', type: VoucherType::Percentage, value: 1000); // 10%
 
-        $invalidVoucher = createVoucherData(code: 'INVALID', type: VoucherType::Fixed, value: 5.00);
+        $invalidVoucher = createVoucherData(code: 'INVALID', type: VoucherType::Fixed, value: 500); // $5.00
 
         $this->voucherService->shouldReceive('find')
             ->with('VALID')
@@ -467,7 +470,7 @@ describe('VoucherConditionProvider edge cases', function (): void {
         $voucher = createVoucherData(
             code: 'DECIMAL',
             type: VoucherType::Fixed,
-            value: 25.50,
+            value: 2550, // $25.50 = 2550 cents
         );
 
         $this->voucherService->shouldReceive('find')
@@ -483,8 +486,8 @@ describe('VoucherConditionProvider edge cases', function (): void {
         $conditions = $this->provider->getConditionsFor($cart);
 
         expect($conditions)->toHaveCount(1);
-        // Fixed values are cast to int
-        expect($conditions[0]->getValue())->toBe('-25');
+        // Fixed values are stored as cents, output as raw integer
+        expect($conditions[0]->getValue())->toBe('-2550');
     });
 
     it('handles percentage voucher with decimal percentage', function (): void {
@@ -492,7 +495,7 @@ describe('VoucherConditionProvider edge cases', function (): void {
         $voucher = createVoucherData(
             code: 'PERCENT',
             type: VoucherType::Percentage,
-            value: 12.5,
+            value: 1250, // 12.5% = 1250 basis points
         );
 
         $this->voucherService->shouldReceive('find')

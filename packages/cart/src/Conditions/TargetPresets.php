@@ -70,28 +70,6 @@ final class TargetPresets
             ->build();
     }
 
-    public static function shipmentsPerGroup(): ConditionTarget
-    {
-        return Target::shipments()
-            ->phase(ConditionPhase::SHIPPING)
-            ->applyPerGroup()
-            ->build();
-    }
-
-    public static function paymentsPerPayment(): ConditionTarget
-    {
-        return Target::payments()
-            ->build();
-    }
-
-    public static function fulfillmentsPerGroup(): ConditionTarget
-    {
-        return Target::fulfillments()
-            ->phase(ConditionPhase::SHIPPING)
-            ->applyPerGroup()
-            ->build();
-    }
-
     public static function customAggregate(): ConditionTarget
     {
         return Target::custom()->build();

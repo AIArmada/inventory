@@ -166,12 +166,12 @@ describe('VoucherType Enum', function (): void {
             expect(VoucherType::BuyXGetY->color())->toBe('warning');
         });
 
-        it('returns purple for tiered', function (): void {
-            expect(VoucherType::Tiered->color())->toBe('purple');
+        it('returns violet for tiered', function (): void {
+            expect(VoucherType::Tiered->color())->toBe('violet');
         });
 
-        it('returns pink for bundle', function (): void {
-            expect(VoucherType::Bundle->color())->toBe('pink');
+        it('returns rose for bundle', function (): void {
+            expect(VoucherType::Bundle->color())->toBe('rose');
         });
 
         it('returns amber for cashback', function (): void {

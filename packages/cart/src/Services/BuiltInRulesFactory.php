@@ -12,6 +12,16 @@ use Carbon\CarbonInterface;
 use InvalidArgumentException;
 use Throwable;
 
+/**
+ * Built-in rules factory for dynamic cart conditions.
+ *
+ * This factory provides general-purpose rules for cart operations including:
+ * - Inventory availability checks
+ * - Customer eligibility rules
+ * - Time-based conditions
+ * - Cart value thresholds
+ * - Product/category restrictions
+ */
 final class BuiltInRulesFactory implements RulesFactoryInterface
 {
     /**

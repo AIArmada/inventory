@@ -10,9 +10,6 @@ enum ConditionScope: string
 {
     case CART = 'cart';
     case ITEMS = 'items';
-    case SHIPMENTS = 'shipments';
-    case PAYMENTS = 'payments';
-    case FULFILLMENTS = 'fulfillments';
     case CUSTOM = 'custom';
 
     public static function fromString(string $scope): self

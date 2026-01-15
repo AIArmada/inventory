@@ -131,15 +131,34 @@ final readonly class VoucherConditionProvider implements ConditionProviderInterf
 
     /**
      * Calculate the condition value based on voucher type.
+     *
+     * Note: Percentage values are stored as basis points (e.g., 1250 = 12.5%).
+     * Fixed values are stored as cents (e.g., 1000 = $10.00).
      */
     private function calculateConditionValue(VoucherData $voucher): ?string
     {
         return match ($voucher->type) {
-            VoucherType::Fixed => '-' . (string) (int) $voucher->value,
-            VoucherType::Percentage => '-' . $voucher->value . '%',
+            VoucherType::Fixed => '-' . (string) $voucher->value,
+            VoucherType::Percentage => $this->formatPercentageValue($voucher->value),
             VoucherType::FreeShipping => '-100%',
             default => null,
         };
+    }
+
+    /**
+     * Format a basis points value as a percentage string.
+     *
+     * @param  int  $basisPoints  Value in basis points (e.g., 1250 = 12.5%)
+     */
+    private function formatPercentageValue(int $basisPoints): string
+    {
+        $percentage = $basisPoints / 100;
+
+        if ($percentage === (int) $percentage) {
+            return '-' . (int) $percentage . '%';
+        }
+
+        return '-' . mb_rtrim(mb_rtrim(number_format($percentage, 2, '.', ''), '0'), '.') . '%';
     }
 
     /**

@@ -84,10 +84,15 @@ trait HasLazyPipeline
 
     /**
      * Get or create lazy pipeline instance.
+     *
+     * This ensures dynamic conditions are evaluated before building the pipeline context.
      */
     protected function getLazyPipeline(): LazyConditionPipeline
     {
         if ($this->lazyPipeline === null || ! $this->lazyPipeline->isCached()) {
+            // Ensure dynamic conditions are evaluated before building pipeline
+            $this->evaluateDynamicConditionsIfDirty();
+
             $context = ConditionPipelineContext::fromCart($this);
             $this->lazyPipeline = new LazyConditionPipeline($context);
         }
@@ -113,6 +118,9 @@ trait HasLazyPipeline
     protected function getSubtotalWithLazyPipeline(): int
     {
         if (! $this->isLazyPipelineEnabled()) {
+            // Ensure dynamic conditions are evaluated before pipeline
+            $this->evaluateDynamicConditionsIfDirty();
+
             return $this->evaluateConditionPipeline()->subtotal();
         }
 
@@ -125,6 +133,9 @@ trait HasLazyPipeline
     protected function getTotalWithLazyPipeline(): int
     {
         if (! $this->isLazyPipelineEnabled()) {
+            // Ensure dynamic conditions are evaluated before pipeline
+            $this->evaluateDynamicConditionsIfDirty();
+
             return $this->evaluateConditionPipeline()->total();
         }
 

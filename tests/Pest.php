@@ -21,6 +21,11 @@ use AIArmada\Commerce\Tests\TestCase;
 
 pest()->extend(TestCase::class)->in(
     'src/Cart',
+    'src/CartAI',
+    'src/CartBlockchain',
+    'src/CartCollaboration',
+    'src/CartFraud',
+    'src/CartGraphQL',
     'src/Chip',
     'src/Docs',
     'src/FilamentCart',

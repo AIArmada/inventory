@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace AIArmada\Vouchers\Actions;
 
+use AIArmada\Vouchers\Concerns\QueriesVouchers;
+use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Exceptions\VoucherNotFoundException;
+use AIArmada\Vouchers\Exceptions\VoucherUsageLimitException;
 use AIArmada\Vouchers\Models\Voucher as VoucherModel;
 use AIArmada\Vouchers\Models\VoucherUsage;
 use Akaunting\Money\Money;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
@@ -19,6 +21,7 @@ use Lorisleiva\Actions\Concerns\AsAction;
 final class RecordVoucherUsage
 {
     use AsAction;
+    use QueriesVouchers;
 
     /**
      * Record a voucher usage.
@@ -37,12 +40,39 @@ final class RecordVoucherUsage
         return DB::transaction(function () use ($code, $discountAmount, $channel, $metadata, $redeemedBy, $notes, $voucherModel): VoucherUsage {
             $voucher = $voucherModel ?? $this->findVoucher($code);
 
+            /** @var VoucherModel $lockedVoucher */
+            $lockedVoucher = VoucherModel::query()
+                ->whereKey($voucher->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Check global usage limit
+            if ($lockedVoucher->usage_limit !== null) {
+                $currentUses = VoucherUsage::where('voucher_id', $lockedVoucher->id)->count();
+                if ($currentUses >= $lockedVoucher->usage_limit) {
+                    throw VoucherUsageLimitException::globalLimit($lockedVoucher->code);
+                }
+            }
+
+            // Check per-user usage limit
+            if ($redeemedBy !== null && $lockedVoucher->usage_limit_per_user) {
+                $currentUserUses = VoucherUsage::where('voucher_id', $lockedVoucher->id)
+                    ->where('redeemed_by_type', $redeemedBy->getMorphClass())
+                    ->where('redeemed_by_id', $redeemedBy->getKey())
+                    ->count();
+
+                if ($currentUserUses >= $lockedVoucher->usage_limit_per_user) {
+                    throw VoucherUsageLimitException::userLimit($lockedVoucher->code);
+                }
+            }
+
             $usage = VoucherUsage::create([
-                'voucher_id' => $voucher->id,
+                'voucher_id' => $lockedVoucher->id,
                 'discount_amount' => $discountAmount->getAmount(),
                 'currency' => $discountAmount->getCurrency()->getCurrency(),
                 'channel' => $channel ?? 'web',
                 'metadata' => $metadata,
+                'target_definition' => $lockedVoucher->target_definition,
                 'redeemed_by_type' => $redeemedBy?->getMorphClass(),
                 'redeemed_by_id' => $redeemedBy?->getKey(),
                 'notes' => $notes,
@@ -50,7 +80,15 @@ final class RecordVoucherUsage
             ]);
 
             // Update the voucher use count
-            $voucher->increment('applied_count');
+            $lockedVoucher->increment('applied_count');
+
+            // Update status to depleted if usage limit reached
+            if ($lockedVoucher->usage_limit !== null) {
+                $newUsageCount = VoucherUsage::where('voucher_id', $lockedVoucher->id)->count();
+                if ($newUsageCount >= $lockedVoucher->usage_limit) {
+                    $lockedVoucher->update(['status' => VoucherStatus::Depleted]);
+                }
+            }
 
             return $usage;
         });
@@ -58,9 +96,11 @@ final class RecordVoucherUsage
 
     private function findVoucher(string $code): VoucherModel
     {
-        $normalizedCode = Str::upper(mb_trim($code));
+        $normalizedCode = $this->normalizeCode($code);
 
-        $voucher = VoucherModel::where('code', $normalizedCode)->first();
+        $voucher = $this->voucherQuery()
+            ->where('code', $normalizedCode)
+            ->first();
 
         if (! $voucher) {
             throw new VoucherNotFoundException("Voucher with code '{$code}' not found.");

@@ -12,12 +12,9 @@ return [
 
     'resources' => [
         'navigation_sort' => [
-            'campaigns' => 5,
             'vouchers' => 10,
             'voucher_usage' => 20,
             'voucher_wallets' => 30,
-            'gift_cards' => 50,
-            'fraud_signals' => 60,
         ],
     ],
 
@@ -28,6 +25,11 @@ return [
     */
     'polling_interval' => '30s',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Integration
+    |--------------------------------------------------------------------------
+    */
     'order_resource' => null,
     'owners' => [],
     'default_currency' => 'MYR',

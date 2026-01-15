@@ -647,65 +647,6 @@ it('shouldApply returns true for static and evaluates rules for dynamic', functi
             {
                 return false;
             }
-
-            public function getLastActivityAt(string $identifier, string $instance): ?string
-            {
-                return null;
-            }
-
-            public function touchLastActivity(string $identifier, string $instance): void {}
-
-            public function getCheckoutStartedAt(string $identifier, string $instance): ?string
-            {
-                return null;
-            }
-
-            public function markCheckoutStarted(string $identifier, string $instance): void {}
-
-            public function getCheckoutAbandonedAt(string $identifier, string $instance): ?string
-            {
-                return null;
-            }
-
-            public function markCheckoutAbandoned(string $identifier, string $instance): void {}
-
-            public function getRecoveryAttempts(string $identifier, string $instance): int
-            {
-                return 0;
-            }
-
-            public function incrementRecoveryAttempts(string $identifier, string $instance): void {}
-
-            public function getRecoveredAt(string $identifier, string $instance): ?string
-            {
-                return null;
-            }
-
-            public function markRecovered(string $identifier, string $instance): void {}
-
-            public function clearAbandonmentTracking(string $identifier, string $instance): void {}
-
-            // Event Sourcing Support
-            public function getEventStreamPosition(string $identifier, string $instance): int
-            {
-                return 0;
-            }
-
-            public function setEventStreamPosition(string $identifier, string $instance, int $position): void {}
-
-            public function getAggregateVersion(string $identifier, string $instance): string
-            {
-                return '0';
-            }
-
-            public function setAggregateVersion(string $identifier, string $instance, string $version): void {}
-
-            public function getSnapshotAt(string $identifier, string $instance): ?string
-            {
-                return null;
-            }
-
-            public function markSnapshotTaken(string $identifier, string $instance): void {}
         },
         identifier: 'test-user'
     );

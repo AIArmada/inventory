@@ -6,7 +6,7 @@ use AIArmada\Cart\Cart;
 use AIArmada\Cart\Conditions\Enums\ConditionPhase;
 use AIArmada\Cart\Conditions\Pipeline\ConditionPipelineContext;
 use AIArmada\Cart\Conditions\Pipeline\LazyConditionPipeline;
-use AIArmada\Cart\Testing\InMemoryStorage;
+use Tests\Support\Cart\InMemoryStorage;
 
 it('returns correct subtotal with lazy evaluation', function (): void {
     $storage = new InMemoryStorage;

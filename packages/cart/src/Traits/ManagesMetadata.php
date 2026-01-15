@@ -18,9 +18,7 @@ trait ManagesMetadata
     {
         $this->storage->putMetadata($this->getIdentifier(), $this->instance(), $key, $value);
 
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new MetadataAdded($key, $value, $this));
-        }
+        $this->dispatchEvent(new MetadataAdded($key, $value, $this));
 
         return $this;
     }
@@ -58,9 +56,7 @@ trait ManagesMetadata
     {
         $this->storage->putMetadata($this->getIdentifier(), $this->instance(), $key, null);
 
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new MetadataRemoved($key, $this));
-        }
+        $this->dispatchEvent(new MetadataRemoved($key, $this));
 
         return $this;
     }
@@ -78,9 +74,7 @@ trait ManagesMetadata
 
         $this->storage->putMetadataBatch($this->getIdentifier(), $this->instance(), $metadata);
 
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new MetadataBatchAdded($metadata, $this));
-        }
+        $this->dispatchEvent(new MetadataBatchAdded($metadata, $this));
 
         return $this;
     }
@@ -92,9 +86,7 @@ trait ManagesMetadata
     {
         $this->storage->clearMetadata($this->getIdentifier(), $this->instance());
 
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new MetadataCleared($this));
-        }
+        $this->dispatchEvent(new MetadataCleared($this));
 
         return $this;
     }

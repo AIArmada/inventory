@@ -10,9 +10,6 @@ use AIArmada\Cart\Conditions\Enums\ConditionScope;
 use AIArmada\Cart\Conditions\Pipeline\Resolvers\CartScopeResolver;
 use AIArmada\Cart\Conditions\Pipeline\Resolvers\ConditionScopeResolverInterface;
 use AIArmada\Cart\Conditions\Pipeline\Resolvers\DefaultScopeResolver;
-use AIArmada\Cart\Conditions\Pipeline\Resolvers\FulfillmentScopeResolver;
-use AIArmada\Cart\Conditions\Pipeline\Resolvers\PaymentScopeResolver;
-use AIArmada\Cart\Conditions\Pipeline\Resolvers\ShipmentScopeResolver;
 
 final class ConditionPipeline
 {
@@ -29,9 +26,6 @@ final class ConditionPipeline
     public function __construct()
     {
         $this->registerScopeResolver(ConditionScope::CART, new CartScopeResolver);
-        $this->registerScopeResolver(ConditionScope::SHIPMENTS, new ShipmentScopeResolver);
-        $this->registerScopeResolver(ConditionScope::PAYMENTS, new PaymentScopeResolver);
-        $this->registerScopeResolver(ConditionScope::FULFILLMENTS, new FulfillmentScopeResolver);
     }
 
     public function registerPhaseProcessor(ConditionPhase $phase, callable $processor): static
@@ -116,10 +110,6 @@ final class ConditionPipeline
 
             if ($scopeConditions === null || $scopeConditions->isEmpty()) {
                 continue;
-            }
-
-            if ($scope === ConditionScope::SHIPMENTS) {
-                file_put_contents('/tmp/scope-debug.log', 'processing shipments scope' . PHP_EOL, FILE_APPEND);
             }
 
             $amount = $this->getResolverForScope($scope)->resolve(

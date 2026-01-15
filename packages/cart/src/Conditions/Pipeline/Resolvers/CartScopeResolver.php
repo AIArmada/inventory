@@ -4,25 +4,29 @@ declare(strict_types=1);
 
 namespace AIArmada\Cart\Conditions\Pipeline\Resolvers;
 
+use AIArmada\Cart\Collections\CartConditionCollection;
+use AIArmada\Cart\Conditions\CartCondition;
 use AIArmada\Cart\Conditions\Enums\ConditionScope;
 use AIArmada\Cart\Conditions\Pipeline\ConditionPipelinePhaseContext;
 
-final class CartScopeResolver extends AbstractDatasetScopeResolver
+final class CartScopeResolver implements ConditionScopeResolverInterface
 {
-    protected function scope(): ConditionScope
+    public function supports(ConditionScope $scope): bool
     {
-        return ConditionScope::CART;
+        return $scope === ConditionScope::CART;
     }
 
-    protected function fetchDatasets(ConditionPipelinePhaseContext $phaseContext): iterable
-    {
-        return [
-            ['base_amount' => $phaseContext->baseAmount],
-        ];
-    }
-
-    protected function extractBaseAmount(mixed $dataset): int
-    {
-        return (int) ($dataset['base_amount'] ?? 0);
+    public function resolve(
+        ConditionPipelinePhaseContext $phaseContext,
+        ConditionScope $scope,
+        CartConditionCollection $conditions,
+        int $currentAmount
+    ): int {
+        return $conditions
+            ->sortByOrder()
+            ->reduce(
+                static fn (int $amount, CartCondition $condition) => $condition->apply($amount),
+                $currentAmount
+            );
     }
 }

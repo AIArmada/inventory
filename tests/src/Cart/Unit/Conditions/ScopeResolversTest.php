@@ -11,10 +11,7 @@ use AIArmada\Cart\Conditions\Pipeline\ConditionPipelineContext;
 use AIArmada\Cart\Conditions\Pipeline\ConditionPipelinePhaseContext;
 use AIArmada\Cart\Conditions\Pipeline\Resolvers\ConditionScopeResolverInterface;
 use AIArmada\Cart\Conditions\Pipeline\Resolvers\DefaultScopeResolver;
-use AIArmada\Cart\Conditions\Pipeline\Resolvers\FulfillmentScopeResolver;
-use AIArmada\Cart\Conditions\Pipeline\Resolvers\PaymentScopeResolver;
-use AIArmada\Cart\Conditions\Pipeline\Resolvers\ShipmentScopeResolver;
-use AIArmada\Cart\Testing\InMemoryStorage;
+use Tests\Support\Cart\InMemoryStorage;
 
 describe('DefaultScopeResolver', function (): void {
     it('can be instantiated', function (): void {
@@ -34,7 +31,7 @@ describe('DefaultScopeResolver', function (): void {
         $resolver = new DefaultScopeResolver(ConditionScope::CART);
 
         expect($resolver->supports(ConditionScope::ITEMS))->toBeFalse()
-            ->and($resolver->supports(ConditionScope::SHIPMENTS))->toBeFalse();
+            ->and($resolver->supports(ConditionScope::CUSTOM))->toBeFalse();
     });
 
     it('resolves with empty conditions returns current amount', function (): void {
@@ -168,73 +165,5 @@ describe('DefaultScopeResolver', function (): void {
 
         // Sorted by order: discount first (1000 - 10% = 900), then fee (900 + 100 = 1000)
         expect($result)->toBe(1000);
-    });
-});
-
-describe('FulfillmentScopeResolver', function (): void {
-    it('can be instantiated', function (): void {
-        $resolver = new FulfillmentScopeResolver;
-
-        expect($resolver)->toBeInstanceOf(FulfillmentScopeResolver::class)
-            ->and($resolver)->toBeInstanceOf(ConditionScopeResolverInterface::class);
-    });
-
-    it('supports fulfillments scope', function (): void {
-        $resolver = new FulfillmentScopeResolver;
-
-        expect($resolver->supports(ConditionScope::FULFILLMENTS))->toBeTrue();
-    });
-
-    it('does not support other scopes', function (): void {
-        $resolver = new FulfillmentScopeResolver;
-
-        expect($resolver->supports(ConditionScope::CART))->toBeFalse()
-            ->and($resolver->supports(ConditionScope::ITEMS))->toBeFalse();
-    });
-});
-
-describe('PaymentScopeResolver', function (): void {
-    it('can be instantiated', function (): void {
-        $resolver = new PaymentScopeResolver;
-
-        expect($resolver)->toBeInstanceOf(PaymentScopeResolver::class)
-            ->and($resolver)->toBeInstanceOf(ConditionScopeResolverInterface::class);
-    });
-
-    it('supports payments scope', function (): void {
-        $resolver = new PaymentScopeResolver;
-
-        expect($resolver->supports(ConditionScope::PAYMENTS))->toBeTrue();
-    });
-
-    it('does not support other scopes', function (): void {
-        $resolver = new PaymentScopeResolver;
-
-        expect($resolver->supports(ConditionScope::CART))->toBeFalse()
-            ->and($resolver->supports(ConditionScope::ITEMS))->toBeFalse()
-            ->and($resolver->supports(ConditionScope::SHIPMENTS))->toBeFalse();
-    });
-});
-
-describe('ShipmentScopeResolver', function (): void {
-    it('can be instantiated', function (): void {
-        $resolver = new ShipmentScopeResolver;
-
-        expect($resolver)->toBeInstanceOf(ShipmentScopeResolver::class)
-            ->and($resolver)->toBeInstanceOf(ConditionScopeResolverInterface::class);
-    });
-
-    it('supports shipments scope', function (): void {
-        $resolver = new ShipmentScopeResolver;
-
-        expect($resolver->supports(ConditionScope::SHIPMENTS))->toBeTrue();
-    });
-
-    it('does not support other scopes', function (): void {
-        $resolver = new ShipmentScopeResolver;
-
-        expect($resolver->supports(ConditionScope::CART))->toBeFalse()
-            ->and($resolver->supports(ConditionScope::ITEMS))->toBeFalse()
-            ->and($resolver->supports(ConditionScope::PAYMENTS))->toBeFalse();
     });
 });

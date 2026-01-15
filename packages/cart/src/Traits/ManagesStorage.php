@@ -12,9 +12,26 @@ use Illuminate\Database\Eloquent\Model;
 trait ManagesStorage
 {
     /**
-     * Get all cart items
+     * Get all cart items (with dynamic condition evaluation)
      */
     public function getItems(): CartCollection
+    {
+        // Ensure dynamic conditions are evaluated before returning items
+        // This is necessary for item-level dynamic conditions to be applied
+        if (method_exists($this, 'evaluateDynamicConditionsIfDirty')) {
+            $this->evaluateDynamicConditionsIfDirty();
+        }
+
+        return $this->getItemsFromStorage();
+    }
+
+    /**
+     * Get items directly from storage (no dynamic condition evaluation)
+     *
+     * Used internally to avoid infinite recursion when evaluating
+     * dynamic conditions that need access to item data.
+     */
+    protected function getItemsFromStorage(): CartCollection
     {
         $items = $this->storage->getItems($this->getIdentifier(), $this->instance());
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
+use AIArmada\CommerceSupport\Support\NullOwnerResolver;
 
 return [
     /*
@@ -21,6 +21,5 @@ return [
     */
     'owner' => [
         'resolver' => env('COMMERCE_OWNER_RESOLVER', NullOwnerResolver::class),
-        'team_type' => env('COMMERCE_OWNER_TEAM_TYPE'),
     ],
 ];

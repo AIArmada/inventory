@@ -9,7 +9,6 @@ use AIArmada\Pricing\Data\PriceResultData;
 use AIArmada\Pricing\Models\Price;
 use AIArmada\Pricing\Models\PriceList;
 use AIArmada\Pricing\Models\PriceTier;
-use AIArmada\Pricing\Models\Promotion;
 use AIArmada\Pricing\Support\PricingOwnerScope;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
@@ -308,10 +307,18 @@ class PriceCalculator
      */
     protected function getPromotionPrice(string $promotionableType, string $promotionableId, int $basePrice, int $quantity, CarbonImmutable $effectiveAt): ?array
     {
-        $promotionTable = (new Promotion)->getTable();
-        $promotionablesTable = config('pricing.database.tables.promotionables', 'promotionables');
+        $promotionClass = '\\AIArmada\\Promotions\\Models\\Promotion';
 
-        $promotion = $this->applyPromotionActiveAt(PricingOwnerScope::applyToOwnedQuery(Promotion::query()), $effectiveAt)
+        if (! class_exists($promotionClass)) {
+            return null;
+        }
+
+        /** @var \AIArmada\Promotions\Models\Promotion $promotionModel */
+        $promotionModel = new $promotionClass;
+        $promotionTable = $promotionModel->getTable();
+        $promotionablesTable = (string) config('promotions.database.tables.promotionables', 'promotionables');
+
+        $promotion = $this->applyPromotionActiveAt($promotionClass::query(), $effectiveAt)
             ->whereExists(function ($query) use ($promotionTable, $promotionablesTable, $promotionableType, $promotionableId): void {
                 $query->selectRaw('1')
                     ->from($promotionablesTable)

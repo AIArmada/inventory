@@ -8,6 +8,7 @@ use AIArmada\Cart\Collections\CartConditionCollection;
 use AIArmada\Cart\Conditions\CartCondition;
 use AIArmada\Cart\Exceptions\InvalidCartItemException;
 use AIArmada\CommerceSupport\Contracts\Payment\LineItemInterface;
+use AIArmada\CommerceSupport\Support\MoneyNormalizer;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Support\Collection;
@@ -85,6 +86,24 @@ final readonly class CartItem implements Arrayable, Jsonable, JsonSerializable, 
     }
 
     /**
+     * Create a CartItem from an array representation.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public static function fromArray(array $data): static
+    {
+        return new static(
+            id: $data['id'] ?? '',
+            name: $data['name'] ?? '',
+            price: (int) ($data['price'] ?? 0),
+            quantity: (int) ($data['quantity'] ?? 1),
+            attributes: $data['attributes'] ?? [],
+            conditions: $data['conditions'] ?? [],
+            associatedModel: $data['associated_model'] ?? null
+        );
+    }
+
+    /**
      * Create a copy of the item with modified properties
      *
      * @param  array<string, mixed>  $attributes
@@ -103,42 +122,52 @@ final readonly class CartItem implements Arrayable, Jsonable, JsonSerializable, 
     }
 
     /**
-     * Normalize price to integer cents.
+     * Create a copy with multiple property changes in a single operation.
      *
-     * @param  int|float|string  $price  Price input
-     *                                   - int: treated as cents (returned as-is)
-     *                                   - float: treated as decimal dollars, converted to cents
-     *                                   - string: sanitized and converted
+     * This is more efficient than chaining multiple setX() calls,
+     * as it creates only one new instance instead of N instances.
+     *
+     * @param  array{name?: string, price?: int|float|string, quantity?: int, attributes?: array<string, mixed>}  $changes
      */
-    private function normalizeToInt(int | float | string $price): int
+    public function withBatch(array $changes): static
     {
-        if (is_int($price)) {
-            return $price;
+        $name = $this->name;
+        $price = $this->price;
+        $quantity = $this->quantity;
+        $attributes = $this->attributes->toArray();
+
+        if (isset($changes['name'])) {
+            $name = $changes['name'];
         }
 
-        if (is_float($price)) {
-            // Float is treated as decimal dollars, convert to cents
-            return (int) round($price * 100);
+        if (isset($changes['price'])) {
+            $price = $this->normalizeToInt($changes['price']);
         }
 
-        // String handling
-        return $this->sanitizeStringPrice($price);
+        if (isset($changes['quantity'])) {
+            $quantity = $changes['quantity'];
+        }
+
+        if (isset($changes['attributes'])) {
+            $attributes = array_merge($attributes, $changes['attributes']);
+        }
+
+        return new static(
+            $this->id,
+            $name,
+            $price,
+            $quantity,
+            $attributes,
+            $this->conditions->toArray(),
+            $this->associatedModel
+        );
     }
 
     /**
-     * Sanitize string price input and convert to integer cents.
+     * Normalize price to integer cents using the centralized MoneyNormalizer.
      */
-    private function sanitizeStringPrice(string $price): int
+    private function normalizeToInt(int | float | string $price): int
     {
-        // Remove currency symbols and formatting
-        $price = str_replace([',', '$', '€', '£', '¥', '₹', 'RM', ' '], '', $price);
-
-        // If contains decimal, assume it's in major units (e.g., 99.99) and convert to cents
-        if (str_contains($price, '.')) {
-            return (int) round((float) $price * 100);
-        }
-
-        // Otherwise assume it's already in cents
-        return (int) $price;
+        return MoneyNormalizer::toCents($price);
     }
 }

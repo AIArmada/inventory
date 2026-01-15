@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AIArmada\Cart\Examples\ExampleRulesFactory;
+use AIArmada\Cart\Testing\ExampleRulesFactory;
 
 beforeEach(function (): void {
     $this->factory = new ExampleRulesFactory;

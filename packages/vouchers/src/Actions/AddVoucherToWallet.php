@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace AIArmada\Vouchers\Actions;
 
+use AIArmada\Vouchers\Concerns\QueriesVouchers;
 use AIArmada\Vouchers\Exceptions\VoucherNotFoundException;
 use AIArmada\Vouchers\Models\Voucher as VoucherModel;
 use AIArmada\Vouchers\Models\VoucherWallet;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 /**
@@ -18,6 +18,7 @@ use Lorisleiva\Actions\Concerns\AsAction;
 final class AddVoucherToWallet
 {
     use AsAction;
+    use QueriesVouchers;
 
     /**
      * Add a voucher to the owner's wallet.
@@ -45,6 +46,8 @@ final class AddVoucherToWallet
                 'holder_id' => $holder->getKey(),
                 'owner_type' => $voucher->owner_type,
                 'owner_id' => $voucher->owner_id,
+                'is_claimed' => true,
+                'claimed_at' => now(),
                 'metadata' => $metadata,
             ]);
         });
@@ -52,9 +55,11 @@ final class AddVoucherToWallet
 
     private function findVoucher(string $code): VoucherModel
     {
-        $normalizedCode = Str::upper(mb_trim($code));
+        $normalizedCode = $this->normalizeCode($code);
 
-        $voucher = VoucherModel::where('code', $normalizedCode)->first();
+        $voucher = $this->voucherQuery()
+            ->where('code', $normalizedCode)
+            ->first();
 
         if (! $voucher) {
             throw new VoucherNotFoundException("Voucher with code '{$code}' not found.");

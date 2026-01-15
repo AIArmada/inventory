@@ -5,30 +5,33 @@ declare(strict_types=1);
 namespace AIArmada\Vouchers\Services;
 
 use AIArmada\Cart\Cart;
-use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\CommerceSupport\Targeting\Contracts\TargetingEngineInterface;
+use AIArmada\CommerceSupport\Targeting\Enums\TargetingMode;
+use AIArmada\CommerceSupport\Targeting\TargetingContext;
+use AIArmada\Vouchers\Concerns\QueriesVouchers;
 use AIArmada\Vouchers\Data\VoucherValidationResult;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Models\Voucher;
 use AIArmada\Vouchers\Models\VoucherUsage;
-use AIArmada\Vouchers\Targeting\TargetingConfiguration;
-use AIArmada\Vouchers\Targeting\TargetingContext;
-use AIArmada\Vouchers\Targeting\TargetingEngine;
 use Akaunting\Money\Money;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
 class VoucherValidator
 {
-    public function __construct() {}
+    use QueriesVouchers;
+
+    public function __construct(
+        private readonly TargetingEngineInterface $targetingEngine
+    ) {}
 
     public function validate(string $code, mixed $cart): VoucherValidationResult
     {
         $code = $this->normalizeCode($code);
 
         // Find voucher
-        $voucher = $this->query()
+        $voucher = $this->voucherQuery()
             ->where('code', $code)
             ->first();
 
@@ -119,26 +122,6 @@ class VoucherValidator
         return VoucherValidationResult::valid();
     }
 
-    /**
-     * @return Builder<Voucher>
-     */
-    protected function query(): Builder
-    {
-        return Voucher::query()->forOwner(
-            $this->resolveOwner(),
-            (bool) config('vouchers.owner.include_global', false)
-        );
-    }
-
-    protected function resolveOwner(): ?Model
-    {
-        if (! config('vouchers.owner.enabled', false)) {
-            return null;
-        }
-
-        return OwnerContext::resolve();
-    }
-
     protected function getUser(): ?Model
     {
         $user = Auth::user();
@@ -177,49 +160,23 @@ class VoucherValidator
         return 0;
     }
 
-    protected function normalizeCode(string $code): string
-    {
-        if (config('vouchers.code.auto_uppercase', true)) {
-            return mb_strtoupper(mb_trim($code));
-        }
-
-        return mb_trim($code);
-    }
-
     /**
      * Validate voucher targeting rules against the cart context.
      */
     protected function validateTargeting(Voucher $voucher, mixed $cart): VoucherValidationResult
     {
-        // Parse targeting configuration from voucher
-        $configuration = TargetingConfiguration::fromArray($voucher->target_definition);
+        $targetingData = $this->parseTargetingDefinition($voucher->target_definition);
 
-        // No targeting rules = valid
-        if ($configuration === null || ! $configuration->hasRules()) {
+        if ($targetingData === null) {
             return VoucherValidationResult::valid();
         }
 
-        // Need a Cart object for targeting evaluation
         if (! $cart instanceof Cart) {
-            // Cannot evaluate targeting without a proper Cart context
             return VoucherValidationResult::valid();
         }
 
-        // Build targeting context
         $context = TargetingContext::fromCart($cart);
-
-        // Evaluate targeting rules using the configuration data
-        $engine = new TargetingEngine;
-        $targetingData = [
-            'mode' => $configuration->mode->value,
-            'rules' => $configuration->rules,
-        ];
-
-        if ($configuration->expression !== null) {
-            $targetingData['expression'] = $configuration->expression;
-        }
-
-        $result = $engine->evaluate($targetingData, $context);
+        $result = $this->targetingEngine->evaluate($targetingData, $context);
 
         if (! $result) {
             return VoucherValidationResult::invalid(
@@ -229,5 +186,56 @@ class VoucherValidator
         }
 
         return VoucherValidationResult::valid();
+    }
+
+    /**
+     * Parse target_definition into targeting engine format.
+     *
+     * @param  array<string, mixed>|null  $targetDefinition
+     * @return array<string, mixed>|null
+     */
+    protected function parseTargetingDefinition(?array $targetDefinition): ?array
+    {
+        if ($targetDefinition === null) {
+            return null;
+        }
+
+        $targeting = $targetDefinition['targeting'] ?? $targetDefinition;
+
+        if (! is_array($targeting) || empty($targeting)) {
+            return null;
+        }
+
+        $modeValue = $targeting['mode'] ?? 'all';
+        $mode = $modeValue instanceof TargetingMode
+            ? $modeValue
+            : TargetingMode::tryFrom($modeValue) ?? TargetingMode::All;
+
+        /** @var array<int, array<string, mixed>> $rules */
+        $rules = [];
+        if (isset($targeting['rules']) && is_array($targeting['rules'])) {
+            $rules = array_values($targeting['rules']);
+        }
+
+        /** @var array<string, mixed>|null $expression */
+        $expression = null;
+        if ($mode === TargetingMode::Custom && isset($targeting['expression']) && is_array($targeting['expression'])) {
+            $expression = $targeting['expression'];
+        }
+
+        if (empty($rules) && $expression === null) {
+            return null;
+        }
+
+        $data = [
+            'mode' => $mode->value,
+            'rules' => $rules,
+        ];
+
+        if ($expression !== null) {
+            $data['expression'] = $expression;
+        }
+
+        return $data;
     }
 }

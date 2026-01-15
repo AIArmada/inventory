@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\CommerceSupport;
 
-use AIArmada\CommerceSupport\Contracts\NullOwnerResolver;
 use AIArmada\CommerceSupport\Contracts\OwnerResolverInterface;
+use AIArmada\CommerceSupport\Support\NullOwnerResolver;
+use AIArmada\CommerceSupport\Targeting\Contracts\TargetingEngineInterface;
+use AIArmada\CommerceSupport\Targeting\TargetingEngine;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
 use Spatie\LaravelPackageTools\Package;
@@ -24,6 +27,7 @@ final class SupportServiceProvider extends PackageServiceProvider
         $package
             ->name('commerce-support')
             ->hasConfigFile('commerce-support')
+            ->hasViews('commerce-support')
             ->hasCommands([
                 Commands\SetupCommand::class,
                 Commands\BoostUpdateCommand::class,
@@ -35,9 +39,16 @@ final class SupportServiceProvider extends PackageServiceProvider
     public function packageRegistered(): void
     {
         $this->registerOwnerResolver();
+        $this->registerTargetingEngine();
     }
 
     public function bootingPackage(): void
+    {
+        $this->validateMorphKeyType();
+        $this->warnAboutNullOwnerResolver();
+    }
+
+    private function validateMorphKeyType(): void
     {
         $morphKeyType = (string) config('commerce-support.database.morph_key_type', 'uuid');
 
@@ -48,6 +59,47 @@ final class SupportServiceProvider extends PackageServiceProvider
         }
 
         Schema::defaultMorphKeyType($morphKeyType);
+    }
+
+    /**
+     * Warn developers when using NullOwnerResolver with owner mode enabled.
+     *
+     * NullOwnerResolver always returns null for the current owner, which means:
+     * - Multi-tenancy is effectively disabled
+     * - All data is treated as "global" (no tenant isolation)
+     * - Owner scopes will not filter data
+     *
+     * This is fine for single-tenant applications, but dangerous if you expect
+     * multi-tenant behavior. The warning helps catch configuration mistakes.
+     */
+    private function warnAboutNullOwnerResolver(): void
+    {
+        $resolverClass = (string) config('commerce-support.owner.resolver', NullOwnerResolver::class);
+        $ownerModeEnabled = (bool) config('commerce-support.owner.enabled', false);
+
+        if ($resolverClass !== NullOwnerResolver::class && ! is_a($resolverClass, NullOwnerResolver::class, true)) {
+            return;
+        }
+
+        if (! $ownerModeEnabled) {
+            return;
+        }
+
+        if ($this->app->runningUnitTests()) {
+            return;
+        }
+
+        $message = sprintf(
+            '[commerce-support] NullOwnerResolver is configured but owner mode is enabled (commerce-support.owner.enabled=true). ' .
+            'This means multi-tenancy is NOT enforced. To enable multi-tenancy, configure a real owner resolver: ' .
+            'config/commerce-support.php -> owner.resolver = YourOwnerResolver::class'
+        );
+
+        if ($this->app->isProduction()) {
+            Log::warning($message);
+        } else {
+            Log::debug($message);
+        }
     }
 
     /**
@@ -92,6 +144,13 @@ final class SupportServiceProvider extends PackageServiceProvider
             }
 
             return $resolver;
+        });
+    }
+
+    private function registerTargetingEngine(): void
+    {
+        $this->app->singleton(TargetingEngineInterface::class, function (): TargetingEngineInterface {
+            return new TargetingEngine;
         });
     }
 }

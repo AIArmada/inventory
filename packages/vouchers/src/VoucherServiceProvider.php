@@ -8,17 +8,6 @@ use AIArmada\Cart\CartManager;
 use AIArmada\Cart\Contracts\CartManagerInterface;
 use AIArmada\Cart\Facades\Cart as CartFacade;
 use AIArmada\Cart\Services\CartConditionResolver;
-use AIArmada\Vouchers\AI\CartFeatureExtractor;
-use AIArmada\Vouchers\AI\Contracts\AbandonmentPredictorInterface;
-use AIArmada\Vouchers\AI\Contracts\CartFeatureExtractorInterface;
-use AIArmada\Vouchers\AI\Contracts\ConversionPredictorInterface;
-use AIArmada\Vouchers\AI\Contracts\DiscountOptimizerInterface;
-use AIArmada\Vouchers\AI\Contracts\VoucherMatcherInterface;
-use AIArmada\Vouchers\AI\Optimizers\RuleBasedDiscountOptimizer;
-use AIArmada\Vouchers\AI\Optimizers\RuleBasedVoucherMatcher;
-use AIArmada\Vouchers\AI\Predictors\RuleBasedAbandonmentPredictor;
-use AIArmada\Vouchers\AI\Predictors\RuleBasedConversionPredictor;
-use AIArmada\Vouchers\AI\VoucherMLDataCollector;
 use AIArmada\Vouchers\Conditions\VoucherCondition;
 use AIArmada\Vouchers\Data\VoucherData;
 use AIArmada\Vouchers\Events\VoucherApplied;
@@ -46,15 +35,9 @@ final class VoucherServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        // Register services as singletons
         $this->app->singleton(VoucherService::class);
         $this->app->singleton(VoucherValidator::class);
         $this->app->singleton(VoucherRulesFactory::class, static fn () => new VoucherRulesFactory);
-
-        // Register AI/ML services
-        $this->registerAIServices();
-
-        // Register affiliate integration
         $this->app->singleton(AffiliateIntegrationRegistrar::class);
 
         $this->app->resolving(CartConditionResolver::class, function (CartConditionResolver $resolver): void {
@@ -98,16 +81,13 @@ final class VoucherServiceProvider extends PackageServiceProvider
             }, 100);
         });
 
-        // Bind facade accessor
         $this->app->bind('voucher', VoucherService::class);
     }
 
     public function packageBooted(): void
     {
-        // Register event listener for tracking voucher applications
         Event::listen(VoucherApplied::class, IncrementVoucherAppliedCount::class);
 
-        // Register affiliate integration
         $this->app->make(AffiliateIntegrationRegistrar::class)->register();
 
         $this->app->extend('cart', function (CartManagerInterface $manager, $app): CartManagerInterface {
@@ -117,12 +97,10 @@ final class VoucherServiceProvider extends PackageServiceProvider
 
             $proxy = CartManagerWithVouchers::fromCartManager($manager);
 
-            // Ensure type-hinting resolution returns the proxied manager
             /** @var Application $app */
             $app->instance(CartManager::class, $proxy);
             $app->instance(CartManagerInterface::class, $proxy);
 
-            // Clear cached facade instance so the proxy is used
             CartFacade::clearResolvedInstance('cart');
 
             return $proxy;
@@ -137,53 +115,9 @@ final class VoucherServiceProvider extends PackageServiceProvider
         return [
             VoucherService::class,
             VoucherValidator::class,
-            ConversionPredictorInterface::class,
-            AbandonmentPredictorInterface::class,
-            DiscountOptimizerInterface::class,
-            VoucherMatcherInterface::class,
-            CartFeatureExtractorInterface::class,
-            CartFeatureExtractor::class,
-            VoucherMLDataCollector::class,
+            VoucherRulesFactory::class,
             AffiliateIntegrationRegistrar::class,
             'voucher',
         ];
-    }
-
-    /**
-     * Register AI/ML optimization services.
-     *
-     * These use rule-based implementations by default but can be swapped
-     * for ML-based implementations (AWS SageMaker, etc.) by rebinding.
-     */
-    private function registerAIServices(): void
-    {
-        // Feature extractor (shared across predictors/optimizers)
-        $this->app->singleton(CartFeatureExtractor::class);
-        $this->app->singleton(CartFeatureExtractorInterface::class, CartFeatureExtractor::class);
-
-        // ML Data Collector for training data export
-        $this->app->singleton(VoucherMLDataCollector::class);
-
-        // Predictors - swap these for ML implementations
-        $this->app->singleton(
-            ConversionPredictorInterface::class,
-            fn ($app) => new RuleBasedConversionPredictor($app->make(CartFeatureExtractorInterface::class))
-        );
-
-        $this->app->singleton(
-            AbandonmentPredictorInterface::class,
-            fn ($app) => new RuleBasedAbandonmentPredictor($app->make(CartFeatureExtractorInterface::class))
-        );
-
-        // Optimizers - swap these for ML implementations
-        $this->app->singleton(
-            DiscountOptimizerInterface::class,
-            fn ($app) => new RuleBasedDiscountOptimizer($app->make(CartFeatureExtractorInterface::class))
-        );
-
-        $this->app->singleton(
-            VoucherMatcherInterface::class,
-            fn ($app) => new RuleBasedVoucherMatcher($app->make(CartFeatureExtractorInterface::class))
-        );
     }
 }

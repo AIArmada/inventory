@@ -72,31 +72,6 @@ describe('TargetPresets', function (): void {
             ->and($target->application)->toBe(ConditionApplication::AGGREGATE);
     });
 
-    it('creates shipments per group target', function (): void {
-        $target = TargetPresets::shipmentsPerGroup();
-
-        expect($target)->toBeInstanceOf(ConditionTarget::class)
-            ->and($target->scope)->toBe(ConditionScope::SHIPMENTS)
-            ->and($target->phase)->toBe(ConditionPhase::SHIPPING)
-            ->and($target->application)->toBe(ConditionApplication::PER_GROUP);
-    });
-
-    it('creates payments per payment target', function (): void {
-        $target = TargetPresets::paymentsPerPayment();
-
-        expect($target)->toBeInstanceOf(ConditionTarget::class)
-            ->and($target->scope)->toBe(ConditionScope::PAYMENTS);
-    });
-
-    it('creates fulfillments per group target', function (): void {
-        $target = TargetPresets::fulfillmentsPerGroup();
-
-        expect($target)->toBeInstanceOf(ConditionTarget::class)
-            ->and($target->scope)->toBe(ConditionScope::FULFILLMENTS)
-            ->and($target->phase)->toBe(ConditionPhase::SHIPPING)
-            ->and($target->application)->toBe(ConditionApplication::PER_GROUP);
-    });
-
     it('creates custom aggregate target', function (): void {
         $target = TargetPresets::customAggregate();
 

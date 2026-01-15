@@ -8,41 +8,32 @@ use AIArmada\Cart\Conditions\Pipeline\ConditionPipeline;
 use AIArmada\Cart\Conditions\Pipeline\ConditionPipelineContext;
 use AIArmada\Cart\Conditions\Pipeline\ConditionPipelineResult;
 use AIArmada\Cart\Contracts\RulesFactoryInterface;
-use AIArmada\Cart\Security\CartRateLimiter;
 use AIArmada\Cart\Services\CartConditionResolver;
 use AIArmada\Cart\Storage\StorageInterface;
 use AIArmada\Cart\Traits\CalculatesTotals;
+use AIArmada\Cart\Traits\DispatchesEvents;
 use AIArmada\Cart\Traits\HasLazyPipeline;
-use AIArmada\Cart\Traits\HasRateLimiting;
-use AIArmada\Cart\Traits\ImplementsCheckoutable;
 use AIArmada\Cart\Traits\ManagesBuyables;
 use AIArmada\Cart\Traits\ManagesConditions;
 use AIArmada\Cart\Traits\ManagesDynamicConditions;
-use AIArmada\Cart\Traits\ManagesIdentifier;
 use AIArmada\Cart\Traits\ManagesInstances;
 use AIArmada\Cart\Traits\ManagesItems;
 use AIArmada\Cart\Traits\ManagesMetadata;
 use AIArmada\Cart\Traits\ManagesStorage;
-use AIArmada\Cart\Traits\ProvidesConditionScopes;
-use AIArmada\CommerceSupport\Contracts\Payment\CheckoutableInterface;
 use Illuminate\Contracts\Events\Dispatcher;
-use Throwable;
 
-final class Cart implements CheckoutableInterface
+final class Cart
 {
     use CalculatesTotals;
+    use DispatchesEvents;
     use HasLazyPipeline;
-    use HasRateLimiting;
-    use ImplementsCheckoutable;
     use ManagesBuyables;
     use ManagesConditions;
     use ManagesDynamicConditions;
-    use ManagesIdentifier;
     use ManagesInstances;
     use ManagesItems;
     use ManagesMetadata;
     use ManagesStorage;
-    use ProvidesConditionScopes;
 
     private CartConditionResolver $conditionResolver;
 
@@ -53,22 +44,39 @@ final class Cart implements CheckoutableInterface
         private string $instanceName = 'default',
         private bool $eventsEnabled = true,
         ?CartConditionResolver $conditionResolver = null,
-        ?CartRateLimiter $rateLimiter = null
     ) {
-        // Cart is now created when first item is added, not during instantiation
         $this->conditionResolver = $conditionResolver
             ?? (function_exists('app') ? app(CartConditionResolver::class) : new CartConditionResolver);
+    }
 
-        // Set rate limiter if provided or resolve from container
-        if ($rateLimiter !== null) {
-            $this->setRateLimiter($rateLimiter);
-        } elseif (function_exists('app') && config('cart.rate_limiting.enabled', true)) {
-            try {
-                $this->setRateLimiter(app(CartRateLimiter::class));
-            } catch (Throwable) {
-                // Rate limiter not available, continue without it
-            }
+    /**
+     * Get the cart identifier.
+     */
+    public function getIdentifier(): string
+    {
+        return $this->identifier;
+    }
+
+    /**
+     * Set the cart identifier.
+     *
+     * This creates a new cart instance with the specified identifier.
+     * Useful for switching between different user/session carts at runtime.
+     */
+    public function setIdentifier(string $identifier): static
+    {
+        if ($this->identifier === $identifier) {
+            return $this;
         }
+
+        return new static(
+            $this->storage,
+            $identifier,
+            $this->events,
+            $this->instanceName,
+            $this->eventsEnabled,
+            $this->conditionResolver
+        );
     }
 
     public function getConditionResolver(): CartConditionResolver

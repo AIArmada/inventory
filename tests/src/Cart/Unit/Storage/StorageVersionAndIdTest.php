@@ -3,23 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\Cart\Facades\Cart;
-use AIArmada\Cart\Storage\CacheStorage;
-use AIArmada\Cart\Storage\SessionStorage;
-use Illuminate\Session\ArraySessionHandler;
-use Illuminate\Session\Store;
-use Illuminate\Support\Facades\Cache;
-
-it('returns null for version and id in non-persistent storages', function (): void {
-    $sessionStore = new Store('testing', new ArraySessionHandler(120));
-    $sessionStorage = new SessionStorage($sessionStore);
-
-    expect($sessionStorage->getVersion('id', 'default'))->toBeNull();
-    expect($sessionStorage->getId('id', 'default'))->toBeNull();
-
-    $cacheStorage = new CacheStorage(Cache::store());
-    expect($cacheStorage->getVersion('id', 'default'))->toBeNull();
-    expect($cacheStorage->getId('id', 'default'))->toBeNull();
-});
 
 it('exposes version and id via cart facade for database storage', function (): void {
     config(['cart.storage' => 'database']);

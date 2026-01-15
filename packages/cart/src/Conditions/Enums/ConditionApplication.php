@@ -12,7 +12,6 @@ enum ConditionApplication: string
     case PER_ITEM = 'per-item';
     case PER_UNIT = 'per-unit';
     case PER_GROUP = 'per-group';
-    case PER_PAYMENT = 'per-payment';
 
     public static function fromString(string $application): self
     {

@@ -5,13 +5,14 @@ declare(strict_types=1);
 use AIArmada\Commerce\Tests\Fixtures\Models\User;
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Pricing\Models\PriceList;
-use AIArmada\Pricing\Models\Promotion;
+use AIArmada\Promotions\Models\Promotion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 describe('Pricing owner scoping', function (): void {
     beforeEach(function (): void {
         config()->set('pricing.features.owner.enabled', true);
+        config()->set('promotions.features.owner.enabled', true);
     });
 
     it('scopes PriceList owner=null to global-only records', function (): void {

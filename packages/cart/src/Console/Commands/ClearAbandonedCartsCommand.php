@@ -290,9 +290,12 @@ final class ClearAbandonedCartsCommand extends Command
         progress(
             label: $dryRun ? 'Simulating deletion...' : 'Deleting carts...',
             steps: $query->clone()->pluck('id')->chunk($batchSize),
-            callback: function ($chunk) use (&$deletedCount, $dryRun, $table): void {
+            callback: function ($chunk) use (&$deletedCount, $dryRun, $table, $ownerType, $ownerId): void {
                 if (! $dryRun) {
-                    $deleted = DB::table($table)->whereIn('id', $chunk->toArray())->delete();
+                    // Defense-in-depth: re-apply owner scope on delete to prevent cross-tenant deletion
+                    $deleteQuery = DB::table($table)->whereIn('id', $chunk->toArray());
+                    CartOwnerScope::applyForOwner($deleteQuery, $ownerType, $ownerId);
+                    $deleted = $deleteQuery->delete();
                     $deletedCount += $deleted;
                 } else {
                     $deletedCount += $chunk->count();

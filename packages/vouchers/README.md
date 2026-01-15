@@ -352,7 +352,10 @@ Cart::validateAppliedVouchers(): array
 | `VoucherNotFoundException` | Voucher code does not exist |
 | `VoucherExpiredException` | Voucher has expired |
 | `InvalidVoucherException` | Voucher is invalid (inactive, not started, min cart value not met) |
+| `InvalidVoucherDataException` | Invalid data passed to VoucherData (e.g., float instead of integer) |
 | `VoucherUsageLimitException` | Usage limit exceeded |
+| `VoucherValidationException` | Voucher validation failed during checkout |
+| `VoucherStackingException` | Stacking policy violation |
 | `ManualRedemptionNotAllowedException` | Manual redemption not allowed for this voucher |
 
 ## Events

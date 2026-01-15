@@ -108,7 +108,7 @@ final class VoucherUsageTimelineWidget extends Widget
             ->get();
 
         $totalSavings = $usages->sum('discount_amount');
-        $currency = $usages->first()->currency ?? 'MYR';
+        $currency = $usages->first()?->currency ?? 'MYR';
         $uniqueCustomers = $usages->pluck('user_identifier')->unique()->count();
 
         return [

@@ -5,12 +5,11 @@ declare(strict_types=1);
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Conditions\CartCondition;
 use AIArmada\Cart\Conditions\ConditionTarget;
-use AIArmada\Cart\Examples\ExampleRulesFactory;
-use AIArmada\Cart\Storage\CacheStorage;
-use Illuminate\Support\Facades\Cache;
+use AIArmada\Cart\Testing\ExampleRulesFactory;
+use Tests\Support\Cart\InMemoryStorage;
 
 beforeEach(function (): void {
-    $this->storage = new CacheStorage(Cache::store('array'));
+    $this->storage = new InMemoryStorage;
     $this->cart = new Cart($this->storage, 'test-identifier');
     $this->rulesFactory = new ExampleRulesFactory;
 });

@@ -57,7 +57,7 @@ class ValidateVoucherOnCheckout
             if ($result->isValid) {
                 $validCodes[] = $code;
             } else {
-                $invalidCodes[$code] = $result->message ?? 'Voucher is no longer valid';
+                $invalidCodes[$code] = $result->reason ?? 'Voucher is no longer valid';
             }
         }
 

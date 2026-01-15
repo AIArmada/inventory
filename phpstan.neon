@@ -114,6 +114,7 @@ parameters:
         # Ignore unused traits (public API)
         - message: '#Trait AIArmada\\Vouchers\\Traits\\.*is used zero times and is not analysed\.#'
         - message: '#Trait AIArmada\\Vouchers\\GiftCards\\Traits\\.*is used zero times and is not analysed\.#'
+        - message: '#Trait AIArmada\\CommerceSupport\\Traits\\.*is used zero times and is not analysed\.#'
         # Ignore relation existence errors (Larastan false positives)
         # Ignore cast.string for enums
         - message: '#Cannot cast AIArmada\\Affiliates\\Enums\\.*to string\.#'

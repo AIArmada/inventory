@@ -30,33 +30,6 @@ final class Target
         );
     }
 
-    public static function shipments(): ConditionTargetBuilder
-    {
-        return new ConditionTargetBuilder(
-            ConditionScope::SHIPMENTS,
-            ConditionPhase::SHIPPING,
-            ConditionApplication::PER_GROUP
-        );
-    }
-
-    public static function payments(): ConditionTargetBuilder
-    {
-        return new ConditionTargetBuilder(
-            ConditionScope::PAYMENTS,
-            ConditionPhase::PAYMENT,
-            ConditionApplication::PER_PAYMENT
-        );
-    }
-
-    public static function fulfillments(): ConditionTargetBuilder
-    {
-        return new ConditionTargetBuilder(
-            ConditionScope::FULFILLMENTS,
-            ConditionPhase::SHIPPING,
-            ConditionApplication::PER_GROUP
-        );
-    }
-
     public static function custom(): ConditionTargetBuilder
     {
         return new ConditionTargetBuilder(

@@ -25,6 +25,18 @@ use Illuminate\Support\Collection;
 class StackingEngine
 {
     /**
+     * Maximum vouchers allowed for best-deal combination calculation.
+     * Higher values cause exponential time complexity O(2^n).
+     */
+    private const MAX_VOUCHERS_FOR_BEST_DEAL = 10;
+
+    /**
+     * Maximum combinations to evaluate before falling back to priority-based.
+     * Prevents runaway computation with many vouchers.
+     */
+    private const MAX_COMBINATIONS_TO_EVALUATE = 500;
+
+    /**
      * @var array<string, StackingRuleInterface>
      */
     private array $rules = [];
@@ -182,7 +194,18 @@ class StackingEngine
         Cart $cart,
         int $maxVouchers
     ): Collection {
+        // Safety guard: if too many vouchers, fall back to priority-based selection
+        // to avoid O(2^n) explosion (e.g., 15 vouchers = 32k combinations)
+        if ($available->count() > self::MAX_VOUCHERS_FOR_BEST_DEAL) {
+            return $this->selectByPriority($available, $cart, $maxVouchers);
+        }
+
         $combinations = $this->generateCombinations($available, $maxVouchers);
+
+        // Safety guard: limit evaluated combinations
+        if (count($combinations) > self::MAX_COMBINATIONS_TO_EVALUATE) {
+            return $this->selectByPriority($available, $cart, $maxVouchers);
+        }
 
         $best = null;
         $bestDiscount = 0;

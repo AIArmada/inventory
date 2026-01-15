@@ -133,6 +133,8 @@ describe('dynamic condition lifecycle', function (): void {
             rules: 'throws'
         );
 
+        $cart->evaluateDynamicConditions();
+
         expect($captured)->not->toBeNull();
         expect($captured['operation'])->toBe('evaluate');
         expect($captured['condition'])->toBeInstanceOf(CartCondition::class);

@@ -20,9 +20,9 @@ beforeEach(function (): void {
     if (! $manager instanceof CartManagerWithVouchers) {
         $proxy = CartManagerWithVouchers::fromCartManager($manager);
 
-        Cart::swap($proxy);
         app()->instance('cart', $proxy);
         app()->instance(CartManager::class, $proxy);
+        Cart::clearResolvedInstance('cart');
     }
 
     Cart::clear();

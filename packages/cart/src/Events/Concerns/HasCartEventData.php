@@ -19,10 +19,6 @@ trait HasCartEventData
 
     private DateTimeImmutable $occurredAt;
 
-    private int $aggregateVersion = 1;
-
-    private bool $shouldPersist = true;
-
     /**
      * Get a unique identifier for this event occurrence.
      */
@@ -40,42 +36,6 @@ trait HasCartEventData
     }
 
     /**
-     * Get the aggregate version at the time of this event.
-     */
-    public function getAggregateVersion(): int
-    {
-        return $this->aggregateVersion;
-    }
-
-    /**
-     * Set the aggregate version for this event.
-     */
-    public function setAggregateVersion(int $version): static
-    {
-        $this->aggregateVersion = $version;
-
-        return $this;
-    }
-
-    /**
-     * Check if this event should be persisted to the event store.
-     */
-    public function shouldPersist(): bool
-    {
-        return $this->shouldPersist;
-    }
-
-    /**
-     * Mark this event as non-persistable.
-     */
-    public function doNotPersist(): static
-    {
-        $this->shouldPersist = false;
-
-        return $this;
-    }
-
-    /**
      * Get event metadata for logging and tracing.
      *
      * @return array<string, mixed>
@@ -85,7 +45,6 @@ trait HasCartEventData
         return [
             'event_id' => $this->getEventId(),
             'occurred_at' => $this->getOccurredAt()->format('c'),
-            'aggregate_version' => $this->getAggregateVersion(),
             'user_agent' => request()?->userAgent(),
             'ip_address' => request()?->ip(),
             'correlation_id' => request()?->header('X-Correlation-ID'),

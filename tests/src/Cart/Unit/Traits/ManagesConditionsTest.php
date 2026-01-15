@@ -5,12 +5,10 @@ declare(strict_types=1);
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Conditions\CartCondition;
 use AIArmada\Cart\Conditions\ConditionTarget;
-use AIArmada\Cart\Storage\CacheStorage;
-use Illuminate\Support\Facades\Cache;
+use Tests\Support\Cart\InMemoryStorage;
 
 beforeEach(function (): void {
-    Cache::flush();
-    $storage = new CacheStorage(Cache::store(), 'test_cart', 3600);
+    $storage = new InMemoryStorage;
     $this->cart = new Cart($storage, 'test-user', null, 'default');
 });
 

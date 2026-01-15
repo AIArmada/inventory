@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Events\Concerns\HasCartEventData;
 use AIArmada\Cart\Events\MetadataBatchAdded;
-use AIArmada\Cart\Testing\InMemoryStorage;
+use Tests\Support\Cart\InMemoryStorage;
 use AIArmada\CommerceSupport\Contracts\Events\CartEventInterface;
 
 describe('HasCartEventData trait', function (): void {
@@ -89,33 +89,11 @@ describe('HasCartEventData trait', function (): void {
         expect($occurredAt)->toBeInstanceOf(DateTimeImmutable::class);
     });
 
-    it('has default aggregate version of 1', function (): void {
-        expect($this->event->getAggregateVersion())->toBe(1);
-    });
-
-    it('allows setting aggregate version', function (): void {
-        $result = $this->event->setAggregateVersion(5);
-
-        expect($result)->toBe($this->event)
-            ->and($this->event->getAggregateVersion())->toBe(5);
-    });
-
-    it('should persist by default', function (): void {
-        expect($this->event->shouldPersist())->toBeTrue();
-    });
-
-    it('can be marked as non-persistable', function (): void {
-        $result = $this->event->doNotPersist();
-
-        expect($result)->toBe($this->event)
-            ->and($this->event->shouldPersist())->toBeFalse();
-    });
-
     it('returns event metadata array', function (): void {
         $metadata = $this->event->getEventMetadata();
 
         expect($metadata)->toBeArray()
-            ->and($metadata)->toHaveKeys(['event_id', 'occurred_at', 'aggregate_version']);
+            ->and($metadata)->toHaveKeys(['event_id', 'occurred_at']);
     });
 
     it('returns empty array from toEventPayload by default', function (): void {
@@ -214,12 +192,13 @@ describe('MetadataBatchAdded', function (): void {
         expect($event->getCartInstance())->toBe('default');
     });
 
-    it('returns cart ID', function (): void {
+    it('returns cart ID (null for InMemoryStorage)', function (): void {
         $event = new MetadataBatchAdded(['key' => 'value'], $this->cart);
 
         $cartId = $event->getCartId();
 
-        expect($cartId)->toBeString();
+        // InMemoryStorage doesn't track cart UUIDs
+        expect($cartId)->toBeNull();
     });
 
     it('serializes to array', function (): void {
@@ -239,17 +218,6 @@ describe('MetadataBatchAdded', function (): void {
         $event = new MetadataBatchAdded(['key' => 'value'], $this->cart);
 
         expect($event->getEventId())->toBeString()
-            ->and($event->getOccurredAt())->toBeInstanceOf(DateTimeImmutable::class)
-            ->and($event->getAggregateVersion())->toBe(1);
-    });
-
-    it('implements shouldPersist through trait', function (): void {
-        $event = new MetadataBatchAdded(['key' => 'value'], $this->cart);
-
-        expect($event->shouldPersist())->toBeTrue();
-
-        $event->doNotPersist();
-
-        expect($event->shouldPersist())->toBeFalse();
+            ->and($event->getOccurredAt())->toBeInstanceOf(DateTimeImmutable::class);
     });
 });

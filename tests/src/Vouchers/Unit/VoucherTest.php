@@ -126,32 +126,6 @@ test('voucher get remaining uses', function (): void {
     expect($unlimited->getRemainingUses())->toBeNull();
 });
 
-test('voucher increment usage', function (): void {
-    $voucher = Voucher::create([
-        'code' => 'INCREMENT',
-        'name' => 'Increment Voucher',
-        'type' => 'fixed',
-        'value' => 10,
-        'currency' => 'MYR',
-        'status' => 'active',
-        'usage_limit' => 1,
-    ]);
-
-    VoucherUsage::create([
-        'voucher_id' => $voucher->id,
-        'discount_amount' => 100,
-        'currency' => 'MYR',
-        'used_at' => now(),
-        'redeemed_by_id' => 1,
-        'redeemed_by_type' => 'User',
-    ]);
-
-    $voucher->incrementUsage();
-
-    $voucher->refresh();
-    expect($voucher->status)->toBe(VoucherStatus::Depleted);
-});
-
 test('voucher wallet count accessors prefer preloaded counts', function (): void {
     $voucher = Voucher::create([
         'code' => 'WALLETCOUNTS',

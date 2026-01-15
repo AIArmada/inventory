@@ -162,4 +162,31 @@ class PaymentGatewayException extends CommerceException
             context: ['expected' => $expected, 'actual' => $actual]
         );
     }
+
+    /**
+     * Create exception for invalid status transition.
+     *
+     * @param  \AIArmada\CommerceSupport\Contracts\Payment\PaymentStatus  $from
+     * @param  \AIArmada\CommerceSupport\Contracts\Payment\PaymentStatus  $to
+     * @param  array<\AIArmada\CommerceSupport\Contracts\Payment\PaymentStatus>  $allowed
+     */
+    public static function invalidStatusTransition(
+        $from,
+        $to,
+        array $allowed = []
+    ): self {
+        $allowedNames = array_map(fn ($s) => $s->value, $allowed);
+        $allowedStr = empty($allowedNames) ? 'none' : implode(', ', $allowedNames);
+
+        return new self(
+            message: "Invalid payment status transition from '{$from->value}' to '{$to->value}'. Allowed transitions: {$allowedStr}",
+            gatewayName: 'internal',
+            errorCode: 'invalid_status_transition',
+            context: [
+                'from' => $from->value,
+                'to' => $to->value,
+                'allowed' => $allowedNames,
+            ]
+        );
+    }
 }

@@ -16,7 +16,7 @@ enum ConditionTargetPreset: string
     case CartSubtotal = 'cart_subtotal';
     case GrandTotal = 'grand_total';
     case Shipments = 'shipments';
-    case Payments = 'payments';
+    case Taxable = 'taxable';
     case Items = 'items';
     case Custom = 'custom';
 
@@ -70,7 +70,7 @@ enum ConditionTargetPreset: string
             self::CartSubtotal => 'Cart subtotal',
             self::GrandTotal => 'Cart grand total',
             self::Shipments => 'Shipments / shipping',
-            self::Payments => 'Payments',
+            self::Taxable => 'Taxable amount',
             self::Items => 'Each cart item',
             self::Custom => 'Custom target',
         };
@@ -82,7 +82,7 @@ enum ConditionTargetPreset: string
             self::CartSubtotal => 'Applies before shipping, tax, and payments (aggregate)',
             self::GrandTotal => 'Applies after shipping/tax/payment adjustments (aggregate)',
             self::Shipments => 'Applies to each shipment/shipping group',
-            self::Payments => 'Applies to each payment instrument',
+            self::Taxable => 'Applies to pre-tax amount (before tax calculation)',
             self::Items => 'Applies to every line item individually',
             self::Custom => 'Provide a custom DSL expression',
         };
@@ -93,8 +93,8 @@ enum ConditionTargetPreset: string
         return match ($this) {
             self::CartSubtotal => TargetPresets::cartSubtotal(),
             self::GrandTotal => TargetPresets::cartGrandTotal(),
-            self::Shipments => TargetPresets::shipmentsPerGroup(),
-            self::Payments => TargetPresets::paymentsPerPayment(),
+            self::Shipments => TargetPresets::cartShipping(),
+            self::Taxable => TargetPresets::cartTaxable(),
             self::Items => TargetPresets::itemsPerItem(),
             self::Custom => null,
         };

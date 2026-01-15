@@ -7,8 +7,8 @@ namespace AIArmada\CommerceSupport\Traits;
 /**
  * Trait for caching computed values within a single request lifecycle.
  *
- * Uses Laravel's native `once()` helper to cache expensive computations
- * that are called multiple times during a single request.
+ * Uses a static cache array to store computed values per instance+method,
+ * avoiding redundant expensive computations during a single request.
  *
  * @example
  * ```php
@@ -23,6 +23,13 @@ namespace AIArmada\CommerceSupport\Traits;
 trait CachesComputedValues // @phpstan-ignore trait.unused
 {
     /**
+     * Static cache storage for computed values.
+     *
+     * @var array<string, mixed>
+     */
+    private static array $computedCache = [];
+
+    /**
      * Cache a computed value for the request lifetime.
      *
      * @template T
@@ -33,10 +40,13 @@ trait CachesComputedValues // @phpstan-ignore trait.unused
      */
     protected function cachedComputation(string $key, callable $callback): mixed
     {
-        // Use once() with a unique key based on class + instance + method
         $cacheKey = $this->getCacheKey($key);
 
-        return once(fn () => $callback());
+        if (! array_key_exists($cacheKey, self::$computedCache)) {
+            self::$computedCache[$cacheKey] = $callback();
+        }
+
+        return self::$computedCache[$cacheKey];
     }
 
     /**
@@ -53,7 +63,15 @@ trait CachesComputedValues // @phpstan-ignore trait.unused
      */
     protected function cachedForInstance(string $method, callable $callback): mixed
     {
-        return once(fn () => $callback());
+        return $this->cachedComputation($method, $callback);
+    }
+
+    /**
+     * Clear all cached computations (useful for testing).
+     */
+    public static function clearComputedCache(): void
+    {
+        self::$computedCache = [];
     }
 
     /**

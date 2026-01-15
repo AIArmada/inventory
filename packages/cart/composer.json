@@ -10,6 +10,10 @@
   "require": {
     "aiarmada/commerce-support": "self.version"
   },
+  "suggest": {
+    "aiarmada/cart-fraud": "Fraud detection and prevention with velocity checks and risk scoring",
+    "aiarmada/cart-graphql": "GraphQL API layer with queries, mutations, and subscriptions"
+  },
   "autoload": {
     "psr-4": {
       "AIArmada\\Cart\\": "src",

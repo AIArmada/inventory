@@ -16,7 +16,7 @@ return new class extends Migration
         $tableName = $tables['vouchers'] ?? $prefix . 'vouchers';
 
         Schema::table($tableName, function (Blueprint $table): void {
-            $table->foreignUuid('affiliate_id')->nullable()->after('campaign_variant_id');
+            $table->foreignUuid('affiliate_id')->nullable()->after('stacking_priority');
             $table->index('affiliate_id');
         });
     }

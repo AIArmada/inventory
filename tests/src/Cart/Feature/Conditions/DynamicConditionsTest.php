@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Conditions\CartCondition;
-use AIArmada\Cart\Storage\SessionStorage;
-use Illuminate\Session\ArraySessionHandler;
-use Illuminate\Session\Store;
+use Tests\Support\Cart\InMemoryStorage;
 
 beforeEach(function (): void {
-    $sessionStore = new Store('testing', new ArraySessionHandler(120));
-    $this->storage = new SessionStorage($sessionStore);
+    $this->storage = new InMemoryStorage;
     $this->cart = new Cart($this->storage, 'dynamic_conditions_test');
 });
 

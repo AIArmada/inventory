@@ -31,39 +31,6 @@ describe('Target', function (): void {
             ->and($target->application)->toBe(ConditionApplication::AGGREGATE);
     });
 
-    it('creates shipments target builder', function (): void {
-        $builder = Target::shipments();
-
-        expect($builder)->toBeInstanceOf(ConditionTargetBuilder::class);
-
-        $target = $builder->build();
-        expect($target->scope)->toBe(ConditionScope::SHIPMENTS)
-            ->and($target->phase)->toBe(ConditionPhase::SHIPPING)
-            ->and($target->application)->toBe(ConditionApplication::PER_GROUP);
-    });
-
-    it('creates payments target builder', function (): void {
-        $builder = Target::payments();
-
-        expect($builder)->toBeInstanceOf(ConditionTargetBuilder::class);
-
-        $target = $builder->build();
-        expect($target->scope)->toBe(ConditionScope::PAYMENTS)
-            ->and($target->phase)->toBe(ConditionPhase::PAYMENT)
-            ->and($target->application)->toBe(ConditionApplication::PER_PAYMENT);
-    });
-
-    it('creates fulfillments target builder', function (): void {
-        $builder = Target::fulfillments();
-
-        expect($builder)->toBeInstanceOf(ConditionTargetBuilder::class);
-
-        $target = $builder->build();
-        expect($target->scope)->toBe(ConditionScope::FULFILLMENTS)
-            ->and($target->phase)->toBe(ConditionPhase::SHIPPING)
-            ->and($target->application)->toBe(ConditionApplication::PER_GROUP);
-    });
-
     it('creates custom target builder', function (): void {
         $builder = Target::custom();
 

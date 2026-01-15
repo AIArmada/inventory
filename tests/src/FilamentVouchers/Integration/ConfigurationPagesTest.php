@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use AIArmada\Commerce\Tests\TestCase;
-use AIArmada\FilamentVouchers\Pages\FraudConfigurationPage;
 use AIArmada\FilamentVouchers\Pages\StackingConfigurationPage;
 use AIArmada\FilamentVouchers\Pages\TargetingConfigurationPage;
 use Filament\Schemas\Schema;
@@ -12,7 +11,6 @@ uses(TestCase::class);
 
 it('builds configuration pages forms and actions', function (): void {
     foreach ([
-        FraudConfigurationPage::class,
         StackingConfigurationPage::class,
         TargetingConfigurationPage::class,
     ] as $pageClass) {
@@ -25,7 +23,6 @@ it('builds configuration pages forms and actions', function (): void {
 
         expect($actions->invoke($page))->toBeArray();
 
-        // Mount and save cover the dynamic `$this->form` schema accessor.
         $page->mount();
 
         if (method_exists($page, 'testDetection')) {

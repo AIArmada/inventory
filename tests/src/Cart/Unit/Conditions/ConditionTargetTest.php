@@ -57,7 +57,5 @@ it('serializes target definitions', function (): void {
 it('provides helpful target presets', function (): void {
     expect(TargetPresets::cartSubtotal()->toDsl())->toBe('cart@cart_subtotal/aggregate')
         ->and(TargetPresets::cartGrandTotal()->toDsl())->toBe('cart@grand_total/aggregate')
-        ->and(TargetPresets::itemsPerItem()->toDsl())->toBe('items@item_discount/per-item')
-        ->and(TargetPresets::shipmentsPerGroup()->toDsl())->toBe('shipments@shipping/per-group')
-        ->and(TargetPresets::paymentsPerPayment()->toDsl())->toBe('payments@payment/per-payment');
+        ->and(TargetPresets::itemsPerItem()->toDsl())->toBe('items@item_discount/per-item');
 });

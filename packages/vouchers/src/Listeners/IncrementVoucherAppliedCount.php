@@ -6,23 +6,28 @@ namespace AIArmada\Vouchers\Listeners;
 
 use AIArmada\Vouchers\Events\VoucherApplied;
 use AIArmada\Vouchers\Models\Voucher;
+use Illuminate\Database\Eloquent\Builder;
 
-class IncrementVoucherAppliedCount
+final class IncrementVoucherAppliedCount
 {
-    /**
-     * Handle the event.
-     */
     public function handle(VoucherApplied $event): void
     {
-        // Only track if enabled
         if (! config('vouchers.tracking.track_applications', true)) {
             return;
         }
 
         $voucherCode = $event->voucher->code;
+        $ownerId = $event->voucher->ownerId;
+        $ownerType = $event->voucher->ownerType;
 
-        // Increment the applied_count for this voucher
-        Voucher::where('code', $voucherCode)
+        Voucher::withoutGlobalScopes()
+            ->where('code', $voucherCode)
+            ->when($ownerId !== null && $ownerType !== null, function (Builder $query) use ($ownerId, $ownerType): void {
+                $query->where('owner_id', $ownerId)->where('owner_type', $ownerType);
+            })
+            ->when($ownerId === null || $ownerType === null, function (Builder $query): void {
+                $query->whereNull('owner_id');
+            })
             ->increment('applied_count');
     }
 }

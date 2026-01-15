@@ -53,6 +53,22 @@ trait ManagesConditions
      */
     public function getConditions(): CartConditionCollection
     {
+        // Ensure dynamic conditions are evaluated before returning
+        if (method_exists($this, 'evaluateDynamicConditionsIfDirty')) {
+            $this->evaluateDynamicConditionsIfDirty();
+        }
+
+        return $this->getConditionsFromStorage();
+    }
+
+    /**
+     * Get cart conditions directly from storage without triggering dynamic evaluation.
+     *
+     * This should be used internally during dynamic condition evaluation to prevent
+     * infinite recursion. External callers should use getConditions() instead.
+     */
+    protected function getConditionsFromStorage(): CartConditionCollection
+    {
         $conditions = $this->storage->getConditions($this->getIdentifier(), $this->instance());
 
         // Convert array back to CartConditionCollection
@@ -80,7 +96,8 @@ trait ManagesConditions
      */
     public function removeCondition(string $name): bool
     {
-        $conditions = $this->getConditions();
+        // Use getConditionsFromStorage() to avoid recursion during dynamic condition evaluation
+        $conditions = $this->getConditionsFromStorage();
 
         if (! $conditions->has($name)) {
             return false;
@@ -97,8 +114,8 @@ trait ManagesConditions
         $this->invalidatePipelineCache();
 
         // Dispatch cart-level condition removed event
-        if ($this->eventsEnabled && $this->events && $removedCondition) {
-            $this->events->dispatch(new CartConditionRemoved($removedCondition, $this));
+        if ($removedCondition) {
+            $this->dispatchEvent(new CartConditionRemoved($removedCondition, $this));
         }
 
         return true;
@@ -130,7 +147,8 @@ trait ManagesConditions
      */
     public function removeConditionsByType(string $type): bool
     {
-        $conditions = $this->getConditions();
+        // Use getConditionsFromStorage() to avoid recursion during dynamic condition evaluation
+        $conditions = $this->getConditionsFromStorage();
         $conditionsToRemove = $conditions->filter(fn (CartCondition $condition) => $condition->getType() === $type);
 
         if ($conditionsToRemove->isEmpty()) {
@@ -171,9 +189,7 @@ trait ManagesConditions
         $this->invalidatePipelineCache();
 
         // Dispatch item-level condition added event
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new ItemConditionAdded($condition, $this, $itemId));
-        }
+        $this->dispatchEvent(new ItemConditionAdded($condition, $this, $itemId));
 
         return true;
     }
@@ -208,8 +224,8 @@ trait ManagesConditions
         $this->invalidatePipelineCache();
 
         // Dispatch item-level condition removed event
-        if ($this->eventsEnabled && $this->events && $removedCondition) {
-            $this->events->dispatch(new ItemConditionRemoved($removedCondition, $this, $itemId));
+        if ($removedCondition) {
+            $this->dispatchEvent(new ItemConditionRemoved($removedCondition, $this, $itemId));
         }
 
         return true;
@@ -440,7 +456,8 @@ trait ManagesConditions
      */
     private function addCartCondition(CartCondition $condition): void
     {
-        $conditions = $this->getConditions();
+        // Use getConditionsFromStorage() to avoid recursion during dynamic condition evaluation
+        $conditions = $this->getConditionsFromStorage();
         $conditions->put($condition->getName(), $condition);
         $conditionsArray = $conditions->toArray();
         $this->storage->putConditions($this->getIdentifier(), $this->instance(), $conditionsArray);
@@ -449,9 +466,7 @@ trait ManagesConditions
         $this->invalidatePipelineCache();
 
         // Dispatch cart-level condition added event
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new CartConditionAdded($condition, $this));
-        }
+        $this->dispatchEvent(new CartConditionAdded($condition, $this));
     }
 
     /**

@@ -9,9 +9,7 @@ use AIArmada\Cart\Contracts\CartManagerInterface;
 use AIArmada\Cart\Listeners\HandleUserLogin;
 use AIArmada\Cart\Listeners\HandleUserLoginAttempt;
 use AIArmada\Cart\Services\CartMigrationService;
-use AIArmada\Cart\Storage\CacheStorage;
 use AIArmada\Cart\Storage\DatabaseStorage;
-use AIArmada\Cart\Storage\SessionStorage;
 use AIArmada\Cart\Storage\StorageInterface;
 use Illuminate\Auth\Events\Attempting;
 use Illuminate\Auth\Events\Login;
@@ -37,36 +35,19 @@ describe('CartServiceProvider', function (): void {
         expect($provides)->toContain(Cart::class);
         expect($provides)->toContain(StorageInterface::class);
         expect($provides)->toContain(CartMigrationService::class);
-        expect($provides)->toContain('cart.storage.session');
-        expect($provides)->toContain('cart.storage.cache');
-        expect($provides)->toContain('cart.storage.database');
+        expect($provides)->toContain('cart.storage');
     });
 
-    it('registers storage drivers correctly', function (): void {
+    it('registers storage correctly', function (): void {
         $app = mock(Application::class);
 
-        // Mock all bind calls for storage drivers + StorageInterface binding
-        $app->shouldReceive('bind')->withAnyArgs()->times(4);
+        // Mock bind calls for storage + StorageInterface binding
+        $app->shouldReceive('bind')->withAnyArgs()->times(2);
 
         $provider = new CartServiceProvider($app);
 
         $reflection = new ReflectionClass($provider);
-        $method = $reflection->getMethod('registerStorageDrivers');
-        $method->setAccessible(true);
-        $method->invoke($provider);
-
-        expect(true)->toBeTrue();
-    });
-
-    it('tests database storage scenarios without complex mocking', function (): void {
-        // This test just covers that the methods exist and can be called without error
-        $app = mock(Application::class);
-        $app->shouldReceive('bind')->withAnyArgs()->times(4);
-
-        $provider = new CartServiceProvider($app);
-
-        $reflection = new ReflectionClass($provider);
-        $method = $reflection->getMethod('registerStorageDrivers');
+        $method = $reflection->getMethod('registerStorage');
         $method->setAccessible(true);
         $method->invoke($provider);
 
@@ -93,7 +74,6 @@ describe('CartServiceProvider', function (): void {
         $app = mock(Application::class);
         $provider = new CartServiceProvider($app);
 
-        // Test that the provider has been properly converted to use Spatie Package Tools
         expect($provider)->toBeInstanceOf(PackageServiceProvider::class);
     });
 
@@ -131,7 +111,7 @@ describe('CartServiceProvider', function (): void {
         $reflection = new ReflectionClass($provider);
 
         $expectedMethods = [
-            'registerStorageDrivers',
+            'registerStorage',
             'registerCartManager',
             'registerMigrationService',
             'registerEventListeners',
@@ -151,49 +131,30 @@ describe('CartServiceProvider', function (): void {
 
         $reflection = new ReflectionClass($provider);
 
-        // Test that configurePackage exists and is callable
         $configureMethod = $reflection->getMethod('configurePackage');
         expect($configureMethod->isPublic())->toBeTrue();
 
-        // Test that registeringPackage exists and is callable
         $registeringMethod = $reflection->getMethod('registeringPackage');
         expect($registeringMethod->isPublic())->toBeTrue();
 
-        // Test that bootingPackage exists and is callable
         $bootingMethod = $reflection->getMethod('bootingPackage');
         expect($bootingMethod->isPublic())->toBeTrue();
     });
 });
 
-// --- Integration-style tests for real container/config/event logic ---
-
 beforeEach(function (): void {
-    Config::set('cart.storage', 'session');
     Config::set('cart.migration.auto_migrate_on_login', true);
 });
 
-it('integration: registers all storage drivers', function (): void {
+it('integration: registers database storage', function (): void {
     $app = app();
     $provider = new CartServiceProvider($app);
     $provider->register();
 
-    expect($app->make('cart.storage.session'))->toBeInstanceOf(SessionStorage::class);
-    expect($app->make('cart.storage.cache'))->toBeInstanceOf(CacheStorage::class);
     if ($app->bound('db.connection')) {
-        expect($app->make('cart.storage.database'))->toBeInstanceOf(DatabaseStorage::class);
+        expect($app->make('cart.storage'))->toBeInstanceOf(DatabaseStorage::class);
+        expect($app->make(StorageInterface::class))->toBeInstanceOf(DatabaseStorage::class);
     }
-});
-
-it('integration: fails fast when cache storage is selected but disabled', function (): void {
-    Config::set('cart.storage', 'cache');
-    Config::set('cart.cache.enabled', false);
-
-    $app = app();
-    $provider = new CartServiceProvider($app);
-    $provider->register();
-
-    expect(fn () => $app->make(StorageInterface::class))
-        ->toThrow(RuntimeException::class, 'Cache storage selected but cart.cache.enabled is false. Enable cache or choose another driver.');
 });
 
 it('integration: registers cart manager and aliases', function (): void {
@@ -220,14 +181,14 @@ it('integration: publishes config, migrations, and views', function (): void {
 
     expect($package->name)->toBe('cart');
     expect($package->commands)->toHaveCount(1);
-    expect(true)->toBeTrue(); // Package was configured successfully
+    expect(true)->toBeTrue();
 });
 
 it('integration: uses configured conditions table name when migrating', function (): void {
     $tableName = 'custom_conditions';
     Config::set('cart.database.conditions_table', $tableName);
 
-    $migrationPath = getcwd() . '/packages/cart/database/migrations/2025_09_29_184331_create_conditions_table.php';
+    $migrationPath = getcwd() . '/packages/cart/database/migrations/2000_02_01_000003_create_conditions_table.php';
     expect(file_exists($migrationPath))->toBeTrue();
 
     /** @var object{up: callable, down: callable} $migration */

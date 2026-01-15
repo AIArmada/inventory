@@ -293,20 +293,29 @@ class VoucherData
     public ?string $description;
     public VoucherType $type;
     public int $value;
+    public ?array $valueConfig;
+    public ?string $creditDestination;
+    public int $creditDelayHours;
     public string $currency;
     public ?int $minCartValue;
     public ?int $maxDiscount;
     public ?int $usageLimit;
     public ?int $usageLimitPerUser;
-    public int $appliedCount;
     public bool $allowsManualRedemption;
-    public ?Carbon $startsAt;
-    public ?Carbon $expiresAt;
+    public int|string|null $ownerId;
+    public ?string $ownerType;
+    public ?DateTimeInterface $startsAt;
+    public ?DateTimeInterface $expiresAt;
     public VoucherStatus $status;
-    public ?array $metadata;
     public ?array $targetDefinition;
+    public ?array $metadata;
 }
 ```
+
+**Important:** All monetary values must be integers:
+- `value`: cents for fixed amounts, basis points for percentages (e.g., 1000 = 10%)
+- `minCartValue`: cents (e.g., 5000 = $50.00)
+- `maxDiscount`: cents (e.g., 10000 = $100.00)
 
 ### VoucherValidationResult
 
@@ -328,9 +337,16 @@ class VoucherValidationResult
 ```php
 enum VoucherType: string
 {
+    // Simple Types
     case Percentage = 'percentage';
     case Fixed = 'fixed';
     case FreeShipping = 'free_shipping';
+
+    // Compound Types (require value_config)
+    case BuyXGetY = 'buy_x_get_y';
+    case Tiered = 'tiered';
+    case Bundle = 'bundle';
+    case Cashback = 'cashback';
 }
 ```
 
@@ -356,7 +372,10 @@ enum VoucherStatus: string
 | `VoucherNotFoundException` | Voucher code not found |
 | `VoucherExpiredException` | Voucher has expired |
 | `InvalidVoucherException` | Voucher is invalid |
+| `InvalidVoucherDataException` | Invalid data passed to VoucherData (e.g., float instead of integer) |
 | `VoucherUsageLimitException` | Usage limit exceeded |
+| `VoucherValidationException` | Voucher validation failed during checkout |
+| `VoucherStackingException` | Stacking policy violation |
 | `ManualRedemptionNotAllowedException` | Manual redemption not allowed |
 
 ---

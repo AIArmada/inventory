@@ -13,6 +13,7 @@ use AIArmada\Cart\Events\ItemUpdated;
 use AIArmada\Cart\Exceptions\InvalidCartItemException;
 use AIArmada\Cart\Exceptions\UnknownModelException;
 use AIArmada\Cart\Models\CartItem;
+use AIArmada\CommerceSupport\Support\MoneyNormalizer;
 
 trait ManagesItems
 {
@@ -32,9 +33,6 @@ trait ManagesItems
         array | object | null $conditions = null,
         string | object | null $associatedModel = null
     ): CartItem | CartCollection {
-        // Check rate limit before adding
-        $this->checkRateLimitIfEnabled('add_item');
-
         // Handle array input - distinguish between single item and multiple items
         if (is_array($id)) {
             // If array has 'id' key, it's a single item array
@@ -82,9 +80,6 @@ trait ManagesItems
      */
     public function update(string | int $id, array $data): ?CartItem
     {
-        // Check rate limit before updating
-        $this->checkRateLimitIfEnabled('update_item');
-
         // Normalize ID to string for consistent handling
         $id = (string) $id;
 
@@ -133,12 +128,10 @@ trait ManagesItems
         // Invalidate pipeline cache after cart modification
         $this->invalidatePipelineCacheIfEnabled();
 
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new ItemUpdated($item, $this));
-        }
+        $this->dispatchEvent(new ItemUpdated($item, $this));
 
-        // Evaluate dynamic conditions after updating item
-        $this->evaluateDynamicConditions();
+        // Mark dynamic conditions dirty - evaluation deferred until totals requested
+        $this->markDynamicConditionsDirty();
 
         return $item;
     }
@@ -148,9 +141,6 @@ trait ManagesItems
      */
     public function remove(string | int $id): ?CartItem
     {
-        // Check rate limit before removing
-        $this->checkRateLimitIfEnabled('remove_item');
-
         // Normalize ID to string for consistent handling
         $id = (string) $id;
 
@@ -168,12 +158,10 @@ trait ManagesItems
         // Invalidate pipeline cache after cart modification
         $this->invalidatePipelineCacheIfEnabled();
 
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new ItemRemoved($item, $this));
-        }
+        $this->dispatchEvent(new ItemRemoved($item, $this));
 
-        // Evaluate dynamic conditions after removing item
-        $this->evaluateDynamicConditions();
+        // Mark dynamic conditions dirty - evaluation deferred until totals requested
+        $this->markDynamicConditionsDirty();
 
         // Handle empty cart based on configured behavior
         if ($cartItems->isEmpty()) {
@@ -188,6 +176,10 @@ trait ManagesItems
      */
     public function get(string | int $id): ?CartItem
     {
+        // Ensure dynamic conditions are evaluated before returning item
+        // This is necessary for item-level dynamic conditions to be applied
+        $this->evaluateDynamicConditionsIfDirty();
+
         // Normalize ID to string for consistent handling
         $id = (string) $id;
 
@@ -210,6 +202,9 @@ trait ManagesItems
      */
     public function search(callable $callback): CartCollection
     {
+        // Ensure dynamic conditions are evaluated before searching
+        $this->evaluateDynamicConditionsIfDirty();
+
         return $this->getItems()->filter($callback);
     }
 
@@ -261,27 +256,17 @@ trait ManagesItems
         $this->invalidatePipelineCacheIfEnabled();
 
         // Dispatch CartCreated event only when adding the first item to an empty cart
-        if ($isFirstItem && $this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new CartCreated($this));
+        if ($isFirstItem) {
+            $this->dispatchEvent(new CartCreated($this));
         }
 
         // Dispatch ItemAdded event
-        if ($this->eventsEnabled && $this->events) {
-            $this->events->dispatch(new ItemAdded($item, $this));
-        }
+        $this->dispatchEvent(new ItemAdded($item, $this));
 
-        // Evaluate dynamic conditions after adding item
-        $this->evaluateDynamicConditions();
+        // Mark dynamic conditions dirty - evaluation deferred until totals requested
+        $this->markDynamicConditionsDirty();
 
         return $item;
-    }
-
-    /**
-     * Check rate limit if the trait is available and enabled.
-     */
-    private function checkRateLimitIfEnabled(string $operation): void
-    {
-        $this->checkRateLimit($operation);
     }
 
     /**
@@ -386,38 +371,10 @@ trait ManagesItems
     }
 
     /**
-     * Normalize price input to cents (integer)
-     *
-     * Accepts:
-     * - int: treated as cents (returned as-is)
-     * - float: treated as decimal dollars, converted to cents (e.g., 19.99 → 1999)
-     * - string: sanitized and converted (e.g., "$19.99" → 1999, "500" → 500)
-     * - null: returns 0
+     * Normalize price input to cents (integer) using the centralized MoneyNormalizer.
      */
     private function normalizePrice(float | int | string | null $price): int
     {
-        if ($price === null) {
-            return 0;
-        }
-
-        if (is_int($price)) {
-            return $price;
-        }
-
-        if (is_float($price)) {
-            // Float is treated as decimal dollars, convert to cents
-            return (int) round($price * 100);
-        }
-
-        // String: sanitize and convert
-        $sanitized = str_replace([',', '$', '€', '£', '¥', '₹', 'RM', ' '], '', $price);
-
-        if (str_contains($sanitized, '.')) {
-            // Decimal string: treat as dollars, convert to cents
-            return (int) round((float) $sanitized * 100);
-        }
-
-        // Integer string: treat as cents
-        return (int) $sanitized;
+        return MoneyNormalizer::toCents($price);
     }
 }

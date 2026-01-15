@@ -6,8 +6,8 @@ namespace AIArmada\FilamentPricing\Resources;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\FilamentPricing\Resources\PromotionResource\Pages;
-use AIArmada\Pricing\Enums\PromotionType;
-use AIArmada\Pricing\Models\Promotion;
+use AIArmada\Promotions\Enums\PromotionType;
+use AIArmada\Promotions\Models\Promotion;
 use BackedEnum;
 use Filament\Actions;
 use Filament\Forms;
@@ -48,7 +48,7 @@ class PromotionResource extends Resource
         /** @var Builder<Promotion> $query */
         $query = parent::getEloquentQuery();
 
-        if (! (bool) config('pricing.features.owner.enabled', false)) {
+        if (! (bool) config('promotions.features.owner.enabled', false)) {
             return $query;
         }
 
@@ -57,7 +57,7 @@ class PromotionResource extends Resource
         /** @var Builder<Promotion> $scoped */
         $scoped = $query->forOwner(
             $owner,
-            (bool) config('pricing.features.owner.include_global', false),
+            (bool) config('promotions.features.owner.include_global', false),
         );
 
         return $scoped;
@@ -65,7 +65,7 @@ class PromotionResource extends Resource
 
     private static function resolveOwner(): ?Model
     {
-        if (! (bool) config('pricing.features.owner.enabled', false)) {
+        if (! (bool) config('promotions.features.owner.enabled', false)) {
             return null;
         }
 

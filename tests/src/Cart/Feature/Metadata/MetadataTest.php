@@ -3,14 +3,11 @@
 declare(strict_types=1);
 
 use AIArmada\Cart\Cart;
-use AIArmada\Cart\Storage\SessionStorage;
-use Illuminate\Session\ArraySessionHandler;
-use Illuminate\Session\Store;
+use Tests\Support\Cart\InMemoryStorage;
 
 describe('Cart Metadata Management', function (): void {
     beforeEach(function (): void {
-        $session = new Store('test', new ArraySessionHandler(60));
-        $this->storage = new SessionStorage($session);
+        $this->storage = new InMemoryStorage;
         $this->cart = new Cart($this->storage, 'test-user');
     });
 

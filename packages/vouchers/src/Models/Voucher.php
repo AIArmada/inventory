@@ -6,8 +6,6 @@ namespace AIArmada\Vouchers\Models;
 
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
-use AIArmada\Vouchers\Campaigns\Models\Campaign;
-use AIArmada\Vouchers\Campaigns\Models\CampaignVariant;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
 use Akaunting\Money\Money;
@@ -17,8 +15,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
-// Conditional import for affiliate integration
 
 /**
  * @property string $id
@@ -47,8 +43,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array<string, mixed>|null $stacking_rules
  * @property array<string>|null $exclusion_groups
  * @property int $stacking_priority
- * @property string|null $campaign_id
- * @property string|null $campaign_variant_id
  * @property string|null $affiliate_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -61,8 +55,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int $wallet_claimed_count
  * @property-read int $wallet_redeemed_count
  * @property-read int $wallet_available_count
- * @property-read Campaign|null $campaign
- * @property-read CampaignVariant|null $campaignVariant
  * @property-read \AIArmada\Affiliates\Models\Affiliate|null $affiliate
  */
 class Voucher extends Model
@@ -102,8 +94,6 @@ class Voucher extends Model
         'stacking_rules',
         'exclusion_groups',
         'stacking_priority',
-        'campaign_id',
-        'campaign_variant_id',
         'affiliate_id',
     ];
 
@@ -115,50 +105,34 @@ class Voucher extends Model
         return $tables['vouchers'] ?? $prefix . 'vouchers';
     }
 
+    /**
+     * @return HasMany<VoucherUsage, $this>
+     */
     public function usages(): HasMany
     {
-        /** @var HasMany<VoucherUsage, Voucher> $relation */
-        $relation = $this->hasMany(VoucherUsage::class);
-
-        return $relation;
+        return $this->hasMany(VoucherUsage::class);
     }
 
+    /**
+     * @return HasMany<VoucherWallet, $this>
+     */
     public function walletEntries(): HasMany
     {
-        /** @var HasMany<VoucherWallet, Voucher> $relation */
-        $relation = $this->hasMany(VoucherWallet::class);
-
-        return $relation;
+        return $this->hasMany(VoucherWallet::class);
     }
 
+    /**
+     * @return HasMany<VoucherTransaction, $this>
+     */
     public function transactions(): HasMany
     {
-        /** @var HasMany<VoucherTransaction, Voucher> $relation */
-        $relation = $this->hasMany(VoucherTransaction::class);
-
-        return $relation;
-    }
-
-    /**
-     * @return BelongsTo<Campaign, Voucher>
-     */
-    public function campaign(): BelongsTo
-    {
-        return $this->belongsTo(Campaign::class, 'campaign_id');
-    }
-
-    /**
-     * @return BelongsTo<CampaignVariant, Voucher>
-     */
-    public function campaignVariant(): BelongsTo
-    {
-        return $this->belongsTo(CampaignVariant::class, 'campaign_variant_id');
+        return $this->hasMany(VoucherTransaction::class);
     }
 
     /**
      * Get the affiliate that owns this voucher (when aiarmada/affiliates is installed).
      *
-     * @return BelongsTo<\AIArmada\Affiliates\Models\Affiliate, Voucher>|BelongsTo<Model, Voucher>
+     * @return BelongsTo<\AIArmada\Affiliates\Models\Affiliate, $this>|BelongsTo<Model, $this>
      */
     public function affiliate(): BelongsTo
     {
@@ -166,7 +140,6 @@ class Voucher extends Model
             return $this->belongsTo(\AIArmada\Affiliates\Models\Affiliate::class, 'affiliate_id');
         }
 
-        // Fallback to generic model if affiliates package not installed
         return $this->belongsTo(Model::class, 'affiliate_id');
     }
 
@@ -190,24 +163,9 @@ class Voucher extends Model
     }
 
     /**
-     * Check if voucher belongs to a campaign.
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function belongsToCampaign(): bool
-    {
-        return $this->campaign_id !== null;
-    }
-
-    /**
-     * Scope to filter vouchers by campaign.
-     *
-     * @param  Builder<Voucher>  $query
-     * @return Builder<Voucher>
-     */
-    public function scopeForCampaign(Builder $query, Campaign $campaign): Builder
-    {
-        return $query->where('campaign_id', $campaign->id);
-    }
-
     public function scopeForOwner(Builder $query, ?Model $owner = null, bool $includeGlobal = true): Builder
     {
         if (! config('vouchers.owner.enabled', false)) {
@@ -216,10 +174,7 @@ class Voucher extends Model
 
         $includeGlobal = $includeGlobal && (bool) config('vouchers.owner.include_global', false);
 
-        /** @var Builder<Voucher> $scoped */
-        $scoped = $this->baseScopeForOwner($query, $owner, $includeGlobal);
-
-        return $scoped;
+        return $this->baseScopeForOwner($query, $owner, $includeGlobal);
     }
 
     public function allowsManualRedemption(): bool
@@ -274,9 +229,14 @@ class Voucher extends Model
         return max(0, $usageLimit - $this->times_used);
     }
 
-    public function incrementUsage(): void
+    /**
+     * Check if voucher should be marked as depleted and update status if so.
+     *
+     * Note: This does NOT increment usage - that's handled by VoucherUsage records.
+     * Call this after recording usage to auto-update status when limit is reached.
+     */
+    public function checkIfDepleted(): void
     {
-        // Auto-update status if depleted
         $usageLimit = $this->getAttribute('usage_limit');
 
         if ($usageLimit && $this->getTimesUsedAttribute() >= $usageLimit) {

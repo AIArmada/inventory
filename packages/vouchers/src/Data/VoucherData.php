@@ -6,8 +6,10 @@ namespace AIArmada\Vouchers\Data;
 
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
+use AIArmada\Vouchers\Exceptions\InvalidVoucherDataException;
 use AIArmada\Vouchers\Models\Voucher;
-use Carbon\CarbonImmutable;
+use Akaunting\Money\Money;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\MapOutputName;
@@ -20,13 +22,18 @@ use Spatie\LaravelData\Mappers\SnakeCaseMapper;
  * Voucher data transfer object.
  *
  * Represents a voucher with all its properties and configuration.
+ * All monetary values are stored in minor units (cents) as integers.
+ * Percentage values are stored in basis points (e.g., 10.50% = 1050).
  */
 #[MapInputName(SnakeCaseMapper::class)]
 #[MapOutputName(SnakeCaseMapper::class)]
 class VoucherData extends Data
 {
     /**
+     * @param  int  $value  Value in cents for fixed amounts, or basis points for percentages
      * @param  array<string, mixed>|null  $valueConfig  Configuration for compound voucher types
+     * @param  int|null  $minCartValue  Minimum cart value in cents
+     * @param  int|null  $maxDiscount  Maximum discount in cents
      * @param  array<string, mixed>|null  $targetDefinition  Target definition for condition application
      * @param  array<string, mixed>|null  $metadata  Additional metadata
      */
@@ -36,13 +43,13 @@ class VoucherData extends Data
         public readonly string $name,
         public readonly ?string $description,
         public readonly VoucherType $type,
-        public readonly float $value,
+        public readonly int $value,
         public readonly ?array $valueConfig,
         public readonly ?string $creditDestination,
         public readonly int $creditDelayHours,
         public readonly string $currency,
-        public readonly ?float $minCartValue,
-        public readonly ?float $maxDiscount,
+        public readonly ?int $minCartValue,
+        public readonly ?int $maxDiscount,
         public readonly ?int $usageLimit,
         public readonly ?int $usageLimitPerUser,
         public readonly bool $allowsManualRedemption,
@@ -80,13 +87,13 @@ class VoucherData extends Data
             name: $voucher->name,
             description: $voucher->description,
             type: $type,
-            value: (float) $voucher->value,
+            value: (int) $voucher->value,
             valueConfig: $voucher->value_config,
             creditDestination: $voucher->credit_destination,
             creditDelayHours: (int) ($voucher->credit_delay_hours ?? 0),
             currency: $voucher->currency,
-            minCartValue: $voucher->min_cart_value ? (float) $voucher->min_cart_value : null,
-            maxDiscount: $voucher->max_discount ? (float) $voucher->max_discount : null,
+            minCartValue: $voucher->min_cart_value !== null ? (int) $voucher->min_cart_value : null,
+            maxDiscount: $voucher->max_discount !== null ? (int) $voucher->max_discount : null,
             usageLimit: $voucher->usage_limit,
             usageLimitPerUser: $voucher->usage_limit_per_user,
             allowsManualRedemption: (bool) $voucher->allows_manual_redemption,
@@ -101,108 +108,80 @@ class VoucherData extends Data
     }
 
     /**
-     * Create from an array.
+     * Create from an array with sensible defaults.
      *
-     * This method provides backward compatibility with existing code
-     * that uses the fromArray factory method.
+     * This method provides convenient array-based construction with default values.
+     *
+     * IMPORTANT: All monetary values must be integers:
+     * - `value`: cents for fixed amounts, basis points for percentages (e.g., 1000 = 10%)
+     * - `min_cart_value`: cents (e.g., 5000 = $50.00)
+     * - `max_discount`: cents (e.g., 10000 = $100.00)
      *
      * @param  array<string, mixed>  $data
+     *
+     * @throws InvalidVoucherDataException If float values are passed where integers are expected
      */
     public static function fromArray(array $data): self
     {
-        $startsAt = isset($data['starts_at']) && is_string($data['starts_at'])
-            ? CarbonImmutable::parse($data['starts_at'])
-            : (isset($data['starts_at']) && $data['starts_at'] instanceof DateTimeInterface
-                ? $data['starts_at']
-                : null);
+        // Validate integer fields - prevent silent float truncation
+        self::validateIntegerField($data, 'value', 'cents for fixed amounts or basis points for percentages');
+        self::validateIntegerField($data, 'min_cart_value', 'cents');
+        self::validateIntegerField($data, 'minCartValue', 'cents');
+        self::validateIntegerField($data, 'max_discount', 'cents');
+        self::validateIntegerField($data, 'maxDiscount', 'cents');
 
-        $expiresAt = isset($data['expires_at']) && is_string($data['expires_at'])
-            ? CarbonImmutable::parse($data['expires_at'])
-            : (isset($data['expires_at']) && $data['expires_at'] instanceof DateTimeInterface
-                ? $data['expires_at']
-                : null);
+        // Normalize enums if passed as strings
+        $type = $data['type'] ?? VoucherType::Fixed;
+        if (is_string($type)) {
+            $type = VoucherType::from($type);
+        }
 
-        /** @var string|int $typeValue */
-        $typeValue = $data['type'] ?? VoucherType::Fixed->value;
-        /** @var string|int $statusValue */
-        $statusValue = $data['status'] ?? VoucherStatus::Active->value;
+        $status = $data['status'] ?? VoucherStatus::Active;
+        if (is_string($status)) {
+            $status = VoucherStatus::from($status);
+        }
 
-        /** @var int|string|null $ownerId */
-        $ownerId = $data['owner_id'] ?? null;
+        // Get currency with config fallback
+        $currency = $data['currency'] ?? (string) config('vouchers.default_currency', 'MYR');
 
-        /** @var array<string, mixed>|null $targetDefinition */
-        $targetDefinition = isset($data['target_definition']) && is_array($data['target_definition'])
-            ? $data['target_definition']
-            : null;
+        // Convert date strings to DateTime objects
+        $startsAt = $data['starts_at'] ?? $data['startsAt'] ?? null;
+        if (is_string($startsAt)) {
+            $startsAt = new DateTimeImmutable($startsAt);
+        }
 
-        /** @var array<string, mixed>|null $metadata */
-        $metadata = isset($data['metadata']) && is_array($data['metadata'])
-            ? $data['metadata']
-            : null;
-
-        /** @var array<string, mixed>|null $valueConfig */
-        $valueConfig = isset($data['value_config']) && is_array($data['value_config'])
-            ? $data['value_config']
-            : null;
-
-        /** @var scalar|null $id */
-        $id = $data['id'] ?? '';
-        /** @var scalar|null $code */
-        $code = $data['code'] ?? '';
-        /** @var scalar|null $name */
-        $name = $data['name'] ?? '';
-        /** @var scalar|null $description */
-        $description = $data['description'] ?? null;
-        /** @var scalar|null $value */
-        $value = $data['value'] ?? 0.0;
-        /** @var scalar|null $currency */
-        $currency = $data['currency'] ?? 'MYR';
-        /** @var scalar|null $minCartValue */
-        $minCartValue = $data['min_cart_value'] ?? null;
-        /** @var scalar|null $maxDiscount */
-        $maxDiscount = $data['max_discount'] ?? null;
-        /** @var scalar|null $usageLimit */
-        $usageLimit = $data['usage_limit'] ?? null;
-        /** @var scalar|null $usageLimitPerUser */
-        $usageLimitPerUser = $data['usage_limit_per_user'] ?? null;
-        /** @var scalar|null $ownerType */
-        $ownerType = $data['owner_type'] ?? null;
-        /** @var scalar|null $creditDestination */
-        $creditDestination = $data['credit_destination'] ?? null;
-        /** @var scalar|null $creditDelayHours */
-        $creditDelayHours = $data['credit_delay_hours'] ?? 0;
-
-        $type = $typeValue instanceof VoucherType
-            ? $typeValue
-            : VoucherType::from((string) $typeValue);
-
-        $status = $statusValue instanceof VoucherStatus
-            ? $statusValue
-            : VoucherStatus::from((string) $statusValue);
+        $expiresAt = $data['expires_at'] ?? $data['expiresAt'] ?? null;
+        if (is_string($expiresAt)) {
+            $expiresAt = new DateTimeImmutable($expiresAt);
+        }
 
         return new self(
-            id: (string) $id,
-            code: (string) $code,
-            name: (string) $name,
-            description: $description !== null ? (string) $description : null,
+            id: (string) ($data['id'] ?? ''),
+            code: (string) ($data['code'] ?? ''),
+            name: (string) ($data['name'] ?? ''),
+            description: $data['description'] ?? null,
             type: $type,
-            value: (float) $value,
-            valueConfig: $valueConfig,
-            creditDestination: $creditDestination !== null ? (string) $creditDestination : null,
-            creditDelayHours: (int) $creditDelayHours,
-            currency: (string) $currency,
-            minCartValue: $minCartValue !== null ? (float) $minCartValue : null,
-            maxDiscount: $maxDiscount !== null ? (float) $maxDiscount : null,
-            usageLimit: $usageLimit !== null ? (int) $usageLimit : null,
-            usageLimitPerUser: $usageLimitPerUser !== null ? (int) $usageLimitPerUser : null,
-            allowsManualRedemption: isset($data['allows_manual_redemption']) && (bool) $data['allows_manual_redemption'],
-            ownerId: $ownerId,
-            ownerType: $ownerType !== null ? (string) $ownerType : null,
+            value: (int) ($data['value'] ?? 0),
+            valueConfig: $data['value_config'] ?? $data['valueConfig'] ?? null,
+            creditDestination: $data['credit_destination'] ?? $data['creditDestination'] ?? null,
+            creditDelayHours: (int) ($data['credit_delay_hours'] ?? $data['creditDelayHours'] ?? 0),
+            currency: $currency,
+            minCartValue: isset($data['min_cart_value']) || isset($data['minCartValue'])
+                ? (int) ($data['min_cart_value'] ?? $data['minCartValue'])
+                : null,
+            maxDiscount: isset($data['max_discount']) || isset($data['maxDiscount'])
+                ? (int) ($data['max_discount'] ?? $data['maxDiscount'])
+                : null,
+            usageLimit: $data['usage_limit'] ?? $data['usageLimit'] ?? null,
+            usageLimitPerUser: $data['usage_limit_per_user'] ?? $data['usageLimitPerUser'] ?? null,
+            allowsManualRedemption: (bool) ($data['allows_manual_redemption'] ?? $data['allowsManualRedemption'] ?? false),
+            ownerId: $data['owner_id'] ?? $data['ownerId'] ?? null,
+            ownerType: $data['owner_type'] ?? $data['ownerType'] ?? null,
             startsAt: $startsAt,
             expiresAt: $expiresAt,
             status: $status,
-            targetDefinition: $targetDefinition,
-            metadata: $metadata,
+            targetDefinition: $data['target_definition'] ?? $data['targetDefinition'] ?? null,
+            metadata: $data['metadata'] ?? null,
         );
     }
 
@@ -288,8 +267,10 @@ class VoucherData extends Data
 
     /**
      * Check if a cart value meets the minimum requirement.
+     *
+     * @param  int  $cartValue  Cart value in minor units (cents)
      */
-    public function meetsMinCartValue(float $cartValue): bool
+    public function meetsMinCartValue(int $cartValue): bool
     {
         if (! $this->hasMinCartValue()) {
             return true;
@@ -304,9 +285,33 @@ class VoucherData extends Data
     public function getFormattedValue(): string
     {
         if ($this->isPercentage()) {
-            return $this->value . '%';
+            $percentage = $this->value / 100;
+
+            return number_format($percentage, 2) . '%';
         }
 
-        return $this->currency . ' ' . number_format($this->value, 2);
+        $money = Money::{$this->currency}($this->value);
+
+        return (string) $money;
+    }
+
+    /**
+     * Validate that a field contains an integer value.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws InvalidVoucherDataException If a non-integer float is passed
+     */
+    private static function validateIntegerField(array $data, string $field, string $description): void
+    {
+        if (! isset($data[$field])) {
+            return;
+        }
+
+        $value = $data[$field];
+
+        if (is_float($value) && $value !== floor($value)) {
+            throw InvalidVoucherDataException::floatNotAllowed($field, $value, $description);
+        }
     }
 }

@@ -113,7 +113,8 @@ it('adds commerce tags to audit data', function (): void {
 
     $transformed = $model->transformAudit($data);
 
-    expect($transformed['tags'])->toBe(['commerce']);
+    // Spatie Auditing stores tags as comma-separated string
+    expect($transformed['tags'])->toBe('commerce');
 });
 
 it('uses all fillable attributes when no include list specified', function (): void {

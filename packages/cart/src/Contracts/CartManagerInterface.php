@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AIArmada\Cart\Contracts;
 
 use AIArmada\Cart\Cart;
-use AIArmada\Cart\Storage\StorageInterface;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -49,8 +48,6 @@ interface CartManagerInterface
 
     /**
      * Create a new cart manager instance scoped to a specific owner
-     *
-     * Use this for admin operations that need to operate on a specific owner's carts.
      */
     public function forOwner(Model $owner): static;
 
@@ -63,11 +60,6 @@ interface CartManagerInterface
      * Get the current owner ID if operating in owner-scoped mode
      */
     public function getOwnerId(): string | int | null;
-
-    /**
-     * Get session storage access for session-specific operations
-     */
-    public function session(?string $sessionKey = null): StorageInterface;
 
     /**
      * Get a cart instance by its UUID

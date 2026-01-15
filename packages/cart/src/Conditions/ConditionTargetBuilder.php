@@ -59,11 +59,6 @@ final class ConditionTargetBuilder
         return $this->apply(ConditionApplication::PER_GROUP);
     }
 
-    public function applyPerPayment(): self
-    {
-        return $this->apply(ConditionApplication::PER_PAYMENT);
-    }
-
     public function where(string $field, ConditionFilterOperator | string $operator, mixed $value): self
     {
         $operator = $operator instanceof ConditionFilterOperator

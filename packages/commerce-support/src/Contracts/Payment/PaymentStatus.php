@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\CommerceSupport\Contracts\Payment;
 
+use InvalidArgumentException;
+
 /**
  * Universal payment status enum for all payment gateways.
  *
@@ -132,6 +134,99 @@ enum PaymentStatus: string
             self::PENDING,
             self::AUTHORIZED,
         ], true);
+    }
+
+    /**
+     * Check if transition to target status is valid.
+     */
+    public function canTransitionTo(PaymentStatus $target): bool
+    {
+        return in_array($target, $this->getAllowedTransitions(), true);
+    }
+
+    /**
+     * Get all allowed transitions from current status.
+     *
+     * @return array<PaymentStatus>
+     */
+    public function getAllowedTransitions(): array
+    {
+        return match ($this) {
+            self::CREATED => [
+                self::PENDING,
+                self::PROCESSING,
+                self::FAILED,
+                self::CANCELLED,
+                self::EXPIRED,
+            ],
+            self::PENDING => [
+                self::PROCESSING,
+                self::REQUIRES_ACTION,
+                self::AUTHORIZED,
+                self::PAID,
+                self::FAILED,
+                self::CANCELLED,
+                self::EXPIRED,
+            ],
+            self::PROCESSING => [
+                self::REQUIRES_ACTION,
+                self::AUTHORIZED,
+                self::PAID,
+                self::FAILED,
+                self::CANCELLED,
+            ],
+            self::REQUIRES_ACTION => [
+                self::PROCESSING,
+                self::AUTHORIZED,
+                self::PAID,
+                self::FAILED,
+                self::CANCELLED,
+                self::EXPIRED,
+            ],
+            self::AUTHORIZED => [
+                self::PAID,
+                self::CANCELLED,
+                self::EXPIRED,
+            ],
+            self::PAID => [
+                self::PARTIALLY_REFUNDED,
+                self::REFUNDED,
+                self::DISPUTED,
+            ],
+            self::PARTIALLY_REFUNDED => [
+                self::REFUNDED,
+                self::DISPUTED,
+            ],
+            self::REFUNDED => [], // Terminal
+            self::FAILED => [], // Terminal
+            self::CANCELLED => [], // Terminal
+            self::EXPIRED => [], // Terminal
+            self::DISPUTED => [
+                self::PAID, // Dispute resolved in merchant's favor
+                self::REFUNDED, // Dispute resolved in customer's favor
+            ],
+        };
+    }
+
+    /**
+     * Transition to new status, throwing if invalid.
+     *
+     * @throws InvalidArgumentException
+     */
+    public function transitionTo(PaymentStatus $target): PaymentStatus
+    {
+        if (! $this->canTransitionTo($target)) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Cannot transition payment status from %s to %s. Allowed: %s',
+                    $this->value,
+                    $target->value,
+                    implode(', ', array_map(fn ($s) => $s->value, $this->getAllowedTransitions()))
+                )
+            );
+        }
+
+        return $target;
     }
 
     /**

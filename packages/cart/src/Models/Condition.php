@@ -46,8 +46,8 @@ use InvalidArgumentException;
  * @property array{factory_keys?: array<int, string>, context?: array<string, mixed>}|null $rules
  * @property bool $is_active
  * @property bool $is_global
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Carbon\CarbonImmutable|null $created_at
+ * @property \Carbon\CarbonImmutable|null $updated_at
  */
 class Condition extends Model
 {
@@ -454,8 +454,8 @@ class Condition extends Model
             'is_percentage' => 'boolean',
             'is_active' => 'boolean',
             'is_global' => 'boolean',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
         ];
     }
 

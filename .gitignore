@@ -13,3 +13,5 @@
 .phpunit.result.cache
 composer.phar
 Thumbs.db
+# Prevent published skeleton migrations from causing duplicate migration issues
+vendor/orchestra/testbench-core/laravel/database/migrations/*.php

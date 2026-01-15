@@ -7,10 +7,8 @@ use AIArmada\Cart\Events\CartConditionAdded;
 use AIArmada\Cart\Events\CartConditionRemoved;
 use AIArmada\Cart\Events\CartCreated;
 use AIArmada\Cart\Events\ItemAdded;
-use AIArmada\Cart\Storage\SessionStorage;
 use Illuminate\Events\Dispatcher;
-use Illuminate\Session\ArraySessionHandler;
-use Illuminate\Session\Store;
+use Tests\Support\Cart\InMemoryStorage;
 
 /**
  * Comprehensive tests for cart event system
@@ -20,7 +18,6 @@ use Illuminate\Session\Store;
  */
 describe('Cart Events', function (): void {
     beforeEach(function (): void {
-        $sessionStore = new Store('testing', new ArraySessionHandler(120));
         $this->events = new Dispatcher;
         $this->dispatchedEvents = [];
 
@@ -34,7 +31,7 @@ describe('Cart Events', function (): void {
 
         $this->cart = new Cart(
             identifier: 'test_cart',
-            storage: new SessionStorage($sessionStore),
+            storage: new InMemoryStorage,
             events: $this->events,
             instanceName: 'test_cart',
             eventsEnabled: true
@@ -129,7 +126,7 @@ describe('Cart Events', function (): void {
     it('does not dispatch condition events when events are disabled', function (): void {
         $cartWithoutEvents = new Cart(
             identifier: 'no_events_cart',
-            storage: new SessionStorage(new Store('testing', new ArraySessionHandler(120))),
+            storage: new InMemoryStorage,
             events: new Dispatcher,
             instanceName: 'no_events_cart',
             eventsEnabled: false
@@ -148,7 +145,6 @@ describe('Cart Events', function (): void {
 
 // Additional standalone tests
 beforeEach(function (): void {
-    $sessionStore = new Store('testing', new ArraySessionHandler(120));
     $this->events = new Dispatcher;
     $this->dispatchedEvents = [];
 
@@ -162,7 +158,7 @@ beforeEach(function (): void {
 
     $this->cart = new Cart(
         identifier: 'test_cart',
-        storage: new SessionStorage($sessionStore),
+        storage: new InMemoryStorage,
         events: $this->events,
         instanceName: 'test_cart',
         eventsEnabled: true

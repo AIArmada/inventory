@@ -7,7 +7,6 @@ namespace AIArmada\Vouchers\Support;
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\CartManager;
 use AIArmada\Cart\Contracts\CartManagerInterface;
-use AIArmada\Cart\Storage\StorageInterface;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -108,11 +107,6 @@ final class CartManagerWithVouchers implements CartManagerInterface
     public function getOwnerId(): string | int | null
     {
         return $this->manager->getOwnerId();
-    }
-
-    public function session(?string $sessionKey = null): StorageInterface
-    {
-        return $this->manager->session($sessionKey);
     }
 
     public function getById(string $uuid): ?Cart

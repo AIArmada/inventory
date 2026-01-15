@@ -6,10 +6,10 @@ namespace AIArmada\FilamentVouchers\Resources\VoucherResource\Tables;
 
 use AIArmada\Cart\Conditions\ConditionTarget;
 use AIArmada\FilamentVouchers\Support\ConditionTargetPreset;
+use AIArmada\FilamentVouchers\Support\MoneyHelper;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
 use AIArmada\Vouchers\Models\Voucher;
-use Akaunting\Money\Money;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -65,14 +65,10 @@ final class VouchersTable
                         $type = $rawType instanceof VoucherType ? $rawType : VoucherType::from((string) $rawType);
 
                         if ($type === VoucherType::Percentage) {
-                            // Value is stored as basis points (e.g., 1050 = 10.50%)
-                            $percentage = (int) $state / 100;
-
-                            return mb_rtrim(mb_rtrim(number_format($percentage, 2), '0'), '.') . ' %';
+                            return MoneyHelper::formatPercentage((int) $state);
                         }
 
-                        // Value is stored as cents
-                        return self::formatMoneyCents((int) $state, (string) $record->currency);
+                        return MoneyHelper::formatMoney((int) $state, (string) $record->currency);
                     })
                     ->alignEnd()
                     ->sortable(),
@@ -234,12 +230,5 @@ final class VouchersTable
             })
             ->paginated([25, 50, 100])
             ->striped();
-    }
-
-    private static function formatMoneyCents(int $cents, string $currency): string
-    {
-        $currency = mb_strtoupper($currency ?: config('filament-vouchers.default_currency', 'MYR'));
-
-        return (string) Money::{$currency}($cents);
     }
 }

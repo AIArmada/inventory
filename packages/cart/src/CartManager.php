@@ -185,27 +185,6 @@ class CartManager implements CartManagerInterface
     }
 
     /**
-     * Get session storage access for session-specific operations
-     *
-     * @throws RuntimeException If session is not available
-     */
-    public function session(?string $sessionKey = null): StorageInterface
-    {
-        if ($this->storage instanceof Storage\SessionStorage) {
-            return $this->storage;
-        }
-
-        // If not using session storage, create a temporary session storage instance
-        if (! app()->bound('session')) {
-            throw new RuntimeException('Session service is not available');
-        }
-
-        $session = app(SessionManager::class)->driver();
-
-        return new Storage\SessionStorage($session, $sessionKey ?? config('cart.session.key', 'cart'));
-    }
-
-    /**
      * Get a cart instance by its UUID
      *
      * This loads a cart object using its database primary key (UUID).

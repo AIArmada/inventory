@@ -1,0 +1,36 @@
+{
+    "name": "aiarmada/promotions",
+    "description": "Automatic promotions and discount campaigns for commerce",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "AIArmada Team"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "aiarmada/commerce-support": "^0.1",
+        "illuminate/database": "^12.0",
+        "illuminate/support": "^12.0",
+        "spatie/laravel-activitylog": "^4.9",
+        "spatie/laravel-data": "^4.0"
+    },
+    "suggest": {
+        "aiarmada/products": "For product/category targeting in promotions"
+    },
+    "autoload": {
+        "psr-4": {
+            "AIArmada\\Promotions\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AIArmada\\Promotions\\PromotionsServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

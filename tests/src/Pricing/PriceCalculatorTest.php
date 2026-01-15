@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 use AIArmada\Pricing\Contracts\Priceable;
 use AIArmada\Pricing\Data\PriceResultData;
-use AIArmada\Pricing\Enums\PromotionType;
 use AIArmada\Pricing\Models\Price;
 use AIArmada\Pricing\Models\PriceList;
 use AIArmada\Pricing\Models\PriceTier;
-use AIArmada\Pricing\Models\Promotion;
 use AIArmada\Pricing\Services\PriceCalculator;
+use AIArmada\Promotions\Enums\PromotionType;
+use AIArmada\Promotions\Models\Promotion;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 

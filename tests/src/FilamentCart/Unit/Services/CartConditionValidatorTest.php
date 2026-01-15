@@ -4,23 +4,22 @@ declare(strict_types=1);
 
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Models\Condition as ConditionModel;
-use AIArmada\Cart\Storage\CacheStorage;
+use AIArmada\Cart\Storage\DatabaseStorage;
 use AIArmada\FilamentCart\Services\CartConditionValidator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 describe('CartConditionValidator', function (): void {
     it('returns valid when no global conditions present', function (): void {
         $validator = new CartConditionValidator;
-        $storage = new CacheStorage(
-            cache: cache()->store(),
-            keyPrefix: 'filament_cart_validator_' . Str::random(12),
-            ttl: 3600,
-            useLocking: false,
+        $storage = new DatabaseStorage(
+            database: DB::connection('testing'),
+            table: 'carts',
         );
 
         $cart = new Cart(
             storage: $storage,
-            identifier: 'user-123',
+            identifier: 'user-' . Str::random(12),
             events: null,
             instanceName: 'default',
             eventsEnabled: false,
@@ -39,16 +38,14 @@ describe('CartConditionValidator', function (): void {
 
     it('removes deactivated global conditions', function (): void {
         $validator = new CartConditionValidator;
-        $storage = new CacheStorage(
-            cache: cache()->store(),
-            keyPrefix: 'filament_cart_validator_' . Str::random(12),
-            ttl: 3600,
-            useLocking: false,
+        $storage = new DatabaseStorage(
+            database: DB::connection('testing'),
+            table: 'carts',
         );
 
         $cart = new Cart(
             storage: $storage,
-            identifier: 'user-123',
+            identifier: 'user-' . Str::random(12),
             events: null,
             instanceName: 'default',
             eventsEnabled: false,
@@ -79,16 +76,14 @@ describe('CartConditionValidator', function (): void {
 
     it('keeps active global conditions', function (): void {
         $validator = new CartConditionValidator;
-        $storage = new CacheStorage(
-            cache: cache()->store(),
-            keyPrefix: 'filament_cart_validator_' . Str::random(12),
-            ttl: 3600,
-            useLocking: false,
+        $storage = new DatabaseStorage(
+            database: DB::connection('testing'),
+            table: 'carts',
         );
 
         $cart = new Cart(
             storage: $storage,
-            identifier: 'user-123',
+            identifier: 'user-' . Str::random(12),
             events: null,
             instanceName: 'default',
             eventsEnabled: false,

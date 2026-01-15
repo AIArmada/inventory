@@ -35,6 +35,15 @@ trait ManagesDynamicConditions
     protected $dynamicConditionFailureHandler = null;
 
     /**
+     * Flag indicating dynamic conditions need re-evaluation.
+     *
+     * This implements a dirty-flag pattern to debounce condition evaluation.
+     * Instead of evaluating after every cart modification, we mark conditions
+     * as dirty and evaluate only when totals are requested.
+     */
+    protected bool $dynamicConditionsDirty = false;
+
+    /**
      * Set rules factory for dynamic condition persistence.
      *
      * @param  RulesFactoryInterface  $factory  Factory to create rule closures
@@ -93,7 +102,8 @@ trait ManagesDynamicConditions
             $this->persistDynamicConditionMetadata($condition, $ruleFactoryKey, $metadata);
         }
 
-        $this->evaluateDynamicConditions();
+        // Mark as dirty instead of evaluating immediately
+        $this->markDynamicConditionsDirty();
 
         return $this;
     }
@@ -141,9 +151,17 @@ trait ManagesDynamicConditions
 
     /**
      * Evaluate all dynamic conditions and apply/remove them based on their rules.
+     *
+     * This method clears the dirty flag before evaluation to prevent
+     * infinite recursion when evaluation triggers getItems() which
+     * would otherwise re-trigger evaluation.
      */
     public function evaluateDynamicConditions(): void
     {
+        // Clear the dirty flag BEFORE evaluation to prevent infinite recursion
+        // when evaluation calls methods that trigger getItems() (e.g., addItemCondition)
+        $this->dynamicConditionsDirty = false;
+
         $this->initializeDynamicConditions();
 
         foreach ($this->dynamicConditions as $condition) {
@@ -157,6 +175,39 @@ trait ManagesDynamicConditions
 
             $this->evaluateCartScopedDynamicCondition($condition);
         }
+    }
+
+    /**
+     * Mark dynamic conditions as needing re-evaluation.
+     *
+     * Call this instead of evaluateDynamicConditions() when making
+     * cart modifications. The actual evaluation will be deferred until
+     * totals are requested, avoiding N evaluations in loops.
+     */
+    public function markDynamicConditionsDirty(): void
+    {
+        $this->dynamicConditionsDirty = true;
+    }
+
+    /**
+     * Evaluate dynamic conditions only if they are dirty.
+     *
+     * This should be called before calculating totals to ensure
+     * conditions are up-to-date while avoiding unnecessary evaluations.
+     */
+    public function evaluateDynamicConditionsIfDirty(): void
+    {
+        if ($this->dynamicConditionsDirty) {
+            $this->evaluateDynamicConditions();
+        }
+    }
+
+    /**
+     * Check if dynamic conditions need re-evaluation.
+     */
+    public function isDynamicConditionsDirty(): bool
+    {
+        return $this->dynamicConditionsDirty;
     }
 
     /**
@@ -214,8 +265,8 @@ trait ManagesDynamicConditions
             }
         }
 
-        // Evaluate all restored conditions
-        $this->evaluateDynamicConditions();
+        // Mark as dirty - evaluation will happen when totals are requested
+        $this->markDynamicConditionsDirty();
 
         return $this;
     }
@@ -602,7 +653,8 @@ trait ManagesDynamicConditions
         }
 
         if ($shouldApply) {
-            if (! $this->getConditions()->has($condition->getName())) {
+            // Use getConditionsFromStorage() to avoid recursion - getConditions() triggers evaluation
+            if (! $this->getConditionsFromStorage()->has($condition->getName())) {
                 $staticCondition = $condition->withoutRules();
                 $this->addCondition($staticCondition);
             }
@@ -618,7 +670,9 @@ trait ManagesDynamicConditions
      */
     private function evaluateItemScopedDynamicCondition(CartCondition $condition): void
     {
-        foreach ($this->getItems() as $item) {
+        // Use getItemsFromStorage() to avoid infinite recursion since getItems()
+        // triggers evaluateDynamicConditionsIfDirty() which calls this method
+        foreach ($this->getItemsFromStorage() as $item) {
             try {
                 $shouldApply = $condition->shouldApply($this, $item);
             } catch (Throwable $exception) {
