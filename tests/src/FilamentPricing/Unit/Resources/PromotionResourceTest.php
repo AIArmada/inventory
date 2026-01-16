@@ -13,7 +13,7 @@ beforeEach(function (): void {
 });
 
 use AIArmada\FilamentPricing\Resources\PromotionResource;
-use AIArmada\Pricing\Models\Promotion;
+use AIArmada\Promotions\Models\Promotion;
 use Filament\Schemas\Schema;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;

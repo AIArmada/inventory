@@ -172,7 +172,11 @@ class RatesRelationManager extends RelationManager
                     }),
 
                 Tables\Columns\TextColumn::make('base_rate')
-                    ->formatStateUsing(fn (ShippingRate $record): string => $record->formatted_base_rate)
+                    ->formatStateUsing(fn (ShippingRate $record): string => money(
+                        $record->base_rate,
+                        config('shipping.defaults.currency', 'MYR'),
+                        false
+                    )->format())
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('delivery_estimate')

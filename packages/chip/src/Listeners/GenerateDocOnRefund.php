@@ -59,7 +59,7 @@ final class GenerateDocOnRefund implements ShouldQueue
         $originalInvoice = $this->findOriginalInvoice($purchase);
 
         $docData = $this->buildDocData($purchase, $event, $docType, $originalInvoice);
-        $docService->createDoc($docData);
+        $docService->create($docData);
     }
 
     private function buildDocData(

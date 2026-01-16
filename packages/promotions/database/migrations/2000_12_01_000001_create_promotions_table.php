@@ -42,7 +42,6 @@ return new class extends Migration
 
             $table->index(['is_active', 'priority']);
             $table->index(['starts_at', 'ends_at']);
-            $table->index(['owner_type', 'owner_id']);
         });
 
         Schema::create((string) config('promotions.database.tables.promotionables', 'promotionables'), function (Blueprint $table): void {

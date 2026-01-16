@@ -196,7 +196,7 @@ describe('Shipment Model', function (): void {
             'currency' => 'USD',
         ]);
 
-        expect($shipment->getFormattedShippingCost())->toBe('12.34 USD');
+        expect($shipment->getFormattedShippingCost())->toBe('$12.34');
         expect($shipment->getTotalWeightKg())->toBe(2.5);
     });
 

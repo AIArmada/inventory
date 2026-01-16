@@ -43,7 +43,7 @@ class DocsInvoiceRenderer implements InvoiceRenderer
             'generate_pdf' => false,
         ]);
 
-        $doc = $this->docService->createDoc($docData);
+        $doc = $this->docService->create($docData);
 
         return $this->docService->generatePdf($doc, false);
     }

@@ -50,7 +50,7 @@ final class GenerateDocOnPayment implements ShouldQueue
         $docService = app(DocService::class);
 
         $docData = $this->buildDocData($purchase, $event, $docType);
-        $docService->createDoc($docData);
+        $docService->create($docData);
     }
 
     private function buildDocData(Purchase $purchase, PurchasePaid $event, string $docType): DocData

@@ -349,6 +349,7 @@ abstract class TestCase extends Orchestra
         $this->loadMigrationsFrom(__DIR__ . '/../../packages/affiliates/database/migrations');
         $this->loadMigrationsFrom(__DIR__ . '/../../packages/affiliate-network/database/migrations');
         $this->loadMigrationsFrom(__DIR__ . '/../../packages/docs/database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '/../../packages/promotions/database/migrations');
     }
 
     protected function setUpDatabase(): void
@@ -1455,7 +1456,7 @@ abstract class TestCase extends Orchestra
         // =========================================================================
         // PRICING PACKAGE TABLES
         // =========================================================================
-        Schema::dropIfExists('promotions');
+        // Note: promotions table is now loaded via migration in defineDatabaseMigrations()
         Schema::dropIfExists('price_tiers');
         Schema::dropIfExists('prices');
         Schema::dropIfExists('price_lists');
@@ -1505,34 +1506,7 @@ abstract class TestCase extends Orchestra
             $table->timestamps();
         });
 
-        Schema::create('promotions', function (Blueprint $table): void {
-            $table->uuid('id')->primary();
-            $table->nullableUuidMorphs('owner');
-            $table->string('name');
-            $table->string('code')->nullable()->unique();
-            $table->text('description')->nullable();
-            $table->string('type')->default('percentage');
-            $table->integer('discount_value')->default(0);
-            $table->integer('priority')->default(0);
-            $table->integer('usage_limit')->nullable();
-            $table->integer('usage_count')->default(0);
-            $table->integer('min_purchase_amount')->nullable();
-            $table->integer('min_quantity')->nullable();
-            $table->boolean('is_stackable')->default(false);
-            $table->boolean('is_active')->default(true);
-            $table->timestamp('starts_at')->nullable();
-            $table->timestamp('ends_at')->nullable();
-            $table->json('conditions')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-        });
-
-        // Pivot table for promotion-product/category relationships
-        Schema::create('promotionables', function (Blueprint $table): void {
-            $table->uuid('promotion_id');
-            $table->uuidMorphs('promotionable');
-            $table->primary(['promotion_id', 'promotionable_id', 'promotionable_type']);
-        });
+        // Note: promotions and promotionables tables are now loaded via migration
 
         // =========================================================================
         // TAX PACKAGE TABLES
