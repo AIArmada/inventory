@@ -22,6 +22,8 @@ final class InventoryMovementResource extends Resource
 {
     protected static ?string $model = InventoryMovement::class;
 
+    protected static ?string $tenantOwnershipRelationshipName = 'fromLocation.owner';
+
     protected static ?string $recordTitleAttribute = 'id';
 
     protected static string | BackedEnum | null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;

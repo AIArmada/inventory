@@ -16,7 +16,10 @@ use AIArmada\Inventory\Cart\ValidateInventoryOnAdd;
 use AIArmada\Inventory\Console\CleanupExpiredAllocationsCommand;
 use AIArmada\Inventory\Console\CreateValuationSnapshotCommand;
 use AIArmada\Inventory\Exports\ExportService;
+use AIArmada\Inventory\Integrations\FulfillmentLocationService;
 use AIArmada\Inventory\Listeners\CommitInventoryOnPayment;
+use AIArmada\Inventory\Listeners\DeductInventoryFromOrder;
+use AIArmada\Inventory\Listeners\ReleaseInventoryFromOrder;
 use AIArmada\Inventory\Listeners\ReleaseInventoryOnCartClear;
 use AIArmada\Inventory\Reports\InventoryKpiService;
 use AIArmada\Inventory\Reports\MovementAnalysisReport;
@@ -33,6 +36,8 @@ use AIArmada\Inventory\Services\SerialService;
 use AIArmada\Inventory\Services\StandardCostService;
 use AIArmada\Inventory\Services\ValuationService;
 use AIArmada\Inventory\Services\WeightedAverageCostService;
+use AIArmada\Orders\Events\InventoryDeductionRequired;
+use AIArmada\Orders\Events\InventoryReleaseRequired;
 use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -59,12 +64,14 @@ final class InventoryServiceProvider extends PackageServiceProvider
         $this->registerAllocationServices();
         $this->registerReplenishmentServices();
         $this->registerReportServices();
+        $this->registerIntegrationServices();
     }
 
     public function packageBooted(): void
     {
         $this->registerCartIntegration();
         $this->registerPaymentIntegration();
+        $this->registerOrdersIntegration();
     }
 
     /**
@@ -89,6 +96,7 @@ final class InventoryServiceProvider extends PackageServiceProvider
             MovementAnalysisReport::class,
             StockLevelReport::class,
             ExportService::class,
+            FulfillmentLocationService::class,
             'inventory',
             'inventory.allocations',
         ];
@@ -153,6 +161,14 @@ final class InventoryServiceProvider extends PackageServiceProvider
         $this->app->singleton(MovementAnalysisReport::class);
         $this->app->singleton(StockLevelReport::class);
         $this->app->singleton(ExportService::class);
+    }
+
+    /**
+     * Register integration services for other packages.
+     */
+    private function registerIntegrationServices(): void
+    {
+        $this->app->singleton(FulfillmentLocationService::class);
     }
 
     /**
@@ -246,6 +262,32 @@ final class InventoryServiceProvider extends PackageServiceProvider
             if (class_exists($eventClass)) {
                 Event::listen($eventClass, CommitInventoryOnPayment::class);
             }
+        }
+    }
+
+    /**
+     * Register orders package integration if available.
+     */
+    private function registerOrdersIntegration(): void
+    {
+        if (! config('inventory.orders.enabled', true)) {
+            return;
+        }
+
+        // Inventory deduction on payment confirmation
+        if (class_exists(InventoryDeductionRequired::class)) {
+            Event::listen(
+                InventoryDeductionRequired::class,
+                DeductInventoryFromOrder::class
+            );
+        }
+
+        // Inventory release on order cancellation
+        if (class_exists(InventoryReleaseRequired::class)) {
+            Event::listen(
+                InventoryReleaseRequired::class,
+                ReleaseInventoryFromOrder::class
+            );
         }
     }
 }

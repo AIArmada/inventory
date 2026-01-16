@@ -24,6 +24,31 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 
+/**
+ * Manages inventory allocations (reservations) for shopping carts.
+ *
+ * Allocations temporarily reserve stock while customers shop, preventing
+ * overselling. Allocations have a TTL and are automatically released if
+ * not committed (converted to actual shipments) within that time.
+ *
+ * @example Allocate stock for a cart
+ * ```php
+ * $service = app(InventoryAllocationService::class);
+ * $allocations = $service->allocate($product, 5, $cartId, ttlMinutes: 30);
+ * ```
+ * @example Release allocations when cart is abandoned
+ * ```php
+ * $service->releaseAllForCart($cartId);
+ * ```
+ * @example Commit allocations after payment
+ * ```php
+ * $movements = $service->commitForCart($cartId, $orderId);
+ * ```
+ * @example Check available stock (considers allocations)
+ * ```php
+ * $available = $service->getTotalAvailable($product);
+ * ```
+ */
 final class InventoryAllocationService
 {
     public function __construct(
@@ -33,7 +58,18 @@ final class InventoryAllocationService
     /**
      * Allocate inventory for a cart.
      *
-     * @return Collection<int, InventoryAllocation>
+     * Reserves stock across one or more locations based on the configured
+     * allocation strategy. If insufficient stock is available, throws an
+     * exception unless backorders are enabled.
+     *
+     * @param  Model  $model  The inventoryable model (e.g., Product)
+     * @param  int  $quantity  Quantity to allocate
+     * @param  string  $cartId  Cart identifier for this allocation
+     * @param  int  $ttlMinutes  How long the allocation remains valid
+     * @return Collection<int, InventoryAllocation> Created allocation records
+     *
+     * @throws InvalidArgumentException If quantity is not positive
+     * @throws InsufficientInventoryException If insufficient stock available
      */
     public function allocate(
         Model $model,
@@ -126,6 +162,9 @@ final class InventoryAllocationService
 
     /**
      * Release a single allocation directly.
+     *
+     * @param  InventoryAllocation  $allocation  The allocation to release
+     * @return int Released quantity (0 if allocation not found or already released)
      */
     public function releaseAllocation(InventoryAllocation $allocation): int
     {
@@ -163,6 +202,13 @@ final class InventoryAllocationService
 
     /**
      * Release allocations for a model/cart.
+     *
+     * Releases all allocations matching the model and cart ID combination.
+     * Use this when a customer removes an item from their cart.
+     *
+     * @param  Model  $model  The inventoryable model
+     * @param  string  $cartId  Cart identifier
+     * @return int Total quantity released
      */
     public function release(Model $model, string $cartId): int
     {
@@ -195,6 +241,12 @@ final class InventoryAllocationService
 
     /**
      * Release all allocations for a cart (across all products).
+     *
+     * Use this when a cart is abandoned, cleared, or cancelled.
+     * Releases reserved stock back to available inventory.
+     *
+     * @param  string  $cartId  Cart identifier
+     * @return int Total quantity released across all products
      */
     public function releaseAllForCart(string $cartId): int
     {
@@ -226,7 +278,12 @@ final class InventoryAllocationService
     /**
      * Commit allocations (convert to shipments after payment).
      *
-     * @return array<InventoryMovement>
+     * Call this after a successful payment to convert reserved stock into
+     * actual shipments. Creates inventory movements and updates stock levels.
+     *
+     * @param  string  $cartId  Cart identifier with allocations to commit
+     * @param  string|null  $orderId  Optional order ID for movement reference
+     * @return array<InventoryMovement> Created shipment movements
      */
     public function commit(string $cartId, ?string $orderId = null): array
     {
@@ -277,6 +334,13 @@ final class InventoryAllocationService
 
     /**
      * Extend allocations for a cart.
+     *
+     * Pushes the expiration time forward. Call this when a customer
+     * shows activity (page views, cart updates) to prevent early expiration.
+     *
+     * @param  string  $cartId  Cart identifier
+     * @param  int  $minutes  Additional minutes to extend
+     * @return int Number of allocations extended
      */
     public function extendAllocations(string $cartId, int $minutes): int
     {
@@ -340,8 +404,25 @@ final class InventoryAllocationService
     /**
      * Validate availability for multiple items.
      *
-     * @param  array<array{model: Model, quantity: int}>  $items
+     * Checks if all items can be fulfilled. Use this before attempting
+     * allocation to provide user-friendly messaging about unavailable items.
+     *
+     * @param  array<array{model: Model, quantity: int}>  $items  Items to validate
      * @return array{available: bool, issues: array<array{model: Model, requested: int, available: int}>}
+     *
+     * @example
+     * ```php
+     * $result = $service->validateAvailability([
+     *     ['model' => $productA, 'quantity' => 2],
+     *     ['model' => $productB, 'quantity' => 5],
+     * ]);
+     *
+     * if (!$result['available']) {
+     *     foreach ($result['issues'] as $issue) {
+     *         echo "{$issue['model']->name}: only {$issue['available']} available";
+     *     }
+     * }
+     * ```
      */
     public function validateAvailability(array $items): array
     {
@@ -371,6 +452,11 @@ final class InventoryAllocationService
 
     /**
      * Clean up expired allocations.
+     *
+     * Releases all allocations past their expiration time. Call this
+     * periodically via a scheduled command to free up reserved stock.
+     *
+     * @return int Number of allocations cleaned up
      */
     public function cleanupExpired(): int
     {
@@ -388,6 +474,11 @@ final class InventoryAllocationService
 
     /**
      * Clean up expired allocations across all owners (maintenance).
+     *
+     * Use this in system-level scheduled tasks that run without
+     * owner context. Bypasses owner scoping for maintenance purposes.
+     *
+     * @return int Number of allocations cleaned up
      */
     public function cleanupExpiredGlobal(): int
     {

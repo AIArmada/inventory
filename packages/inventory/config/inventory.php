@@ -124,6 +124,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Orders Integration
+    |--------------------------------------------------------------------------
+    |
+    | Configure integration with the Orders package when installed.
+    | Listens for InventoryDeductionRequired and InventoryReleaseRequired events.
+    |
+    */
+    'orders' => [
+        'enabled' => env('INVENTORY_ORDERS_ENABLED', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Events
     |--------------------------------------------------------------------------
     */

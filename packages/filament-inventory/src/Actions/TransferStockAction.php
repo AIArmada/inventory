@@ -39,7 +39,7 @@ final class TransferStockAction
                             ->required()
                             ->searchable()
                             ->preload()
-                            ->reactive()
+                            ->live()
                             ->afterStateUpdated(fn (callable $set) => $set('to_location_id', null)),
 
                         Select::make('to_location_id')

@@ -25,6 +25,27 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 
+/**
+ * Core inventory operations service.
+ *
+ * Handles receiving, shipping, transferring, and adjusting inventory
+ * with full movement tracking and event dispatching.
+ *
+ * @example Receiving inventory
+ * ```php
+ * $service = app(InventoryService::class);
+ * $movement = $service->receive($product, $location->id, 100, reason: 'PO-2024-001');
+ * ```
+ * @example Shipping inventory
+ * ```php
+ * $movement = $service->ship($product, $location->id, 10, reason: 'ORD-2024-001');
+ * ```
+ * @example Checking availability
+ * ```php
+ * $availability = $service->getAvailability($product);
+ * // ['total' => 100, 'reserved' => 20, 'available' => 80, 'locations' => [...]]
+ * ```
+ */
 final class InventoryService
 {
     /**
@@ -41,10 +62,22 @@ final class InventoryService
      */
     private array $totalAvailableCache = [];
 
-    public function __construct() {}
-
     /**
      * Receive inventory at a location.
+     *
+     * Creates an inventory level record if one doesn't exist, increments
+     * on-hand quantity, and records the movement for audit purposes.
+     *
+     * @param  Model  $model  The inventoryable model (e.g., Product)
+     * @param  string  $locationId  UUID of the receiving location
+     * @param  int  $quantity  Positive quantity to receive
+     * @param  string|null  $reason  Reference number (e.g., PO number)
+     * @param  string|null  $note  Additional notes
+     * @param  string|null  $userId  ID of user performing the action
+     * @param  DateTimeInterface|null  $occurredAt  When the receipt occurred (defaults to now)
+     * @return InventoryMovement The created movement record
+     *
+     * @throws InvalidArgumentException If quantity is not positive
      */
     public function receive(
         Model $model,

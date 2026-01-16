@@ -19,10 +19,56 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
+/**
+ * Manages serial number tracking for high-value or regulated items.
+ *
+ * Serial tracking provides individual unit traceability through the
+ * full lifecycle: registration → sale → service → warranty → disposal.
+ *
+ * @example Register a serial with warranty
+ * ```php
+ * $service = app(SerialService::class);
+ * $serial = $service->register(
+ *     model: $product,
+ *     serialNumber: 'SN-2024-ABC123',
+ *     locationId: $warehouse->id,
+ *     condition: SerialCondition::New,
+ *     warrantyExpiresAt: now()->addYear(),
+ * );
+ * ```
+ * @example Sell a serial (assign to customer)
+ * ```php
+ * $service->sell($serial, orderId: $order->id, userId: $customer->id);
+ * // Status: Available → Sold
+ * ```
+ * @example Return/RMA handling
+ * ```php
+ * $service->customerReturn($serial, returnReason: 'defective');
+ * // Serial goes to InTransit, then:
+ * $service->receive($serial, warehouseId: $returns->id, condition: SerialCondition::Defective);
+ * ```
+ * @example Full history audit
+ * ```php
+ * $history = $serial->history()->chronological()->get();
+ * foreach ($history as $event) {
+ *     echo "{$event->event_type}: {$event->notes}";
+ * }
+ * ```
+ */
 final class SerialService
 {
     /**
      * Register a new serial number.
+     *
+     * @param  Model  $model  The inventoryable model (e.g., Product)
+     * @param  string  $serialNumber  Unique serial number
+     * @param  string|null  $locationId  Initial storage location
+     * @param  string|null  $batchId  Associated batch (if applicable)
+     * @param  SerialCondition  $condition  Physical condition
+     * @param  int|null  $unitCostMinor  Cost in minor units (cents)
+     * @param  Carbon|null  $warrantyExpiresAt  Warranty expiration date
+     * @param  string|null  $userId  User performing registration
+     * @return InventorySerial The registered serial record
      */
     public function register(
         Model $model,

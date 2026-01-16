@@ -22,6 +22,8 @@ final class InventoryAllocationResource extends Resource
 {
     protected static ?string $model = InventoryAllocation::class;
 
+    protected static ?string $tenantOwnershipRelationshipName = 'location.owner';
+
     protected static string | BackedEnum | null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
 
     protected static ?string $navigationLabel = 'Allocations';

@@ -24,6 +24,8 @@ final class InventoryLevelResource extends Resource
 {
     protected static ?string $model = InventoryLevel::class;
 
+    protected static ?string $tenantOwnershipRelationshipName = 'location.owner';
+
     protected static ?string $recordTitleAttribute = 'id';
 
     protected static string | BackedEnum | null $navigationIcon = Heroicon::OutlinedCube;

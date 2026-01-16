@@ -10,6 +10,7 @@ use Filament\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget;
+use Illuminate\Support\Facades\Route;
 
 final class ExpiringBatchesWidget extends TableWidget
 {
@@ -90,6 +91,7 @@ final class ExpiringBatchesWidget extends TableWidget
                 Action::make('view')
                     ->label('View')
                     ->icon('heroicon-o-eye')
+                    ->visible(fn (): bool => Route::has('filament.admin.resources.inventory-batches.view'))
                     ->url(fn (InventoryBatch $record): string => route('filament.admin.resources.inventory-batches.view', $record)),
             ])
             ->emptyStateHeading('No Expiring Batches')

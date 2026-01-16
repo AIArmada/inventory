@@ -16,6 +16,36 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
+/**
+ * Handles inventory valuation using different costing methods.
+ *
+ * Supports FIFO, Weighted Average, and Standard Cost methods for
+ * accurate inventory valuation and COGS calculation.
+ *
+ * @example Calculate valuation using FIFO
+ * ```php
+ * $service = app(ValuationService::class);
+ * $valuation = $service->calculateValuation(
+ *     $product,
+ *     CostingMethod::Fifo
+ * );
+ * // ['quantity' => 100, 'value' => 15000, 'average_cost' => 150]
+ * ```
+ * @example Get total inventory value for a warehouse
+ * ```php
+ * $totals = $service->getLocationValuation($warehouse->id, CostingMethod::WeightedAverage);
+ * // ['total_quantity' => 5000, 'total_value' => 750000, 'sku_count' => 150]
+ * ```
+ * @example Create valuation snapshot for month-end
+ * ```php
+ * $snapshot = $service->createSnapshot(CostingMethod::Fifo, 'Monthly close - Dec 2024');
+ * ```
+ * @example Calculate COGS for a shipment
+ * ```php
+ * $cogs = $service->calculateCogs($product, 10, CostingMethod::Fifo);
+ * // Uses FIFO layers to determine cost of goods sold
+ * ```
+ */
 final class ValuationService
 {
     public function __construct(

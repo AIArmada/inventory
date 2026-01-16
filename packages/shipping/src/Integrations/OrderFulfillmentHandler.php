@@ -22,6 +22,9 @@ use Throwable;
  * This handler implements the FulfillmentHandler contract from the orders
  * package, allowing orders to create shipments and track deliveries through
  * the shipping package infrastructure.
+ *
+ * When the inventory package is installed, this handler will automatically
+ * use FulfillmentLocationService to determine the best warehouse to ship from.
  */
 final class OrderFulfillmentHandler implements FulfillmentHandler
 {
@@ -47,7 +50,8 @@ final class OrderFulfillmentHandler implements FulfillmentHandler
                 ];
             }
 
-            $originAddress = $this->getOriginAddress();
+            // Get origin address - try inventory-aware location first
+            $originAddress = $this->getOriginAddressForOrder($order, $shipmentData);
             $destinationAddress = AddressData::from([
                 'name' => mb_trim($shippingAddress->first_name . ' ' . $shippingAddress->last_name),
                 'company' => $shippingAddress->company,
@@ -219,6 +223,128 @@ final class OrderFulfillmentHandler implements FulfillmentHandler
             'countryCode' => $origin['country_code'] ?? 'MY',
             'phone' => $origin['phone'] ?? null,
             'email' => $origin['email'] ?? null,
+        ]);
+    }
+
+    /**
+     * Get the best origin address for an order using inventory awareness when available.
+     *
+     * When the inventory package is installed, this method queries the
+     * FulfillmentLocationService to find the optimal warehouse that can
+     * fulfill the order items. Falls back to static config if inventory
+     * package is not available or if no suitable location is found.
+     *
+     * @param  array<string, mixed>  $shipmentData  Optional shipment data including forced location_id
+     */
+    private function getOriginAddressForOrder(Order $order, array $shipmentData = []): AddressData
+    {
+        // If a specific location_id is provided, try to use it
+        $forcedLocationId = $shipmentData['location_id'] ?? null;
+
+        // Try inventory-aware fulfillment location
+        if (class_exists(\AIArmada\Inventory\Integrations\FulfillmentLocationService::class)) {
+            try {
+                /** @var \AIArmada\Inventory\Integrations\FulfillmentLocationService|null $fulfillmentService */
+                $fulfillmentService = app(\AIArmada\Inventory\Integrations\FulfillmentLocationService::class);
+
+                if ($fulfillmentService !== null) {
+                    // Build items array from order
+                    $items = $order->items
+                        ->filter(fn ($item) => $item->metadata['requires_shipping'] ?? true)
+                        ->map(fn ($item) => [
+                            'variant_id' => $item->purchasable_id,
+                            'quantity' => $item->quantity,
+                        ])
+                        ->values()
+                        ->toArray();
+
+                    if ($items !== []) {
+                        // If forced location, check it can fulfill
+                        if ($forcedLocationId !== null) {
+                            $location = $this->getLocationById($forcedLocationId);
+                            if ($location !== null && $this->locationCanFulfill($fulfillmentService, $location, $items)) {
+                                return $this->locationToAddress($location);
+                            }
+                        }
+
+                        // Find best fulfillment location using the Order
+                        $location = $fulfillmentService->getBestFulfillmentLocation($order);
+
+                        if ($location !== null) {
+                            return $this->locationToAddress($location);
+                        }
+                    }
+                }
+            } catch (Throwable $e) {
+                report($e);
+            }
+        }
+
+        // Fall back to static config
+        return $this->getOriginAddress();
+    }
+
+    /**
+     * Get a location model by ID.
+     *
+     * @return object|null Location model or null
+     */
+    private function getLocationById(string $locationId): ?object
+    {
+        if (! class_exists(\AIArmada\Inventory\Models\Location::class)) {
+            return null;
+        }
+
+        try {
+            return \AIArmada\Inventory\Models\Location::find($locationId);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Check if a location can fulfill all items.
+     *
+     * @param  array<int, array{variant_id: string, quantity: int}>  $items
+     */
+    private function locationCanFulfill(object $fulfillmentService, object $location, array $items): bool
+    {
+        try {
+            $availability = $fulfillmentService->getAvailabilitySummary($items);
+
+            foreach ($availability as $item) {
+                $locationStock = collect($item['locations'] ?? [])
+                    ->firstWhere('location_id', $location->id);
+
+                if ($locationStock === null || ($locationStock['available'] ?? 0) < $item['quantity_needed']) {
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Convert a Location model to AddressData.
+     */
+    private function locationToAddress(object $location): AddressData
+    {
+        $address = $location->address ?? [];
+
+        return AddressData::from([
+            'name' => $location->name ?? config('app.name'),
+            'company' => $address['company'] ?? null,
+            'line1' => $address['line1'] ?? $address['address_line_1'] ?? '',
+            'line2' => $address['line2'] ?? $address['address_line_2'] ?? null,
+            'city' => $address['city'] ?? '',
+            'state' => $address['state'] ?? '',
+            'postcode' => $address['postcode'] ?? $address['postal_code'] ?? '',
+            'countryCode' => $address['country_code'] ?? $address['country'] ?? 'MY',
+            'phone' => $address['phone'] ?? null,
+            'email' => $address['email'] ?? null,
         ]);
     }
 

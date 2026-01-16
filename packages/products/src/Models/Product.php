@@ -34,6 +34,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Spatie\Sluggable\HasSlug;
 use Spatie\Sluggable\SlugOptions;
 use Spatie\Tags\HasTags;
+use Throwable;
 
 /**
  * @property string $id
@@ -596,20 +597,39 @@ class Product extends Model implements Buyable, HasMedia, Inventoryable, Priceab
 
     public function getStockQuantity(): int
     {
-        // Will integrate with inventory package
-        return 0;
+        if (! $this->tracksInventory()) {
+            return 0;
+        }
+
+        // Use inventory package if installed and configured
+        if (class_exists(\AIArmada\Inventory\Services\InventoryService::class)) {
+            try {
+                return app(\AIArmada\Inventory\Services\InventoryService::class)->getTotalAvailable($this);
+            } catch (Throwable) {
+                // Inventory tables may not exist, fall back to local stock
+            }
+        }
+
+        // Fallback to local stock attribute
+        return $this->stock ?? 0;
     }
 
     public function isInStock(): bool
     {
-        // Will integrate with inventory package
-        return true;
+        if (! $this->tracksInventory()) {
+            return true;
+        }
+
+        return $this->getStockQuantity() > 0;
     }
 
     public function hasStock(int $quantity): bool
     {
-        // Will integrate with inventory package
-        return true;
+        if (! $this->tracksInventory()) {
+            return true;
+        }
+
+        return $this->getStockQuantity() >= $quantity;
     }
 
     public function tracksInventory(): bool

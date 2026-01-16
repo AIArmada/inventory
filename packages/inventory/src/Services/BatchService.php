@@ -18,10 +18,54 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 
+/**
+ * Manages batch/lot tracking for inventory items.
+ *
+ * Batch tracking enables FIFO picking, expiration management, and
+ * traceability for regulated industries (food, pharma, etc.).
+ *
+ * @example Create a batch with expiration
+ * ```php
+ * $service = app(BatchService::class);
+ * $batch = $service->createBatch(
+ *     model: $product,
+ *     batchNumber: 'LOT-2024-001',
+ *     locationId: $warehouse->id,
+ *     quantity: 100,
+ *     expiresAt: now()->addMonths(6),
+ *     lotNumber: 'MFG-2024-A1',
+ *     unitCostMinor: 1500,  // $15.00
+ * );
+ * ```
+ * @example Pick from earliest expiring batch (FEFO)
+ * ```php
+ * $batch = $service->getEarliestExpiringBatch($product);
+ * $service->decrementBatch($batch, 5);
+ * ```
+ * @example Handle product recall
+ * ```php
+ * $batches = $service->recallBatch('LOT-2024-001', 'FDA Safety Alert #12345');
+ * // All affected batches are now quarantined
+ * ```
+ */
 final class BatchService
 {
     /**
      * Create a new batch.
+     *
+     * @param  Model  $model  The inventoryable model (e.g., Product)
+     * @param  string  $batchNumber  Unique batch/lot identifier
+     * @param  string  $locationId  Location UUID where batch is stored
+     * @param  int  $quantity  Initial quantity received
+     * @param  Carbon|null  $expiresAt  Expiration date (null = never expires)
+     * @param  Carbon|null  $manufacturedAt  Manufacturing/production date
+     * @param  string|null  $lotNumber  Additional lot number (if different from batch)
+     * @param  int|null  $unitCostMinor  Unit cost in minor units (cents)
+     * @param  string|null  $supplierId  Supplier/vendor identifier
+     * @param  string|null  $purchaseOrderNumber  PO reference
+     * @return InventoryBatch The created batch record
+     *
+     * @throws InvalidArgumentException If quantity is not positive or location is invalid
      */
     public function createBatch(
         Model $model,
@@ -180,8 +224,12 @@ final class BatchService
     /**
      * Recall multiple batches.
      *
-     * @param  Collection<int, InventoryBatch>|array<InventoryBatch>  $batches
-     * @return Collection<int, InventoryBatch>
+     * Quarantines all specified batches and releases any associated
+     * allocations. Use this for product recalls or quality issues.
+     *
+     * @param  Collection<int, InventoryBatch>|array<InventoryBatch>  $batches  Batches to recall
+     * @param  string  $reason  Recall reason (e.g., FDA notice number)
+     * @return Collection<int, InventoryBatch> The recalled batches
      */
     public function recallBatches(Collection | array $batches, string $reason): Collection
     {
@@ -231,6 +279,16 @@ final class BatchService
 
     /**
      * Split a batch into two.
+     *
+     * Creates a new batch with the specified quantity, reducing the
+     * original batch. Useful for partial shipments or re-packaging.
+     *
+     * @param  InventoryBatch  $batch  The batch to split
+     * @param  int  $quantityToSplit  Quantity for the new batch
+     * @param  string  $newBatchNumber  Batch number for the new batch
+     * @return InventoryBatch The newly created batch
+     *
+     * @throws InvalidArgumentException If quantity is invalid or batch has reservations
      */
     public function splitBatch(InventoryBatch $batch, int $quantityToSplit, string $newBatchNumber): InventoryBatch
     {
@@ -273,7 +331,15 @@ final class BatchService
     /**
      * Merge batches into one.
      *
-     * @param  Collection<int, InventoryBatch>  $batches
+     * Combines multiple batches of the same item into a single batch.
+     * Uses the earliest expiration date. Cannot merge batches with
+     * reserved quantities.
+     *
+     * @param  Collection<int, InventoryBatch>  $batches  Batches to merge (min 2)
+     * @param  string  $newBatchNumber  Batch number for the merged batch
+     * @return InventoryBatch The newly created merged batch
+     *
+     * @throws InvalidArgumentException If validation fails
      */
     public function mergeBatches(Collection $batches, string $newBatchNumber): InventoryBatch
     {

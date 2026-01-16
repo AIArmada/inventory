@@ -130,6 +130,11 @@ parameters:
         - message: '#Call to an undefined method Illuminate\\Database\\Eloquent\\Model::(updateDefaultPaymentMethod|deletePaymentMethod)\(\)\.#'
         # Ignore PHPDoc type issues in Cart traits
         - message: '#PHPDoc tag @param for parameter \$resolver with type.*is not subtype of native type callable\.#'
+        # Ignore Cart integration classes when Cart package is not installed (suggested dependency)
+        - message: '#.*unknown class AIArmada\\Cart\\Contracts\\Cart(ValidatorInterface|ValidationResult|ManagerInterface).*#'
+        - message: '#.*unknown interface AIArmada\\Cart\\Contracts\\Cart(ValidatorInterface|ManagerInterface).*#'
+        - message: '#.*invalid (return )?type AIArmada\\Cart\\Contracts\\Cart(ValidationResult|ManagerInterface).*#'
+        - message: '#Call to an undefined method AIArmada\\Cart\\Contracts\\CartManagerInterface::session\(\)\.#'
         # Ignore nullCoalesce in exception classes
         # (no ignore) surface strict/dead-code issues
         # Ignore unused Buyable trait (it's part of the public API)
@@ -173,3 +178,5 @@ parameters:
         analyseAndScan:
             - vendor
             - '*/Testing/*'
+            # Exclude Cart integration files when Cart package is not installed (suggested dependency)
+            - packages/inventory/src/Cart/

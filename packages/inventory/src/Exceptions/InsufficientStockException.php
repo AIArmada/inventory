@@ -6,6 +6,10 @@ namespace AIArmada\Inventory\Exceptions;
 
 use Exception;
 
+/**
+ * @deprecated Use InsufficientInventoryException::forLocation() instead.
+ *             This class will be removed in a future version.
+ */
 final class InsufficientStockException extends Exception
 {
     public function __construct(
@@ -19,6 +23,8 @@ final class InsufficientStockException extends Exception
 
     /**
      * Create exception with details.
+     *
+     * @deprecated Use InsufficientInventoryException::forLocation() instead.
      */
     public static function forLocation(string $locationId, int $requested, int $available): self
     {

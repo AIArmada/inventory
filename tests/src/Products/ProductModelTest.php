@@ -594,19 +594,24 @@ describe('Product Model', function (): void {
         it('returns stock quantity', function (): void {
             $product = Product::create(['name' => 'Stock Product', 'price' => 1000]);
 
+            // Without inventory package tables configured, returns 0
             expect($product->getStockQuantity())->toBe(0);
         });
 
-        it('checks is in stock', function (): void {
-            $product = Product::create(['name' => 'In Stock', 'price' => 1000]);
+        it('digital products are always in stock', function (): void {
+            $digital = Product::create(['name' => 'Digital', 'price' => 1000, 'type' => ProductType::Digital]);
 
-            expect($product->isInStock())->toBeTrue();
+            // Digital products don't track inventory, so always in stock
+            expect($digital->isInStock())->toBeTrue()
+                ->and($digital->hasStock(999))->toBeTrue();
         });
 
-        it('checks has stock', function (): void {
-            $product = Product::create(['name' => 'Has Stock', 'price' => 1000]);
+        it('physical products check actual stock', function (): void {
+            $product = Product::create(['name' => 'Physical', 'price' => 1000, 'type' => ProductType::Simple]);
 
-            expect($product->hasStock(5))->toBeTrue();
+            // Without inventory tables, stock is 0, so not in stock
+            expect($product->isInStock())->toBeFalse()
+                ->and($product->hasStock(5))->toBeFalse();
         });
 
         it('does not track inventory by default', function (): void {
