@@ -103,22 +103,22 @@ class RoleResource extends Resource
             Section::make('Role Details')
                 ->description('Define the role name and the guard it applies to.')
                 ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true)
-                    ->placeholder('e.g. sales_manager')
-                    ->helperText('Use a unique, readable name per guard.')
-                    ->autocomplete(false),
-                Forms\Components\Select::make('guard_name')
-                    ->options(array_combine($guards, $guards))
-                    ->default($guards[0] ?? 'web')
-                    ->required()
-                    ->live()
-                    ->searchable()
-                    ->preload()
-                    ->helperText('Guards map to auth drivers (web, api, etc.).'),
-            ])->columns(2),
+                    Forms\Components\TextInput::make('name')
+                        ->required()
+                        ->maxLength(255)
+                        ->unique(ignoreRecord: true)
+                        ->placeholder('e.g. sales_manager')
+                        ->helperText('Use a unique, readable name per guard.')
+                        ->autocomplete(false),
+                    Forms\Components\Select::make('guard_name')
+                        ->options(array_combine($guards, $guards))
+                        ->default($guards[0] ?? 'web')
+                        ->required()
+                        ->live()
+                        ->searchable()
+                        ->preload()
+                        ->helperText('Guards map to auth drivers (web, api, etc.).'),
+                ])->columns(2),
 
             static::getAuthzFormComponents()
                 ->columnSpanFull(),

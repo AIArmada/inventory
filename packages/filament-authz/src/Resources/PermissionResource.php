@@ -97,21 +97,21 @@ class PermissionResource extends Resource
             Section::make('Permission Details')
                 ->description('Create a permission name and guard.')
                 ->schema([
-                Forms\Components\TextInput::make('name')
-                    ->required()
-                    ->maxLength(255)
-                    ->unique(ignoreRecord: true)
-                    ->placeholder('e.g. orders.viewAny')
-                    ->helperText('Names should follow your permission naming convention.')
-                    ->autocomplete(false),
-                Forms\Components\Select::make('guard_name')
-                    ->options(array_combine($guards, $guards))
-                    ->default($guards[0] ?? 'web')
-                    ->required()
-                    ->searchable()
-                    ->preload()
-                    ->helperText('Guards map to auth drivers (web, api, etc.).'),
-            ])->columns(2),
+                    Forms\Components\TextInput::make('name')
+                        ->required()
+                        ->maxLength(255)
+                        ->unique(ignoreRecord: true)
+                        ->placeholder('e.g. orders.viewAny')
+                        ->helperText('Names should follow your permission naming convention.')
+                        ->autocomplete(false),
+                    Forms\Components\Select::make('guard_name')
+                        ->options(array_combine($guards, $guards))
+                        ->default($guards[0] ?? 'web')
+                        ->required()
+                        ->searchable()
+                        ->preload()
+                        ->helperText('Guards map to auth drivers (web, api, etc.).'),
+                ])->columns(2),
         ]);
     }
 

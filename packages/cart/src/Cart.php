@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Cart;
 
+use AIArmada\Cart\Collections\CartConditionCollection;
 use AIArmada\Cart\Conditions\CartCondition;
 use AIArmada\Cart\Conditions\ConditionProviderRegistry;
 use AIArmada\Cart\Conditions\Pipeline\ConditionPipeline;
@@ -98,6 +99,14 @@ final class Cart
     public function getConditionProviderRegistry(): ?ConditionProviderRegistry
     {
         return $this->conditionProviderRegistry;
+    }
+
+    /**
+     * Get stored cart conditions without syncing providers.
+     */
+    public function getStoredConditions(): CartConditionCollection
+    {
+        return $this->getConditionsFromStorage();
     }
 
     /**

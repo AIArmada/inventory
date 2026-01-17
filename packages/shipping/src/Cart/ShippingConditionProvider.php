@@ -133,7 +133,52 @@ class ShippingConditionProvider implements ConditionProviderInterface
             return null;
         }
 
-        return AddressData::from($addressData);
+        $name = $addressData['name'] ?? null;
+        $phone = $addressData['phone'] ?? null;
+        $address = $addressData['address'] ?? null;
+        $postCode = $addressData['postCode'] ?? $addressData['post_code'] ?? null;
+
+        if (! is_string($name) || mb_trim($name) === '') {
+            return null;
+        }
+
+        if (! is_string($phone) || mb_trim($phone) === '') {
+            return null;
+        }
+
+        if (! is_string($address) || mb_trim($address) === '') {
+            return null;
+        }
+
+        if (! is_string($postCode) || mb_trim($postCode) === '') {
+            return null;
+        }
+
+        $countryCode = $addressData['countryCode'] ?? $addressData['country_code'] ?? 'MYS';
+        if (! is_string($countryCode) || mb_trim($countryCode) === '') {
+            $countryCode = 'MYS';
+        }
+
+        $isResidential = $addressData['isResidential'] ?? $addressData['is_residential'] ?? true;
+        if (! is_bool($isResidential)) {
+            $isResidential = true;
+        }
+
+        return AddressData::from([
+            'name' => $name,
+            'phone' => $phone,
+            'address' => $address,
+            'postCode' => $postCode,
+            'countryCode' => $countryCode,
+            'company' => $addressData['company'] ?? null,
+            'email' => $addressData['email'] ?? null,
+            'address2' => $addressData['address2'] ?? $addressData['address_2'] ?? null,
+            'city' => $addressData['city'] ?? null,
+            'state' => $addressData['state'] ?? null,
+            'latitude' => $addressData['latitude'] ?? null,
+            'longitude' => $addressData['longitude'] ?? null,
+            'isResidential' => $isResidential,
+        ]);
     }
 
     /**

@@ -76,8 +76,7 @@ final class CartConditionBatchRemoval
                     $conditionRemoved = false;
 
                     // Try removing from regular conditions
-                    if ($cart->getConditions()->has($conditionName)) {
-                        $cart->removeCondition($conditionName);
+                    if ($cart->removeCondition($conditionName)) {
                         $conditionRemoved = true;
                     }
 

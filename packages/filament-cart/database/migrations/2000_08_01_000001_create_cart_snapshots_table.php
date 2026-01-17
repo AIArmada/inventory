@@ -17,7 +17,7 @@ return new class extends Migration
         $tableName = $tables['snapshots'] ?? $tablePrefix . 'snapshots';
         $jsonType = (string) ($databaseConfig['json_column_type'] ?? commerce_json_column_type('cart', 'json'));
 
-        Schema::create($tableName, function (Blueprint $table) use ($jsonType): void {
+        Schema::create($tableName, function (Blueprint $table) use ($jsonType, $tableName): void {
             $table->uuid('id')->primary();
             $table->string('identifier');
             $table->string('instance')->default('default');

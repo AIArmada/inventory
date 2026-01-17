@@ -6,6 +6,8 @@ namespace AIArmada\FilamentCart\Services;
 
 use AIArmada\Cart\Cart as BaseCart;
 use AIArmada\Cart\Conditions\CartCondition as BaseCartCondition;
+use AIArmada\Cart\Conditions\Pipeline\ConditionPipeline;
+use AIArmada\Cart\Conditions\Pipeline\ConditionPipelineContext;
 use AIArmada\Cart\Models\CartItem as BaseCartItem;
 use AIArmada\FilamentCart\Models\Cart;
 use AIArmada\FilamentCart\Models\CartCondition;
@@ -26,7 +28,7 @@ class NormalizedCartSynchronizer
             $ownerKey = Cart::resolveOwnerKey($owner);
 
             $items = $cart->getItems();
-            $conditions = $cart->getConditions();
+            $conditions = $cart->getStoredConditions();
 
             $currency = $this->resolveCurrency();
 
@@ -44,9 +46,13 @@ class NormalizedCartSynchronizer
             $cartModel->conditions = $conditions->isEmpty() ? null : $conditions->toArray();
             $cartModel->items_count = $cart->countItems();
             $cartModel->quantity = $cart->getTotalQuantity();
-            $cartModel->subtotal = (int) $cart->subtotalWithoutConditions()->getAmount();
-            $cartModel->total = (int) $cart->total()->getAmount();
-            $cartModel->savings = (int) $cart->savings()->getAmount();
+            $pipeline = new ConditionPipeline;
+            $pipelineResult = $pipeline->process(new ConditionPipelineContext($cart, $conditions));
+
+            $subtotalWithoutConditions = (int) $cart->subtotalWithoutConditions()->getAmount();
+            $cartModel->subtotal = $subtotalWithoutConditions;
+            $cartModel->total = $pipelineResult->total();
+            $cartModel->savings = max(0, $subtotalWithoutConditions - $cartModel->total);
             $cartModel->currency = $currency;
             $cartModel->save();
 
