@@ -99,7 +99,7 @@ final class StackingConfigurationPage extends Page implements HasForms
                                 'value_threshold' => 'Value Threshold',
                             ])
                             ->required()
-                            ->reactive(),
+                            ->live(),
 
                         TextInput::make('value')
                             ->label('Value')

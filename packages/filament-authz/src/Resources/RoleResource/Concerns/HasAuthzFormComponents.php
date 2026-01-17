@@ -61,6 +61,7 @@ trait HasAuthzFormComponents
     {
         return Tabs::make('Permissions')
             ->contained()
+            ->persistTabInQueryString()
             ->tabs(static::getPermissionTabs());
     }
 
@@ -95,6 +96,7 @@ trait HasAuthzFormComponents
             ->label('Select All Resources')
             ->helperText('Toggle all resource permissions at once')
             ->live()
+            ->columnSpanFull()
             ->afterStateHydrated(function ($state, callable $set, callable $get) use ($allPermissions): void {
                 $current = $get('permissions') ?? [];
                 $set('select_all_resources', static::shouldSelectAll($allPermissions, $current));
@@ -242,7 +244,9 @@ trait HasAuthzFormComponents
     {
         return Toggle::make('select_all_' . $category)
             ->label('Select All ' . ucfirst($category))
+            ->helperText('Toggle all ' . $category . ' permissions at once')
             ->live()
+            ->columnSpanFull()
             ->afterStateHydrated(function ($state, callable $set, callable $get) use ($category, $permissionKeys): void {
                 $current = $get('permissions') ?? [];
                 $set('select_all_' . $category, static::shouldSelectAll($permissionKeys, $current));

@@ -40,7 +40,7 @@ final class BoostUpdateCommand extends Command
         $configPath = $projectRoot . '/boost.json';
 
         if (! file_exists($configPath)) {
-            $this->components->error('No boost.json found at project root. Run boost:install first from the demo folder.');
+            $this->components->error('No boost.json found at project root. Run commerce:boost-install first.');
 
             return self::FAILURE;
         }
@@ -236,13 +236,19 @@ final class BoostUpdateCommand extends Command
      */
     private function getProjectRoot(): string
     {
+        $cwd = getcwd();
+
+        if (is_string($cwd) && file_exists($cwd . '/composer.json')) {
+            return $cwd;
+        }
+
         // Check if we're in a testbench environment
         if (function_exists('\\Orchestra\\Testbench\\package_path')) {
             return \Orchestra\Testbench\package_path();
         }
 
-        // Fallback to current working directory
-        return getcwd() ?: base_path();
+        // Fallback to application base path
+        return base_path();
     }
 
     /**

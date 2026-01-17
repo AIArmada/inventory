@@ -13,8 +13,10 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -98,16 +100,24 @@ class RoleResource extends Resource
         $guards = config('filament-authz.guards', ['web']);
 
         return $form->schema([
-            Section::make('Role Details')->schema([
+            Section::make('Role Details')
+                ->description('Define the role name and the guard it applies to.')
+                ->schema([
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255)
-                    ->unique(ignoreRecord: true),
+                    ->unique(ignoreRecord: true)
+                    ->placeholder('e.g. sales_manager')
+                    ->helperText('Use a unique, readable name per guard.')
+                    ->autocomplete(false),
                 Forms\Components\Select::make('guard_name')
                     ->options(array_combine($guards, $guards))
                     ->default($guards[0] ?? 'web')
                     ->required()
-                    ->reactive(),
+                    ->live()
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Guards map to auth drivers (web, api, etc.).'),
             ])->columns(2),
 
             static::getAuthzFormComponents()
@@ -120,7 +130,7 @@ class RoleResource extends Resource
         $guards = config('filament-authz.guards', ['web']);
 
         return $table->columns([
-            TextColumn::make('name')->searchable()->sortable(),
+            TextColumn::make('name')->searchable()->sortable()->copyable(),
             TextColumn::make('guard_name')->badge()->sortable(),
             TextColumn::make('permissions_count')
                 ->counts('permissions')
@@ -129,17 +139,32 @@ class RoleResource extends Resource
                 ->label('Permissions')
                 ->sortable(),
             TextColumn::make('created_at')->since()->sortable()->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('updated_at')->since()->sortable()->toggleable(isToggledHiddenByDefault: true),
         ])->filters([
             SelectFilter::make('guard_name')
                 ->label('Guard')
                 ->options(array_combine($guards, $guards))
-                ->placeholder('All guards'),
+                ->placeholder('All guards')
+                ->searchable(),
+            Filter::make('has_permissions')
+                ->label('Has permissions')
+                ->query(fn (Builder $query): Builder => $query->has('permissions'))
+                ->indicator('Has permissions'),
         ])->actions([
             Actions\EditAction::make(),
             Actions\DeleteAction::make(),
         ])->bulkActions([
             Actions\DeleteBulkAction::make(),
-        ])->defaultSort('name');
+        ])->defaultSort('name')
+            ->striped()
+            ->persistSearchInSession()
+            ->persistFiltersInSession()
+            ->deferFilters()
+            ->paginationPageOptions([10, 25, 50, 100])
+            ->defaultPaginationPageOption(25)
+            ->emptyStateHeading('No roles yet')
+            ->emptyStateDescription('Create roles to control access to resources and pages.')
+            ->emptyStateIcon('heroicon-o-shield-check');
     }
 
     public static function getPages(): array

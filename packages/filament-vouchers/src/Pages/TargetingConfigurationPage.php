@@ -90,7 +90,7 @@ final class TargetingConfigurationPage extends Page implements HasForms
                                         'customer_ltv' => 'Customer Lifetime Value',
                                     ])
                                     ->required()
-                                    ->reactive(),
+                                    ->live(),
 
                                 Select::make('operator')
                                     ->label('Operator')

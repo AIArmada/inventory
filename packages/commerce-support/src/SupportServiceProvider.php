@@ -30,6 +30,7 @@ final class SupportServiceProvider extends PackageServiceProvider
             ->hasViews('commerce-support')
             ->hasCommands([
                 Commands\SetupCommand::class,
+                Commands\BoostInstallCommand::class,
                 Commands\BoostUpdateCommand::class,
                 Commands\PublishMigrationsCommand::class,
                 Commands\InstallCommand::class,

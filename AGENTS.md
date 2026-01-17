@@ -19,7 +19,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 - Use per-package checks (tests/PHPStan) instead of repo-wide runs.
 - When a guideline requires verification, either run it (if feasible) or call out what must be run by the user.
 
-
 === .ai/filament rules ===
 
 # Filament Guidelines
@@ -32,7 +31,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 
 ## Verification
 - Double-check method signatures in the installed Filament version before shipping.
-
 
 === .ai/multitenancy rules ===
 
@@ -92,7 +90,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
   - `rg -n -- "Route::.*\{.*\}" packages/<pkg>/routes`
   - `rg -n -- "withoutOwnerScope\(|withoutGlobalScope\(.*Owner" packages/<pkg>/src`
 
-
 === .ai/development rules ===
 
 # Development Guidelines
@@ -126,7 +123,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 ## Beta Status
 - **Break Changes**: Allowed for improvement. No backward compatibility required.
 
-
 === .ai/model rules ===
 
 # Model Guidelines
@@ -140,7 +136,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 ## Verification
 - Search for forbidden DB cascades/constraints in migrations: `rg -n -- "constrained\(|cascadeOnDelete\(" packages/*/database`
 
-
 === .ai/database rules ===
 
 # Database Guidelines
@@ -152,7 +147,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 
 ## Verification
 - Ensure no constraints/cascades slipped in: `rg -n -- "constrained\(|cascadeOnDelete\(" packages/*/database`
-
 
 === .ai/spatie rules ===
 
@@ -167,7 +161,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 
 ## Rule of thumb
 - If one of the above solves the problem, prefer it over inventing a custom subsystem.
-
 
 === .ai/docs rules ===
 
@@ -186,7 +179,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 - Import: `import Aside from "@components/Aside.astro"`
 - Variants: `info`, `warning`, `tip`, `danger`
 
-
 === .ai/phpstan rules ===
 
 # PHPStan Guidelines
@@ -200,7 +192,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 ## Verification
 - Example: `./vendor/bin/phpstan analyse packages/<pkg>/src --level=6`
 
-
 === .ai/packages rules ===
 
 # Packages Guidelines
@@ -210,7 +201,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 - **DTOs**: Use `spatie/laravel-data`.
 - **Deletes**: No soft deletes (`SoftDeletes`).
 - **Testing**: Verify both standalone install and integrated behavior.
-
 
 === .ai/config rules ===
 
@@ -227,7 +217,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 ## Verification
 - Find config reads: `rg -n -- "config\('" packages/*/src packages/*/config`
 - Find unused keys (typical pattern): `rg -n -- "config\('pkg\." packages/*/config | cat`
-
 
 === .ai/test rules ===
 
@@ -253,7 +242,6 @@ These files are intentionally split by concern for easier maintenance. Read and 
 - Don’t run full coverage if `0% files > 10%`.
 - Targets: Core ≥80%, Filament ≥70%, Support ≥80%.
 - **Output**: ALWAYS pipe: `2>&1 | tee /tmp/out.txt`.
-
 
 === foundation rules ===
 
@@ -286,7 +274,6 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 ## Documentation Files
 - You must only create documentation files if explicitly requested by the user.
-
 
 === boost rules ===
 
@@ -324,7 +311,6 @@ This application is a Laravel application and its main Laravel ecosystems packag
 4. Mixed Queries - query=middleware "rate limit" - "middleware" AND exact phrase "rate limit".
 5. Multiple Queries - queries=["authentication", "middleware"] - ANY of these terms.
 
-
 === php rules ===
 
 ## PHP
@@ -356,11 +342,142 @@ protected function isAccessible(User $user, ?string $path = null): bool
 ## Enums
 - Typically, keys in an Enum should be TitleCase. For example: `FavoritePerson`, `BestLake`, `Monthly`.
 
+=== filament/blueprint rules ===
 
-=== tests rules ===
+## Filament Blueprint
 
-## Test Enforcement
+You are writing Filament v5 implementation plans. Plans must be specific enough
+that an implementing agent can write code without making decisions.
 
-- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
-- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test --compact` with a specific filename or filter.
+**Start here**: Read
+`/vendor/filament/blueprint/resources/markdown/planning/overview.md` for plan format,
+required sections, and what to clarify with the user before planning.
+
+=== filament/filament rules ===
+
+## Filament
+
+- Filament is used by this application. Follow existing conventions for how and where it's implemented.
+- Filament is a Server-Driven UI (SDUI) framework for Laravel that lets you define user interfaces in PHP using structured configuration objects. Built on Livewire, Alpine.js, and Tailwind CSS.
+- Use the `search-docs` tool for official documentation on Artisan commands, code examples, testing, relationships, and idiomatic practices.
+
+### Artisan
+
+- Use Filament-specific Artisan commands to create files. Find them with `list-artisan-commands` or `php artisan --help`.
+- Inspect required options and always pass `--no-interaction`.
+
+### Patterns
+
+Use static `make()` methods to initialize components. Most configuration methods accept a `Closure` for dynamic values.
+
+Use `Get $get` to read other form field values for conditional logic:
+
+<code-snippet name="Conditional form field" lang="php">
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Utilities\Get;
+
+Select::make('type')
+    ->options(CompanyType::class)
+    ->required()
+    ->live(),
+
+TextInput::make('company_name')
+    ->required()
+    ->visible(fn (Get $get): bool => $get('type') === 'business'),
+</code-snippet>
+
+Use `state()` with a `Closure` to compute derived column values:
+
+<code-snippet name="Computed table column" lang="php">
+use Filament\Tables\Columns\TextColumn;
+
+TextColumn::make('full_name')
+    ->state(fn (User $record): string => "{$record->first_name} {$record->last_name}"),
+</code-snippet>
+
+Actions encapsulate a button with optional modal form and logic:
+
+<code-snippet name="Action with modal form" lang="php">
+use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
+
+Action::make('updateEmail')
+    ->form([
+        TextInput::make('email')->email()->required(),
+    ])
+    ->action(fn (array $data, User $record): void => $record->update($data)),
+</code-snippet>
+
+### Testing
+
+Authenticate before testing panel functionality. Filament uses Livewire, so use `livewire()` or `Livewire::test()`:
+
+<code-snippet name="Filament Table Test" lang="php">
+    livewire(ListUsers::class)
+        ->assertCanSeeTableRecords($users)
+        ->searchTable($users->first()->name)
+        ->assertCanSeeTableRecords($users->take(1))
+        ->assertCanNotSeeTableRecords($users->skip(1));
+</code-snippet>
+
+<code-snippet name="Filament Create Resource Test" lang="php">
+    livewire(CreateUser::class)
+        ->fillForm([
+            'name' => 'Test',
+            'email' => 'test@example.com',
+        ])
+        ->call('create')
+        ->assertNotified()
+        ->assertRedirect();
+
+    assertDatabaseHas(User::class, [
+        'name' => 'Test',
+        'email' => 'test@example.com',
+    ]);
+</code-snippet>
+
+<code-snippet name="Testing Validation" lang="php">
+    livewire(CreateUser::class)
+        ->fillForm([
+            'name' => null,
+            'email' => 'invalid-email',
+        ])
+        ->call('create')
+        ->assertHasFormErrors([
+            'name' => 'required',
+            'email' => 'email',
+        ])
+        ->assertNotNotified();
+</code-snippet>
+
+<code-snippet name="Calling Actions" lang="php">
+    use Filament\Actions\DeleteAction;
+    use Filament\Actions\Testing\TestAction;
+
+    livewire(EditUser::class, ['record' => $user->id])
+        ->callAction(DeleteAction::class)
+        ->assertNotified()
+        ->assertRedirect();
+
+    livewire(ListUsers::class)
+        ->callAction(TestAction::make('promote')->table($user), [
+            'role' => 'admin',
+        ])
+        ->assertNotified();
+</code-snippet>
+
+### Common Mistakes
+
+**Commonly Incorrect Namespaces:**
+- Form fields (TextInput, Select, etc.): `Filament\Forms\Components\`
+- Infolist entries (for read-only views) (TextEntry, IconEntry, etc.): `Filament\Forms\Components\`
+- Layout components (Grid, Section, Fieldset, Tabs, Wizard, etc.): `Filament\Schemas\Components\`
+- Schema utilities (Get, Set, etc.): `Filament\Schemas\Components\Utilities\`
+- Actions: `Filament\Actions\` (no `Filament\Tables\Actions\` etc.)
+- Icons: `Filament\Support\Icons\Heroicon` enum (e.g., `Heroicon::PencilSquare`)
+
+**Recent breaking changes to Filament:**
+- File visibility is `private` by default. Use `->visibility('public')` for public access.
+- `Grid`, `Section`, and `Fieldset` no longer span all columns by default.
 </laravel-boost-guidelines>

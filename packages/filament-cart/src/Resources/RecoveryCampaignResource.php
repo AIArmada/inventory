@@ -21,10 +21,10 @@ use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
-use Filament\Tables\Actions\ViewAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -132,7 +132,7 @@ final class RecoveryCampaignResource extends Resource
                             ->required(),
                         Checkbox::make('offer_discount')
                             ->label('Offer Discount')
-                            ->reactive(),
+                            ->live(),
                         Select::make('discount_type')
                             ->options([
                                 'percentage' => 'Percentage Off',
@@ -155,7 +155,7 @@ final class RecoveryCampaignResource extends Resource
                     ->schema([
                         Checkbox::make('ab_testing_enabled')
                             ->label('Enable A/B Testing')
-                            ->reactive(),
+                            ->live(),
                         TextInput::make('ab_test_split_percent')
                             ->label('Variant Split (%)')
                             ->numeric()

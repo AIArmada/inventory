@@ -266,7 +266,7 @@ final class ApplyConditionAction extends Action
                 Toggle::make('is_dynamic')
                     ->label('Dynamic Condition')
                     ->helperText('Enable if this condition should auto-apply/remove based on rules')
-                    ->reactive()
+                    ->live()
                     ->default(false),
 
                 Select::make('dynamic_rules.factory_keys')

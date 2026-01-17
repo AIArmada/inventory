@@ -122,6 +122,7 @@
             "AIArmada\\FilamentVouchers\\Database\\Factories\\": "packages/filament-vouchers/database/factories/",
             "AIArmada\\FilamentVouchers\\Database\\Seeders\\": "packages/filament-vouchers/database/seeders/",
             "AIArmada\\FilamentVouchers\\Tests\\": "packages/filament-vouchers/tests/",
+            "AIArmada\\LivewireBlueprint\\": "packages/livewire-blueprint/src",
             "AIArmada\\Inventory\\": "packages/inventory/src",
             "AIArmada\\Inventory\\Database\\Factories\\": "packages/inventory/database/factories",
             "AIArmada\\Inventory\\Tests\\": "packages/inventory/tests/",
