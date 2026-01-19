@@ -216,12 +216,12 @@ class JntShippingDriver implements ShippingDriverInterface
             templateName: $options['template'] ?? null,
         );
 
-        $labelUrl = $response['url'] ?? null;
-        $labelContent = $response['content'] ?? null;
+        $base64Content = $response['base64EncodeContent'] ?? null;
+        $labelContent = $base64Content !== null ? base64_decode($base64Content) : null;
 
         return new LabelData(
             format: 'pdf',
-            url: $labelUrl,
+            url: null,
             content: $labelContent,
             trackingNumber: $trackingNumber,
         );

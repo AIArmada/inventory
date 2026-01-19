@@ -22,7 +22,6 @@ use AIArmada\Products\Models\Product;
 use AIArmada\Tax\Services\TaxCalculator;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Exceptions\InvalidVoucherException;
-use AIArmada\Vouchers\GiftCards\Models\GiftCard;
 use AIArmada\Vouchers\Models\Voucher;
 use App\Listeners\HandleChipPaymentSuccess;
 use Exception;
@@ -683,18 +682,18 @@ final class ShopController extends Controller
 
             // Add order items as products
             foreach ($order->items as $item) {
-                $purchase->addProduct(
+                $purchase->addProductCents(
                     name: $item->name,
-                    price: $item->unit_price,
+                    priceInCents: $item->unit_price,
                     quantity: $item->quantity
                 );
             }
 
             // Add shipping as a product if applicable
             if ($shippingCost > 0) {
-                $purchase->addProduct(
+                $purchase->addProductCents(
                     name: 'Shipping (' . ucfirst(str_replace('_', ' ', $request->shipping_method)) . ')',
-                    price: $shippingCost,
+                    priceInCents: $shippingCost,
                     quantity: 1
                 );
             }
@@ -706,9 +705,9 @@ final class ShopController extends Controller
 
             // Represent tax explicitly so payment total matches order.
             if ($order->tax_total > 0) {
-                $purchase->addProduct(
+                $purchase->addProductCents(
                     name: 'Tax',
-                    price: $order->tax_total,
+                    priceInCents: $order->tax_total,
                     quantity: 1
                 );
             }
@@ -983,54 +982,6 @@ final class ShopController extends Controller
         ) {
             abort(404);
         }
-    }
-
-    /**
-     * Gift Cards page.
-     */
-    public function giftCards(Request $request): View
-    {
-        $giftCard = null;
-        $availableCards = null;
-
-        $owner = OwnerContext::resolve();
-
-        // Check balance if code provided
-        if ($request->filled('code')) {
-            $giftCard = GiftCard::query()
-                ->when(
-                    $owner,
-                    fn ($query) => $query->forOwner($owner),
-                    fn ($query) => $query->whereRaw('1 = 0'),
-                )
-                ->where('code', mb_strtoupper($request->code))
-                ->first();
-        }
-
-        // Get demo gift cards for display
-        $availableCards = GiftCard::query()
-            ->when(
-                $owner,
-                fn ($query) => $query->forOwner($owner),
-                fn ($query) => $query->whereRaw('1 = 0'),
-            )
-            ->where('status', 'active')
-            ->where('current_balance', '>', 0)
-            ->orderBy('initial_balance', 'asc')
-            ->take(6)
-            ->get();
-
-        return view('shop.gift-cards', compact('giftCard', 'availableCards'));
-    }
-
-    /**
-     * Check gift card balance (redirect).
-     */
-    public function checkGiftCard(Request $request): RedirectResponse
-    {
-        $code = $request->get('code', '');
-
-        return redirect()->route('shop.gift-cards', ['code' => $code]);
     }
 
     /**

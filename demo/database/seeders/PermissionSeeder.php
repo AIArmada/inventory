@@ -12,11 +12,13 @@ use AIArmada\FilamentAuthz\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * 🔐 AUTHZ SHOWCASE SEEDER
+ * 🔐 AUTHZ SHOWCASE SEEDER (SINGLE TENANCY)
  *
  * Creates a comprehensive permission and role structure demonstrating
  * the full power of the filament-authz package with realistic
  * commerce-focused access control.
+ *
+ * Single Tenancy: All roles/permissions belong to one tenant (admin@commerce.demo)
  */
 final class PermissionSeeder extends Seeder
 {
@@ -25,14 +27,22 @@ final class PermissionSeeder extends Seeder
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $this->command->info('🔐 Building Authorization System...');
+        $this->command->info('🔐 Building Authorization System (Single Tenancy)...');
 
-        $owner = $this->resolveTenantOwner();
+        // Single tenant: All permissions belong to admin@commerce.demo
+        $singleTenantOwner = $this->resolveTenantOwner();
 
-        OwnerContext::withOwner($owner, function (): void {
-            $this->createPermissions();
-            $this->createRoles();
-        });
+        $previousTeamId = getPermissionsTeamId();
+        setPermissionsTeamId($singleTenantOwner);
+
+        try {
+            OwnerContext::withOwner($singleTenantOwner, function (): void {
+                $this->createPermissions();
+                $this->createRoles();
+            });
+        } finally {
+            setPermissionsTeamId($previousTeamId);
+        }
         $this->assignRolesToUsers();
 
         $this->command->info('   ✓ Authorization system complete');
@@ -204,6 +214,7 @@ final class PermissionSeeder extends Seeder
         $superAdmin = Role::firstOrCreate([
             'name' => 'super_admin',
             'guard_name' => 'web',
+            ...$this->teamAttributes(),
         ]);
         // Super admin gets ALL permissions automatically via filament-authz
 
@@ -213,6 +224,7 @@ final class PermissionSeeder extends Seeder
         $admin = Role::firstOrCreate([
             'name' => 'admin',
             'guard_name' => 'web',
+            ...$this->teamAttributes(),
         ]);
         $admin->syncPermissions(Permission::where('name', 'not like', 'role.%')
             ->where('name', 'not like', 'permission.%')
@@ -226,6 +238,7 @@ final class PermissionSeeder extends Seeder
         $inventoryManager = Role::firstOrCreate([
             'name' => 'inventory_manager',
             'guard_name' => 'web',
+            ...$this->teamAttributes(),
         ]);
         $inventoryManager->syncPermissions([
             // Full inventory access
@@ -263,6 +276,7 @@ final class PermissionSeeder extends Seeder
         $marketingManager = Role::firstOrCreate([
             'name' => 'marketing_manager',
             'guard_name' => 'web',
+            ...$this->teamAttributes(),
         ]);
         $marketingManager->syncPermissions([
             // Full voucher access
@@ -304,6 +318,7 @@ final class PermissionSeeder extends Seeder
         $financeManager = Role::firstOrCreate([
             'name' => 'finance_manager',
             'guard_name' => 'web',
+            ...$this->teamAttributes(),
         ]);
         $financeManager->syncPermissions([
             // Payment access
@@ -336,6 +351,7 @@ final class PermissionSeeder extends Seeder
         $support = Role::firstOrCreate([
             'name' => 'customer_support',
             'guard_name' => 'web',
+            ...$this->teamAttributes(),
         ]);
         $support->syncPermissions([
             // Read orders
@@ -370,6 +386,7 @@ final class PermissionSeeder extends Seeder
         $viewer = Role::firstOrCreate([
             'name' => 'viewer',
             'guard_name' => 'web',
+            ...$this->teamAttributes(),
         ]);
         $viewerPermissions = Permission::where('name', 'like', '%.viewAny')
             ->orWhere('name', 'like', '%.view')
@@ -382,6 +399,28 @@ final class PermissionSeeder extends Seeder
     private function assignRolesToUsers(): void
     {
         // Assignments are done in UserSeeder after users are created
+    }
+
+    /**
+     * @return array<string, int|string>
+     */
+    private function teamAttributes(): array
+    {
+        $registrar = app(PermissionRegistrar::class);
+
+        if (! $registrar->teams) {
+            return [];
+        }
+
+        $teamId = getPermissionsTeamId();
+
+        if ($teamId === null) {
+            return [];
+        }
+
+        $teamsKey = $registrar->teamsKey;
+
+        return [$teamsKey => $teamId];
     }
 
     private function resolveTenantOwner(): User

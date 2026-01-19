@@ -250,7 +250,7 @@ final class InventorySeeder extends Seeder
 
                 InventoryLevel::firstOrCreate(
                     [
-                        'inventoryable_type' => Product::class,
+                        'inventoryable_type' => $product->getMorphClass(),
                         'inventoryable_id' => $product->id,
                         'location_id' => $location->id,
                     ],
@@ -298,12 +298,12 @@ final class InventorySeeder extends Seeder
 
             for ($i = 0; $i < rand(2, 5); $i++) {
                 InventoryMovement::create([
-                    'inventoryable_type' => Product::class,
+                    'inventoryable_type' => $product->getMorphClass(),
                     'inventoryable_id' => $product->id,
                     'from_location_id' => null, // External supplier
                     'to_location_id' => $targetLocation->id,
                     'quantity' => rand(50, 200),
-                    'type' => 'receive',
+                    'type' => 'receipt',
                     'reason' => 'purchase',
                     'reference' => 'PO-' . mb_strtoupper(Str::random(8)),
                     'note' => 'Supplier delivery - ' . fake()->company(),
@@ -319,7 +319,7 @@ final class InventorySeeder extends Seeder
             $toLocation = $activeLocations->filter(fn ($l) => $l->id !== $fromLocation->id)->random();
 
             InventoryMovement::create([
-                'inventoryable_type' => Product::class,
+                'inventoryable_type' => $product->getMorphClass(),
                 'inventoryable_id' => $product->id,
                 'from_location_id' => $fromLocation->id,
                 'to_location_id' => $toLocation->id,
@@ -339,12 +339,12 @@ final class InventorySeeder extends Seeder
 
             for ($i = 0; $i < rand(5, 15); $i++) {
                 InventoryMovement::create([
-                    'inventoryable_type' => Product::class,
+                    'inventoryable_type' => $product->getMorphClass(),
                     'inventoryable_id' => $product->id,
                     'from_location_id' => $sourceLocation->id,
                     'to_location_id' => null, // Customer
                     'quantity' => rand(1, 5),
-                    'type' => 'ship',
+                    'type' => 'shipment',
                     'reason' => 'sale',
                     'reference' => 'ORD-' . mb_strtoupper(Str::random(8)),
                     'note' => 'Customer order fulfillment',
@@ -359,12 +359,12 @@ final class InventorySeeder extends Seeder
             $location = $activeLocations->random();
 
             InventoryMovement::create([
-                'inventoryable_type' => Product::class,
+                'inventoryable_type' => $product->getMorphClass(),
                 'inventoryable_id' => $product->id,
                 'from_location_id' => null,
                 'to_location_id' => $location->id,
                 'quantity' => rand(-5, 10),
-                'type' => 'adjust',
+                'type' => 'adjustment',
                 'reason' => fake()->randomElement(['count', 'damage', 'found', 'expired']),
                 'reference' => 'ADJ-' . mb_strtoupper(Str::random(8)),
                 'note' => 'Inventory audit adjustment',

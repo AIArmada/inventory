@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\FilamentOrders\Resources\OrderResource\Pages;
 
 use AIArmada\FilamentOrders\Resources\OrderResource;
+use AIArmada\Orders\Contracts\FulfillmentHandler;
 use AIArmada\Orders\Models\Order;
 use AIArmada\Orders\Services\OrderService;
 use AIArmada\Orders\States\PendingPayment;
@@ -90,27 +91,84 @@ class ViewOrder extends ViewRecord
 
                     return $user ? Gate::forUser($user)->allows('update', $record) : false;
                 })
-                ->form([
-                    \Filament\Forms\Components\TextInput::make('carrier')
-                        ->label('Carrier')
-                        ->required(),
-                    \Filament\Forms\Components\TextInput::make('tracking_number')
-                        ->label('Tracking Number')
-                        ->required(),
-                ])
+                ->form(function (): array {
+                    // Check if FulfillmentHandler (shipping integration) is available
+                    $hasFulfillmentHandler = app()->bound(FulfillmentHandler::class);
+                    $carriers = $this->getAvailableCarriers();
+
+                    if ($hasFulfillmentHandler && $carriers !== []) {
+                        // Shipping integration available - show carrier selection
+                        return [
+                            \Filament\Forms\Components\Select::make('carrier')
+                                ->label('Shipping Carrier')
+                                ->options($carriers)
+                                ->default(config('shipping.default', 'jnt'))
+                                ->required()
+                                ->helperText('Shipment will be created automatically via carrier API'),
+                            \Filament\Forms\Components\Select::make('service')
+                                ->label('Service Type')
+                                ->options([
+                                    'standard' => 'Standard Delivery',
+                                    'express' => 'Express Delivery',
+                                    'EZ' => 'J&T EZ',
+                                ])
+                                ->default('standard'),
+                        ];
+                    }
+
+                    // Fallback to manual input
+                    return [
+                        \Filament\Forms\Components\TextInput::make('carrier')
+                            ->label('Carrier')
+                            ->required(),
+                        \Filament\Forms\Components\TextInput::make('tracking_number')
+                            ->label('Tracking Number')
+                            ->required(),
+                    ];
+                })
                 ->action(function (Order $record, array $data): void {
                     try {
                         $service = app(OrderService::class);
-                        $service->ship(
-                            $record,
-                            $data['carrier'],
-                            $data['tracking_number'],
-                        );
 
-                        Notification::make()
-                            ->title('Order shipped')
-                            ->success()
-                            ->send();
+                        // Check if FulfillmentHandler is available for API-based shipping
+                        if (app()->bound(FulfillmentHandler::class) && ! isset($data['tracking_number'])) {
+                            /** @var FulfillmentHandler $fulfillmentHandler */
+                            $fulfillmentHandler = app(FulfillmentHandler::class);
+
+                            $result = $fulfillmentHandler->createShipment($record, [
+                                'carrier' => $data['carrier'] ?? config('shipping.default', 'jnt'),
+                                'service' => $data['service'] ?? 'standard',
+                            ]);
+
+                            if (! $result['success']) {
+                                throw new \RuntimeException($result['error'] ?? 'Failed to create shipment via carrier API');
+                            }
+
+                            // Update order with tracking info from API
+                            $service->ship(
+                                $record,
+                                $this->getCarrierName($data['carrier'] ?? 'jnt'),
+                                $result['tracking_number'] ?? 'PENDING',
+                            );
+
+                            Notification::make()
+                                ->title('Order shipped via ' . $this->getCarrierName($data['carrier'] ?? 'jnt'))
+                                ->body('Tracking number: ' . ($result['tracking_number'] ?? 'Pending'))
+                                ->success()
+                                ->send();
+                        } else {
+                            // Manual tracking input
+                            $service->ship(
+                                $record,
+                                $data['carrier'],
+                                $data['tracking_number'],
+                            );
+
+                            Notification::make()
+                                ->title('Order shipped')
+                                ->success()
+                                ->send();
+                        }
 
                         $this->refreshFormData(['status', 'shipped_at']);
                     } catch (Throwable $exception) {
@@ -217,5 +275,39 @@ class ViewOrder extends ViewRecord
                 })
                 ->visible(fn (Order $record) => $record->isPaid()),
         ];
+    }
+
+    /**
+     * Get available shipping carriers.
+     *
+     * @return array<string, string>
+     */
+    protected function getAvailableCarriers(): array
+    {
+        $carriers = [];
+
+        // Check for JNT integration
+        if (class_exists(\AIArmada\Jnt\Shipping\JntShippingDriver::class)) {
+            $carriers['jnt'] = 'J&T Express';
+        }
+
+        // Check for manual shipping driver
+        if ($carriers === []) {
+            $carriers['manual'] = 'Manual Shipping';
+        }
+
+        return $carriers;
+    }
+
+    /**
+     * Get carrier display name.
+     */
+    protected function getCarrierName(string $carrierCode): string
+    {
+        return match ($carrierCode) {
+            'jnt' => 'J&T Express',
+            'manual' => 'Manual',
+            default => ucfirst($carrierCode),
+        };
     }
 }

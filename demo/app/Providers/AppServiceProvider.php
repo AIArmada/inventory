@@ -28,10 +28,9 @@ use AIArmada\Inventory\Models\InventorySupplierLeadtime;
 use AIArmada\Inventory\Models\InventoryValuationSnapshot;
 use AIArmada\Orders\Models\Order;
 use AIArmada\Docs\Models\Doc;
-use AIArmada\FilamentAuthz\Models\PermissionRequest;
+use AIArmada\Promotions\Models\Promotion;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateFraudSignal;
-use AIArmada\Pricing\Models\Promotion;
 use AIArmada\Pricing\Models\Price;
 use AIArmada\Pricing\Models\PriceList;
 use AIArmada\Products\Models\Category;
@@ -44,7 +43,6 @@ use App\Models\User;
 use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 final class AppServiceProvider extends ServiceProvider
@@ -72,24 +70,27 @@ final class AppServiceProvider extends ServiceProvider
         $this->app->bind(OwnerResolverInterface::class, function (): OwnerResolverInterface {
             return new class implements OwnerResolverInterface
             {
+                /**
+                 * Single tenancy: All data belongs to one owner (admin@commerce.demo).
+                 * This ensures all users see the same data and can interact with it.
+                 */
                 public function resolve(): ?Model
                 {
-                    $user = Auth::user();
+                    // Cache the single tenant owner for performance
+                    static $singleTenantOwner = null;
 
-                    if ($user instanceof Model) {
-                        return $user;
+                    if ($singleTenantOwner instanceof Model) {
+                        return $singleTenantOwner;
                     }
 
-                    $ownerFromQuery = request()->query('owner');
+                    $owner = User::query()
+                        ->where('email', 'admin@commerce.demo')
+                        ->first();
 
-                    if (is_string($ownerFromQuery) && $ownerFromQuery !== '') {
-                        session(['demo_owner_id' => $ownerFromQuery]);
-                    }
+                    if ($owner instanceof Model) {
+                        $singleTenantOwner = $owner;
 
-                    $demoOwnerId = session('demo_owner_id');
-
-                    if (is_string($demoOwnerId) && $demoOwnerId !== '') {
-                        return User::query()->find($demoOwnerId);
+                        return $singleTenantOwner;
                     }
 
                     return User::query()->first();
@@ -104,7 +105,7 @@ final class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::unguard();
-        
+
         Relation::enforceMorphMap([
             'order' => Order::class,
             'chip_client' => Client::class,
@@ -115,7 +116,6 @@ final class AppServiceProvider extends ServiceProvider
             'promotion' => Promotion::class,
             'affiliate' => Affiliate::class,
             'affiliate_fraud_signal' => AffiliateFraudSignal::class,
-            'permission_request' => PermissionRequest::class,
             'doc' => Doc::class,
             'product' => Product::class,
             'category' => Category::class,

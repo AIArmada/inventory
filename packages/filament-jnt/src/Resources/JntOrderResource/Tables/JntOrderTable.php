@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentJnt\Resources\JntOrderResource\Tables;
 
+use AIArmada\FilamentJnt\Actions\BulkPrintAwbAction;
+use AIArmada\FilamentJnt\Actions\PrintAwbTableAction;
 use AIArmada\Jnt\Enums\TrackingStatus;
 use AIArmada\Jnt\Models\JntOrder;
 use AIArmada\Jnt\Services\JntStatusMapper;
+use Filament\Actions\BulkActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Columns\IconColumn;
@@ -132,8 +135,13 @@ final class JntOrderTable
             ->actions([
                 ViewAction::make()
                     ->icon('heroicon-o-eye'),
+                PrintAwbTableAction::make(),
             ])
-            ->bulkActions([])
+            ->bulkActions([
+                BulkActionGroup::make([
+                    BulkPrintAwbAction::make(),
+                ]),
+            ])
             ->defaultSort('created_at', 'desc')
             ->paginated([25, 50, 100])
             ->poll(config('filament-jnt.polling_interval', '30s'));

@@ -27,6 +27,7 @@ final class ShippingServiceProvider extends PackageServiceProvider
         $package
             ->name('shipping')
             ->hasConfigFile()
+            ->hasRoute('web')
             ->discoversMigrations();
     }
 

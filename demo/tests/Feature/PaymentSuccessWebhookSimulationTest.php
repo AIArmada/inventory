@@ -12,7 +12,11 @@ uses(RefreshDatabase::class);
 
 test('payment success simulates CHIP webhook without morph map violations', function (): void {
     /** @var \App\Models\User&\Illuminate\Contracts\Auth\Authenticatable $owner */
-    $owner = \App\Models\User::factory()->create();
+    $owner = \App\Models\User::factory()->create([
+        'email' => 'admin@commerce.demo',
+    ]);
+
+    OwnerContext::override($owner);
 
     $order = OwnerContext::withOwner($owner, function () use ($owner): Order {
         $order = Order::create([
@@ -61,4 +65,6 @@ test('payment success simulates CHIP webhook without morph map violations', func
 
     expect($order->paid_at)->not()->toBeNull();
     expect($order->payments()->count())->toBeGreaterThan(0);
+
+    OwnerContext::clearOverride();
 });

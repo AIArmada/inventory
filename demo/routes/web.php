@@ -64,10 +64,6 @@ Route::get('/order/{order}/success', [ShopController::class, 'orderSuccess'])->n
 // Affiliate tracking
 Route::get('/ref/{code}', [ShopController::class, 'trackAffiliate'])->name('shop.affiliate');
 
-// Gift Cards
-Route::get('/gift-cards', [ShopController::class, 'giftCards'])->name('shop.gift-cards');
-Route::get('/gift-cards/check', [ShopController::class, 'checkGiftCard'])->name('shop.gift-cards.check');
-
 // Order Tracking
 Route::get('/tracking', [ShopController::class, 'tracking'])->name('shop.tracking');
 Route::get('/tracking/search', [ShopController::class, 'trackingSearch'])->name('shop.tracking.search');

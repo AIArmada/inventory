@@ -10,26 +10,25 @@ use AIArmada\Affiliates\Enums\ConversionStatus;
 use AIArmada\Affiliates\Models\Affiliate;
 use AIArmada\Affiliates\Models\AffiliateAttribution;
 use AIArmada\Affiliates\Models\AffiliateConversion;
-use AIArmada\Cart\Facades\Cart;
+use AIArmada\Orders\Models\Order;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
-use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Vouchers\Models\Voucher;
 use AIArmada\Vouchers\Models\VoucherUsage;
-use AIArmada\Orders\Models\Order;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * 🎭 THE ULTIMATE SHOWCASE SEEDER
+ * 🎭 THE ULTIMATE SHOWCASE SEEDER (SINGLE TENANCY)
  *
  * This seeder creates a complete, impressive demo that showcases
  * the full power of the AIArmada Commerce ecosystem.
+ *
+ * Single Tenancy: All voucher and affiliate codes are clean without tenant suffixes.
  */
 final class ShowcaseSeeder extends Seeder
 {
-    private ?string $tenantCodeSuffix = null;
 
     public function run(): void
     {
@@ -248,16 +247,17 @@ final class ShowcaseSeeder extends Seeder
             $influencerVouchers
         );
 
+        // Get the single tenant owner for owner-scoped vouchers
+        $owner = User::where('email', 'admin@commerce.demo')->first();
+
         foreach ($allVouchers as $voucherData) {
-            $voucherData['code'] = $this->withTenantSuffix($voucherData['code']);
-
-            if (isset($voucherData['metadata']['affiliate_code']) && is_string($voucherData['metadata']['affiliate_code'])) {
-                $voucherData['metadata']['affiliate_code'] = $this->withTenantSuffix($voucherData['metadata']['affiliate_code']);
-            }
-
+            // Single tenancy: use clean codes without tenant suffixes
+            // Assign owner for owner-scoped mode
             $voucher = Voucher::create(array_merge([
                 'currency' => 'MYR',
                 'allows_manual_redemption' => true,
+                'owner_type' => $owner ? $owner->getMorphClass() : null,
+                'owner_id' => $owner?->getKey(),
             ], $voucherData));
 
             // Create some usage history for active vouchers with applied_count
@@ -462,11 +462,7 @@ final class ShowcaseSeeder extends Seeder
         $allAffiliates = [];
 
         foreach ($topInfluencers as $data) {
-            $data['code'] = $this->withTenantSuffix($data['code']);
-            if (isset($data['default_voucher_code']) && is_string($data['default_voucher_code'])) {
-                $data['default_voucher_code'] = $this->withTenantSuffix($data['default_voucher_code']);
-            }
-
+            // Single tenancy: use clean codes without tenant suffixes
             $affiliate = Affiliate::create(array_merge([
                 'status' => AffiliateStatus::Active,
                 'currency' => 'MYR',
@@ -476,8 +472,7 @@ final class ShowcaseSeeder extends Seeder
         }
 
         foreach ($businessPartners as $data) {
-            $data['code'] = $this->withTenantSuffix($data['code']);
-
+            // Single tenancy: use clean codes without tenant suffixes
             $affiliate = Affiliate::create(array_merge([
                 'status' => AffiliateStatus::Active,
                 'currency' => 'MYR',
@@ -487,8 +482,7 @@ final class ShowcaseSeeder extends Seeder
         }
 
         foreach ($regularAffiliates as $data) {
-            $data['code'] = $this->withTenantSuffix($data['code']);
-
+            // Single tenancy: use clean codes without tenant suffixes
             $affiliate = Affiliate::create(array_merge([
                 'status' => AffiliateStatus::Active,
                 'currency' => 'MYR',
@@ -499,8 +493,7 @@ final class ShowcaseSeeder extends Seeder
         }
 
         foreach ($pendingAffiliates as $data) {
-            $data['code'] = $this->withTenantSuffix($data['code']);
-
+            // Single tenancy: use clean codes without tenant suffixes
             Affiliate::create(array_merge([
                 'currency' => 'MYR',
                 'payout_terms' => 'monthly',
@@ -622,32 +615,5 @@ final class ShowcaseSeeder extends Seeder
         // This seeder focuses on backend data that persists in the database
 
         $this->command->info('   ✓ Cart infrastructure ready for user interactions');
-    }
-
-    private function withTenantSuffix(string $code): string
-    {
-        return $code . '-' . $this->tenantCodeSuffix();
-    }
-
-    private function tenantCodeSuffix(): string
-    {
-        if ($this->tenantCodeSuffix !== null) {
-            return $this->tenantCodeSuffix;
-        }
-
-        $owner = OwnerContext::resolve();
-
-        if ($owner === null) {
-            $this->tenantCodeSuffix = Str::upper(Str::random(6));
-
-            return $this->tenantCodeSuffix;
-        }
-
-        // UUIDv7 values share a timestamp prefix; using the *start* of the ID will collide
-        // for records created around the same time. Use the tail of the ID for uniqueness.
-        $normalizedOwnerId = str_replace('-', '', (string) $owner->getKey());
-        $this->tenantCodeSuffix = Str::upper(Str::substr($normalizedOwnerId, -6));
-
-        return $this->tenantCodeSuffix;
     }
 }

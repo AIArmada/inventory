@@ -52,7 +52,7 @@ class JntServiceProvider extends PackageServiceProvider
             ->name('jnt')
             ->hasConfigFile()
             ->discoversMigrations()
-            ->hasRoute('webhooks')
+            ->hasRoutes(['webhooks', 'web'])
             ->hasCommands([
                 ConfigCheckCommand::class,
                 HealthCheckCommand::class,

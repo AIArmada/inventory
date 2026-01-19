@@ -148,8 +148,18 @@ class ShipmentService
             ]);
 
             // Generate label if supported and not already provided
+            // Wrapped in try-catch to not fail shipment if label generation fails (e.g., sandbox environments)
             if ($result->labelUrl === null && $driver->supports(DriverCapability::LabelGeneration)) {
-                $this->generateLabel($shipment);
+                try {
+                    $this->generateLabel($shipment);
+                } catch (\Throwable $e) {
+                    // Log warning but don't fail the shipment
+                    \Illuminate\Support\Facades\Log::warning('Label generation failed for shipment', [
+                        'shipment_id' => $shipment->id,
+                        'tracking_number' => $shipment->tracking_number,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
 
             $this->recordEvent($shipment, 'shipped', 'Shipment created with carrier');

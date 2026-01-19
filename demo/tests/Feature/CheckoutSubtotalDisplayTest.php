@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AIArmada\Products\Enums\ProductStatus;
 use AIArmada\Products\Models\Product;
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Vouchers\Enums\VoucherStatus;
 use AIArmada\Vouchers\Enums\VoucherType;
 use AIArmada\Vouchers\Models\Voucher;
@@ -12,6 +13,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('checkout displays pre-discount subtotal when a voucher is applied', function (): void {
+	$owner = \App\Models\User::factory()->create([
+		'email' => 'admin@commerce.demo',
+	]);
+
+	OwnerContext::override($owner);
+
 	$product = Product::create([
 		'name' => 'AirPods Pro',
 		'sku' => 'APP-2-001',
@@ -19,6 +26,8 @@ test('checkout displays pre-discount subtotal when a voucher is applied', functi
 		'currency' => 'MYR',
 		'status' => ProductStatus::Active,
 	]);
+
+	$product->assignOwner($owner)->save();
 
 	Voucher::create([
 		'code' => 'LOYAL100-TEST',
@@ -38,6 +47,8 @@ test('checkout displays pre-discount subtotal when a voucher is applied', functi
 		'status' => VoucherStatus::Active,
 		'target_definition' => null,
 		'metadata' => null,
+		'owner_type' => $owner->getMorphClass(),
+		'owner_id' => (string) $owner->getKey(),
 	]);
 
 	/** @var \Tests\TestCase $this */
@@ -58,4 +69,6 @@ test('checkout displays pre-discount subtotal when a voucher is applied', functi
 
 	expect($html)->toMatch('/<span>\s*Subtotal\s*<\/span>\s*<span>\s*RM\s*2,198\.00\s*<\/span>/');
 	expect($html)->not()->toContain('voucher_LOYAL100-TEST');
+
+	OwnerContext::clearOverride();
 });

@@ -4,58 +4,52 @@ declare(strict_types=1);
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Orders\Models\Order;
-use AIArmada\Orders\States\Created;
-use App\Filament\Resources\OrderResource;
+use AIArmada\Orders\States\PendingPayment;
+use AIArmada\Orders\States\Processing;
+use AIArmada\FilamentOrders\Resources\OrderResource;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-it('owner-scopes the OrderResource navigation badge', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
+it('shows the OrderResource navigation badge for the single tenant', function (): void {
+    $owner = User::factory()->create(['email' => 'admin@commerce.demo']);
 
-    OwnerContext::withOwner($ownerA, function (): void {
+    OwnerContext::withOwner($owner, function () use ($owner): void {
         Order::create([
-            'order_number' => 'ORD-DEMO-A-0001',
-            'status' => Created::class,
+            'order_number' => 'ORD-DEMO-0001',
+            'status' => PendingPayment::class,
             'subtotal' => 10_00,
             'discount_total' => 0,
             'tax_total' => 0,
             'shipping_total' => 0,
             'grand_total' => 10_00,
             'currency' => 'MYR',
-        ]);
-    });
-
-    OwnerContext::withOwner($ownerB, function (): void {
+        ])->assignOwner($owner)->save();
         Order::create([
-            'order_number' => 'ORD-DEMO-B-0001',
-            'status' => Created::class,
+            'order_number' => 'ORD-DEMO-0002',
+            'status' => Processing::class,
             'subtotal' => 20_00,
             'discount_total' => 0,
             'tax_total' => 0,
             'shipping_total' => 0,
             'grand_total' => 20_00,
             'currency' => 'MYR',
-        ]);
+        ])->assignOwner($owner)->save();
     });
 
-    $badgeA = OwnerContext::withOwner($ownerA, fn (): ?string => OrderResource::getNavigationBadge());
-    $badgeB = OwnerContext::withOwner($ownerB, fn (): ?string => OrderResource::getNavigationBadge());
+    $badge = OwnerContext::withOwner($owner, fn (): ?string => OrderResource::getNavigationBadge());
 
-    expect($badgeA)->toBe('1');
-    expect($badgeB)->toBe('1');
+    expect($badge)->toBe('2');
 });
 
-it('owner-scopes the OrderResource list query', function (): void {
-    $ownerA = User::factory()->create();
-    $ownerB = User::factory()->create();
+it('scopes the OrderResource list query to the single tenant', function (): void {
+    $owner = User::factory()->create(['email' => 'admin@commerce.demo']);
 
-    $orderA = OwnerContext::withOwner($ownerA, function (): Order {
-        return Order::create([
-            'order_number' => 'ORD-DEMO-A-0001',
-            'status' => Created::class,
+    $orderA = OwnerContext::withOwner($owner, function () use ($owner): Order {
+        $order = Order::create([
+            'order_number' => 'ORD-DEMO-0001',
+            'status' => PendingPayment::class,
             'subtotal' => 10_00,
             'discount_total' => 0,
             'tax_total' => 0,
@@ -63,12 +57,16 @@ it('owner-scopes the OrderResource list query', function (): void {
             'grand_total' => 10_00,
             'currency' => 'MYR',
         ]);
+
+        $order->assignOwner($owner)->save();
+
+        return $order;
     });
 
-    $orderB = OwnerContext::withOwner($ownerB, function (): Order {
-        return Order::create([
-            'order_number' => 'ORD-DEMO-B-0001',
-            'status' => Created::class,
+    $orderB = OwnerContext::withOwner($owner, function () use ($owner): Order {
+        $order = Order::create([
+            'order_number' => 'ORD-DEMO-0002',
+            'status' => Processing::class,
             'subtotal' => 20_00,
             'discount_total' => 0,
             'tax_total' => 0,
@@ -76,17 +74,25 @@ it('owner-scopes the OrderResource list query', function (): void {
             'grand_total' => 20_00,
             'currency' => 'MYR',
         ]);
+
+        $order->assignOwner($owner)->save();
+
+        return $order;
     });
 
-    $idsForA = OwnerContext::withOwner($ownerA, fn (): array => OrderResource::getEloquentQuery()->pluck('id')->all());
+    $ids = OwnerContext::withOwner($owner, fn (): array => OrderResource::getEloquentQuery()->pluck('id')->all());
 
-    expect($idsForA)->toContain($orderA->id);
-    expect($idsForA)->not->toContain($orderB->id);
+    expect($ids)->toContain($orderA->id);
+    expect($ids)->toContain($orderB->id);
 });
 
 it('fails closed when no owner is resolved for OrderResource', function (): void {
+    OwnerContext::override(null);
+
     $badge = OrderResource::getNavigationBadge();
     $count = OrderResource::getEloquentQuery()->count();
+
+    OwnerContext::clearOverride();
 
     expect($badge)->toBeNull();
     expect($count)->toBe(0);

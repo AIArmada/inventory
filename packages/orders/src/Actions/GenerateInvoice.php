@@ -41,7 +41,7 @@ final class GenerateInvoice
     {
         $invoiceNumber = $this->generateInvoiceNumber($order);
 
-        return Pdf::view('orders::pdf.invoice', [
+        $pdf = Pdf::view('orders::pdf.invoice', [
             'order' => $order,
             'items' => $order->items,
             'billingAddress' => $order->billingAddress,
@@ -53,6 +53,20 @@ final class GenerateInvoice
             ->format('a4')
             ->margins(15, 15, 15, 15)
             ->name("invoice-{$order->order_number}.pdf");
+
+        // Configure node module path for puppeteer
+        $nodeModulePath = base_path('node_modules');
+        if (is_dir($nodeModulePath)) {
+            $pdf->withBrowsershot(function (\Spatie\Browsershot\Browsershot $browsershot) use ($nodeModulePath): void {
+                $browsershot
+                    ->setNodeModulePath($nodeModulePath)
+                    ->setEnvironmentOptions([
+                        'NODE_PATH' => $nodeModulePath,
+                    ]);
+            });
+        }
+
+        return $pdf;
     }
 
     /**

@@ -148,6 +148,41 @@ Manually sync tracking information:
 
 **Visibility**: Only shown for orders with tracking number.
 
+### Print AWB Action
+
+Print the Air Waybill (shipping label) for an order:
+
+1. Click **Print AWB** button on any order row
+2. Wait for PDF generation
+3. Label opens in a new browser tab
+
+**Features**:
+- Generates shipping label via J&T API
+- Opens PDF in new browser window
+- Shows error notification if generation fails
+
+**Visibility**: Available on all orders in the table view.
+
+### Bulk Print AWBs Action
+
+Print multiple shipping labels at once:
+
+1. Select orders using checkboxes
+2. Click **Bulk actions** dropdown
+3. Select **Print AWBs**
+4. Confirm the action
+5. Wait for all labels to generate
+6. Success notification shows download link
+
+**Features**:
+- Generates labels for all selected orders
+- Caches labels temporarily with signed URLs
+- Shows progress during generation
+- Reports success/failure count
+- Opens combined PDF in new tab
+
+**Visibility**: Available when one or more orders are selected.
+
 ---
 
 ## Dashboard Widget

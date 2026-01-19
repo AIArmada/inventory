@@ -30,9 +30,6 @@
                 <a href="{{ route('shop.tracking') }}" class="flex items-center gap-2 hover:text-amber-400 transition">
                     <span>📦</span> Track Your Order
                 </a>
-                <a href="{{ route('shop.gift-cards') }}" class="flex items-center gap-2 hover:text-amber-400 transition">
-                    <span>🎁</span> Gift Cards
-                </a>
                 <a href="{{ route('shop.orders') }}" class="flex items-center gap-2 hover:text-amber-400 transition">
                     <span>📋</span> Order History
                 </a>
