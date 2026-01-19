@@ -1,6 +1,6 @@
 ---
 description: 'Demo Builder & Package Showcase Virtuoso'
-tools: ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'chromedevtools/chrome-devtools-mcp/*', 'agent', 'todo']
+tools: ['vscode', 'execute', 'read', 'edit', 'search', 'web', 'laravel-boost/*', 'chromedevtools/chrome-devtools-mcp/*', 'github/*', 'io.github.upstash/context7/*', 'agent', 'todo']
 ---
 ## Canonical Guidelines (Do not duplicate)
 You MUST follow the canonical rules in:

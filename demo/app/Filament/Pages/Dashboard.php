@@ -15,7 +15,6 @@ use AIArmada\FilamentJnt\Widgets\JntStatsWidget;
 use AIArmada\FilamentVouchers\Widgets\VoucherStatsWidget;
 use App\Filament\Widgets\LatestOrders;
 use App\Filament\Widgets\RevenueChart;
-use App\Filament\Widgets\StatsOverview;
 use App\Filament\Widgets\TopAffiliates;
 use BackedEnum;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -67,12 +66,7 @@ final class Dashboard extends BaseDashboard
     {
         return [
             // ============================================
-            // ROW 1: CORE BUSINESS METRICS
-            // ============================================
-            StatsOverview::class,
-
-            // ============================================
-            // ROW 2: REVENUE & ORDERS
+            // ROW 1: REVENUE & ORDERS
             // ============================================
             RevenueChart::class,
             LatestOrders::class,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAuthz\Resources;
 
+use AIArmada\FilamentAuthz\Concerns\ScopesAuthzTenancy;
 use AIArmada\FilamentAuthz\Models\Permission;
 use AIArmada\FilamentAuthz\Resources\PermissionResource\Pages;
 use Filament\Actions;
@@ -15,15 +16,25 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
 class PermissionResource extends Resource
 {
+    use ScopesAuthzTenancy;
+
     protected static ?string $model = null;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function getEloquentQuery(): Builder
+    {
+        // Permissions are global in Spatie's teams implementation
+        // Only roles are scoped by team_id
+        return parent::getEloquentQuery();
+    }
 
     public static function getModel(): string
     {
@@ -54,17 +65,19 @@ class PermissionResource extends Resource
     {
         $user = Auth::user();
 
-        if ($user === null) {
+        if (! $user instanceof Authorizable) {
             return false;
         }
 
         $superAdminRole = config('filament-authz.super_admin_role');
 
-        if (method_exists($user, 'hasRole') && $user->hasRole($superAdminRole)) {
-            return true;
+        if (method_exists($user, 'hasRole')) {
+            if ((bool) call_user_func([$user, 'hasRole'], $superAdminRole)) {
+                return true;
+            }
         }
 
-        return method_exists($user, 'can') && $user->can($ability);
+        return $user->can($ability);
     }
 
     public static function getNavigationGroup(): ?string
@@ -108,7 +121,6 @@ class PermissionResource extends Resource
                         ->options(array_combine($guards, $guards))
                         ->default($guards[0] ?? 'web')
                         ->required()
-                        ->searchable()
                         ->preload()
                         ->helperText('Guards map to auth drivers (web, api, etc.).'),
                 ])->columns(2),

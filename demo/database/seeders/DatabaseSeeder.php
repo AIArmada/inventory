@@ -54,7 +54,6 @@ final class DatabaseSeeder extends Seeder
                     InventorySeeder::class,
                     OrderSeeder::class,
                     ShowcaseSeeder::class,
-                    GiftCardSeeder::class,
                     JntShippingSeeder::class,
                     BillingShowcaseSeeder::class,
                 ]);

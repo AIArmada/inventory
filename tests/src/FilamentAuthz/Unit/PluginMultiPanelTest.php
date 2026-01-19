@@ -7,37 +7,37 @@ use AIArmada\FilamentAuthz\FilamentAuthzPlugin;
 describe('Multi-Panel Support', function (): void {
     it('can be scoped to tenant', function (): void {
         $plugin = FilamentAuthzPlugin::make()
-            ->scopedToTenant();
+            ->scopeToTenant();
 
         expect($plugin->isScopedToTenant())->toBeTrue();
     });
 
     it('can disable tenant scoping', function (): void {
         $plugin = FilamentAuthzPlugin::make()
-            ->scopedToTenant(false);
+            ->scopeToTenant(false);
 
         expect($plugin->isScopedToTenant())->toBeFalse();
     });
 
     it('can set tenant ownership relationship', function (): void {
         $plugin = FilamentAuthzPlugin::make()
-            ->tenantOwnershipRelationship('team');
+            ->tenantOwnershipRelationshipName('team');
 
-        expect($plugin->getTenantOwnershipRelationship())->toBe('team');
+        expect($plugin->getTenantOwnershipRelationshipName())->toBe('team');
     });
 
     it('can use closure for tenant scoping', function (): void {
         $plugin = FilamentAuthzPlugin::make()
-            ->scopedToTenant(fn () => true);
+            ->scopeToTenant(fn () => true);
 
         expect($plugin->isScopedToTenant())->toBeTrue();
     });
 
     it('can use closure for tenant relationship', function (): void {
         $plugin = FilamentAuthzPlugin::make()
-            ->tenantOwnershipRelationship(fn () => 'organization');
+            ->tenantOwnershipRelationshipName(fn () => 'organization');
 
-        expect($plugin->getTenantOwnershipRelationship())->toBe('organization');
+        expect($plugin->getTenantOwnershipRelationshipName())->toBe('organization');
     });
 
     it('returns null panel when not registered', function (): void {
@@ -49,8 +49,8 @@ describe('Multi-Panel Support', function (): void {
     it('has fluent API for tenant methods', function (): void {
         $plugin = FilamentAuthzPlugin::make();
 
-        $result = $plugin->scopedToTenant()
-            ->tenantOwnershipRelationship('teams');
+        $result = $plugin->scopeToTenant()
+            ->tenantOwnershipRelationshipName('teams');
 
         expect($result)->toBeInstanceOf(FilamentAuthzPlugin::class);
     });
@@ -99,11 +99,11 @@ describe('Plugin Configuration', function (): void {
         expect($plugin->getGridColumns())->toBe(3);
     });
 
-    it('can set checkbox columns', function (): void {
+    it('can set checkbox list columns', function (): void {
         $plugin = FilamentAuthzPlugin::make()
-            ->checkboxColumns(4);
+            ->checkboxListColumns(4);
 
-        expect($plugin->getCheckboxColumns())->toBe(4);
+        expect($plugin->getCheckboxListColumns())->toBe(4);
     });
 
     it('has correct plugin id', function (): void {
@@ -126,21 +126,21 @@ describe('Plugin Configuration', function (): void {
             ->navigationIcon('heroicon-o-lock-closed')
             ->navigationSort(5)
             ->gridColumns(3)
-            ->checkboxColumns(4)
+            ->checkboxListColumns(4)
             ->resourcesTab()
             ->pagesTab()
             ->widgetsTab()
             ->customPermissionsTab()
-            ->scopedToTenant()
-            ->tenantOwnershipRelationship('team');
+            ->scopeToTenant()
+            ->tenantOwnershipRelationshipName('team');
 
         expect($plugin)->toBeInstanceOf(FilamentAuthzPlugin::class);
         expect($plugin->getNavigationGroup())->toBe('Access Control');
         expect($plugin->getNavigationIcon())->toBe('heroicon-o-lock-closed');
         expect($plugin->getNavigationSort())->toBe(5);
         expect($plugin->getGridColumns())->toBe(3);
-        expect($plugin->getCheckboxColumns())->toBe(4);
+        expect($plugin->getCheckboxListColumns())->toBe(4);
         expect($plugin->isScopedToTenant())->toBeTrue();
-        expect($plugin->getTenantOwnershipRelationship())->toBe('team');
+        expect($plugin->getTenantOwnershipRelationshipName())->toBe('team');
     });
 });

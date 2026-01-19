@@ -230,24 +230,28 @@ class Authz
         }
 
         $excluded = (array) config('filament-authz.resources.exclude', []);
-        $actions = (array) config('filament-authz.resources.actions', []);
 
         return collect($panel->getResources())
             ->filter(fn (string $resource): bool => ! in_array($resource, $excluded, true))
-            ->map(function (string $resource) use ($actions): array {
+            ->map(function (string $resource): array {
                 $subject = $this->getResourceSubject($resource);
                 $label = $this->getResourceLabel($resource);
+                $actions = $this->getResourceActions($resource);
 
                 $permissions = [];
+                $actionMap = [];
                 foreach ($actions as $action) {
                     $key = $this->buildPermissionKey($subject, $action);
-                    $permissions[$key] = str($action)->headline()->toString();
+                    $permissions[$key] = $this->getActionLabel($action);
+                    $actionMap[$action] = $key;
                 }
 
                 return [
                     'type' => 'resource',
                     'class' => $resource,
+                    'subject' => $subject,
                     'permissions' => $permissions,
+                    'actions' => $actionMap,
                     'label' => $label,
                     'model' => method_exists($resource, 'getModel') ? $resource::getModel() : null,
                 ];
@@ -339,5 +343,30 @@ class Authz
         }
 
         return str(class_basename($resource))->beforeLast('Resource')->headline()->toString();
+    }
+
+    /**
+     * @param  class-string<resource>  $resource
+     * @return list<string>
+     */
+    protected function getResourceActions(string $resource): array
+    {
+        $actions = (array) config('filament-authz.resources.actions', []);
+        $extras = (array) config('filament-authz.resources.extra_actions', []);
+
+        $extraActions = (array) ($extras[$resource] ?? []);
+
+        return array_values(array_unique(array_merge($actions, $extraActions)));
+    }
+
+    protected function getActionLabel(string $action): string
+    {
+        $labels = (array) config('filament-authz.resources.action_labels', []);
+
+        if (isset($labels[$action])) {
+            return (string) $labels[$action];
+        }
+
+        return str($action)->headline()->toString();
     }
 }

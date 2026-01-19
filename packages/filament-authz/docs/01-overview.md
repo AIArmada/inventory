@@ -15,7 +15,10 @@ Filament Authz is a comprehensive authorization package for Filament v5, built o
 - **Wildcard Permissions** — Support for flexible wildcard matching (e.g., `user.*`, `*.view`)
 - **Policy Generation** — CLI command to scaffold Laravel Policies based on discovered permissions
 - **Super Admin Bypass** — Built-in bypass logic for a designated Super Admin role
+- **User Impersonation** — Securely impersonate users with banner notification and panel selection
 - **Fluent Plugin API** — Clean, closure-based API for per-panel configuration
+- **UUID Support** — Built-in UUID primary keys for Role and Permission models
+- **Laravel Octane Compatible** — Automatic cache clearing between Octane requests
 
 ## Core Concepts
 
@@ -92,3 +95,33 @@ class SettingsPage extends Page
 - Laravel 12+
 - Filament 5.0+
 - Spatie laravel-permission 6.0+
+
+## Architecture
+
+### Services
+
+| Service | Purpose |
+|---------|---------|
+| `Authz` | Main service for entity discovery, permission building, and caching |
+| `EntityDiscoveryService` | Discovers Filament Resources, Pages, and Widgets |
+| `PermissionKeyBuilder` | Builds permission keys with configurable case and separator |
+| `WildcardPermissionResolver` | Resolves wildcard patterns like `orders.*` |
+| `ImpersonateManager` | Manages user impersonation session state |
+
+### Models
+
+| Model | Purpose |
+|-------|---------|
+| `Role` | Extends Spatie Role with UUID support and tenant scoping |
+| `Permission` | Extends Spatie Permission with UUID support |
+
+### Traits
+
+| Trait | Purpose |
+|-------|---------|
+| `HasPageAuthz` | Protects Filament Pages with permission checks |
+| `HasWidgetAuthz` | Protects Filament Widgets with permission checks |
+| `HasPanelAuthz` | Adds panel access control with auto-role assignment |
+| `CanBeImpersonated` | Adds impersonation capability to User models |
+| `SyncsRolePermissions` | Shared permission sync logic for Role pages |
+| `ScopesAuthzTenancy` | Applies tenant scoping to queries |

@@ -223,3 +223,39 @@ Define roles and permissions to sync from config.
 ```
 
 Run sync with: `php artisan authz:sync --flush-cache`
+
+### Impersonation
+
+Configure user impersonation behavior.
+
+```php
+'impersonate' => [
+    'enabled' => true,      // Enable impersonation feature
+    'guard' => 'web',       // Authentication guard for impersonation
+],
+```
+
+When impersonation is enabled:
+- A modal allows selecting which panel to redirect to after impersonating
+- A banner shows at the top of the page while impersonating
+- Leaving impersonation returns you to the original panel
+
+### Tenant Scoping
+
+Enable multi-tenant support for roles and permissions.
+
+```php
+'scoped_to_tenant' => false,
+```
+
+When enabled, roles are filtered by the current tenant context using the `commerce-support` owner primitives.
+
+## Environment Variables
+
+The package supports the following environment variables:
+
+| Variable | Config Key | Default |
+|----------|------------|---------|
+| None | All settings in config file | Various |
+
+Most settings are hardcoded or configured via config file since they are deployment-independent.

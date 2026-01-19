@@ -57,12 +57,12 @@ class EntityDiscoveryService
                 $subject = $this->getResourceSubject($resource);
                 $label = $this->getResourceLabel($resource);
 
-                return collect($this->getResourceActions())
+                return collect($this->getResourceActions($resource))
                     ->map(fn (string $action): array => [
                         'type' => 'resource',
                         'class' => $resource,
                         'permission' => $this->keyBuilder->build($subject, $action),
-                        'label' => $label . ' - ' . str($action)->headline()->toString(),
+                        'label' => $label . ' - ' . $this->getActionLabel($action),
                     ])
                     ->all();
             })
@@ -146,9 +146,9 @@ class EntityDiscoveryService
     /**
      * @return list<string>
      */
-    protected function getResourceActions(): array
+    protected function getResourceActions(string $resource): array
     {
-        return config('filament-authz.resources.actions', [
+        $actions = (array) config('filament-authz.resources.actions', [
             'viewAny',
             'view',
             'create',
@@ -157,6 +157,22 @@ class EntityDiscoveryService
             'restore',
             'forceDelete',
         ]);
+
+        $extras = (array) config('filament-authz.resources.extra_actions', []);
+        $extraActions = (array) ($extras[$resource] ?? []);
+
+        return array_values(array_unique(array_merge($actions, $extraActions)));
+    }
+
+    protected function getActionLabel(string $action): string
+    {
+        $labels = (array) config('filament-authz.resources.action_labels', []);
+
+        if (isset($labels[$action])) {
+            return (string) $labels[$action];
+        }
+
+        return str($action)->headline()->toString();
     }
 
     /**

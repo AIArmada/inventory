@@ -226,3 +226,191 @@ $user->assignRole('super_admin');
 $user->can('anything.here'); // true
 Gate::allows('any-ability'); // true
 ```
+
+## User Impersonation
+
+Impersonation allows administrators to log in as another user to debug issues or verify user experience.
+
+### Setup
+
+1. Add the `CanBeImpersonated` trait to your User model:
+
+```php
+namespace App\Models;
+
+use AIArmada\FilamentAuthz\Concerns\CanBeImpersonated;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+class User extends Authenticatable
+{
+    use CanBeImpersonated;
+}
+```
+
+2. Enable impersonation in config:
+
+```php
+// config/filament-authz.php
+'impersonate' => [
+    'enabled' => true,
+    'guard' => 'web',
+],
+```
+
+3. Register the routes (automatically done by the service provider when enabled).
+
+### Table Action
+
+Add impersonation to a user table:
+
+```php
+use AIArmada\FilamentAuthz\Tables\Actions\ImpersonateTableAction;
+
+public static function table(Table $table): Table
+{
+    return $table
+        ->actions([
+            ImpersonateTableAction::make(),
+        ]);
+}
+```
+
+The action shows a modal allowing selection of which panel to redirect to after impersonation.
+
+### Page/Header Action
+
+Add impersonation as a page action:
+
+```php
+use AIArmada\FilamentAuthz\Actions\ImpersonateAction;
+
+protected function getHeaderActions(): array
+{
+    return [
+        ImpersonateAction::make()
+            ->record($this->record),
+    ];
+}
+```
+
+### Leave Impersonation
+
+While impersonating, a banner appears at the top of the page. Users can leave by:
+
+1. Clicking "Leave" in the banner
+2. Using the `LeaveImpersonationAction` in a menu:
+
+```php
+use AIArmada\FilamentAuthz\Actions\LeaveImpersonationAction;
+
+// In user menu
+->userMenuItems([
+    LeaveImpersonationAction::make(),
+])
+```
+
+### Authorization
+
+Control who can impersonate via the `CanBeImpersonated` trait methods:
+
+```php
+class User extends Authenticatable
+{
+    use CanBeImpersonated;
+
+    public function canBeImpersonated(): bool
+    {
+        // Prevent impersonating super admins
+        return !$this->hasRole('super_admin');
+    }
+
+    public function canImpersonate(): bool
+    {
+        // Only super admins can impersonate
+        return $this->hasRole('super_admin');
+    }
+}
+```
+
+### Helper Functions
+
+Check impersonation state from anywhere:
+
+```php
+use function AIArmada\FilamentAuthz\is_impersonating;
+use function AIArmada\FilamentAuthz\get_impersonator;
+use function AIArmada\FilamentAuthz\can_impersonate;
+use function AIArmada\FilamentAuthz\can_be_impersonated;
+
+if (is_impersonating()) {
+    $originalUser = get_impersonator();
+    // Show notice or restrict actions
+}
+
+if (can_impersonate($admin, $targetUser)) {
+    // Allow impersonation
+}
+```
+
+### Blade Directives
+
+Use in Blade templates:
+
+```blade
+@impersonating
+    <div class="alert">You are impersonating {{ auth()->user()->name }}</div>
+@endimpersonating
+
+@canImpersonate($targetUser)
+    <button>Impersonate</button>
+@endcanImpersonate
+```
+
+### Events
+
+Listen to impersonation events:
+
+```php
+use AIArmada\FilamentAuthz\Events\TakeImpersonation;
+use AIArmada\FilamentAuthz\Events\LeaveImpersonation;
+
+// In EventServiceProvider
+protected $listen = [
+    TakeImpersonation::class => [
+        LogImpersonationStart::class,
+    ],
+    LeaveImpersonation::class => [
+        LogImpersonationEnd::class,
+    ],
+];
+```
+
+Event properties:
+
+```php
+// TakeImpersonation
+$event->impersonator; // User who initiated impersonation
+$event->impersonated; // User being impersonated
+
+// LeaveImpersonation
+$event->impersonator; // User who was impersonating
+$event->impersonated; // User who was being impersonated
+```
+
+## Panel Access Control
+
+Control which users can access which panels using the `HasPanelAuthz` trait:
+
+```php
+namespace App\Models;
+
+use AIArmada\FilamentAuthz\Concerns\HasPanelAuthz;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+class User extends Authenticatable
+{
+    use HasPanelAuthz;
+}
+```
+
+The trait provides a `canAccessPanel()` method that checks for the appropriate panel permission (e.g., `panel.admin`).

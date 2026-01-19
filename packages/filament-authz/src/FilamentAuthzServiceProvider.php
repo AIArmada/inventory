@@ -9,17 +9,28 @@ use AIArmada\FilamentAuthz\Console\GeneratePoliciesCommand;
 use AIArmada\FilamentAuthz\Console\SeederCommand;
 use AIArmada\FilamentAuthz\Console\SuperAdminCommand;
 use AIArmada\FilamentAuthz\Console\SyncAuthzCommand;
+use AIArmada\FilamentAuthz\Guard\SessionGuard;
+use AIArmada\FilamentAuthz\Http\Middleware\ImpersonationBannerMiddleware;
 use AIArmada\FilamentAuthz\Models\Permission as AuthzPermission;
 use AIArmada\FilamentAuthz\Models\Role as AuthzRole;
 use AIArmada\FilamentAuthz\Services\EntityDiscoveryService;
+use AIArmada\FilamentAuthz\Services\ImpersonateManager;
 use AIArmada\FilamentAuthz\Services\PermissionKeyBuilder;
 use AIArmada\FilamentAuthz\Services\WildcardPermissionResolver;
 use AIArmada\FilamentAuthz\Support\OwnerContextTeamResolver;
+use Illuminate\Auth\AuthManager;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\Compilers\BladeCompiler;
 use Spatie\Permission\Contracts\PermissionsTeamResolver;
 use Spatie\Permission\Models\Permission as SpatiePermission;
 use Spatie\Permission\Models\Role as SpatieRole;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Authz Service Provider.
@@ -28,6 +39,7 @@ use Spatie\Permission\Models\Role as SpatieRole;
  * - Cleaner service registration
  * - Proper singleton bindings
  * - Modular command registration
+ * - Laravel Octane compatibility
  */
 class FilamentAuthzServiceProvider extends ServiceProvider
 {
@@ -49,14 +61,38 @@ class FilamentAuthzServiceProvider extends ServiceProvider
             );
         });
 
+        $this->app->singleton(ImpersonateManager::class, function ($app): ImpersonateManager {
+            return new ImpersonateManager($app);
+        });
+
+        $this->app->alias(ImpersonateManager::class, 'impersonate');
+
         $this->registerTeamResolver();
+        $this->registerAuthDriver();
+        $this->registerOctaneListeners();
     }
 
     public function boot(): void
     {
+        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'filament-authz');
+        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'filament-authz');
+        $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
+
+        $this->registerImpersonationBanner();
+        $this->registerBladeDirectives();
+        $this->registerImpersonationEventListeners();
+
         $this->publishes([
             __DIR__ . '/../config/filament-authz.php' => config_path('filament-authz.php'),
         ], 'filament-authz-config');
+
+        $this->publishes([
+            __DIR__ . '/../resources/lang' => $this->app->langPath('vendor/filament-authz'),
+        ], 'filament-authz-translations');
+
+        $this->publishes([
+            __DIR__ . '/../resources/views' => resource_path('views/vendor/filament-authz'),
+        ], 'filament-authz-views');
 
         $this->registerGateHooks();
         $this->registerCommands();
@@ -127,5 +163,126 @@ class FilamentAuthzServiceProvider extends ServiceProvider
         }
 
         $this->app->singleton(PermissionsTeamResolver::class, OwnerContextTeamResolver::class);
+    }
+
+    /**
+     * Register Octane listeners to clear caches between requests.
+     *
+     * This ensures fresh permission/role data on each Octane request
+     * by resetting Spatie permission cache and Authz discovery cache.
+     */
+    private function registerOctaneListeners(): void
+    {
+        if (! class_exists(\Laravel\Octane\Events\RequestReceived::class)) {
+            return;
+        }
+
+        $this->app['events']->listen(
+            \Laravel\Octane\Events\RequestReceived::class,
+            function (): void {
+                app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+                if ($this->app->has(Authz::class)) {
+                    app(Authz::class)->clearCache();
+                }
+            }
+        );
+    }
+
+    private function registerImpersonationBanner(): void
+    {
+        if (! config('filament-authz.impersonate.enabled', true)) {
+            return;
+        }
+
+        $kernel = $this->app->make(Kernel::class);
+        $kernel->appendMiddlewareToGroup('web', ImpersonationBannerMiddleware::class);
+    }
+
+    /**
+     * Register custom auth driver with quietLogin/quietLogout support.
+     */
+    private function registerAuthDriver(): void
+    {
+        /** @var AuthManager $auth */
+        $auth = $this->app['auth'];
+
+        $auth->extend('session', function (Application $app, string $name, array $config) use ($auth) {
+            $provider = $auth->createUserProvider($config['provider'] ?? null);
+
+            $guard = new SessionGuard(
+                $name,
+                $provider,
+                $app['session.store'],
+                $app['request'] ?? null
+            );
+
+            if (method_exists($guard, 'setCookieJar')) {
+                $guard->setCookieJar($app['cookie']);
+            }
+
+            if (method_exists($guard, 'setDispatcher')) {
+                $guard->setDispatcher($app['events']);
+            }
+
+            if (method_exists($guard, 'setRequest')) {
+                $guard->setRequest($app->refresh('request', $guard, 'setRequest'));
+            }
+
+            if (isset($config['remember'])) {
+                $guard->setRememberDuration($config['remember']);
+            }
+
+            return $guard;
+        });
+    }
+
+    /**
+     * Register Blade directives for impersonation.
+     */
+    private function registerBladeDirectives(): void
+    {
+        $this->app->afterResolving('blade.compiler', function (BladeCompiler $blade): void {
+            $blade->directive('impersonating', function (?string $guard = null): string {
+                return "<?php if (\\AIArmada\\FilamentAuthz\\is_impersonating({$guard})) : ?>";
+            });
+
+            $blade->directive('endImpersonating', function (): string {
+                return '<?php endif; ?>';
+            });
+
+            $blade->directive('canImpersonate', function (?string $guard = null): string {
+                return "<?php if (\\AIArmada\\FilamentAuthz\\can_impersonate({$guard})) : ?>";
+            });
+
+            $blade->directive('endCanImpersonate', function (): string {
+                return '<?php endif; ?>';
+            });
+
+            $blade->directive('canBeImpersonated', function (string $expression): string {
+                $args = preg_split("/,(\s+)?/", $expression);
+                $guard = $args[1] ?? 'null';
+
+                return "<?php if (\\AIArmada\\FilamentAuthz\\can_be_impersonated({$args[0]}, {$guard})) : ?>";
+            });
+
+            $blade->directive('endCanBeImpersonated', function (): string {
+                return '<?php endif; ?>';
+            });
+        });
+    }
+
+    /**
+     * Clear impersonation data on real login/logout events.
+     */
+    private function registerImpersonationEventListeners(): void
+    {
+        Event::listen(Login::class, function (): void {
+            app(ImpersonateManager::class)->clear();
+        });
+
+        Event::listen(Logout::class, function (): void {
+            app(ImpersonateManager::class)->clear();
+        });
     }
 }

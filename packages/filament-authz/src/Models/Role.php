@@ -6,7 +6,10 @@ namespace AIArmada\FilamentAuthz\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\Permission\Contracts\Role as RoleContract;
+use Spatie\Permission\Guard;
 use Spatie\Permission\Models\Role as SpatieRole;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Role model extending Spatie Permission with UUID support.
@@ -47,5 +50,57 @@ final class Role extends SpatieRole
         }
 
         return parent::getTable();
+    }
+
+    public static function create(array $attributes = [])
+    {
+        $attributes['guard_name'] ??= Guard::getDefaultName(static::class);
+
+        $registrar = app(PermissionRegistrar::class);
+
+        if ($registrar->teams && config('filament-authz.scoped_to_tenant', true)) {
+            $teamsKey = $registrar->teamsKey;
+            $teamId = getPermissionsTeamId();
+
+            if ($teamId !== null && ! array_key_exists($teamsKey, $attributes)) {
+                $attributes[$teamsKey] = $teamId;
+            }
+        }
+
+        return static::query()->create($attributes);
+    }
+
+    /**
+     * @return RoleContract|Role|null
+     */
+    protected static function findByParam(array $params = []): ?RoleContract
+    {
+        $query = static::query();
+
+        $registrar = app(PermissionRegistrar::class);
+
+        if ($registrar->teams) {
+            $teamsKey = $registrar->teamsKey;
+            $teamId = $params[$teamsKey] ?? getPermissionsTeamId();
+
+            if (config('filament-authz.scoped_to_tenant', true)) {
+                if ($teamId === null) {
+                    $query->whereNull($teamsKey);
+                } else {
+                    $query->where($teamsKey, $teamId);
+                }
+            } else {
+                $query->where(fn ($q) => $q->whereNull($teamsKey)
+                    ->orWhere($teamsKey, $teamId));
+            }
+
+            unset($params[$teamsKey]);
+        }
+
+        foreach ($params as $key => $value) {
+            $query->where($key, $value);
+        }
+
+        return $query->first();
     }
 }

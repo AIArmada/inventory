@@ -16,6 +16,8 @@ return new class extends Migration
             $table->string('stripe_id')->unique();
             $table->string('stripe_product');
             $table->string('stripe_price');
+            $table->string('meter_id')->nullable()->index();
+            $table->string('meter_event_name')->nullable();
             $table->integer('quantity')->nullable();
             $table->timestamps();
 

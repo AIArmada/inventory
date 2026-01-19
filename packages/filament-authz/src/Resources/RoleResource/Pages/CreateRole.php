@@ -7,6 +7,7 @@ namespace AIArmada\FilamentAuthz\Resources\RoleResource\Pages;
 use AIArmada\FilamentAuthz\Concerns\SyncsRolePermissions;
 use AIArmada\FilamentAuthz\Resources\RoleResource;
 use Filament\Resources\Pages\CreateRecord;
+use Spatie\Permission\PermissionRegistrar;
 
 class CreateRole extends CreateRecord
 {
@@ -16,7 +17,25 @@ class CreateRole extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        return $this->extractPermissionIds($data);
+        $data = $this->extractPermissionIds($data);
+
+        $registrar = app(PermissionRegistrar::class);
+
+        if (! $registrar->teams || ! config('filament-authz.scoped_to_tenant', true)) {
+            return $data;
+        }
+
+        $teamsKey = $registrar->teamsKey;
+
+        if (! array_key_exists($teamsKey, $data)) {
+            $teamId = getPermissionsTeamId();
+
+            if ($teamId !== null) {
+                $data[$teamsKey] = $teamId;
+            }
+        }
+
+        return $data;
     }
 
     protected function afterCreate(): void

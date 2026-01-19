@@ -36,6 +36,10 @@
         },
         {
             "type": "path",
+            "url": "../packages/promotions"
+        },
+        {
+            "type": "path",
             "url": "../packages/shipping"
         },
         {
@@ -120,6 +124,10 @@
         },
         {
             "type": "path",
+            "url": "../packages/filament-promotions"
+        },
+        {
+            "type": "path",
             "url": "../packages/filament-shipping"
         },
         {
@@ -149,13 +157,14 @@
         "aiarmada/orders": "*",
         "aiarmada/pricing": "*",
         "aiarmada/products": "*",
+        "aiarmada/promotions": "*",
         "aiarmada/shipping": "*",
         "aiarmada/tax": "*",
         "aiarmada/cart": "*",
         "aiarmada/cashier": "*",
         "aiarmada/cashier-chip": "*",
         "aiarmada/chip": "*",
-        "aiarmada/commerce-support": "*",
+        "aiarmada/commerce-support": "dev-develop as 0.1.0",
         "aiarmada/vouchers": "*",
         "aiarmada/affiliates": "*",
         "aiarmada/jnt": "*",
@@ -171,6 +180,7 @@
         "aiarmada/filament-orders": "*",
         "aiarmada/filament-pricing": "*",
         "aiarmada/filament-products": "*",
+        "aiarmada/filament-promotions": "*",
         "aiarmada/filament-shipping": "*",
         "aiarmada/filament-tax": "*",
         "aiarmada/filament-authz": "*",

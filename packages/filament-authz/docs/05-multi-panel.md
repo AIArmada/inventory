@@ -39,3 +39,62 @@ The Role resource form uses the current panel to discover what should be display
 
 ### Tenant Scoping
 If your panel uses tenant-scoping (e.g., via `scopedToTenant()`), the Role resource will automatically apply a global scope to ensure roles are only visible to the correct tenant.
+
+## SyncAuthzTenant Middleware
+
+The `SyncAuthzTenant` middleware ensures the authorization context is properly set for each panel request. It's automatically registered when using the plugin with tenant scoping.
+
+### Manual Registration
+
+If you need to register the middleware manually:
+
+```php
+// In your PanelProvider
+$panel
+    ->middleware([
+        \AIArmada\FilamentAuthz\Middleware\SyncAuthzTenant::class,
+    ]);
+```
+
+### What It Does
+
+1. Resolves the current tenant from the Filament panel
+2. Sets the owner context for authorization scoping
+3. Ensures all queries in the request are properly tenant-filtered
+
+## Panel-Specific Guards
+
+Each panel can use a different authentication guard. The impersonation feature respects the configured guard:
+
+```php
+// Admin panel with web guard
+FilamentAuthzPlugin::make()
+    // Uses config('filament-authz.impersonate.guard') or 'web'
+
+// API panel with custom guard
+FilamentAuthzPlugin::make()
+    // Will still use the configured impersonate guard
+```
+
+## Shared Permission Keys
+
+Permission keys are global across panels. If you have `UserResource` in both admin and customer panels, they share the same `user.*` permissions. This allows:
+
+1. **Central role management** — Define roles once, use across panels
+2. **Consistent authorization** — Same permission means same access everywhere
+3. **Simplified auditing** — One set of permissions to track
+
+To have panel-specific permissions, use different resource names or custom permissions:
+
+```php
+// Admin panel
+'custom_permissions' => [
+    'admin.export-users',
+    'admin.impersonate',
+],
+
+// Customer panel
+'custom_permissions' => [
+    'customer.download-invoices',
+],
+```

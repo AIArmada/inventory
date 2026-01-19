@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentAuthz\Resources;
 
+use AIArmada\FilamentAuthz\Concerns\ScopesAuthzTenancy;
+use AIArmada\FilamentAuthz\FilamentAuthzPlugin;
 use AIArmada\FilamentAuthz\Models\Role;
 use AIArmada\FilamentAuthz\Resources\RoleResource\Concerns\HasAuthzFormComponents;
 use AIArmada\FilamentAuthz\Resources\RoleResource\Pages;
 use Filament\Actions;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -16,21 +19,39 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Contracts\Auth\Access\Authorizable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Throwable;
 
 class RoleResource extends Resource
 {
     use HasAuthzFormComponents;
+    use ScopesAuthzTenancy;
 
     protected static ?string $model = null;
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return static::applyTenantScope(parent::getEloquentQuery());
+    }
+
     public static function getModel(): string
     {
         return config('permission.models.role', Role::class);
+    }
+
+    public static function getModelLabel(): string
+    {
+        return __('filament-authz::filament-authz.resource.role.label');
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return __('filament-authz::filament-authz.resource.role.plural_label');
     }
 
     public static function canViewAny(): bool
@@ -57,37 +78,85 @@ class RoleResource extends Resource
     {
         $user = Auth::user();
 
-        if ($user === null) {
+        if (! $user instanceof Authorizable) {
             return false;
         }
 
         $superAdminRole = config('filament-authz.super_admin_role');
 
-        if (method_exists($user, 'hasRole') && $user->hasRole($superAdminRole)) {
-            return true;
+        if (method_exists($user, 'hasRole')) {
+            if ((bool) call_user_func([$user, 'hasRole'], $superAdminRole)) {
+                return true;
+            }
         }
 
-        return method_exists($user, 'can') && $user->can($ability);
+        return $user->can($ability);
     }
 
     public static function getNavigationGroup(): ?string
     {
-        return config('filament-authz.navigation.group');
+        return static::getPlugin()?->getNavigationGroup()
+            ?? config('filament-authz.navigation.group');
     }
 
     public static function getNavigationIcon(): ?string
     {
-        return config('filament-authz.navigation.icons.roles');
+        return static::getPlugin()?->getNavigationIcon()
+            ?? config('filament-authz.navigation.icons.roles');
+    }
+
+    public static function getActiveNavigationIcon(): ?string
+    {
+        return static::getPlugin()?->getActiveNavigationIcon()
+            ?? config('filament-authz.navigation.icons.roles_active');
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::getPlugin()?->getNavigationLabel()
+            ?? config('filament-authz.navigation.label')
+            ?? __('filament-authz::filament-authz.navigation.roles');
     }
 
     public static function getNavigationSort(): ?int
     {
-        return config('filament-authz.navigation.sort');
+        return static::getPlugin()?->getNavigationSort()
+            ?? config('filament-authz.navigation.sort');
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getPlugin()?->getNavigationBadge()
+            ?? config('filament-authz.navigation.badge');
+    }
+
+    /**
+     * @return string | array<string> | null
+     */
+    public static function getNavigationBadgeColor(): string | array | null
+    {
+        return static::getPlugin()?->getNavigationBadgeColor()
+            ?? config('filament-authz.navigation.badge_color');
+    }
+
+    public static function getNavigationParentItem(): ?string
+    {
+        return static::getPlugin()?->getNavigationParentItem()
+            ?? config('filament-authz.navigation.parent_item');
+    }
+
+    public static function getCluster(): ?string
+    {
+        return static::getPlugin()?->getCluster()
+            ?? config('filament-authz.navigation.cluster');
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return (bool) config('filament-authz.navigation.register', true) && static::canViewAny();
+        $shouldRegister = static::getPlugin()?->shouldRegisterNavigation()
+            ?? config('filament-authz.navigation.register', true);
+
+        return (bool) $shouldRegister && static::canViewAny();
     }
 
     public static function getSlug(?\Filament\Panel $panel = null): string
@@ -100,24 +169,24 @@ class RoleResource extends Resource
         $guards = config('filament-authz.guards', ['web']);
 
         return $form->schema([
-            Section::make('Role Details')
-                ->description('Define the role name and the guard it applies to.')
+            Section::make(__('filament-authz::filament-authz.section.role_details'))
+                ->description(__('filament-authz::filament-authz.section.role_details_description'))
                 ->schema([
                     Forms\Components\TextInput::make('name')
+                        ->label(__('filament-authz::filament-authz.form.name'))
                         ->required()
                         ->maxLength(255)
                         ->unique(ignoreRecord: true)
-                        ->placeholder('e.g. sales_manager')
-                        ->helperText('Use a unique, readable name per guard.')
+                        ->placeholder(__('filament-authz::filament-authz.form.name_placeholder'))
+                        ->helperText(__('filament-authz::filament-authz.form.name_helper'))
                         ->autocomplete(false),
                     Forms\Components\Select::make('guard_name')
+                        ->label(__('filament-authz::filament-authz.form.guard_name'))
                         ->options(array_combine($guards, $guards))
                         ->default($guards[0] ?? 'web')
                         ->required()
                         ->live()
-                        ->searchable()
-                        ->preload()
-                        ->helperText('Guards map to auth drivers (web, api, etc.).'),
+                        ->helperText(__('filament-authz::filament-authz.form.guard_name_helper')),
                 ])->columns(2),
 
             static::getAuthzFormComponents()
@@ -130,26 +199,41 @@ class RoleResource extends Resource
         $guards = config('filament-authz.guards', ['web']);
 
         return $table->columns([
-            TextColumn::make('name')->searchable()->sortable()->copyable(),
-            TextColumn::make('guard_name')->badge()->sortable(),
+            TextColumn::make('name')
+                ->label(__('filament-authz::filament-authz.table.name'))
+                ->searchable()
+                ->sortable()
+                ->copyable(),
+            TextColumn::make('guard_name')
+                ->label(__('filament-authz::filament-authz.table.guard_name'))
+                ->badge()
+                ->sortable(),
             TextColumn::make('permissions_count')
                 ->counts('permissions')
                 ->badge()
                 ->color('primary')
-                ->label('Permissions')
+                ->label(__('filament-authz::filament-authz.table.permissions_count'))
                 ->sortable(),
-            TextColumn::make('created_at')->since()->sortable()->toggleable(isToggledHiddenByDefault: true),
-            TextColumn::make('updated_at')->since()->sortable()->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('created_at')
+                ->label(__('filament-authz::filament-authz.table.created_at'))
+                ->since()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('updated_at')
+                ->label(__('filament-authz::filament-authz.table.updated_at'))
+                ->since()
+                ->sortable()
+                ->toggleable(isToggledHiddenByDefault: true),
         ])->filters([
             SelectFilter::make('guard_name')
-                ->label('Guard')
+                ->label(__('filament-authz::filament-authz.filter.guard'))
                 ->options(array_combine($guards, $guards))
-                ->placeholder('All guards')
+                ->placeholder(__('filament-authz::filament-authz.filter.all_guards'))
                 ->searchable(),
             Filter::make('has_permissions')
-                ->label('Has permissions')
+                ->label(__('filament-authz::filament-authz.filter.has_permissions'))
                 ->query(fn (Builder $query): Builder => $query->has('permissions'))
-                ->indicator('Has permissions'),
+                ->indicator(__('filament-authz::filament-authz.filter.has_permissions')),
         ])->actions([
             Actions\EditAction::make(),
             Actions\DeleteAction::make(),
@@ -162,8 +246,8 @@ class RoleResource extends Resource
             ->deferFilters()
             ->paginationPageOptions([10, 25, 50, 100])
             ->defaultPaginationPageOption(25)
-            ->emptyStateHeading('No roles yet')
-            ->emptyStateDescription('Create roles to control access to resources and pages.')
+            ->emptyStateHeading(__('filament-authz::filament-authz.empty_state.heading'))
+            ->emptyStateDescription(__('filament-authz::filament-authz.empty_state.description'))
             ->emptyStateIcon('heroicon-o-shield-check');
     }
 
@@ -174,5 +258,21 @@ class RoleResource extends Resource
             'create' => Pages\CreateRole::route('/create'),
             'edit' => Pages\EditRole::route('/{record}/edit'),
         ];
+    }
+
+    protected static function getPlugin(): ?FilamentAuthzPlugin
+    {
+        try {
+            $panel = Filament::getCurrentOrDefaultPanel();
+
+            if ($panel === null) {
+                return null;
+            }
+
+            /** @var FilamentAuthzPlugin|null */
+            return $panel->getPlugin('filament-authz');
+        } catch (Throwable) {
+            return null;
+        }
     }
 }

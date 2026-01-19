@@ -108,3 +108,92 @@ When using multiple panels with different configurations:
    php artisan authz:discover --panel=admin --create
    php artisan authz:discover --panel=customer --create
    ```
+
+## Impersonation Issues
+
+### Impersonation Not Working
+
+1. **Verify enabled** — Check `config('filament-authz.impersonate.enabled')` is `true`
+2. **Check routes** — Verify routes are registered:
+   ```bash
+   php artisan route:list | grep impersonate
+   ```
+3. **Check User model** — Ensure `CanBeImpersonated` trait is added:
+   ```php
+   use AIArmada\FilamentAuthz\Concerns\CanBeImpersonated;
+   
+   class User extends Authenticatable
+   {
+       use CanBeImpersonated;
+   }
+   ```
+
+### Banner Not Displaying
+
+1. **Check middleware** — The `ImpersonationBannerMiddleware` should be auto-registered
+2. **Verify session** — Check impersonation is active:
+   ```php
+   is_impersonating(); // Should return true
+   ```
+
+### Cannot Leave Impersonation
+
+1. **Check session data** — Required keys must exist:
+   ```php
+   session('impersonate.impersonator_id');
+   session('impersonate.back_to');
+   ```
+2. **Verify original user exists** — The impersonator must still be in the database
+
+## Octane Compatibility
+
+The package is Laravel Octane compatible. It automatically flushes cached data between requests using the `RequestTerminated` event listener.
+
+If you encounter stale data in Octane:
+
+1. **Verify listener is registered** — Check the service provider is loaded
+2. **Clear caches manually** in testing:
+   ```php
+   app(PermissionRegistrar::class)->forgetCachedPermissions();
+   Authz::clearCache();
+   ```
+
+## Permission Cache Not Clearing After User Updates
+
+When assigning roles via `UserAuthzForm`, the permission cache is automatically cleared. If using custom forms:
+
+```php
+use Spatie\Permission\PermissionRegistrar;
+
+// After syncing roles/permissions
+app(PermissionRegistrar::class)->forgetCachedPermissions();
+```
+
+## Commands Not Running in Production
+
+The following commands are blocked in production by `CommandProhibitor`:
+
+- `authz:discover --create` (use seeders instead)
+- `authz:sync` (use seeders/migrations instead)
+
+To run in production, use the `--force` flag if available, or configure `APP_ENV` appropriately.
+
+## Wildcard Permissions Not Matching
+
+1. **Verify enabled** — Check `config('filament-authz.wildcard_permissions')` is `true`
+2. **Check pattern** — Wildcards use `*` character:
+   - `orders.*` matches `orders.view`, `orders.create`, etc.
+   - `*.view` matches `orders.view`, `products.view`, etc.
+3. **Verify permission exists** — The wildcard permission must be granted:
+   ```php
+   $user->givePermissionTo('orders.*');
+   ```
+
+## Tenant Scoping Not Working
+
+1. **Verify enabled** — Check `->scopedToTenant()` on plugin or `scoped_to_tenant` in config
+2. **Check OwnerContext** — The owner resolver must return the current tenant:
+   ```php
+   app(OwnerResolverInterface::class)->resolve();
+   ```
+3. **Check Role model** — The `Role` model should use `HasOwner` trait when scoped
