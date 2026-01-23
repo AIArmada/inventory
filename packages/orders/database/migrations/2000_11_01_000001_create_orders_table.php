@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create(config('orders.database.tables.orders', 'orders'), function (Blueprint $table) use ($jsonType): void {
             $table->uuid('id')->primary();
             $table->string('order_number')->unique();
-            $table->string('status', 50)->default('created')->index();
+            $table->string('status', 50)->default('processing')->index();
 
             // Customer relationship (polymorphic)
             $table->nullableUuidMorphs('customer');

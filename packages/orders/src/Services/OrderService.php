@@ -8,6 +8,7 @@ use AIArmada\Orders\Contracts\OrderServiceInterface;
 use AIArmada\Orders\Events\OrderCreated;
 use AIArmada\Orders\Models\Order;
 use AIArmada\Orders\Models\OrderItem;
+use AIArmada\Orders\States\Created;
 use AIArmada\Orders\States\PendingPayment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +37,7 @@ final class OrderService implements OrderServiceInterface
             // Create the order
             $order = Order::create([
                 'order_number' => $orderData['order_number'] ?? Order::generateOrderNumber(),
+                'status' => Created::class,
                 'customer_id' => $orderData['customer_id'] ?? null,
                 'customer_type' => $orderData['customer_type'] ?? null,
                 'subtotal' => $orderData['subtotal'] ?? 0,

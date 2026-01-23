@@ -11,6 +11,7 @@ use AIArmada\Orders\Models\OrderRefund;
 use AIArmada\Orders\States\Canceled;
 use AIArmada\Orders\States\Completed;
 use AIArmada\Orders\States\Created;
+use AIArmada\Orders\States\Processing;
 
 describe('Order Model', function (): void {
     describe('Order Creation', function (): void {
@@ -45,6 +46,17 @@ describe('Order Model', function (): void {
             ]);
 
             expect($order1->order_number)->not->toBe($order2->order_number);
+        });
+
+        it('defaults to processing for ecommerce flow', function (): void {
+            $order = Order::create([
+                'order_number' => 'ORD-DEFAULT-' . uniqid(),
+                'currency' => 'MYR',
+                'subtotal' => 10000,
+                'grand_total' => 10000,
+            ]);
+
+            expect($order->status)->toBeInstanceOf(Processing::class);
         });
     });
 

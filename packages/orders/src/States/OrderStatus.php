@@ -70,9 +70,10 @@ abstract class OrderStatus extends State
     final public static function config(): StateConfig
     {
         return parent::config()
-            ->default(Created::class)
+            ->default(self::resolveDefaultStateClass())
             // Initial → Payment
             ->allowTransition(Created::class, PendingPayment::class)
+            ->allowTransition(Created::class, Processing::class)
             // Payment outcomes
             ->allowTransition(PendingPayment::class, Processing::class)
             ->allowTransition(PendingPayment::class, Canceled::class)
@@ -140,5 +141,33 @@ abstract class OrderStatus extends State
     public function name(): string
     {
         return $this->getValue();
+    }
+
+    /**
+     * @return class-string<OrderStatus>
+     */
+    private static function resolveDefaultStateClass(): string
+    {
+        $default = config('orders.status.default', Processing::class);
+
+        /** @var array<int, string> $allowed */
+        $allowed = array_values(array_filter((array) config('orders.status.allowed', []), 'is_string'));
+
+        if (is_string($default) && class_exists($default) && is_subclass_of($default, self::class)) {
+            return $default;
+        }
+
+        $defaultValue = is_string($default) ? $default : '';
+
+        if ($defaultValue !== '' && $allowed !== [] && ! in_array($defaultValue, $allowed, true)) {
+            return Processing::class;
+        }
+
+        return match ($defaultValue) {
+            'created' => Created::class,
+            'pending_payment' => PendingPayment::class,
+            'processing' => Processing::class,
+            default => Processing::class,
+        };
     }
 }

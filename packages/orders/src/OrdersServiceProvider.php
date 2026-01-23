@@ -6,6 +6,7 @@ namespace AIArmada\Orders;
 
 use AIArmada\Orders\Contracts\OrderServiceInterface;
 use AIArmada\Orders\Services\OrderService;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\Gate;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -25,12 +26,12 @@ final class OrdersServiceProvider extends PackageServiceProvider
     public function registeringPackage(): void
     {
         $this->app->bind(OrderServiceInterface::class, OrderService::class);
+        $this->registerEventListeners();
     }
 
     public function bootingPackage(): void
     {
         $this->registerPolicies();
-        $this->registerEventListeners();
     }
 
     protected function registerPolicies(): void
@@ -41,6 +42,15 @@ final class OrdersServiceProvider extends PackageServiceProvider
 
     protected function registerEventListeners(): void
     {
-        // Event listeners will be registered here
+        if (! config('orders.integrations.docs.enabled', true)) {
+            return;
+        }
+
+        if (! interface_exists(\AIArmada\Docs\Contracts\DocServiceInterface::class)) {
+            return;
+        }
+
+        $dispatcher = $this->app->make(Dispatcher::class);
+        $dispatcher->listen(Events\OrderPaid::class, Listeners\CreateInvoiceForPaidOrder::class);
     }
 }

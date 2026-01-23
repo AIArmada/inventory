@@ -30,6 +30,15 @@ return [
     ],
 
     /* Behavior */
+    'status' => [
+        'allowed' => [ // created, pending_payment, processing
+            'created',
+            'pending_payment',
+            'processing',
+        ],
+        'default' => 'processing',
+    ],
+
     'order_number' => [
         'prefix' => env('ORDERS_ORDER_NUMBER_PREFIX', 'ORD'),
         'separator' => env('ORDERS_ORDER_NUMBER_SEPARATOR', '-'),
@@ -52,6 +61,10 @@ return [
         ],
         'affiliates' => [
             'enabled' => true,
+        ],
+        'docs' => [
+            'enabled' => true,
+            'generate_pdf' => false,
         ],
     ],
 

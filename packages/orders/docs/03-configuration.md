@@ -93,6 +93,25 @@ Enable/disable integrations with other Commerce packages:
     'inventory' => [
         'enabled' => true, // Auto-reserve/release inventory
     ],
+
+## Order Status Defaults
+
+Define which order states are allowed as initial values and the default used when no status is provided:
+
+```php
+'status' => [
+    'allowed' => [
+        'created',
+        'pending_payment',
+        'processing',
+    ],
+    'default' => 'processing',
+],
+```
+
+Recommended usage:
+- **E-commerce flow**: keep `processing` as default (order created after payment).
+- **Traditional flow**: set default to `created` or pass an explicit status on create.
     'affiliates' => [
         'enabled' => true, // Track affiliate commissions
     ],
@@ -154,6 +173,15 @@ return [
         'enabled' => true,
         'include_global' => false,
         'auto_assign_on_create' => true,
+    ],
+
+    'status' => [
+        'allowed' => [
+            'created',
+            'pending_payment',
+            'processing',
+        ],
+        'default' => 'processing',
     ],
 
     'order_number' => [
