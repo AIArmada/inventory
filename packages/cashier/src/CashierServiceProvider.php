@@ -69,10 +69,6 @@ final class CashierServiceProvider extends PackageServiceProvider
             $this->publishes([
                 __DIR__ . '/../config/cashier.php' => $this->app->configPath('cashier.php'),
             ], 'cashier-config');
-
-            $this->publishesMigrations([
-                __DIR__ . '/../database/migrations' => $this->app->databasePath('migrations'),
-            ], 'cashier-stripe-migrations');
         }
     }
 
