@@ -32,8 +32,8 @@ use Illuminate\Support\Carbon;
  * @property bool $active
  * @property Carbon $created_at
  * @property Carbon $updated_at
- * @property-read ShippingZone $zone
  * @property-read string $formatted_base_rate
+ * @property-read ShippingZone $zone
  */
 class ShippingRate extends Model
 {
@@ -169,6 +169,9 @@ class ShippingRate extends Model
         return "{$this->estimated_days_min}-{$this->estimated_days_max} days";
     }
 
+    /**
+     * Get the formatted base rate.
+     */
     public function getFormattedBaseRateAttribute(): string
     {
         return $this->formatMoney($this->base_rate);

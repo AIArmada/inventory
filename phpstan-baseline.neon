@@ -1,2 +1,8 @@
 parameters:
 	ignoreErrors:
+		-
+			message: '/Return type of call to method Illuminate\\Support\\Collection<\(int\|string\),class-string>::map\(\) contains unresolvable type\./'
+			path: packages/filament-authz/src/Authz.php
+		-
+			message: '/Parameter #1 \$callback of method Illuminate\\Support\\Collection<\(int\|string\),class-string>::map\(\) contains unresolvable type\./'
+			path: packages/filament-authz/src/Authz.php

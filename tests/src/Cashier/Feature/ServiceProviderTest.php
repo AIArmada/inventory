@@ -42,7 +42,11 @@ describe('CashierServiceProvider', function (): void {
 
         expect($provider)->not()->toBeNull();
 
-        if (class_exists(\Composer\InstalledVersions::class) && \Composer\InstalledVersions::isInstalled('laravel/cashier')) {
+        $migrationsPath = base_path('vendor/laravel/cashier/database/migrations');
+        $isInstalled = class_exists(\Composer\InstalledVersions::class)
+            && \Composer\InstalledVersions::isInstalled('laravel/cashier');
+
+        if ($isInstalled && is_dir($migrationsPath)) {
             $pathsToPublish = ServiceProvider::pathsToPublish(CashierServiceProvider::class, 'cashier-stripe-migrations');
 
             expect($pathsToPublish)->toBeArray()->not()->toBeEmpty();

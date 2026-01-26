@@ -71,7 +71,7 @@ describe('Orders ↔ Docs Integration', function (): void {
             ->first();
 
         expect($doc)->not->toBeNull();
-        expect($doc->status->equals(Paid::class))->toBeTrue();
+        expect($doc?->status->equals(Paid::class))->toBeTrue();
     });
 
     it('does not create a document when docs integration is disabled', function (): void {

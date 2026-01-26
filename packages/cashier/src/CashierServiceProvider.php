@@ -65,7 +65,7 @@ final class CashierServiceProvider extends PackageServiceProvider
      */
     protected function registerPublishing(): void
     {
-        if ($this->app->runningInConsole()) {
+        if ($this->app->runningInConsole() || $this->app->runningUnitTests()) {
             $this->publishes([
                 __DIR__ . '/../config/cashier.php' => $this->app->configPath('cashier.php'),
             ], 'cashier-config');
