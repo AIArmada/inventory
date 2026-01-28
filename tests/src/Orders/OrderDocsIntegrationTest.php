@@ -52,7 +52,7 @@ describe('Orders ↔ Docs Integration', function (): void {
                 'line1' => '123 Invoice Street',
                 'city' => 'Kuala Lumpur',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
                 'email' => 'invoice@example.com',
             ],
         );

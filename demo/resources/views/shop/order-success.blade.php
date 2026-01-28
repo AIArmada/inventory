@@ -81,7 +81,7 @@
                     <p>{{ $order->shippingAddress?->line2 }}</p>
                     @endif
                     <p>{{ $order->shippingAddress?->city ?? '' }}, {{ $order->shippingAddress?->state ?? '' }} {{ $order->shippingAddress?->postcode ?? '' }}</p>
-                    <p>{{ $order->shippingAddress?->country_code ?? '' }}</p>
+                    <p>{{ $order->shippingAddress?->country ?? '' }}</p>
                 </div>
             </div>
 

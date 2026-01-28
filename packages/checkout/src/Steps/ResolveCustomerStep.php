@@ -6,6 +6,8 @@ namespace AIArmada\Checkout\Steps;
 
 use AIArmada\Checkout\Data\StepResult;
 use AIArmada\Checkout\Models\CheckoutSession;
+use AIArmada\Customers\Models\Customer;
+use AIArmada\Customers\Services\CustomerResolver;
 
 final class ResolveCustomerStep extends AbstractCheckoutStep
 {
@@ -42,29 +44,30 @@ final class ResolveCustomerStep extends AbstractCheckoutStep
 
     public function handle(CheckoutSession $session): StepResult
     {
-        $customerId = $session->customer_id;
+        $customer = $session->customer_id !== null ? $session->customer : null;
+        $billingData = $session->billing_data ?? [];
+        $shippingData = $session->shipping_data ?? [];
+        $user = auth()->check() ? auth()->user() : null;
 
-        if ($customerId === null && auth()->check()) {
-            $user = auth()->user();
+        if (class_exists(CustomerResolver::class) && class_exists(Customer::class)) {
+            $resolver = app(CustomerResolver::class);
+            $resolvedCustomer = $resolver->resolve($user, $customer, $billingData, $shippingData);
 
-            if ($user !== null && method_exists($user, 'customer')) {
-                /** @var \Illuminate\Database\Eloquent\Relations\Relation|null $relation */
-                $relation = $user->customer();
-                if ($relation !== null) {
-                    $customer = $relation->getResults();
-                    if ($customer !== null && isset($customer->id)) {
-                        $customerId = $customer->id;
-                    }
-                }
+            if ($resolvedCustomer !== null) {
+                $session->update(['customer_id' => $resolvedCustomer->id]);
+
+                $this->loadCustomerDefaults($session);
+
+                return $this->success('Customer resolved', ['customer_id' => $resolvedCustomer->id]);
             }
         }
 
-        if ($customerId !== null) {
-            $session->update(['customer_id' => $customerId]);
+        if ($customer !== null) {
+            $session->update(['customer_id' => $customer->id]);
 
             $this->loadCustomerDefaults($session);
 
-            return $this->success('Customer resolved', ['customer_id' => $customerId]);
+            return $this->success('Customer resolved', ['customer_id' => $customer->id]);
         }
 
         return $this->success('Proceeding as guest checkout');
@@ -86,15 +89,15 @@ final class ResolveCustomerStep extends AbstractCheckoutStep
         $billingData = $session->billing_data ?? [];
         $shippingData = $session->shipping_data ?? [];
 
-        if (empty($billingData) && method_exists($customer, 'defaultBillingAddress')) {
-            $address = $customer->defaultBillingAddress();
+        if (empty($billingData) && method_exists($customer, 'getDefaultBillingAddress')) {
+            $address = $customer->getDefaultBillingAddress();
             if ($address !== null) {
                 $billingData = $address->toArray();
             }
         }
 
-        if (empty($shippingData) && method_exists($customer, 'defaultShippingAddress')) {
-            $address = $customer->defaultShippingAddress();
+        if (empty($shippingData) && method_exists($customer, 'getDefaultShippingAddress')) {
+            $address = $customer->getDefaultShippingAddress();
             if ($address !== null) {
                 $shippingData = $address->toArray();
             }

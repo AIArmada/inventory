@@ -26,20 +26,22 @@ class CartBridge
      *     shipping_address: array{
      *         name: string,
      *         phone: string,
-     *         address: string,
+     *         line1: string,
+     *         line2?: string,
      *         city?: string,
      *         state?: string,
-     *         post_code: string,
-     *         country_code?: string,
+     *         postcode: string,
+     *         country?: string,
      *     },
      *     billing_address?: array{
      *         name: string,
      *         phone: string,
-     *         address: string,
+     *         line1: string,
+     *         line2?: string,
      *         city?: string,
      *         state?: string,
-     *         post_code: string,
-     *         country_code?: string,
+     *         postcode: string,
+     *         country?: string,
      *     },
      *     items: array<int, array{
      *         name: string,
@@ -121,11 +123,12 @@ class CartBridge
         return new AddressData(
             name: $config['name'] ?? config('app.name', 'Warehouse'),
             phone: $config['phone'] ?? '',
-            address: $config['address'] ?? '',
+            line1: $config['line1'] ?? $config['address'] ?? '',
+            line2: $config['line2'] ?? $config['address2'] ?? null,
             city: $config['city'] ?? null,
             state: $config['state'] ?? null,
-            postCode: $config['post_code'] ?? '',
-            countryCode: $config['country_code'] ?? 'MYS',
+            postcode: $config['postcode'] ?? $config['post_code'] ?? '',
+            country: $config['country'] ?? $config['country_code'] ?? 'MY',
         );
     }
 
@@ -135,11 +138,12 @@ class CartBridge
      * @param  array{
      *     name: string,
      *     phone: string,
-     *     address: string,
+     *     line1: string,
+     *     line2?: string,
      *     city?: string,
      *     state?: string,
-     *     post_code: string,
-     *     country_code?: string,
+     *     postcode: string,
+     *     country?: string,
      * }  $address
      */
     protected function parseAddress(array $address): AddressData
@@ -147,11 +151,12 @@ class CartBridge
         return new AddressData(
             name: $address['name'],
             phone: $address['phone'],
-            address: $address['address'],
+            line1: $address['line1'] ?? $address['address'] ?? $address['address1'] ?? '',
+            line2: $address['line2'] ?? $address['address2'] ?? null,
             city: $address['city'] ?? null,
             state: $address['state'] ?? null,
-            postCode: $address['post_code'],
-            countryCode: $address['country_code'] ?? 'MYS',
+            postcode: $address['postcode'] ?? $address['post_code'] ?? '',
+            country: $address['country'] ?? $address['country_code'] ?? 'MY',
         );
     }
 

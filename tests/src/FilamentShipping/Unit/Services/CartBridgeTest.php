@@ -26,11 +26,11 @@ describe('createShipmentDataFromOrder', function (): void {
             'shipping_address' => [
                 'name' => 'John Doe',
                 'phone' => '+60123456789',
-                'address' => '123 Main Street',
+                'line1' => '123 Main Street',
                 'city' => 'Kuala Lumpur',
                 'state' => 'WP Kuala Lumpur',
-                'post_code' => '50000',
-                'country_code' => 'MYS',
+                'postcode' => '50000',
+                'country' => 'MY',
             ],
             'items' => [
                 [
@@ -72,8 +72,8 @@ describe('createShipmentDataFromOrder', function (): void {
             'shipping_address' => [
                 'name' => 'John Doe',
                 'phone' => '+60123456789',
-                'address' => '123 Main Street',
-                'post_code' => '50000',
+                'line1' => '123 Main Street',
+                'postcode' => '50000',
             ],
             'items' => [],
         ];
@@ -91,11 +91,11 @@ describe('createShipmentDataFromOrder', function (): void {
             'shipping_address' => [
                 'name' => 'Jane Doe',
                 'phone' => '+60198765432',
-                'address' => '456 Second Street',
+                'line1' => '456 Second Street',
                 'city' => 'Petaling Jaya',
                 'state' => 'Selangor',
-                'post_code' => '47810',
-                'country_code' => 'MYS',
+                'postcode' => '47810',
+                'country' => 'MY',
             ],
             'items' => [],
         ];
@@ -105,11 +105,11 @@ describe('createShipmentDataFromOrder', function (): void {
         expect($shipmentData->destination)->toBeInstanceOf(AddressData::class);
         expect($shipmentData->destination->name)->toBe('Jane Doe');
         expect($shipmentData->destination->phone)->toBe('+60198765432');
-        expect($shipmentData->destination->address)->toBe('456 Second Street');
+        expect($shipmentData->destination->line1)->toBe('456 Second Street');
         expect($shipmentData->destination->city)->toBe('Petaling Jaya');
         expect($shipmentData->destination->state)->toBe('Selangor');
-        expect($shipmentData->destination->postCode)->toBe('47810');
-        expect($shipmentData->destination->countryCode)->toBe('MYS');
+        expect($shipmentData->destination->postcode)->toBe('47810');
+        expect($shipmentData->destination->country)->toBe('MY');
     });
 
     it('creates correct shipment items', function (): void {
@@ -120,8 +120,8 @@ describe('createShipmentDataFromOrder', function (): void {
             'shipping_address' => [
                 'name' => 'John Doe',
                 'phone' => '+60123456789',
-                'address' => '123 Main Street',
-                'post_code' => '50000',
+                'line1' => '123 Main Street',
+                'postcode' => '50000',
             ],
             'items' => [
                 [
@@ -153,8 +153,8 @@ describe('createShipmentDataFromOrder', function (): void {
             'shipping_address' => [
                 'name' => 'John Doe',
                 'phone' => '+60123456789',
-                'address' => '123 Main Street',
-                'post_code' => '50000',
+                'line1' => '123 Main Street',
+                'postcode' => '50000',
             ],
             'items' => [
                 [

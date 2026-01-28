@@ -32,8 +32,8 @@ return new class extends Migration
             $table->string('phone')->nullable();
 
             // Address fields
-            $table->string('address1');
-            $table->string('address2')->nullable();
+            $table->string('line1');
+            $table->string('line2')->nullable();
             $table->string('city');
             $table->string('state')->nullable();
             $table->string('postcode');

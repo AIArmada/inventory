@@ -238,6 +238,23 @@ Customize model classes if you've extended the defaults:
 ],
 ```
 
+When using a custom order model, ensure your implementation of
+`AIArmada\Orders\Contracts\OrderServiceInterface` returns that model and
+binds the interface in the container.
+
+### Session Data Transformers
+
+Transform billing/shipping data before checkout steps use it:
+
+```php
+'transformers' => [
+    'billing' => App\Checkout\Transformers\BillingTransformer::class,
+    'shipping' => App\Checkout\Transformers\ShippingTransformer::class,
+],
+```
+
+Each transformer must implement `AIArmada\Checkout\Contracts\SessionDataTransformerInterface`.
+
 ### Payment Settings
 
 | Key | Type | Default | Description |

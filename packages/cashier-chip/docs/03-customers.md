@@ -93,7 +93,7 @@ class User extends Authenticatable
             'full_name' => $this->full_name,
             'email' => $this->email,
             'phone' => $this->phone_number,
-            'street_address' => $this->address1,
+            'street_address' => $this->line1,
             'city' => $this->city,
             'country' => 'MY',
         ];

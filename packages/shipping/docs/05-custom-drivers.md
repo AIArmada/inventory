@@ -287,8 +287,8 @@ class JntShippingDriver implements ShippingDriverInterface
         return [
             'name' => $address->name,
             'phone' => $address->phone,
-            'address1' => $address->line1,
-            'address2' => $address->line2,
+            'line1' => $address->line1,
+            'line2' => $address->line2,
             'city' => $address->city,
             'state' => $address->state,
             'postcode' => $address->postcode,

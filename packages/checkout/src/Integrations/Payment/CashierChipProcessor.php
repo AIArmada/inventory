@@ -145,6 +145,8 @@ final class CashierChipProcessor implements PaymentProcessorInterface
             'product_name' => $request->description,
             'success_url' => $request->successUrl,
             'failure_url' => $request->failureUrl,
+            'metadata' => $request->metadata,
+            'reference' => $request->description,
         ]);
 
         $checkoutUrl = $payment->purchase->checkout_url ?? null;

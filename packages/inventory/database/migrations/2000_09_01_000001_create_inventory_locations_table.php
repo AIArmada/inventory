@@ -17,7 +17,12 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('code')->unique();
-            $table->text('address')->nullable();
+            $table->string('line1')->nullable();
+            $table->string('line2')->nullable();
+            $table->string('city')->nullable();
+            $table->string('state')->nullable();
+            $table->string('postcode')->nullable();
+            $table->string('country', 2)->nullable();
             $table->boolean('is_active')->default(true);
             $table->integer('priority')->default(0);
             $table->foreignUuid('parent_id')->nullable();

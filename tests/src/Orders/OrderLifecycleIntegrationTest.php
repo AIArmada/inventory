@@ -52,7 +52,7 @@ describe('Order Lifecycle Integration', function (): void {
             'line1' => '123 Test Street',
             'city' => 'Test City',
             'postcode' => '12345',
-            'country_code' => 'MY',
+            'country' => 'MY',
             'email' => 'john@test.com',
         ];
 

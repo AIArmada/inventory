@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('city');
             $table->string('state')->nullable();
             $table->string('postcode', 20);
-            $table->string('country_code', 2)->default('MY');
+            $table->string('country', 2)->default('MY');
 
             // Contact
             $table->string('phone')->nullable();

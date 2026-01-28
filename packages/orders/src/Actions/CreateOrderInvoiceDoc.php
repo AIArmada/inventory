@@ -112,7 +112,7 @@ final class CreateOrderInvoiceDoc
             'city' => $address->city,
             'state' => $address->state,
             'postcode' => $address->postcode,
-            'country_code' => $address->country_code,
+            'country' => $address->country,
             'company' => $address->company,
         ], static fn ($value) => $value !== null && $value !== '');
     }

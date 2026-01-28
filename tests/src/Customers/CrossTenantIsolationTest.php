@@ -122,7 +122,7 @@ it('enforces owner scoping for addresses', function (): void {
     OwnerContext::withOwner($ownerA, function () use ($customerA): void {
         Address::query()->create([
             'customer_id' => $customerA->id,
-            'address1' => '123 Owner A',
+            'line1' => '123 Owner A',
             'city' => 'KL',
             'postcode' => '50000',
             'country' => 'MY',
@@ -132,7 +132,7 @@ it('enforces owner scoping for addresses', function (): void {
     OwnerContext::withOwner($ownerB, function () use ($customerB): void {
         Address::query()->create([
             'customer_id' => $customerB->id,
-            'address1' => '456 Owner B',
+            'line1' => '456 Owner B',
             'city' => 'KL',
             'postcode' => '50000',
             'country' => 'MY',
@@ -144,7 +144,7 @@ it('enforces owner scoping for addresses', function (): void {
 
         expect(fn () => Address::query()->create([
             'customer_id' => $customerB->id,
-            'address1' => 'Cross-tenant',
+            'line1' => 'Cross-tenant',
             'city' => 'KL',
             'postcode' => '50000',
             'country' => 'MY',

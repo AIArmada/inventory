@@ -19,7 +19,12 @@ class InventoryLocationFactory extends Factory
         return [
             'name' => $this->faker->unique()->company() . ' Warehouse',
             'code' => mb_strtoupper($this->faker->unique()->lexify('WH-???')),
-            'address' => $this->faker->address(),
+            'line1' => $this->faker->streetAddress(),
+            'line2' => $this->faker->optional()->secondaryAddress(),
+            'city' => $this->faker->city(),
+            'state' => $this->faker->state(),
+            'postcode' => $this->faker->postcode(),
+            'country' => 'MY',
             'is_active' => true,
             'priority' => $this->faker->numberBetween(1, 100),
             'metadata' => null,

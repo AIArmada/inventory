@@ -30,8 +30,8 @@ final class ChipProcessor implements PaymentProcessorInterface
             return false;
         }
 
-        return config('chip.brand_id') !== null
-            && config('chip.secret_key') !== null;
+        return config('chip.collect.brand_id') !== null
+            && config('chip.collect.api_key') !== null;
     }
 
     public function createPayment(CheckoutSession $session, PaymentRequest $request): PaymentResult

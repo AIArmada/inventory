@@ -47,15 +47,15 @@ it('calculates rates based on weight', function (): void {
     $origin = new AddressData(
         name: 'Sender',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $destination = new AddressData(
         name: 'Receiver',
         phone: '+60198765432',
-        address: '456 Target St',
-        postCode: '40000',
+        line1: '456 Target St',
+        postcode: '40000',
     );
 
     $packages = [new PackageData(weight: 2000)]; // 2kg
@@ -77,15 +77,15 @@ it('applies custom configuration for rates', function (): void {
     $origin = new AddressData(
         name: 'Sender',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $destination = new AddressData(
         name: 'Receiver',
         phone: '+60198765432',
-        address: '456 Target St',
-        postCode: '40000',
+        line1: '456 Target St',
+        postcode: '40000',
     );
 
     $packages = [new PackageData(weight: 3000)]; // 3kg
@@ -104,14 +104,14 @@ it('creates shipment with manual tracking number', function (): void {
         origin: new AddressData(
             name: 'Sender',
             phone: '+60123456789',
-            address: '123 Test St',
-            postCode: '50000',
+            line1: '123 Test St',
+            postcode: '50000',
         ),
         destination: new AddressData(
             name: 'Receiver',
             phone: '+60198765432',
-            address: '456 Target St',
-            postCode: '40000',
+            line1: '456 Target St',
+            postcode: '40000',
         ),
         items: [],
     );
@@ -126,9 +126,9 @@ it('always services all destinations', function (): void {
     $destination = new AddressData(
         name: 'Test',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
-        countryCode: 'ANY',
+        line1: '123 Test St',
+        postcode: '50000',
+        country: 'ANY',
     );
 
     expect($this->driver->servicesDestination($destination))->toBeTrue();
@@ -138,8 +138,8 @@ it('validates all addresses as valid', function (): void {
     $address = new AddressData(
         name: 'Test',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $result = $this->driver->validateAddress($address);
@@ -152,8 +152,8 @@ it('returns address validation warning', function (): void {
     $address = new AddressData(
         name: 'Test',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $result = $this->driver->validateAddress($address);
@@ -214,15 +214,15 @@ it('applies free shipping when cart total meets threshold', function (): void {
     $origin = new AddressData(
         name: 'Sender',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $destination = new AddressData(
         name: 'Receiver',
         phone: '+60198765432',
-        address: '456 Target St',
-        postCode: '40000',
+        line1: '456 Target St',
+        postcode: '40000',
     );
 
     $packages = [new PackageData(weight: 500)];
@@ -242,15 +242,15 @@ it('does not apply free shipping when cart total below threshold', function (): 
     $origin = new AddressData(
         name: 'Sender',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $destination = new AddressData(
         name: 'Receiver',
         phone: '+60198765432',
-        address: '456 Target St',
-        postCode: '40000',
+        line1: '456 Target St',
+        postcode: '40000',
     );
 
     $packages = [new PackageData(weight: 500)];
@@ -270,15 +270,15 @@ it('uses custom currency from config', function (): void {
     $origin = new AddressData(
         name: 'Sender',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $destination = new AddressData(
         name: 'Receiver',
         phone: '+60198765432',
-        address: '456 Target St',
-        postCode: '40000',
+        line1: '456 Target St',
+        postcode: '40000',
     );
 
     $packages = [new PackageData(weight: 500)];

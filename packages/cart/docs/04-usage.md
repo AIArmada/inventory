@@ -196,6 +196,59 @@ Cart::clearConditions();
 > Provider-managed conditions (from vouchers, affiliates, shipping, etc.) are synced automatically
 > when conditions are read. Avoid manually mutating those conditions; use the provider APIs instead.
 
+## Cart Snapshot Contract
+
+Use `Cart::content()` (or `Cart::getContent()`) to capture a normalized snapshot of the cart state. Checkout sessions store this snapshot as `cart_snapshot`.
+
+```json
+{
+    "id": "uuid",
+    "identifier": "guest-session-id-or-user-id",
+    "instance": "default",
+    "version": 1,
+    "metadata": {},
+    "items": [
+        {
+            "id": "SKU-001",
+            "name": "Product Name",
+            "price": 4999,
+            "quantity": 2,
+            "attributes": {
+                "weight": 250,
+                "dimensions": {"length": 20, "width": 10, "height": 5}
+            },
+            "conditions": [],
+            "associated_model": {
+                "class": "App\\Models\\Product",
+                "id": "uuid",
+                "data": {"sku": "SKU-001"}
+            }
+        }
+    ],
+    "conditions": [],
+    "subtotal": 9998,
+    "total": 9998,
+    "quantity": 2,
+    "count": 1,
+    "item_count": 2,
+    "totals": {
+        "subtotal": 9998,
+        "total": 9998,
+        "subtotal_without_conditions": 9998
+    },
+    "is_empty": false,
+    "captured_at": "2026-01-28T10:00:00+00:00",
+    "created_at": "2026-01-28T10:00:00+00:00",
+    "updated_at": "2026-01-28T10:00:00+00:00"
+}
+```
+
+Notes:
+- `price` and totals are stored in the smallest currency unit (cents).
+- `attributes.weight` is in grams when provided.
+- `item_count` reflects total quantity; `count` reflects unique line items.
+- `associated_model` is populated when cart items are linked to Eloquent models.
+
 ## Working with Metadata
 
 ```php

@@ -266,7 +266,7 @@ class RateShoppingEngine
 
         return $this->shippingManager->driver('manual')
             ->getRates(
-                new AddressData(name: '', phone: '', address: '', postCode: ''),
+                new AddressData(name: '', phone: '', line1: '', postcode: ''),
                 $destination,
                 $packages
             )
@@ -297,8 +297,8 @@ class RateShoppingEngine
         }
 
         return 'shipping:rates:' . md5(serialize([
-            'origin' => $origin->postCode,
-            'destination' => $destination->postCode . $destination->countryCode,
+            'origin' => $origin->postcode,
+            'destination' => $destination->postcode . $destination->country,
             'weight' => $totalWeight,
             'packages' => count($packages),
             'options' => $optionsHash,

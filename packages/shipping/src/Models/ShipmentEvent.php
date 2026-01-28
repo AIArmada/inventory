@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $city
  * @property string|null $state
  * @property string|null $country
- * @property string|null $postal_code
+ * @property string|null $postcode
  * @property Carbon $occurred_at
  * @property array|null $raw_data
  * @property Carbon $created_at
@@ -44,7 +44,7 @@ class ShipmentEvent extends Model
         'city',
         'state',
         'country',
-        'postal_code',
+        'postcode',
         'occurred_at',
         'raw_data',
     ];

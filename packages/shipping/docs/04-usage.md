@@ -30,7 +30,7 @@ Cart::setMetadata('shipping_address', [
     'city' => 'Petaling Jaya',
     'state' => 'Selangor',
     'postcode' => '47800',
-    'countryCode' => 'MY',
+    'country' => 'MY',
 ]);
 
 Cart::setMetadata('selected_shipping_method', [
@@ -48,7 +48,7 @@ use AIArmada\Shipping\Data\AddressData;
 use AIArmada\Shipping\Data\PackageData;
 
 $destination = AddressData::from([
-    'line_1' => '456 Customer Ave',
+    'line1' => '456 Customer Ave',
     'city' => 'Petaling Jaya',
     'state' => 'Selangor',
     'postcode' => '47800',
@@ -102,7 +102,7 @@ $shipmentData = ShipmentData::from([
     'service_code' => 'standard',
     'origin' => AddressData::from([
         'name' => 'My Warehouse',
-        'line_1' => '123 Warehouse St',
+        'line1' => '123 Warehouse St',
         'city' => 'Kuala Lumpur',
         'state' => 'Kuala Lumpur',
         'postcode' => '50000',
@@ -110,7 +110,7 @@ $shipmentData = ShipmentData::from([
     ]),
     'destination' => AddressData::from([
         'name' => 'John Doe',
-        'line_1' => '456 Customer Ave',
+        'line1' => '456 Customer Ave',
         'city' => 'Petaling Jaya',
         'state' => 'Selangor',
         'postcode' => '47800',

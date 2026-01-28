@@ -148,7 +148,7 @@ class ShippingZone extends Model
             return false;
         }
 
-        return in_array(mb_strtoupper($address->countryCode), array_map('strtoupper', $this->countries), true);
+        return in_array(mb_strtoupper($address->country), array_map('strtoupper', $this->countries), true);
     }
 
     protected function matchesState(AddressData $address): bool
@@ -179,7 +179,7 @@ class ShippingZone extends Model
             return false;
         }
 
-        $postcode = $address->postCode;
+        $postcode = $address->postcode;
 
         if (empty($postcode)) {
             return false;

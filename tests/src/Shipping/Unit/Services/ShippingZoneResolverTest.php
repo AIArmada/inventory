@@ -26,9 +26,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -56,9 +56,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'Jane Doe',
             phone: '456-789-0123',
-            address: '456 Maple Ave',
-            postCode: 'M5V 1A1',
-            countryCode: 'CA',
+            line1: '456 Maple Ave',
+            postcode: 'M5V 1A1',
+            country: 'CA',
             city: 'Toronto',
             state: 'ON'
         );
@@ -73,9 +73,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'Bob Smith',
             phone: '789-012-3456',
-            address: '789 High St',
-            postCode: 'SW1A 1AA',
-            countryCode: 'GB',
+            line1: '789 High St',
+            postcode: 'SW1A 1AA',
+            country: 'GB',
             city: 'London'
         );
 
@@ -100,9 +100,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -120,9 +120,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -163,9 +163,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -192,9 +192,9 @@ describe('ShippingZoneResolver', function (): void {
         $serviceableAddress = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -202,9 +202,9 @@ describe('ShippingZoneResolver', function (): void {
         $nonServiceableAddress = new AddressData(
             name: 'Bob Smith',
             phone: '789-012-3456',
-            address: '789 High St',
-            postCode: 'SW1A 1AA',
-            countryCode: 'GB',
+            line1: '789 High St',
+            postcode: 'SW1A 1AA',
+            country: 'GB',
             city: 'London'
         );
 
@@ -228,9 +228,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -247,9 +247,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'Bob Smith',
             phone: '789-012-3456',
-            address: '789 High St',
-            postCode: 'SW1A 1AA',
-            countryCode: 'GB',
+            line1: '789 High St',
+            postcode: 'SW1A 1AA',
+            country: 'GB',
             city: 'London'
         );
 
@@ -277,9 +277,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'Bob Smith',
             phone: '789-012-3456',
-            address: '789 High St',
-            postCode: 'SW1A 1AA',
-            countryCode: 'GB',
+            line1: '789 High St',
+            postcode: 'SW1A 1AA',
+            country: 'GB',
             city: 'London'
         );
 
@@ -329,9 +329,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -376,9 +376,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -393,9 +393,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'Bob Smith',
             phone: '789-012-3456',
-            address: '789 High St',
-            postCode: 'SW1A 1AA',
-            countryCode: 'GB',
+            line1: '789 High St',
+            postcode: 'SW1A 1AA',
+            country: 'GB',
             city: 'London'
         );
 
@@ -419,9 +419,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -501,9 +501,9 @@ describe('ShippingZoneResolver', function (): void {
         $address = new \AIArmada\Shipping\Data\AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );

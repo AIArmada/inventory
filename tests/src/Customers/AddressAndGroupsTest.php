@@ -22,10 +22,10 @@ describe('Address Model', function (): void {
                 'customer_id' => $customer->id,
                 'first_name' => 'John',
                 'last_name' => 'Doe',
-                'address1' => '123 Main Street',
+                'line1' => '123 Main Street',
                 'city' => 'Kuala Lumpur',
                 'state' => 'KL',
-                'postal_code' => '50000',
+                'postcode' => '50000',
                 'country' => 'MY',
                 'type' => 'shipping',
             ]);
@@ -48,7 +48,7 @@ describe('Address Model', function (): void {
                 'customer_id' => $customer->id,
                 'first_name' => 'Jane',
                 'last_name' => 'Doe',
-                'address1' => '100 Ship Street',
+                'line1' => '100 Ship Street',
                 'city' => 'Petaling Jaya',
                 'country' => 'MY',
                 'type' => 'shipping',
@@ -58,7 +58,7 @@ describe('Address Model', function (): void {
                 'customer_id' => $customer->id,
                 'first_name' => 'Jane',
                 'last_name' => 'Doe',
-                'address1' => '200 Bill Street',
+                'line1' => '200 Bill Street',
                 'city' => 'Shah Alam',
                 'country' => 'MY',
                 'type' => 'billing',
@@ -80,7 +80,7 @@ describe('Address Model', function (): void {
 
             $default = Address::create([
                 'customer_id' => $customer->id,
-                'address1' => 'Default Street',
+                'line1' => 'Default Street',
                 'city' => 'KL',
                 'country' => 'MY',
                 'is_default' => true,
@@ -88,7 +88,7 @@ describe('Address Model', function (): void {
 
             $other = Address::create([
                 'customer_id' => $customer->id,
-                'address1' => 'Other Street',
+                'line1' => 'Other Street',
                 'city' => 'KL',
                 'country' => 'MY',
                 'is_default' => false,

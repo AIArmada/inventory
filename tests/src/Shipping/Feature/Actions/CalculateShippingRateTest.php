@@ -14,9 +14,9 @@ describe('CalculateShippingRate Action', function (): void {
         $origin = new AddressData(
             name: 'Test Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -24,9 +24,9 @@ describe('CalculateShippingRate Action', function (): void {
         $destination = new AddressData(
             name: 'Test Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -84,9 +84,9 @@ describe('CalculateShippingRate Action', function (): void {
         $origin = new AddressData(
             name: 'Test Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -94,9 +94,9 @@ describe('CalculateShippingRate Action', function (): void {
         $destination = new AddressData(
             name: 'Test Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -117,9 +117,9 @@ describe('CalculateShippingRate Action', function (): void {
         $origin = new AddressData(
             name: 'Test Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -127,9 +127,9 @@ describe('CalculateShippingRate Action', function (): void {
         $destination = new AddressData(
             name: 'Test Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -152,9 +152,9 @@ describe('CalculateShippingRate Action', function (): void {
         $origin = new AddressData(
             name: 'Test Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -162,9 +162,9 @@ describe('CalculateShippingRate Action', function (): void {
         $destination = new AddressData(
             name: 'Test Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -195,17 +195,17 @@ describe('CalculateShippingRate Action', function (): void {
         $origin = new AddressData(
             name: 'Test Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
         );
 
         $destination = new AddressData(
             name: 'Test Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
         );
 
         $packages = [

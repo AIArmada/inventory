@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AIArmada\FilamentInventory\Resources\InventoryLocationResource\Schemas;
 
 use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Grid;
@@ -33,9 +32,32 @@ final class InventoryLocationForm
                             ->helperText('Unique identifier for this location'),
                     ]),
 
-                    Textarea::make('address')
-                        ->label('Address')
-                        ->rows(3),
+                    TextInput::make('line1')
+                        ->label('Address Line 1')
+                        ->maxLength(255),
+
+                    TextInput::make('line2')
+                        ->label('Address Line 2')
+                        ->maxLength(255),
+
+                    Grid::make(3)->schema([
+                        TextInput::make('city')
+                            ->label('City')
+                            ->maxLength(255),
+
+                        TextInput::make('state')
+                            ->label('State')
+                            ->maxLength(255),
+
+                        TextInput::make('postcode')
+                            ->label('Postcode')
+                            ->maxLength(20),
+                    ]),
+
+                    TextInput::make('country')
+                        ->label('Country')
+                        ->maxLength(2)
+                        ->helperText('ISO 3166-1 alpha-2'),
 
                     Grid::make(2)->schema([
                         TextInput::make('priority')

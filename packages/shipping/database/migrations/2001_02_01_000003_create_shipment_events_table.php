@@ -24,8 +24,8 @@ return new class extends Migration
             $table->string('location')->nullable();
             $table->string('city')->nullable();
             $table->string('state')->nullable();
-            $table->string('country', 3)->nullable();
-            $table->string('postal_code', 20)->nullable();
+            $table->string('country', 2)->nullable();
+            $table->string('postcode', 20)->nullable();
 
             $table->timestamp('occurred_at')->index();
             $table->{$jsonType}('raw_data')->nullable();

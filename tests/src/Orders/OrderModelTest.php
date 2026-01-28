@@ -245,7 +245,7 @@ describe('Order Model', function (): void {
                 'line1' => '123 Billing St',
                 'city' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             OrderPayment::create([
@@ -326,7 +326,7 @@ describe('Order Model', function (): void {
                 'city' => 'Kuala Lumpur',
                 'state' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             $shippingAddress = OrderAddress::create([
@@ -340,7 +340,7 @@ describe('Order Model', function (): void {
                 'city' => 'Penang',
                 'state' => 'PG',
                 'postcode' => '10000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             $order->refresh();

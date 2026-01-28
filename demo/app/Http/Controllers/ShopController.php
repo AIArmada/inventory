@@ -442,7 +442,7 @@ final class ShopController extends Controller
             'phone' => 'required|string',
             'first_name' => 'required|string',
             'last_name' => 'required|string',
-            'address1' => 'required|string',
+            'line1' => 'required|string',
             'city' => 'required|string',
             'state' => 'required|string',
             'postcode' => 'required|string',
@@ -605,12 +605,12 @@ final class ShopController extends Controller
             'type' => 'shipping',
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
-            'line1' => $request->address1,
-            'line2' => $request->address2,
+            'line1' => $request->line1,
+            'line2' => $request->line2,
             'city' => $request->city,
             'state' => $request->state,
             'postcode' => $request->postcode,
-            'country_code' => 'MY',
+            'country' => 'MY',
             'phone' => $request->phone,
             'email' => $request->email,
         ]);
@@ -700,7 +700,7 @@ final class ShopController extends Controller
                     country: 'MY'
                 )
                 ->billingAddress(
-                    streetAddress: $request->address1,
+                    streetAddress: $request->line1,
                     city: $request->city,
                     zipCode: $request->postcode,
                     state: $request->state,

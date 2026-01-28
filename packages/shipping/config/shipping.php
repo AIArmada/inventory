@@ -39,9 +39,10 @@ return [
         'origin' => [
             'name' => env('SHIPPING_ORIGIN_NAME', env('APP_NAME', 'Store')),
             'phone' => env('SHIPPING_ORIGIN_PHONE', ''),
-            'address' => env('SHIPPING_ORIGIN_ADDRESS', ''),
-            'post_code' => env('SHIPPING_ORIGIN_POST_CODE', ''),
-            'country_code' => env('SHIPPING_ORIGIN_COUNTRY_CODE', 'MYS'),
+            'line1' => env('SHIPPING_ORIGIN_LINE1', env('SHIPPING_ORIGIN_ADDRESS', '')),
+            'line2' => env('SHIPPING_ORIGIN_LINE2', env('SHIPPING_ORIGIN_ADDRESS_2', '')),
+            'postcode' => env('SHIPPING_ORIGIN_POSTCODE', env('SHIPPING_ORIGIN_POST_CODE', '')),
+            'country' => env('SHIPPING_ORIGIN_COUNTRY', env('SHIPPING_ORIGIN_COUNTRY_CODE', 'MY')),
             'state' => env('SHIPPING_ORIGIN_STATE'),
             'city' => env('SHIPPING_ORIGIN_CITY'),
         ],

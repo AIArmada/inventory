@@ -66,6 +66,30 @@ composer require aiarmada/promotions
 composer require aiarmada/vouchers
 ```
 
+## Custom Order Model (Non-Orders Integration)
+
+If you are not using `aiarmada/orders` but still want to use checkout, bind your
+own implementation of `OrderServiceInterface` and point checkout to your model:
+
+```php
+use AIArmada\Orders\Contracts\OrderServiceInterface;
+
+public function register(): void
+{
+    $this->app->singleton(OrderServiceInterface::class, App\Checkout\OrderService::class);
+}
+```
+
+```php
+// config/checkout.php
+'models' => [
+    'order' => App\Models\Order::class,
+],
+```
+
+Your `OrderServiceInterface` implementation should return your custom order
+model and handle item/address creation in `createOrder()`.
+
 ## Service Provider
 
 The package auto-discovers its service provider. If needed, manually register:

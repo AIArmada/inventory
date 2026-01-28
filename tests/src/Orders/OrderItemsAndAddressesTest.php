@@ -244,7 +244,7 @@ describe('OrderAddress Model', function (): void {
                 'city' => 'Kuala Lumpur',
                 'state' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             expect($address)->toBeInstanceOf(OrderAddress::class)
@@ -269,7 +269,7 @@ describe('OrderAddress Model', function (): void {
                 'line1' => 'Ship Address',
                 'city' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             $billing = OrderAddress::create([
@@ -280,7 +280,7 @@ describe('OrderAddress Model', function (): void {
                 'line1' => 'Bill Address',
                 'city' => 'PJ',
                 'postcode' => '47500',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             expect($shipping->type)->toBe('shipping')
@@ -306,7 +306,7 @@ describe('OrderAddress Model', function (): void {
                 'line1' => 'Main Street',
                 'city' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             expect($address->order->id)->toBe($order->id);
@@ -331,7 +331,7 @@ describe('OrderAddress Model', function (): void {
                 'line1' => 'Main Street',
                 'city' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             expect($address->getFullName())->toBe('John Doe');
@@ -356,7 +356,7 @@ describe('OrderAddress Model', function (): void {
                 'line1' => 'Bill Street',
                 'city' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             $shipping = OrderAddress::create([
@@ -367,7 +367,7 @@ describe('OrderAddress Model', function (): void {
                 'line1' => 'Ship Street',
                 'city' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             expect($billing->isBilling())->toBeTrue()
@@ -397,7 +397,7 @@ describe('OrderAddress Model', function (): void {
                 'city' => 'Kuala Lumpur',
                 'state' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             $oneLine = $address->getOneLine();
@@ -429,7 +429,7 @@ describe('OrderAddress Model', function (): void {
                 'city' => 'Kuala Lumpur',
                 'state' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ]);
 
             $formatted = $address->getFormatted();
@@ -464,7 +464,7 @@ describe('OrderAddress Model', function (): void {
                 'city' => 'Kuala Lumpur',
                 'state' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
                 'phone' => '0123456789',
                 'email' => 'john@example.com',
             ]);
@@ -478,7 +478,7 @@ describe('OrderAddress Model', function (): void {
                 ->and($array)->toHaveKey('city', 'Kuala Lumpur')
                 ->and($array)->toHaveKey('state', 'KL')
                 ->and($array)->toHaveKey('postcode', '50000')
-                ->and($array)->toHaveKey('country_code', 'MY')
+                ->and($array)->toHaveKey('country', 'MY')
                 ->and($array)->toHaveKey('phone', '0123456789')
                 ->and($array)->toHaveKey('email', 'john@example.com');
         });

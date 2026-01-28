@@ -33,7 +33,7 @@ it('custom relation manager actions require authentication (abort 403)', functio
     $address = Address::query()->create([
         'customer_id' => $customer->getKey(),
         'type' => 'both',
-        'address1' => 'Line 1',
+        'line1' => 'Line 1',
         'city' => 'City',
         'postcode' => '12345',
         'country' => 'MY',

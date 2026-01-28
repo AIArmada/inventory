@@ -49,15 +49,15 @@ it('returns test rate quotes', function (): void {
     $origin = new AddressData(
         name: 'Sender',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $destination = new AddressData(
         name: 'Receiver',
         phone: '+60198765432',
-        address: '456 Target St',
-        postCode: '40000',
+        line1: '456 Target St',
+        postcode: '40000',
     );
 
     $packages = [new PackageData(weight: 1000)];
@@ -78,14 +78,14 @@ it('creates test shipment successfully', function (): void {
         origin: new AddressData(
             name: 'Sender',
             phone: '+60123456789',
-            address: '123 Test St',
-            postCode: '50000',
+            line1: '123 Test St',
+            postcode: '50000',
         ),
         destination: new AddressData(
             name: 'Receiver',
             phone: '+60198765432',
-            address: '456 Target St',
-            postCode: '40000',
+            line1: '456 Target St',
+            postcode: '40000',
         ),
         items: [],
     );
@@ -124,8 +124,8 @@ it('returns valid address validation', function (): void {
     $address = new AddressData(
         name: 'Test',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $result = $this->driver->validateAddress($address);
@@ -138,9 +138,9 @@ it('services all destinations', function (): void {
     $destination = new AddressData(
         name: 'Test',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
-        countryCode: 'MYS',
+        line1: '123 Test St',
+        postcode: '50000',
+        country: 'MY',
     );
 
     expect($this->driver->servicesDestination($destination))->toBeTrue();
@@ -148,9 +148,9 @@ it('services all destinations', function (): void {
     $internationalDest = new AddressData(
         name: 'Test',
         phone: '+1234567890',
-        address: '123 Test St',
-        postCode: '10001',
-        countryCode: 'USA',
+        line1: '123 Test St',
+        postcode: '10001',
+        country: 'US',
     );
 
     expect($this->driver->servicesDestination($internationalDest))->toBeTrue();

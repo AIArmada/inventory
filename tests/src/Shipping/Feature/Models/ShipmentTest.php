@@ -22,18 +22,18 @@ describe('Shipment Model', function (): void {
             'carrier_code' => 'test-carrier',
             'origin_address' => [
                 'name' => 'Test Origin',
-                'street' => '123 Origin St',
+                'line1' => '123 Origin St',
                 'city' => 'Origin City',
                 'state' => 'OS',
-                'postal_code' => '12345',
+                'postcode' => '12345',
                 'country' => 'US',
             ],
             'destination_address' => [
                 'name' => 'Test Destination',
-                'street' => '456 Dest St',
+                'line1' => '456 Dest St',
                 'city' => 'Dest City',
                 'state' => 'DS',
-                'postal_code' => '67890',
+                'postcode' => '67890',
                 'country' => 'US',
             ],
         ]);

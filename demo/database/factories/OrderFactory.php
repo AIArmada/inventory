@@ -109,12 +109,12 @@ final class OrderFactory extends Factory
         return [
             'name' => $this->faker->name(),
             'phone' => $this->faker->phoneNumber(),
-            'address1' => $this->faker->streetAddress(),
-            'address2' => $this->faker->optional()->secondaryAddress(),
+            'line1' => $this->faker->streetAddress(),
+            'line2' => $this->faker->optional()->secondaryAddress(),
             'city' => $this->faker->city(),
             'state' => $this->faker->randomElement(['Selangor', 'Kuala Lumpur', 'Penang', 'Johor', 'Perak']),
             'postcode' => $this->faker->postcode(),
-            'country' => 'Malaysia',
+            'country' => 'MY',
         ];
     }
 }

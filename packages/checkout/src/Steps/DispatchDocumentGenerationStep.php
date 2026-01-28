@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Checkout\Steps;
 
 use AIArmada\Checkout\Data\StepResult;
+use AIArmada\Checkout\Events\DocumentsDispatched;
 use AIArmada\Checkout\Jobs\GenerateCheckoutDocumentsJob;
 use AIArmada\Checkout\Models\CheckoutSession;
 
@@ -70,6 +71,13 @@ final class DispatchDocumentGenerationStep extends AbstractCheckoutStep
             orderId: $session->order_id,
             documentTypes: $documentsToGenerate,
         )->onQueue($queue);
+
+        event(new DocumentsDispatched(
+            session: $session,
+            orderId: $session->order_id,
+            documents: $documentsToGenerate,
+            queue: $queue,
+        ));
 
         return $this->success('Document generation dispatched', [
             'documents' => $documentsToGenerate,

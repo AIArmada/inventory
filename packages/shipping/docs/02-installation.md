@@ -59,7 +59,7 @@ Add these to your `.env` file:
 
 ```env
 # Origin address for shipments
-SHIPPING_ORIGIN_LINE_1="123 Warehouse St"
+SHIPPING_ORIGIN_LINE1="123 Warehouse St"
 SHIPPING_ORIGIN_CITY="Kuala Lumpur"
 SHIPPING_ORIGIN_STATE="Kuala Lumpur"
 SHIPPING_ORIGIN_POSTCODE="50000"

@@ -102,7 +102,7 @@ describe('OrderService', function (): void {
                 'line1' => '123 Billing St',
                 'city' => 'KL',
                 'postcode' => '50000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ];
 
             $shippingAddress = [
@@ -111,7 +111,7 @@ describe('OrderService', function (): void {
                 'line1' => '456 Shipping St',
                 'city' => 'Penang',
                 'postcode' => '10000',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ];
 
             $order = $service->createOrder($orderData, $items, $billingAddress, $shippingAddress);
@@ -168,7 +168,7 @@ describe('OrderService', function (): void {
                 'line1' => '789 Test Ave',
                 'city' => 'JB',
                 'postcode' => '80000',
-                'country_code' => 'MY',
+                'country' => 'MY',
                 'phone' => '0123456789',
             ];
 
@@ -269,7 +269,7 @@ describe('OrderService', function (): void {
                 'line1' => '123 Cart Street',
                 'city' => 'Cart City',
                 'postcode' => '12345',
-                'country_code' => 'MY',
+                'country' => 'MY',
             ];
 
             $order = $service->createFromCart($cart, $customer, $billingAddress);

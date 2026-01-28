@@ -35,8 +35,30 @@ final class InventoryLocationInfolist
                             ->formatStateUsing(fn (bool $state): string => $state ? 'Active' : 'Inactive'),
                     ]),
 
-                    TextEntry::make('address')
-                        ->label('Address')
+                    TextEntry::make('line1')
+                        ->label('Address Line 1')
+                        ->placeholder('—'),
+
+                    TextEntry::make('line2')
+                        ->label('Address Line 2')
+                        ->placeholder('—'),
+
+                    Grid::make(3)->schema([
+                        TextEntry::make('city')
+                            ->label('City')
+                            ->placeholder('—'),
+
+                        TextEntry::make('state')
+                            ->label('State')
+                            ->placeholder('—'),
+
+                        TextEntry::make('postcode')
+                            ->label('Postcode')
+                            ->placeholder('—'),
+                    ]),
+
+                    TextEntry::make('country')
+                        ->label('Country')
                         ->placeholder('—'),
 
                     Grid::make(3)->schema([

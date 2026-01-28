@@ -57,9 +57,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -67,9 +67,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -129,9 +129,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -139,9 +139,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -203,9 +203,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -213,9 +213,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -253,9 +253,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -263,9 +263,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -306,9 +306,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -316,9 +316,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -366,9 +366,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -376,9 +376,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -411,9 +411,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -421,9 +421,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -475,9 +475,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -485,9 +485,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -516,9 +516,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -526,9 +526,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -557,9 +557,9 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US',
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US',
             city: 'Origin City',
             state: 'OS'
         );
@@ -567,9 +567,9 @@ describe('RateShoppingEngine', function (): void {
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US',
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US',
             city: 'Dest City',
             state: 'DS'
         );
@@ -607,17 +607,17 @@ describe('RateShoppingEngine', function (): void {
         $origin = new AddressData(
             name: 'Origin',
             phone: '123-456-7890',
-            address: '123 Origin St',
-            postCode: '12345',
-            countryCode: 'US'
+            line1: '123 Origin St',
+            postcode: '12345',
+            country: 'US'
         );
 
         $destination = new AddressData(
             name: 'Destination',
             phone: '987-654-3210',
-            address: '456 Dest St',
-            postCode: '67890',
-            countryCode: 'US'
+            line1: '456 Dest St',
+            postcode: '67890',
+            country: 'US'
         );
 
         $packages = [new PackageData(1000, 10, 5, 5, 500, 'box', 1)];

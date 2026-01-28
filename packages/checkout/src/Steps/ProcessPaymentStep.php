@@ -127,6 +127,10 @@ final class ProcessPaymentStep extends AbstractCheckoutStep
 
         // Handle immediate success
         if ($result->isSuccessful()) {
+            event(new \AIArmada\Checkout\Events\CheckoutPaymentCompleted(
+                session: $session,
+                paymentData: $paymentData,
+            ));
             $session->status->transitionTo(Processing::class);
 
             return $this->success('Payment completed', [

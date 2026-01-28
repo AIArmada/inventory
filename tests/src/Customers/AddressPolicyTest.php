@@ -73,7 +73,7 @@ describe('AddressPolicy', function (): void {
             $address = Address::query()->create([
                 'customer_id' => $customer->id,
                 'type' => AddressType::Shipping,
-                'address1' => '123 Test St',
+                'line1' => '123 Test St',
                 'city' => 'Test City',
                 'postcode' => '12345',
                 'country' => 'MY',
@@ -99,7 +99,7 @@ describe('AddressPolicy', function (): void {
             $address = Address::query()->create([
                 'customer_id' => $customer->id,
                 'type' => AddressType::Shipping,
-                'address1' => '123 Test St',
+                'line1' => '123 Test St',
                 'city' => 'Test City',
                 'postcode' => '12345',
                 'country' => 'MY',
@@ -135,7 +135,7 @@ describe('AddressPolicy', function (): void {
             $addressA = Address::query()->create([
                 'customer_id' => $customerA->id,
                 'type' => AddressType::Shipping,
-                'address1' => '123 A St',
+                'line1' => '123 A St',
                 'city' => 'A City',
                 'postcode' => '11111',
                 'country' => 'MY',
@@ -146,7 +146,7 @@ describe('AddressPolicy', function (): void {
             $addressB = Address::query()->create([
                 'customer_id' => $customerB->id,
                 'type' => AddressType::Shipping,
-                'address1' => '456 B St',
+                'line1' => '456 B St',
                 'city' => 'B City',
                 'postcode' => '22222',
                 'country' => 'MY',
@@ -185,7 +185,7 @@ describe('AddressPolicy', function (): void {
             $address = Address::query()->create([
                 'customer_id' => $customer->id,
                 'type' => AddressType::Billing,
-                'address1' => '789 Update St',
+                'line1' => '789 Update St',
                 'city' => 'Update City',
                 'postcode' => '33333',
                 'country' => 'MY',
@@ -209,7 +209,7 @@ describe('AddressPolicy', function (): void {
             $address = Address::query()->create([
                 'customer_id' => $customer->id,
                 'type' => AddressType::Billing,
-                'address1' => '789 Update St',
+                'line1' => '789 Update St',
                 'city' => 'Update City',
                 'postcode' => '33333',
                 'country' => 'MY',
@@ -235,7 +235,7 @@ describe('AddressPolicy', function (): void {
             $address = Address::query()->create([
                 'customer_id' => $customer->id,
                 'type' => AddressType::Both,
-                'address1' => '999 Delete St',
+                'line1' => '999 Delete St',
                 'city' => 'Delete City',
                 'postcode' => '44444',
                 'country' => 'MY',
@@ -259,7 +259,7 @@ describe('AddressPolicy', function (): void {
             $address = Address::query()->create([
                 'customer_id' => $customer->id,
                 'type' => AddressType::Both,
-                'address1' => '999 Delete St',
+                'line1' => '999 Delete St',
                 'city' => 'Delete City',
                 'postcode' => '44444',
                 'country' => 'MY',

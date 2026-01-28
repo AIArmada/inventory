@@ -22,9 +22,9 @@ beforeEach(function (): void {
     config(['shipping.defaults.origin' => [
         'name' => 'Test Store',
         'phone' => '123456',
-        'address' => '1 Main St',
-        'post_code' => '00000',
-        'country_code' => 'MYS',
+        'line1' => '1 Main St',
+        'postcode' => '00000',
+        'country' => 'MY',
     ]]);
 });
 
@@ -61,9 +61,9 @@ it('returns empty conditions when no rate available', function (): void {
     $cart->setMetadata('shipping_address', [
         'name' => 'John Doe',
         'phone' => '123456',
-        'address' => '123 Test St',
-        'postCode' => '12345',
-        'countryCode' => 'MYS',
+        'line1' => '123 Test St',
+        'postcode' => '12345',
+        'country' => 'MY',
     ]);
 
     $this->rateEngine->shouldReceive('getBestRate')
@@ -82,9 +82,9 @@ it('returns shipping condition when rate is available', function (): void {
     $cart->setMetadata('shipping_address', [
         'name' => 'John Doe',
         'phone' => '123456',
-        'address' => '123 Test St',
-        'postCode' => '12345',
-        'countryCode' => 'MYS',
+        'line1' => '123 Test St',
+        'postcode' => '12345',
+        'country' => 'MY',
     ]);
 
     $rate = new RateQuoteData(
@@ -114,9 +114,9 @@ it('applies free shipping when evaluator returns applies true', function (): voi
     $cart->setMetadata('shipping_address', [
         'name' => 'John Doe',
         'phone' => '123456',
-        'address' => '123 Test St',
-        'postCode' => '12345',
-        'countryCode' => 'MYS',
+        'line1' => '123 Test St',
+        'postcode' => '12345',
+        'country' => 'MY',
     ]);
 
     $rate = new RateQuoteData(
@@ -166,9 +166,9 @@ it('validates shipping condition passes when address exists', function (): void 
     $cart->setMetadata('shipping_address', [
         'name' => 'John Doe',
         'phone' => '123456',
-        'address' => '123 Test St',
-        'postCode' => '12345',
-        'countryCode' => 'MYS',
+        'line1' => '123 Test St',
+        'postcode' => '12345',
+        'country' => 'MY',
     ]);
 
     $condition = new CartCondition(
@@ -217,9 +217,9 @@ it('gets selected rate when method is specified', function (): void {
     $cart->setMetadata('shipping_address', [
         'name' => 'John Doe',
         'phone' => '123456',
-        'address' => '123 Test St',
-        'postCode' => '12345',
-        'countryCode' => 'MYS',
+        'line1' => '123 Test St',
+        'postcode' => '12345',
+        'country' => 'MY',
     ]);
     $cart->setMetadata('selected_shipping_method', ['carrier' => 'jnt', 'service' => 'standard']);
 
@@ -257,9 +257,9 @@ it('calculates package weight from cart items', function (): void {
     $cart->setMetadata('shipping_address', [
         'name' => 'John Doe',
         'phone' => '123456',
-        'address' => '123 Test St',
-        'postCode' => '12345',
-        'countryCode' => 'MYS',
+        'line1' => '123 Test St',
+        'postcode' => '12345',
+        'country' => 'MY',
     ]);
     $cart->add('item1', 'Product with weight', 5000, 2, ['weight' => 500]);
 

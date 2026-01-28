@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace AIArmada\Checkout\Integrations;
 
 use AIArmada\Checkout\Models\CheckoutSession;
-use AIArmada\Jnt\Facades\JntExpress;
-use AIArmada\Shipping\Contracts\ShippingManagerInterface;
-use Throwable;
+use AIArmada\Jnt\Shipping\JntShippingDriver;
+use AIArmada\Shipping\Actions\CalculateShippingRate;
+use AIArmada\Shipping\Data\AddressData;
+use AIArmada\Shipping\Data\PackageData;
+use AIArmada\Shipping\Data\RateQuoteData;
+use AIArmada\Shipping\ShippingManager;
+use Illuminate\Support\Collection;
 
 final class ShippingAdapter
 {
@@ -15,7 +19,7 @@ final class ShippingAdapter
 
     public function __construct()
     {
-        $this->hasJnt = class_exists(JntExpress::class)
+        $this->hasJnt = class_exists(JntShippingDriver::class)
             && config('checkout.integrations.shipping.jnt.enabled', true);
     }
 
@@ -26,22 +30,36 @@ final class ShippingAdapter
      */
     public function getRates(CheckoutSession $session): array
     {
-        if (! class_exists(ShippingManagerInterface::class)) {
+        if (! class_exists(ShippingManager::class) || ! class_exists(CalculateShippingRate::class)) {
             return $this->getDefaultRates($session);
         }
-
-        $shippingManager = app(ShippingManagerInterface::class);
 
         $shippingData = $session->shipping_data ?? [];
         $cartSnapshot = $session->cart_snapshot ?? [];
 
-        $request = $this->buildShippingRequest($session, $shippingData, $cartSnapshot);
+        $origin = $this->getOriginAddress();
+        $destination = $this->buildDestinationAddress($shippingData);
+        $packages = $this->buildPackages($cartSnapshot);
 
-        $rates = $shippingManager->getRates($request);
+        if ($origin === null || $destination === null || $packages === []) {
+            return $this->getDefaultRates($session);
+        }
 
-        if ($this->hasJnt && config('checkout.integrations.shipping.jnt.auto_detect', true)) {
-            $jntRates = $this->getJntRates($session, $shippingData);
-            $rates = array_merge($rates, $jntRates);
+        /** @var Collection<int, RateQuoteData> $rateQuotes */
+        $rateQuotes = app(CalculateShippingRate::class)->handle(
+            origin: $origin,
+            destination: $destination,
+            packages: $packages,
+            carrier: null,
+            options: [
+                'currency' => $session->currency,
+            ],
+        );
+
+        $rates = $this->normalizeRates($rateQuotes);
+
+        if (! $this->hasJnt || ! config('checkout.integrations.shipping.jnt.auto_detect', true)) {
+            $rates = array_values(array_filter($rates, fn (array $rate): bool => ($rate['carrier'] ?? '') !== 'jnt'));
         }
 
         return $rates;
@@ -105,76 +123,115 @@ final class ShippingAdapter
 
     /**
      * @param  array<string, mixed>  $shippingData
-     * @param  array<string, mixed>  $cartSnapshot
-     * @return array<string, mixed>
      */
-    private function buildShippingRequest(CheckoutSession $session, array $shippingData, array $cartSnapshot): array
+    private function buildDestinationAddress(array $shippingData): ?AddressData
     {
-        $items = $cartSnapshot['items'] ?? [];
+        $line1 = $shippingData['line1'] ?? $shippingData['address_line_1'] ?? '';
+        $postcode = $shippingData['postcode'] ?? '';
 
-        $totalWeight = 0;
-        $packageItems = [];
-
-        foreach ($items as $item) {
-            $weight = ($item['weight'] ?? 0) * ($item['quantity'] ?? 1);
-            $totalWeight += $weight;
-
-            $packageItems[] = [
-                'product_id' => $item['product_id'] ?? null,
-                'name' => $item['name'] ?? '',
-                'quantity' => $item['quantity'] ?? 1,
-                'weight' => $item['weight'] ?? 0,
-                'dimensions' => $item['dimensions'] ?? null,
-            ];
+        if ($line1 === '' || $postcode === '') {
+            return null;
         }
 
-        return [
-            'destination' => [
-                'address_line_1' => $shippingData['address_line_1'] ?? '',
-                'address_line_2' => $shippingData['address_line_2'] ?? '',
-                'city' => $shippingData['city'] ?? '',
-                'state' => $shippingData['state'] ?? '',
-                'postcode' => $shippingData['postcode'] ?? '',
-                'country' => $shippingData['country'] ?? 'MY',
-            ],
-            'items' => $packageItems,
-            'total_weight' => $totalWeight,
-            'subtotal' => $session->subtotal,
-            'currency' => $session->currency,
-        ];
+        return AddressData::from([
+            'name' => $shippingData['name'] ?? 'Customer',
+            'phone' => $shippingData['phone'] ?? '',
+            'line1' => $line1,
+            'line2' => $shippingData['line2'] ?? $shippingData['address_line_2'] ?? null,
+            'city' => $shippingData['city'] ?? null,
+            'state' => $shippingData['state'] ?? null,
+            'postcode' => $postcode,
+            'country' => $shippingData['country'] ?? 'MY',
+            'email' => $shippingData['email'] ?? null,
+            'company' => $shippingData['company'] ?? null,
+        ]);
     }
 
     /**
-     * @param  array<string, mixed>  $shippingData
-     * @return array<array<string, mixed>>
+     * @param  array<string, mixed>  $cartSnapshot
+     * @return array<PackageData>
      */
-    private function getJntRates(CheckoutSession $session, array $shippingData): array
+    private function buildPackages(array $cartSnapshot): array
     {
-        if (! $this->hasJnt) {
+        $items = $cartSnapshot['items'] ?? [];
+
+        if (! is_array($items) || $items === []) {
             return [];
         }
 
-        try {
-            $cartSnapshot = $session->cart_snapshot ?? [];
-            $items = $cartSnapshot['items'] ?? [];
+        return array_values(array_filter(array_map(function (array $item): ?PackageData {
+            $attributes = $item['attributes'] ?? [];
+            $quantity = (int) ($item['quantity'] ?? 1);
 
-            $totalWeight = array_reduce($items, function (int $carry, array $item) {
-                return $carry + (($item['weight'] ?? 500) * ($item['quantity'] ?? 1));
-            }, 0);
+            $weight = (int) ($item['weight'] ?? $attributes['weight'] ?? 0);
+            $weight = $weight * max(1, $quantity);
 
-            $originPostcode = config('jnt.origin.postcode', config('shipping.origin.postcode', ''));
-            $destinationPostcode = $shippingData['postcode'] ?? '';
-
-            if (empty($originPostcode) || empty($destinationPostcode)) {
-                return [];
+            if ($weight <= 0) {
+                return null;
             }
 
-            // The JNT package doesn't have a getRates method - return empty for now
-            // JNT integration would need to be implemented based on actual JNT API
-            return [];
-        } catch (Throwable) {
-            return [];
+            $dimensions = $item['dimensions'] ?? $attributes['dimensions'] ?? null;
+
+            return PackageData::from([
+                'weight' => $weight,
+                'length' => $dimensions['length'] ?? null,
+                'width' => $dimensions['width'] ?? null,
+                'height' => $dimensions['height'] ?? null,
+                'declaredValue' => $item['price'] ?? null,
+                'quantity' => 1,
+            ]);
+        }, $items)));
+    }
+
+    private function getOriginAddress(): ?AddressData
+    {
+        $origin = config('shipping.defaults.origin', []);
+
+        $line1 = $origin['line1'] ?? $origin['address'] ?? '';
+        $postcode = $origin['postcode'] ?? $origin['post_code'] ?? '';
+
+        if ($line1 === '' || $postcode === '') {
+            return null;
         }
+
+        return AddressData::from([
+            'name' => $origin['name'] ?? config('app.name', 'Store'),
+            'phone' => $origin['phone'] ?? '',
+            'line1' => $line1,
+            'line2' => $origin['line2'] ?? $origin['address2'] ?? null,
+            'city' => $origin['city'] ?? null,
+            'state' => $origin['state'] ?? null,
+            'postcode' => $postcode,
+            'country' => $origin['country'] ?? $origin['country_code'] ?? 'MY',
+            'company' => $origin['company'] ?? null,
+            'email' => $origin['email'] ?? null,
+        ]);
+    }
+
+    /**
+     * @param  Collection<int, RateQuoteData>  $rates
+     * @return array<array<string, mixed>>
+     */
+    private function normalizeRates(Collection $rates): array
+    {
+        return $rates->map(function (RateQuoteData $rate): array {
+            return [
+                'method_id' => $rate->carrier . '_' . $rate->service,
+                'carrier' => $rate->carrier,
+                'service' => $rate->service,
+                'service_type' => $rate->service,
+                'name' => $rate->serviceDescription ?? $rate->service,
+                'rate' => $rate->rate,
+                'currency' => $rate->currency,
+                'estimated_days' => $rate->estimatedDays,
+                'estimated_delivery' => $rate->estimatedDeliveryDate,
+                'quote_id' => $rate->quoteId,
+                'calculated_locally' => $rate->calculatedLocally,
+                'restrictions' => $rate->restrictions,
+                'note' => $rate->note,
+                'expires_at' => $rate->expiresAt?->format(DATE_ATOM),
+            ];
+        })->values()->all();
     }
 
     /**
@@ -183,13 +240,14 @@ final class ShippingAdapter
     private function getOriginData(): array
     {
         return [
-            'name' => config('jnt.origin.name', config('shipping.origin.name', '')),
-            'phone' => config('jnt.origin.phone', config('shipping.origin.phone', '')),
-            'address' => config('jnt.origin.address', config('shipping.origin.address', '')),
-            'postcode' => config('jnt.origin.postcode', config('shipping.origin.postcode', '')),
-            'city' => config('jnt.origin.city', config('shipping.origin.city', '')),
-            'state' => config('jnt.origin.state', config('shipping.origin.state', '')),
-            'country' => config('jnt.origin.country', config('shipping.origin.country', 'MY')),
+            'name' => config('jnt.origin.name', config('shipping.defaults.origin.name', '')),
+            'phone' => config('jnt.origin.phone', config('shipping.defaults.origin.phone', '')),
+            'line1' => config('jnt.origin.line1', config('shipping.defaults.origin.line1', config('shipping.defaults.origin.address', ''))),
+            'line2' => config('jnt.origin.line2', config('shipping.defaults.origin.line2', null)),
+            'postcode' => config('jnt.origin.postcode', config('shipping.defaults.origin.postcode', '')),
+            'city' => config('jnt.origin.city', config('shipping.defaults.origin.city', '')),
+            'state' => config('jnt.origin.state', config('shipping.defaults.origin.state', '')),
+            'country' => config('jnt.origin.country', config('shipping.defaults.origin.country', 'MY')),
         ];
     }
 
@@ -199,8 +257,8 @@ final class ShippingAdapter
     private function formatAddress(array $address): string
     {
         $parts = array_filter([
-            $address['address_line_1'] ?? '',
-            $address['address_line_2'] ?? '',
+            $address['line1'] ?? $address['address_line_1'] ?? '',
+            $address['line2'] ?? $address['address_line_2'] ?? '',
         ]);
 
         return implode(', ', $parts);

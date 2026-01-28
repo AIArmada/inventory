@@ -1288,11 +1288,10 @@ abstract class TestCase extends Orchestra
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();
             $table->string('company')->nullable();
-            $table->string('address1');
-            $table->string('address2')->nullable();
+            $table->string('line1');
+            $table->string('line2')->nullable();
             $table->string('city');
             $table->string('state')->nullable();
-            $table->string('postal_code')->nullable();
             $table->string('country');
             $table->string('phone')->nullable();
             $table->string('recipient_name')->nullable();
@@ -1401,7 +1400,7 @@ abstract class TestCase extends Orchestra
             $table->string('city');
             $table->string('state')->nullable();
             $table->string('postcode')->nullable();
-            $table->string('country_code')->default('MY');
+            $table->string('country')->default('MY');
             $table->string('phone')->nullable();
             $table->string('email')->nullable();
             $table->json('metadata')->nullable();

@@ -58,18 +58,33 @@ final class ValidateCartStep extends AbstractCheckoutStep
             return $this->failed('Cart is empty', ['cart' => 'Cart is empty']);
         }
 
-        // Re-capture cart snapshot with latest data
-        $snapshot = [
-            'items' => $cart->getItems()->toArray(),
-            'subtotal' => $cart->subtotal()->getAmount(),
-            'total' => $cart->total()->getAmount(),
-            'item_count' => $cart->countItems(),
-            'captured_at' => now()->toIso8601String(),
+        $snapshot = method_exists($cart, 'content')
+            ? (array) $cart->content()
+            : [
+                'items' => $cart->getItems()->toArray(),
+                'subtotal' => $cart->subtotal()->getAmount(),
+                'total' => $cart->total()->getAmount(),
+                'count' => $cart->countItems(),
+                'metadata' => [],
+                'conditions' => [],
+            ];
+
+        $totals = [
+            'subtotal' => (int) ($snapshot['subtotal'] ?? $cart->subtotal()->getAmount()),
+            'total' => (int) ($snapshot['total'] ?? $cart->total()->getAmount()),
         ];
+
+        if (method_exists($cart, 'getRawSubtotalWithoutConditions')) {
+            $totals['subtotal_without_conditions'] = (int) $cart->getRawSubtotalWithoutConditions();
+        }
+
+        $snapshot['item_count'] = $snapshot['item_count'] ?? $snapshot['count'] ?? $cart->countItems();
+        $snapshot['totals'] = $totals;
+        $snapshot['captured_at'] = now()->toIso8601String();
 
         $session->update([
             'cart_snapshot' => $snapshot,
-            'subtotal' => $cart->subtotal()->getAmount(),
+            'subtotal' => $totals['subtotal'],
         ]);
 
         return $this->success('Cart validated successfully', [

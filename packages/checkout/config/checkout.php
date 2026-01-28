@@ -44,6 +44,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Session Data Transformers
+    |--------------------------------------------------------------------------
+    */
+    'transformers' => [
+        'billing' => \AIArmada\Checkout\Transformers\NullSessionDataTransformer::class,
+        'shipping' => \AIArmada\Checkout\Transformers\NullSessionDataTransformer::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Steps
     |--------------------------------------------------------------------------
     */

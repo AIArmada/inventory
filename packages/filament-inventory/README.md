@@ -43,7 +43,7 @@ public function panel(Panel $panel): Panel
 ### Inventory Locations
 
 Full CRUD for managing warehouses and locations:
-- Name, code (unique identifier), address
+- Name, code (unique identifier), address lines, city, state, postcode, country
 - Priority (for allocation order)
 - Active/inactive status
 

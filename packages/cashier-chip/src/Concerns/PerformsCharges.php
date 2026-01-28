@@ -65,6 +65,14 @@ trait PerformsCharges // @phpstan-ignore trait.unused
             $builder->failureUrl($options['failure_url']);
         }
 
+        if (isset($options['reference'])) {
+            $builder->reference($options['reference']);
+        }
+
+        if (isset($options['metadata']) && is_array($options['metadata'])) {
+            $builder->metadata($options['metadata']);
+        }
+
         // Create the purchase
         $purchase = $builder->create();
 

@@ -45,8 +45,8 @@ All configuration is in `config/shipping.php`. Below is a complete reference.
     
     // Default origin address
     'origin' => [
-        'line_1' => env('SHIPPING_ORIGIN_LINE_1'),
-        'line_2' => env('SHIPPING_ORIGIN_LINE_2'),
+        'line1' => env('SHIPPING_ORIGIN_LINE1'),
+        'line2' => env('SHIPPING_ORIGIN_LINE2'),
         'city' => env('SHIPPING_ORIGIN_CITY'),
         'state' => env('SHIPPING_ORIGIN_STATE'),
         'postcode' => env('SHIPPING_ORIGIN_POSTCODE'),
@@ -220,7 +220,7 @@ return [
         'weight_unit' => 'g',
         'dimension_unit' => 'cm',
         'origin' => [
-            'line_1' => env('SHIPPING_ORIGIN_LINE_1'),
+            'line1' => env('SHIPPING_ORIGIN_LINE1'),
             'city' => env('SHIPPING_ORIGIN_CITY'),
             'state' => env('SHIPPING_ORIGIN_STATE'),
             'postcode' => env('SHIPPING_ORIGIN_POSTCODE'),

@@ -76,12 +76,12 @@ $this->orderService->addAddress($order, [
     'type' => 'shipping', // or 'billing'
     'first_name' => 'John',
     'last_name' => 'Doe',
-    'address1' => '123 Main Street',
-    'address2' => 'Apt 4B',
+    'line1' => '123 Main Street',
+    'line2' => 'Apt 4B',
     'city' => 'Kuala Lumpur',
     'state' => 'Wilayah Persekutuan',
-    'postal_code' => '50000',
-    'country_code' => 'MY',
+    'postcode' => '50000',
+    'country' => 'MY',
     'phone' => '+60123456789',
     'email' => 'john@example.com',
 ]);

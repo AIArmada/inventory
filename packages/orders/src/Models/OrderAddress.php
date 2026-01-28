@@ -27,7 +27,7 @@ use InvalidArgumentException;
  * @property string $city
  * @property string|null $state
  * @property string $postcode
- * @property string $country_code
+ * @property string $country
  * @property string|null $owner_id
  * @property string|null $owner_type
  * @property string|null $phone
@@ -64,7 +64,7 @@ final class OrderAddress extends Model
         'city',
         'state',
         'postcode',
-        'country_code',
+        'country',
         'phone',
         'email',
         'metadata',
@@ -75,7 +75,7 @@ final class OrderAddress extends Model
      */
     protected $attributes = [
         'type' => 'shipping',
-        'country_code' => 'MY',
+        'country' => 'MY',
     ];
 
     public function getTable(): string
@@ -137,7 +137,7 @@ final class OrderAddress extends Model
             $this->city,
             $this->state,
             $this->postcode,
-            $this->country_code,
+            $this->country,
         ]);
 
         return implode(', ', $parts);
@@ -154,7 +154,7 @@ final class OrderAddress extends Model
             $this->line1,
             $this->line2,
             mb_trim("{$this->city}, {$this->state} {$this->postcode}"),
-            $this->country_code,
+            $this->country,
         ]);
 
         return implode("\n", $lines);
@@ -175,7 +175,7 @@ final class OrderAddress extends Model
             'city' => $this->city,
             'state' => $this->state,
             'postcode' => $this->postcode,
-            'country_code' => $this->country_code,
+            'country' => $this->country,
             'phone' => $this->phone,
             'email' => $this->email,
         ];

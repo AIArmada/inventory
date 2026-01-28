@@ -192,10 +192,10 @@ class ShippingZoneResolver
         }
 
         return md5(serialize([
-            'country' => $address->countryCode,
+            'country' => $address->country,
             'state' => $address->state,
             'city' => $address->city,
-            'postal' => $address->postCode,
+            'postcode' => $address->postcode,
             'owner_id' => $ownerId,
             'owner_type' => $ownerType,
         ]));

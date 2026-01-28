@@ -135,8 +135,8 @@ class ShippingConditionProvider implements ConditionProviderInterface
 
         $name = $addressData['name'] ?? null;
         $phone = $addressData['phone'] ?? null;
-        $address = $addressData['address'] ?? null;
-        $postCode = $addressData['postCode'] ?? $addressData['post_code'] ?? null;
+        $line1 = $addressData['line1'] ?? $addressData['address1'] ?? $addressData['address'] ?? null;
+        $postcode = $addressData['postcode'] ?? $addressData['postCode'] ?? $addressData['post_code'] ?? null;
 
         if (! is_string($name) || mb_trim($name) === '') {
             return null;
@@ -146,17 +146,17 @@ class ShippingConditionProvider implements ConditionProviderInterface
             return null;
         }
 
-        if (! is_string($address) || mb_trim($address) === '') {
+        if (! is_string($line1) || mb_trim($line1) === '') {
             return null;
         }
 
-        if (! is_string($postCode) || mb_trim($postCode) === '') {
+        if (! is_string($postcode) || mb_trim($postcode) === '') {
             return null;
         }
 
-        $countryCode = $addressData['countryCode'] ?? $addressData['country_code'] ?? 'MYS';
-        if (! is_string($countryCode) || mb_trim($countryCode) === '') {
-            $countryCode = 'MYS';
+        $country = $addressData['country'] ?? $addressData['countryCode'] ?? $addressData['country_code'] ?? 'MY';
+        if (! is_string($country) || mb_trim($country) === '') {
+            $country = 'MY';
         }
 
         $isResidential = $addressData['isResidential'] ?? $addressData['is_residential'] ?? true;
@@ -167,12 +167,12 @@ class ShippingConditionProvider implements ConditionProviderInterface
         return AddressData::from([
             'name' => $name,
             'phone' => $phone,
-            'address' => $address,
-            'postCode' => $postCode,
-            'countryCode' => $countryCode,
+            'line1' => $line1,
+            'postcode' => $postcode,
+            'country' => $country,
             'company' => $addressData['company'] ?? null,
             'email' => $addressData['email'] ?? null,
-            'address2' => $addressData['address2'] ?? $addressData['address_2'] ?? null,
+            'line2' => $addressData['line2'] ?? $addressData['address2'] ?? $addressData['address_2'] ?? null,
             'city' => $addressData['city'] ?? null,
             'state' => $addressData['state'] ?? null,
             'latitude' => $addressData['latitude'] ?? null,
@@ -191,9 +191,9 @@ class ShippingConditionProvider implements ConditionProviderInterface
         return new AddressData(
             name: $origin['name'] ?? config('app.name', 'Store'),
             phone: $origin['phone'] ?? '',
-            address: $origin['address'] ?? '',
-            postCode: $origin['post_code'] ?? '',
-            countryCode: $origin['country_code'] ?? 'MYS',
+            line1: $origin['line1'] ?? $origin['address'] ?? '',
+            postcode: $origin['postcode'] ?? $origin['post_code'] ?? '',
+            country: $origin['country'] ?? $origin['country_code'] ?? 'MY',
             state: $origin['state'] ?? null,
             city: $origin['city'] ?? null,
         );

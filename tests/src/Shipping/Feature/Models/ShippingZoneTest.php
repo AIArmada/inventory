@@ -159,9 +159,9 @@ describe('ShippingZone Model', function (): void {
         $usAddress = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -169,9 +169,9 @@ describe('ShippingZone Model', function (): void {
         $caAddress = new AddressData(
             name: 'Jane Doe',
             phone: '456-789-0123',
-            address: '456 Maple Ave',
-            postCode: 'M5V 1A1',
-            countryCode: 'CA',
+            line1: '456 Maple Ave',
+            postcode: 'M5V 1A1',
+            country: 'CA',
             city: 'Toronto',
             state: 'ON'
         );
@@ -179,9 +179,9 @@ describe('ShippingZone Model', function (): void {
         $ukAddress = new AddressData(
             name: 'Bob Smith',
             phone: '789-012-3456',
-            address: '789 High St',
-            postCode: 'SW1A 1AA',
-            countryCode: 'GB',
+            line1: '789 High St',
+            postcode: 'SW1A 1AA',
+            country: 'GB',
             city: 'London'
         );
 
@@ -204,9 +204,9 @@ describe('ShippingZone Model', function (): void {
         $caAddress = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '90210',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '90210',
+            country: 'US',
             city: 'Los Angeles',
             state: 'CA'
         );
@@ -214,9 +214,9 @@ describe('ShippingZone Model', function (): void {
         $nyAddress = new AddressData(
             name: 'Jane Doe',
             phone: '456-789-0123',
-            address: '456 Broadway',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '456 Broadway',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -224,9 +224,9 @@ describe('ShippingZone Model', function (): void {
         $caCanadaAddress = new AddressData(
             name: 'Bob Smith',
             phone: '789-012-3456',
-            address: '789 Queen St',
-            postCode: 'M5V 1A1',
-            countryCode: 'CA',
+            line1: '789 Queen St',
+            postcode: 'M5V 1A1',
+            country: 'CA',
             city: 'Toronto',
             state: 'ON'
         );
@@ -252,9 +252,9 @@ describe('ShippingZone Model', function (): void {
         $manhattanAddress = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10025',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10025',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -262,9 +262,9 @@ describe('ShippingZone Model', function (): void {
         $brooklynAddress = new AddressData(
             name: 'Jane Doe',
             phone: '456-789-0123',
-            address: '456 Flatbush Ave',
-            postCode: '11201',
-            countryCode: 'US',
+            line1: '456 Flatbush Ave',
+            postcode: '11201',
+            country: 'US',
             city: 'Brooklyn',
             state: 'NY'
         );
@@ -288,9 +288,9 @@ describe('ShippingZone Model', function (): void {
         $nearbyAddress = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY',
             latitude: 40.7505, // ~4km from center
@@ -300,9 +300,9 @@ describe('ShippingZone Model', function (): void {
         $farAddress = new AddressData(
             name: 'Jane Doe',
             phone: '456-789-0123',
-            address: '456 Far St',
-            postCode: '19101',
-            countryCode: 'US',
+            line1: '456 Far St',
+            postcode: '19101',
+            country: 'US',
             city: 'Philadelphia',
             state: 'PA',
             latitude: 39.9526, // ~150km from NYC
@@ -327,9 +327,9 @@ describe('ShippingZone Model', function (): void {
         $anyUsAddress = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -351,9 +351,9 @@ describe('ShippingZone Model', function (): void {
         $noStateAddress = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '90210',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '90210',
+            country: 'US',
             city: 'Los Angeles',
             state: null // No state provided
         );
@@ -376,9 +376,9 @@ describe('ShippingZone Model', function (): void {
         $noPostcodeAddress = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '', // Empty postcode
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '', // Empty postcode
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -401,9 +401,9 @@ describe('ShippingZone Model', function (): void {
         $noCoordinatesAddress = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY',
             latitude: null, // No coordinates
@@ -428,9 +428,9 @@ describe('ShippingZone Model', function (): void {
         $addressWithCoords = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY',
             latitude: 40.7505,
@@ -453,9 +453,9 @@ describe('ShippingZone Model', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -476,9 +476,9 @@ describe('ShippingZone Model', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );
@@ -499,9 +499,9 @@ describe('ShippingZone Model', function (): void {
         $address = new AddressData(
             name: 'John Doe',
             phone: '123-456-7890',
-            address: '123 Main St',
-            postCode: '10001',
-            countryCode: 'US',
+            line1: '123 Main St',
+            postcode: '10001',
+            country: 'US',
             city: 'New York',
             state: 'NY'
         );

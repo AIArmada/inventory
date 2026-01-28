@@ -15,7 +15,7 @@ Manage warehouses, stores, and fulfillment centers.
 - Full CRUD operations
 - Priority-based allocation ordering
 - Active/inactive status
-- Address and metadata storage
+- Structured address and metadata storage
 - Navigation badge showing active location count
 
 ### Fields
@@ -24,7 +24,12 @@ Manage warehouses, stores, and fulfillment centers.
 |-------|------|-------------|
 | `name` | string | Location display name |
 | `code` | string | Unique identifier (e.g., "WH-001") |
-| `address` | text | Physical address |
+| `line1` | string | Address line 1 |
+| `line2` | string | Address line 2 |
+| `city` | string | City |
+| `state` | string | State |
+| `postcode` | string | Postcode |
+| `country` | string | ISO 3166-1 alpha-2 |
 | `priority` | integer | Higher priority = used first for allocation |
 | `is_active` | boolean | Inactive locations excluded from allocation |
 | `metadata` | json | Custom key-value pairs |

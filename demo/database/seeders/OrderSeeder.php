@@ -74,7 +74,7 @@ final class OrderSeeder extends Seeder
                 'city' => fake()->city(),
                 'state' => fake()->randomElement(['Selangor', 'Kuala Lumpur', 'Penang', 'Johor', 'Sabah']),
                 'postcode' => fake()->postcode(),
-                'country_code' => 'MY',
+                'country' => 'MY',
             ];
 
             $order = Order::create([

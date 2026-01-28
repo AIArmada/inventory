@@ -51,13 +51,13 @@ class AddressesRelationManager extends RelationManager
                     ->tel()
                     ->maxLength(20),
 
-                Forms\Components\TextInput::make('address1')
-                    ->label('Address 1')
+                Forms\Components\TextInput::make('line1')
+                    ->label('Address Line 1')
                     ->required()
                     ->maxLength(255),
 
-                Forms\Components\TextInput::make('address2')
-                    ->label('Address 2')
+                Forms\Components\TextInput::make('line2')
+                    ->label('Address Line 2')
                     ->maxLength(255),
 
                 Grid::make(3)
@@ -116,7 +116,7 @@ class AddressesRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('full_address')
                     ->label('Address')
                     ->limit(50)
-                    ->searchable(['address1', 'city', 'postcode']),
+                    ->searchable(['line1', 'city', 'postcode']),
 
                 Tables\Columns\IconColumn::make('is_default_billing')
                     ->label('Billing')

@@ -164,7 +164,7 @@ final class OrderService implements OrderServiceInterface
             'city' => $addressData['city'],
             'state' => $addressData['state'] ?? null,
             'postcode' => $addressData['postcode'],
-            'country_code' => $addressData['country_code'] ?? 'MY',
+            'country' => $addressData['country'] ?? $addressData['country_code'] ?? 'MY',
             'phone' => $addressData['phone'] ?? null,
             'email' => $addressData['email'] ?? null,
             'metadata' => $addressData['metadata'] ?? null,

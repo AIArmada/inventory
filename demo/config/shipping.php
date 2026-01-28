@@ -27,7 +27,7 @@ return [
         'city' => env('SHIPPING_ORIGIN_CITY', ''),
         'state' => env('SHIPPING_ORIGIN_STATE', ''),
         'postcode' => env('SHIPPING_ORIGIN_POSTCODE', ''),
-        'country_code' => env('SHIPPING_ORIGIN_COUNTRY_CODE', 'MY'),
+        'country' => env('SHIPPING_ORIGIN_COUNTRY', env('SHIPPING_ORIGIN_COUNTRY_CODE', 'MY')),
         'email' => env('SHIPPING_ORIGIN_EMAIL'),
     ],
 

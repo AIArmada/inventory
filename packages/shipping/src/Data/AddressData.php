@@ -14,12 +14,12 @@ class AddressData extends Data
     public function __construct(
         public readonly string $name,
         public readonly string $phone,
-        public readonly string $address,
-        public readonly string $postCode,
-        public readonly string $countryCode = 'MYS',
+        public readonly string $line1,
+        public readonly string $postcode,
+        public readonly string $country = 'MY',
         public readonly ?string $company = null,
         public readonly ?string $email = null,
-        public readonly ?string $address2 = null,
+        public readonly ?string $line2 = null,
         public readonly ?string $city = null,
         public readonly ?string $state = null,
         public readonly ?float $latitude = null,
@@ -30,12 +30,12 @@ class AddressData extends Data
     public function getFullAddress(): string
     {
         $parts = array_filter([
-            $this->address,
-            $this->address2,
+            $this->line1,
+            $this->line2,
             $this->city,
             $this->state,
-            $this->postCode,
-            $this->countryCode,
+            $this->postcode,
+            $this->country,
         ]);
 
         return implode(', ', $parts);

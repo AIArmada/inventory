@@ -42,15 +42,15 @@ it('returns empty rates when not configured', function (): void {
     $origin = new AddressData(
         name: 'Sender',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $destination = new AddressData(
         name: 'Receiver',
         phone: '+60198765432',
-        address: '456 Target St',
-        postCode: '40000',
+        line1: '456 Target St',
+        postcode: '40000',
     );
 
     $lightPackage = [new PackageData(weight: 500)];
@@ -74,15 +74,15 @@ it('applies custom flat rate from configuration', function (): void {
     $origin = new AddressData(
         name: 'Sender',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $destination = new AddressData(
         name: 'Receiver',
         phone: '+60198765432',
-        address: '456 Target St',
-        postCode: '40000',
+        line1: '456 Target St',
+        postcode: '40000',
     );
 
     $packages = [new PackageData(weight: 1000)];
@@ -101,14 +101,14 @@ it('creates shipment with generated tracking number', function (): void {
         origin: new AddressData(
             name: 'Sender',
             phone: '+60123456789',
-            address: '123 Test St',
-            postCode: '50000',
+            line1: '123 Test St',
+            postcode: '50000',
         ),
         destination: new AddressData(
             name: 'Receiver',
             phone: '+60198765432',
-            address: '456 Target St',
-            postCode: '40000',
+            line1: '456 Target St',
+            postcode: '40000',
         ),
         items: [],
     );
@@ -123,17 +123,17 @@ it('services all destinations', function (): void {
     $myDestination = new AddressData(
         name: 'Test',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
-        countryCode: 'MYS',
+        line1: '123 Test St',
+        postcode: '50000',
+        country: 'MY',
     );
 
     $sgDestination = new AddressData(
         name: 'Test',
         phone: '+6512345678',
-        address: '123 Test St',
-        postCode: '123456',
-        countryCode: 'SGP',
+        line1: '123 Test St',
+        postcode: '123456',
+        country: 'SG',
     );
 
     expect($this->driver->servicesDestination($myDestination))->toBeTrue();
@@ -155,8 +155,8 @@ it('validates address always returns valid', function (): void {
     $address = new AddressData(
         name: 'Test',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $result = $this->driver->validateAddress($address);
@@ -230,15 +230,15 @@ it('returns multiple configured rates', function (): void {
     $origin = new AddressData(
         name: 'Sender',
         phone: '+60123456789',
-        address: '123 Test St',
-        postCode: '50000',
+        line1: '123 Test St',
+        postcode: '50000',
     );
 
     $destination = new AddressData(
         name: 'Receiver',
         phone: '+60198765432',
-        address: '456 Target St',
-        postCode: '40000',
+        line1: '456 Target St',
+        postcode: '40000',
     );
 
     $packages = [new PackageData(weight: 500)];

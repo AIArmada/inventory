@@ -53,7 +53,7 @@ $customer = Customer::create([
 
 $customer->addresses()->create([
     'type' => AddressType::Both,
-    'address1' => '123 Main Street',
+    'line1' => '123 Main Street',
     'city' => 'Kuala Lumpur',
     'postcode' => '50000',
     'country' => 'MY',
@@ -109,8 +109,8 @@ $address = $customer->addresses()->create([
     'type' => AddressType::Shipping,
     'label' => 'Home',
     'recipient_name' => 'John Doe',
-    'address1' => '456 Oak Avenue',
-    'address2' => 'Apt 3B',
+    'line1' => '456 Oak Avenue',
+    'line2' => 'Apt 3B',
     'city' => 'Petaling Jaya',
     'state' => 'Selangor',
     'postcode' => '46000',
@@ -157,7 +157,7 @@ MY
 
 // For shipping labels
 $labelData = $address->toShippingLabel();
-// ['name' => 'John Doe', 'address1' => '456 Oak Avenue', ...]
+// ['name' => 'John Doe', 'line1' => '456 Oak Avenue', ...]
 ```
 
 ## Marketing Preferences

@@ -24,7 +24,12 @@ use Illuminate\Support\Carbon;
  * @property string $id
  * @property string $name
  * @property string $code
- * @property string|null $address
+ * @property string|null $line1
+ * @property string|null $line2
+ * @property string|null $city
+ * @property string|null $state
+ * @property string|null $postcode
+ * @property string|null $country
  * @property bool $is_active
  * @property int $priority
  * @property string|null $parent_id
@@ -77,7 +82,12 @@ final class InventoryLocation extends Model
     protected $fillable = [
         'name',
         'code',
-        'address',
+        'line1',
+        'line2',
+        'city',
+        'state',
+        'postcode',
+        'country',
         'is_active',
         'priority',
         'parent_id',

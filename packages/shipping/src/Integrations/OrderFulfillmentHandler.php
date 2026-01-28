@@ -55,12 +55,12 @@ final class OrderFulfillmentHandler implements FulfillmentHandler
             $destinationAddress = AddressData::from([
                 'name' => mb_trim($shippingAddress->first_name . ' ' . $shippingAddress->last_name),
                 'company' => $shippingAddress->company,
-                'address' => $shippingAddress->line1 ?? '',
-                'address2' => $shippingAddress->line2,
+                'line1' => $shippingAddress->line1 ?? '',
+                'line2' => $shippingAddress->line2,
                 'city' => $shippingAddress->city,
                 'state' => $shippingAddress->state,
-                'postCode' => $shippingAddress->postcode ?? '',
-                'countryCode' => $shippingAddress->country_code ?? 'MY',
+                'postcode' => $shippingAddress->postcode ?? '',
+                'country' => $shippingAddress->country ?? 'MY',
                 'phone' => $shippingAddress->phone ?? '',
                 'email' => $shippingAddress->email,
             ]);
@@ -128,11 +128,11 @@ final class OrderFulfillmentHandler implements FulfillmentHandler
 
         $destination = AddressData::from([
             'name' => mb_trim($shippingAddress->first_name . ' ' . $shippingAddress->last_name),
-            'address' => $shippingAddress->line1 ?? '',
+            'line1' => $shippingAddress->line1 ?? '',
             'city' => $shippingAddress->city,
             'state' => $shippingAddress->state,
-            'postCode' => $shippingAddress->postcode ?? '',
-            'countryCode' => $shippingAddress->country_code ?? 'MY',
+            'postcode' => $shippingAddress->postcode ?? '',
+            'country' => $shippingAddress->country ?? 'MY',
             'phone' => $shippingAddress->phone ?? '',
         ]);
 
@@ -211,17 +211,17 @@ final class OrderFulfillmentHandler implements FulfillmentHandler
      */
     private function getOriginAddress(): AddressData
     {
-        $origin = (array) config('shipping.origin', []);
+        $origin = (array) config('shipping.defaults.origin', []);
 
         return AddressData::from([
             'name' => $origin['name'] ?? config('app.name'),
             'company' => $origin['company'] ?? null,
-            'address' => $origin['line1'] ?? $origin['address'] ?? '',
-            'address2' => $origin['line2'] ?? $origin['address2'] ?? null,
+            'line1' => $origin['line1'] ?? $origin['address'] ?? '',
+            'line2' => $origin['line2'] ?? $origin['address2'] ?? null,
             'city' => $origin['city'] ?? '',
             'state' => $origin['state'] ?? '',
-            'postCode' => $origin['postcode'] ?? $origin['postCode'] ?? '',
-            'countryCode' => $origin['country_code'] ?? $origin['countryCode'] ?? 'MY',
+            'postcode' => $origin['postcode'] ?? $origin['postCode'] ?? $origin['post_code'] ?? '',
+            'country' => $origin['country'] ?? $origin['country_code'] ?? $origin['countryCode'] ?? 'MY',
             'phone' => $origin['phone'] ?? '',
             'email' => $origin['email'] ?? null,
         ]);
@@ -331,46 +331,30 @@ final class OrderFulfillmentHandler implements FulfillmentHandler
     /**
      * Convert a Location model to AddressData.
      *
-     * Note: InventoryLocation stores address as a plain text string, not structured data.
-     * If the address is not structured (array/object), we fall back to the static origin config.
+     * Note: InventoryLocation stores structured address fields.
+     * If the address is missing, we fall back to the static origin config.
      */
     private function locationToAddress(object $location): AddressData
     {
-        $rawAddress = $location->address ?? null;
+        $origin = (array) config('shipping.defaults.origin', []);
 
-        // If address is a plain string (as in InventoryLocation), we cannot extract structured data
-        // Fall back to static origin config but use location name
-        if (is_string($rawAddress) || $rawAddress === null) {
-            $origin = (array) config('shipping.origin', []);
+        $line1 = $location->line1 ?? null;
 
-            return AddressData::from([
-                'name' => $location->name ?? config('app.name'),
-                'company' => $origin['company'] ?? null,
-                'address' => $origin['line1'] ?? $origin['address'] ?? (is_string($rawAddress) ? $rawAddress : ''),
-                'address2' => $origin['line2'] ?? $origin['address2'] ?? null,
-                'city' => $origin['city'] ?? '',
-                'state' => $origin['state'] ?? '',
-                'postCode' => $origin['postcode'] ?? $origin['postCode'] ?? '',
-                'countryCode' => $origin['country_code'] ?? $origin['countryCode'] ?? 'MY',
-                'phone' => $origin['phone'] ?? '',
-                'email' => $origin['email'] ?? null,
-            ]);
+        if ($line1 === null || $line1 === '') {
+            $line1 = $origin['line1'] ?? $origin['address'] ?? '';
         }
-
-        // Structured address (array or object)
-        $address = is_array($rawAddress) ? $rawAddress : (array) $rawAddress;
 
         return AddressData::from([
             'name' => $location->name ?? config('app.name'),
-            'company' => $address['company'] ?? null,
-            'address' => $address['line1'] ?? $address['address1'] ?? $address['address_line_1'] ?? $address['address'] ?? '',
-            'address2' => $address['line2'] ?? $address['address2'] ?? $address['address_line_2'] ?? null,
-            'city' => $address['city'] ?? '',
-            'state' => $address['state'] ?? '',
-            'postCode' => $address['postcode'] ?? $address['postal_code'] ?? $address['postCode'] ?? '',
-            'countryCode' => $address['country_code'] ?? $address['country'] ?? $address['countryCode'] ?? 'MY',
-            'phone' => $address['phone'] ?? '',
-            'email' => $address['email'] ?? null,
+            'company' => $origin['company'] ?? null,
+            'line1' => $line1,
+            'line2' => $location->line2 ?? $origin['line2'] ?? $origin['address2'] ?? null,
+            'city' => $location->city ?? $origin['city'] ?? '',
+            'state' => $location->state ?? $origin['state'] ?? '',
+            'postcode' => $location->postcode ?? $origin['postcode'] ?? $origin['postCode'] ?? $origin['post_code'] ?? '',
+            'country' => $location->country ?? $origin['country'] ?? $origin['country_code'] ?? 'MY',
+            'phone' => $origin['phone'] ?? '',
+            'email' => $origin['email'] ?? null,
         ]);
     }
 

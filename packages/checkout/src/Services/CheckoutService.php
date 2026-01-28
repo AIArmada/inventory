@@ -9,6 +9,7 @@ use AIArmada\Checkout\Contracts\CheckoutServiceInterface;
 use AIArmada\Checkout\Contracts\CheckoutStepInterface;
 use AIArmada\Checkout\Contracts\CheckoutStepRegistryInterface;
 use AIArmada\Checkout\Contracts\PaymentGatewayResolverInterface;
+use AIArmada\Checkout\Contracts\SessionDataTransformerInterface;
 use AIArmada\Checkout\Data\CheckoutResult;
 use AIArmada\Checkout\Enums\PaymentStatus;
 use AIArmada\Checkout\Enums\StepStatus;
@@ -27,8 +28,10 @@ use AIArmada\Checkout\States\Completed;
 use AIArmada\Checkout\States\PaymentFailed;
 use AIArmada\Checkout\States\Pending;
 use AIArmada\Checkout\States\Processing;
+use AIArmada\Checkout\Transformers\NullSessionDataTransformer;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 use Throwable;
 
 final class CheckoutService implements CheckoutServiceInterface
@@ -87,6 +90,8 @@ final class CheckoutService implements CheckoutServiceInterface
             throw InvalidCheckoutStateException::cannotModify($session->id, $session->status->name());
         }
 
+        $this->transformSessionData($session);
+
         $session->status->transitionTo(Processing::class);
 
         try {
@@ -142,6 +147,8 @@ final class CheckoutService implements CheckoutServiceInterface
         if (! $this->stepRegistry->isEnabled($stepName)) {
             throw CheckoutStepException::stepNotFound($stepName);
         }
+
+        $this->transformSessionData($session);
 
         $this->processStepInternal($session, $step);
 
@@ -440,6 +447,8 @@ final class CheckoutService implements CheckoutServiceInterface
             return CheckoutResult::failed($session, 'Payment could not be verified');
         }
 
+        $this->dispatchPaymentCompleted($session);
+
         // Payment confirmed - mark payment step complete and continue
         $session->setStepState('process_payment', StepStatus::Completed);
         $session->status->transitionTo(Processing::class);
@@ -447,5 +456,52 @@ final class CheckoutService implements CheckoutServiceInterface
 
         // Continue with remaining steps (create_order, etc.)
         return $this->continueFromStep($session, 'process_payment');
+    }
+
+    private function transformSessionData(CheckoutSession $session): void
+    {
+        $billingData = $this->transformData('billing', $session->billing_data ?? [], $session);
+        $shippingData = $this->transformData('shipping', $session->shipping_data ?? [], $session);
+
+        $updates = [];
+
+        if ($billingData !== ($session->billing_data ?? [])) {
+            $updates['billing_data'] = $billingData;
+        }
+
+        if ($shippingData !== ($session->shipping_data ?? [])) {
+            $updates['shipping_data'] = $shippingData;
+        }
+
+        if ($updates !== []) {
+            $session->update($updates);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function transformData(string $type, array $data, CheckoutSession $session): array
+    {
+        $transformerClass = config("checkout.transformers.{$type}", NullSessionDataTransformer::class);
+
+        $transformer = app($transformerClass);
+
+        if (! $transformer instanceof SessionDataTransformerInterface) {
+            throw new RuntimeException("Checkout {$type} transformer must implement " . SessionDataTransformerInterface::class);
+        }
+
+        return $transformer->transform($data, $session);
+    }
+
+    private function dispatchPaymentCompleted(CheckoutSession $session): void
+    {
+        $paymentData = $session->payment_data ?? [];
+
+        $this->events->dispatch(new \AIArmada\Checkout\Events\CheckoutPaymentCompleted(
+            session: $session,
+            paymentData: is_array($paymentData) ? $paymentData : [],
+        ));
     }
 }

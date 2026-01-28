@@ -72,7 +72,7 @@ describe('ShipmentEvent Model', function (): void {
             'city' => 'New York',
             'state' => 'NY',
             'country' => 'US',
-            'postal_code' => '10001',
+            'postcode' => '10001',
             'occurred_at' => now(),
             'raw_data' => ['carrier_ref' => 'ABC123'],
         ]);
@@ -82,7 +82,7 @@ describe('ShipmentEvent Model', function (): void {
         expect($event->city)->toBe('New York');
         expect($event->state)->toBe('NY');
         expect($event->country)->toBe('US');
-        expect($event->postal_code)->toBe('10001');
+        expect($event->postcode)->toBe('10001');
         expect($event->raw_data)->toBe(['carrier_ref' => 'ABC123']);
     });
 

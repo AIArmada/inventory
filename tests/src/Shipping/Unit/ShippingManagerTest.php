@@ -25,7 +25,7 @@ beforeEach(function (): void {
         ],
     ]);
 
-    $this->manager = app(ShippingManager::class);
+    $this->manager = new ShippingManager(app());
 });
 
 it('returns null driver by default', function (): void {
@@ -135,9 +135,9 @@ it('can get drivers for destination', function (): void {
     $destination = new AddressData(
         name: 'Test Destination',
         phone: '123-456-7890',
-        address: '123 Test St',
-        postCode: '12345',
-        countryCode: 'US',
+        line1: '123 Test St',
+        postcode: '12345',
+        country: 'US',
         city: 'Test City',
         state: 'TS'
     );

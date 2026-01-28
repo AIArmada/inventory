@@ -32,6 +32,7 @@ use Spatie\Tags\HasTags;
  * @property string $email
  * @property string|null $phone
  * @property string|null $company
+ * @property bool $is_guest
  * @property CustomerStatus $status
  * @property bool $accepts_marketing
  * @property array<string, mixed>|null $metadata
@@ -65,6 +66,7 @@ class Customer extends Model implements HasMedia
     protected $casts = [
         'status' => CustomerStatus::class,
         'accepts_marketing' => 'boolean',
+        'is_guest' => 'boolean',
         'metadata' => 'array',
     ];
 
@@ -74,6 +76,7 @@ class Customer extends Model implements HasMedia
     protected $attributes = [
         'status' => 'active',
         'accepts_marketing' => true,
+        'is_guest' => false,
     ];
 
     /**
@@ -199,6 +202,11 @@ class Customer extends Model implements HasMedia
     public function isActive(): bool
     {
         return $this->status === CustomerStatus::Active;
+    }
+
+    public function isGuest(): bool
+    {
+        return $this->is_guest;
     }
 
     public function isSuspended(): bool

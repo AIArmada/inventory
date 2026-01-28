@@ -113,11 +113,11 @@ class CheckoutSession extends Model
     }
 
     /**
-     * @return BelongsTo<\AIArmada\Orders\Models\Order, $this>
+     * @return BelongsTo<\Illuminate\Database\Eloquent\Model, $this>
      */
     public function order(): BelongsTo
     {
-        /** @var class-string<\AIArmada\Orders\Models\Order> $orderModel */
+        /** @var class-string<\Illuminate\Database\Eloquent\Model> $orderModel */
         $orderModel = config('checkout.models.order', \AIArmada\Orders\Models\Order::class);
 
         return $this->belongsTo($orderModel, 'order_id');

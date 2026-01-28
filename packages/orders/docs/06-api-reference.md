@@ -133,12 +133,12 @@ Billing and shipping addresses.
 | `first_name` | `string\|null` | First name |
 | `last_name` | `string\|null` | Last name |
 | `company` | `string\|null` | Company name |
-| `address1` | `string` | Address 1 |
-| `address2` | `string\|null` | Address 2 |
+| `line1` | `string` | Address line 1 |
+| `line2` | `string\|null` | Address line 2 |
 | `city` | `string` | City |
 | `state` | `string\|null` | State/province |
-| `postal_code` | `string\|null` | Postal/ZIP code |
-| `country_code` | `string` | ISO country code |
+| `postcode` | `string\|null` | Postal/ZIP code |
+| `country` | `string` | ISO country code |
 | `phone` | `string\|null` | Phone number |
 | `email` | `string\|null` | Email address |
 | `metadata` | `array\|null` | Additional metadata |

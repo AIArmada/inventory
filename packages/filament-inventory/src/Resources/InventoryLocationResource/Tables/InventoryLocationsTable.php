@@ -36,8 +36,8 @@ final class InventoryLocationsTable
                     ->color('info')
                     ->copyable(),
 
-                TextColumn::make('address')
-                    ->label('Address')
+                TextColumn::make('line1')
+                    ->label('Address Line 1')
                     ->limit(30)
                     ->tooltip(fn (?string $state): ?string => $state)
                     ->toggleable(),

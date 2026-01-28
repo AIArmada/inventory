@@ -85,6 +85,42 @@ $session->payment_gateway;  // Payment gateway used
 $session->expires_at;       // Session expiration
 ```
 
+### Cart Snapshot Schema
+
+The checkout session stores a normalized cart snapshot in `cart_snapshot`:
+
+```json
+{
+    "items": [
+        {
+            "id": "SKU-001",
+            "name": "Product Name",
+            "price": 4999,
+            "quantity": 2,
+            "attributes": {
+                "weight": 250,
+                "dimensions": {"length": 20, "width": 10, "height": 5}
+            },
+            "conditions": [],
+            "associated_model": {
+                "class": "App\\Models\\Product",
+                "id": "uuid",
+                "data": {"sku": "SKU-001"}
+            }
+        }
+    ],
+    "subtotal": 9998,
+    "total": 9998,
+    "item_count": 2,
+    "captured_at": "2026-01-28T10:00:00+00:00"
+}
+```
+
+Notes:
+- `price` and totals are stored in the smallest currency unit (cents).
+- `attributes.weight` is in grams when provided.
+- `associated_model` is populated when cart items are linked to Eloquent models.
+
 ## Checkout States
 
 The checkout session uses Spatie Model States for robust status management. States define allowed transitions and provide behavior methods.
@@ -246,7 +282,7 @@ $session->update([
         'city' => 'Kuala Lumpur',
         'state' => 'WP',
         'postcode' => '50000',
-        'country_code' => 'MY',
+        'country' => 'MY',
         'phone' => '+60123456789',
         'email' => 'john@example.com',
     ],
@@ -273,6 +309,7 @@ use AIArmada\Checkout\Events\CheckoutStarted;
 use AIArmada\Checkout\Events\CheckoutCompleted;
 use AIArmada\Checkout\Events\CheckoutFailed;
 use AIArmada\Checkout\Events\CheckoutStepCompleted;
+use AIArmada\Checkout\Events\CheckoutPaymentCompleted;
 use AIArmada\Checkout\Events\PaymentProcessed;
 use AIArmada\Checkout\Events\PaymentFailed;
 
@@ -285,6 +322,9 @@ protected $listen = [
     PaymentFailed::class => [
         LogPaymentFailure::class,
         NotifyCustomerSupport::class,
+    ],
+    CheckoutPaymentCompleted::class => [
+        UpdateOrderPaymentStatus::class,
     ],
 ];
 ```

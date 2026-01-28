@@ -124,15 +124,17 @@ final class CheckoutServiceProvider extends PackageServiceProvider
     protected function registerPaymentProcessors(PaymentGatewayResolver $resolver): void
     {
         // Priority: cashier → cashier-chip → chip
-        if (class_exists(\AIArmada\Cashier\GatewayManager::class)) {
+        $gateways = (array) config('checkout.payment.gateways', []);
+
+        if (class_exists(\AIArmada\Cashier\GatewayManager::class) && ($gateways['cashier']['enabled'] ?? true)) {
             $resolver->register('cashier', $this->app->make(\AIArmada\Checkout\Integrations\Payment\CashierProcessor::class));
         }
 
-        if (class_exists(\AIArmada\CashierChip\Cashier::class)) {
+        if (class_exists(\AIArmada\CashierChip\Cashier::class) && ($gateways['cashier-chip']['enabled'] ?? true)) {
             $resolver->register('cashier-chip', $this->app->make(\AIArmada\Checkout\Integrations\Payment\CashierChipProcessor::class));
         }
 
-        if (class_exists(\AIArmada\Chip\Facades\Chip::class)) {
+        if (class_exists(\AIArmada\Chip\Facades\Chip::class) && ($gateways['chip']['enabled'] ?? true)) {
             $resolver->register('chip', $this->app->make(\AIArmada\Checkout\Integrations\Payment\ChipProcessor::class));
         }
     }

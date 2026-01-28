@@ -35,9 +35,9 @@ it('creates result with corrected address', function (): void {
     $corrected = new AddressData(
         name: 'John Doe',
         phone: '123456789',
-        address: '123 Corrected Street',
-        postCode: '50001',
-        countryCode: 'MYS',
+        line1: '123 Corrected Street',
+        postcode: '50001',
+        country: 'MY',
     );
 
     $result = new AddressValidationResult(
@@ -47,7 +47,7 @@ it('creates result with corrected address', function (): void {
 
     expect($result->hasCorrectedAddress())->toBeTrue();
     expect($result->correctedAddress)->toBe($corrected);
-    expect($result->correctedAddress->address)->toBe('123 Corrected Street');
+    expect($result->correctedAddress->line1)->toBe('123 Corrected Street');
 });
 
 it('creates result with warnings', function (): void {
@@ -83,9 +83,9 @@ it('creates result with all fields', function (): void {
     $corrected = new AddressData(
         name: 'John Doe',
         phone: '123456789',
-        address: '123 Corrected Street',
-        postCode: '50001',
-        countryCode: 'MYS',
+        line1: '123 Corrected Street',
+        postcode: '50001',
+        country: 'MY',
     );
 
     $result = new AddressValidationResult(

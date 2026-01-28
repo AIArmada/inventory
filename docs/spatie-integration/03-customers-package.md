@@ -118,12 +118,12 @@ class Address extends Model
         'first_name',
         'last_name',
         'company',
-        'address1',
-        'address2',
+        'line1',
+        'line2',
         'city',
         'state',
-        'postal_code',
-        'country_code',
+        'postcode',
+        'country',
         'phone',
         'is_default_billing',
         'is_default_shipping',
@@ -135,7 +135,7 @@ class Address extends Model
             'label',
             'city',
             'state',
-            'country_code',
+            'country',
             'is_default_billing',
             'is_default_shipping',
         ];
@@ -259,7 +259,7 @@ Customer::withAllTags(['at-risk'], Customer::TAG_TYPE_BEHAVIOR)
 
 // New customers in specific region
 Customer::withAnyTags(['new-customer'], Customer::TAG_TYPE_SEGMENT)
-    ->whereHas('addresses', fn($q) => $q->where('country_code', 'MY'))
+    ->whereHas('addresses', fn ($q) => $q->where('country', 'MY'))
     ->get();
 ```
 
