@@ -53,7 +53,7 @@ final class CreateOrderStep extends AbstractCheckoutStep
 
     public function handle(CheckoutSession $session): StepResult
     {
-        if (! class_exists(OrderServiceInterface::class)) {
+        if (! app()->bound(OrderServiceInterface::class)) {
             return $this->failed('Orders package not available');
         }
 

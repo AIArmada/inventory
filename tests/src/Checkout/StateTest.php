@@ -144,4 +144,18 @@ describe('State transitions', function (): void {
             expect(is_subclass_of($state, CheckoutState::class))->toBeTrue("$state should extend CheckoutState");
         }
     });
+
+    it('allows processing to payment failed transition', function (): void {
+        $session = new CheckoutSession;
+        $session->status = Processing::class;
+
+        expect($session->status->canTransitionTo(PaymentFailed::class))->toBeTrue();
+    });
+
+    it('allows processing to completed transition', function (): void {
+        $session = new CheckoutSession;
+        $session->status = Processing::class;
+
+        expect($session->status->canTransitionTo(Completed::class))->toBeTrue();
+    });
 });

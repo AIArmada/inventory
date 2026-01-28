@@ -230,7 +230,7 @@ final class ShopController extends Controller
                 fn ($query) => $query->forOwner($owner),
                 fn ($query) => $query->whereRaw('1 = 0'),
             )
-            ->where('status', VoucherStatus::Active)
+            ->where('status', VoucherStatus::normalize(Active::class))
             ->where(function ($query): void {
                 $query->whereNull('expires_at')
                     ->orWhere('expires_at', '>', now());

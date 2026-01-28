@@ -2,16 +2,28 @@
 
 declare(strict_types=1);
 
+use AIArmada\Checkout\Contracts\CheckoutStepInterface;
+use AIArmada\Checkout\Data\StepResult;
 use AIArmada\Checkout\Http\Controllers\PaymentCallbackController;
 use AIArmada\Checkout\Http\Controllers\PaymentWebhookController;
 use AIArmada\Checkout\Models\CheckoutSession;
+use AIArmada\Checkout\Services\CheckoutService;
+use AIArmada\Checkout\Services\CheckoutStepRegistry;
 use AIArmada\Checkout\States\AwaitingPayment;
 use AIArmada\Checkout\States\Cancelled;
 use AIArmada\Checkout\States\Completed;
 use AIArmada\Checkout\States\PaymentFailed;
 use AIArmada\Checkout\States\Pending;
 use AIArmada\Checkout\States\Processing;
+use AIArmada\Checkout\Steps\CreateOrderStep;
+use AIArmada\Checkout\Steps\ProcessPaymentStep;
+use AIArmada\Orders\Contracts\OrderServiceInterface;
+use AIArmada\Orders\Models\Order;
+use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+use function Pest\Laravel\mock;
 
 describe('PaymentCallbackController', function (): void {
     beforeEach(function (): void {
@@ -224,6 +236,131 @@ describe('PaymentWebhookController', function (): void {
         $data = json_decode($response->getContent(), true);
 
         expect($data['reason'])->toBe('invalid_state');
+    });
+});
+
+describe('ProcessPaymentStep', function (): void {
+    it('handles free orders without redundant status transitions', function (): void {
+        $session = CheckoutSession::create([
+            'cart_id' => 'test-cart-free',
+            'grand_total' => 0,
+            'currency' => 'USD',
+        ]);
+
+        $session->status->transitionTo(Processing::class);
+
+        $step = app(ProcessPaymentStep::class);
+        $result = $step->handle($session);
+
+        expect($result->isSuccessful())->toBeTrue()
+            ->and($session->fresh()->payment_data['type'] ?? null)->toBe('free_order');
+    });
+});
+
+describe('CreateOrderStep', function (): void {
+    it('creates an order when the order service is bound', function (): void {
+        $orderService = mock(OrderServiceInterface::class);
+        $order = new Order;
+        $order->forceFill([
+            'id' => (string) Str::uuid(),
+            'order_number' => 'TEST-ORDER-1',
+        ]);
+
+        $orderService->shouldReceive('createOrder')->andReturn($order);
+
+        app()->instance(OrderServiceInterface::class, $orderService);
+
+        $session = CheckoutSession::create([
+            'cart_id' => 'test-cart-create-order',
+            'status' => Processing::class,
+            'cart_snapshot' => [
+                'items' => [
+                    [
+                        'name' => 'Test Item',
+                        'quantity' => 1,
+                        'price' => 0,
+                    ],
+                ],
+                'subtotal' => 0,
+                'total' => 0,
+                'item_count' => 1,
+            ],
+            'payment_data' => [
+                'type' => 'free_order',
+            ],
+            'subtotal' => 0,
+            'grand_total' => 0,
+            'currency' => 'USD',
+        ]);
+
+        $step = app(CreateOrderStep::class);
+        $result = $step->handle($session);
+
+        expect($result->isSuccessful())->toBeTrue()
+            ->and($session->fresh()->order_id)->not->toBeNull();
+    });
+});
+
+describe('CheckoutService', function (): void {
+    it('completes successfully when a step sets the session to completed', function (): void {
+        $registry = new CheckoutStepRegistry;
+
+        $registry->register('complete_order', new class implements CheckoutStepInterface
+        {
+            public function getIdentifier(): string
+            {
+                return 'complete_order';
+            }
+
+            public function getName(): string
+            {
+                return 'Complete Order';
+            }
+
+            public function validate(CheckoutSession $session): array
+            {
+                return [];
+            }
+
+            public function handle(CheckoutSession $session): StepResult
+            {
+                $session->status->transitionTo(Completed::class);
+
+                return StepResult::success($this->getIdentifier());
+            }
+
+            public function canSkip(CheckoutSession $session): bool
+            {
+                return false;
+            }
+
+            public function rollback(CheckoutSession $session): void {}
+
+            public function getDependencies(): array
+            {
+                return [];
+            }
+        });
+
+        $registry->setOrder(['complete_order']);
+
+        $service = new CheckoutService(
+            stepRegistry: $registry,
+            events: app(Dispatcher::class),
+            paymentResolver: null,
+        );
+
+        $session = CheckoutSession::create([
+            'cart_id' => 'test-cart-checkout-complete',
+            'step_states' => [
+                'complete_order' => 'pending',
+            ],
+            'current_step' => 'complete_order',
+        ]);
+
+        $result = $service->processCheckout($session);
+
+        expect($result->success)->toBeTrue();
     });
 });
 

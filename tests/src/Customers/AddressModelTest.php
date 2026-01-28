@@ -6,6 +6,7 @@ use AIArmada\Customers\Enums\AddressType;
 use AIArmada\Customers\Enums\CustomerStatus;
 use AIArmada\Customers\Models\Address;
 use AIArmada\Customers\Models\Customer;
+use AIArmada\Customers\Services\CustomerResolver;
 
 describe('Address Model', function (): void {
     beforeEach(function (): void {
@@ -241,6 +242,39 @@ describe('Address Model', function (): void {
             $label = $address->toShippingLabel();
 
             expect($label['name'])->toBe('Address Test');
+        });
+    });
+
+    describe('Resolver address payload', function (): void {
+        it('stores legacy address columns alongside line fields', function (): void {
+            $resolver = app(CustomerResolver::class);
+
+            $customer = $resolver->resolve(
+                null,
+                null,
+                [
+                    'email' => 'resolver-' . uniqid() . '@example.com',
+                    'name' => 'Resolver Test',
+                    'phone' => '+60123456789',
+                ],
+                [
+                    'name' => 'Resolver Test',
+                    'street1' => '123 Resolver St',
+                    'street2' => 'Suite 200',
+                    'city' => 'Kuala Lumpur',
+                    'state' => 'WP',
+                    'postcode' => '50000',
+                    'country' => 'MY',
+                ],
+            );
+
+            $address = $customer?->addresses()->where('type', AddressType::Shipping->value)->first();
+
+            expect($address)->not->toBeNull()
+                ->and($address?->line1)->toBe('123 Resolver St')
+                ->and($address?->line2)->toBe('Suite 200')
+                ->and($address?->address1)->toBe('123 Resolver St')
+                ->and($address?->address2)->toBe('Suite 200');
         });
     });
 

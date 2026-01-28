@@ -287,7 +287,7 @@ final class VoucherSeeder extends Seeder
                 'allows_manual_redemption' => true,
                 'owner_type' => User::class,
                 'owner_id' => $user->id,
-                'status' => VoucherStatus::Active,
+                'status' => Active::class,
                 'starts_at' => now(),
                 'expires_at' => now()->addDays(30),
                 'metadata' => ['occasion' => 'birthday'],
