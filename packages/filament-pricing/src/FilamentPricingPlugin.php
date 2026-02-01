@@ -37,8 +37,9 @@ final class FilamentPricingPlugin implements Plugin
             Resources\PriceListResource::class,
         ];
 
-        // Only register PromotionResource if promotions package is installed
-        if (class_exists('\\AIArmada\\Promotions\\Models\\Promotion')) {
+        // Only register PromotionResource if promotions package is installed and feature is enabled
+        if (config('filament-pricing.features.promotions', true)
+            && class_exists('\\AIArmada\\Promotions\\Models\\Promotion')) {
             $resources[] = Resources\PromotionResource::class;
         }
 
