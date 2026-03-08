@@ -1,0 +1,41 @@
+{
+  "name": "aiarmada/inventory",
+  "description": "Multi-location inventory and warehouse management system for Laravel with allocation strategies, cart integration, and movement tracking",
+  "license": "MIT",
+  "homepage": "https://github.com/aiarmada/commerce",
+  "support": {
+    "issues": "https://github.com/aiarmada/commerce/issues",
+    "source": "https://github.com/aiarmada/commerce"
+  },
+  "require": {
+    "aiarmada/commerce-support": "self.version"
+  },
+  "suggest": {
+    "aiarmada/cart": "Required for cart integration features (stock reservation, allocation on checkout)",
+    "aiarmada/orders": "Required for automatic inventory deduction on payment and release on cancellation",
+    "aiarmada/shipping": "Required for fulfillment location optimization",
+    "aiarmada/products": "Recommended for product stock queries via Inventoryable interface"
+  },
+  "autoload": {
+    "psr-4": {
+      "AIArmada\\Inventory\\": "src/",
+      "AIArmada\\Inventory\\Database\\Factories\\": "database/factories/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "AIArmada\\Inventory\\InventoryServiceProvider"
+      ],
+      "aliases": {
+        "Inventory": "AIArmada\\Inventory\\Facades\\Inventory",
+        "InventoryAllocation": "AIArmada\\Inventory\\Facades\\InventoryAllocation"
+      }
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}
