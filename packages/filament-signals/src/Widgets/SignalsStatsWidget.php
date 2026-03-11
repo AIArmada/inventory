@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentSignals\Widgets;
 
+use AIArmada\FilamentSignals\Support\SignalsUiConfig;
 use AIArmada\Signals\Services\SignalsDashboardService;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -17,6 +18,8 @@ final class SignalsStatsWidget extends StatsOverviewWidget
     protected function getStats(): array
     {
         $summary = app(SignalsDashboardService::class)->summary();
+        $outcomesLabel = SignalsUiConfig::outcomesLabel();
+        $monetaryValueLabel = SignalsUiConfig::monetaryValueLabel();
 
         return [
             Stat::make('Tracked Properties', number_format($summary['tracked_properties']))
@@ -37,11 +40,11 @@ final class SignalsStatsWidget extends StatsOverviewWidget
             Stat::make('Events', number_format($summary['events']))
                 ->description('Captured interactions')
                 ->color('info'),
-            Stat::make('Conversions', number_format($summary['conversions']))
-                ->description('Events tagged as conversions')
+            Stat::make($outcomesLabel, number_format($summary['conversions']))
+                ->description('Events matching the primary outcome')
                 ->color('success'),
-            Stat::make('Revenue', $this->formatMoney($summary['revenue_minor']))
-                ->description('Conversion revenue in range')
+            Stat::make($monetaryValueLabel, $this->formatMoney($summary['revenue_minor']))
+                ->description('Tracked monetary value in range')
                 ->color('warning'),
         ];
     }

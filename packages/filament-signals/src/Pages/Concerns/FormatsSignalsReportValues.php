@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentSignals\Pages\Concerns;
 
+use AIArmada\FilamentSignals\Support\SignalsUiConfig;
 use Carbon\CarbonImmutable;
 
 trait FormatsSignalsReportValues
@@ -20,5 +21,20 @@ trait FormatsSignalsReportValues
         }
 
         return CarbonImmutable::parse($state)->format('M j, Y g:i A');
+    }
+
+    public function outcomesLabel(): string
+    {
+        return SignalsUiConfig::outcomesLabel();
+    }
+
+    public function monetaryValueLabel(): string
+    {
+        return SignalsUiConfig::monetaryValueLabel();
+    }
+
+    public function averageOutcomeRateLabel(): string
+    {
+        return SignalsUiConfig::averageOutcomeRateLabel();
     }
 }

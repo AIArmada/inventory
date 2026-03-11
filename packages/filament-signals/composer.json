@@ -1,6 +1,6 @@
 {
     "name": "aiarmada/filament-signals",
-    "description": "Filament admin dashboard for AIArmada Signals",
+    "description": "Filament admin dashboard for AIArmada Signals analytics",
     "license": "MIT",
     "type": "library",
     "keywords": [
@@ -8,7 +8,7 @@
         "filament",
         "signals",
         "analytics",
-        "commerce"
+        "product-analytics"
     ],
     "authors": [
         {

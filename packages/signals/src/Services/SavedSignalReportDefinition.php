@@ -172,7 +172,7 @@ final class SavedSignalReportDefinition
      * @param  array<string, mixed>|array<int, array<string, mixed>>|null  $settings
      * @return array<string, mixed>|null
      */
-    public static function normalizeSettings(string $reportType, array|null $settings): ?array
+    public static function normalizeSettings(string $reportType, ?array $settings): ?array
     {
         if ($settings === null || $settings === []) {
             return null;
@@ -194,7 +194,7 @@ final class SavedSignalReportDefinition
      * @param  array<string, mixed>|array<int, array<string, mixed>>|null  $settings
      * @return list<array{label:string,event_name:string,event_category:string|null}>
      */
-    public static function funnelSteps(array|null $settings): array
+    public static function funnelSteps(?array $settings): array
     {
         $structuredSettings = self::normalizeSettingsShape($settings);
         $steps = $structuredSettings['funnel_steps'] ?? [];
@@ -233,7 +233,7 @@ final class SavedSignalReportDefinition
     /**
      * @param  array<string, mixed>|array<int, array<string, mixed>>|null  $settings
      */
-    public static function attributionModel(array|null $settings): string
+    public static function attributionModel(?array $settings): string
     {
         $structuredSettings = self::normalizeSettingsShape($settings);
         $model = (string) ($structuredSettings['attribution_model'] ?? self::ATTRIBUTION_MODEL_EVENT);
@@ -246,20 +246,27 @@ final class SavedSignalReportDefinition
     /**
      * @param  array<string, mixed>|array<int, array<string, mixed>>|null  $settings
      */
-    public static function conversionEventName(array|null $settings): string
+    public static function conversionEventName(?array $settings): string
     {
         $structuredSettings = self::normalizeSettingsShape($settings);
         $eventName = mb_trim((string) ($structuredSettings['conversion_event_name'] ?? ''));
+        $defaultOutcomeEventName = mb_trim((string) config('signals.defaults.primary_outcome_event_name', ''));
 
-        return $eventName !== ''
-            ? $eventName
-            : (string) config('signals.integrations.orders.event_name', 'order.paid');
+        if ($eventName !== '') {
+            return $eventName;
+        }
+
+        if ($defaultOutcomeEventName !== '') {
+            return $defaultOutcomeEventName;
+        }
+
+        return (string) config('signals.integrations.orders.event_name', 'order.paid');
     }
 
     /**
      * @param  array<string, mixed>|array<int, array<string, mixed>>|null  $settings
      */
-    public static function stepWindowMinutes(array|null $settings): ?int
+    public static function stepWindowMinutes(?array $settings): ?int
     {
         $structuredSettings = self::normalizeSettingsShape($settings);
         $value = $structuredSettings['step_window_minutes'] ?? null;
@@ -276,7 +283,7 @@ final class SavedSignalReportDefinition
     /**
      * @param  array<string, mixed>|array<int, array<string, mixed>>|null  $settings
      */
-    public static function journeyBreakdownDimension(array|null $settings): string
+    public static function journeyBreakdownDimension(?array $settings): string
     {
         $structuredSettings = self::normalizeSettingsShape($settings);
         $dimension = (string) ($structuredSettings['breakdown_dimension'] ?? 'path_pair');
@@ -289,7 +296,7 @@ final class SavedSignalReportDefinition
     /**
      * @param  array<string, mixed>|array<int, array<string, mixed>>|null  $settings
      */
-    public static function contentBreakdownDimension(array|null $settings): string
+    public static function contentBreakdownDimension(?array $settings): string
     {
         $structuredSettings = self::normalizeSettingsShape($settings);
         $dimension = (string) ($structuredSettings['breakdown_dimension'] ?? 'path');
@@ -303,7 +310,7 @@ final class SavedSignalReportDefinition
      * @param  array<string, mixed>|array<int, array<string, mixed>>|null  $settings
      * @return list<int>
      */
-    public static function retentionWindows(array|null $settings): array
+    public static function retentionWindows(?array $settings): array
     {
         $structuredSettings = self::normalizeSettingsShape($settings);
         $windows = $structuredSettings['retention_windows'] ?? null;
@@ -316,7 +323,7 @@ final class SavedSignalReportDefinition
      * @param  array<string, mixed>|array<int, array<string, mixed>>|null  $settings
      * @return array<string, mixed>
      */
-    private static function normalizeSettingsShape(array|null $settings): array
+    private static function normalizeSettingsShape(?array $settings): array
     {
         if ($settings === null || $settings === []) {
             return [];

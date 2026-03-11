@@ -1,14 +1,14 @@
 {
     "name": "aiarmada/signals",
-    "description": "Privacy-first behavioral analytics foundation for the AIArmada Commerce ecosystem",
+    "description": "Privacy-first behavioral analytics foundation for Laravel applications",
     "license": "MIT",
     "type": "library",
     "keywords": [
         "laravel",
         "analytics",
         "signals",
-        "commerce",
-        "product-analytics"
+        "product-analytics",
+        "behavioral-analytics"
     ],
     "authors": [
         {

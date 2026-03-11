@@ -30,6 +30,10 @@ return [
 
     /* Resources */
     'resources' => [
+        'labels' => [
+            'outcomes' => 'Outcomes',
+            'monetary_value' => 'Monetary Value',
+        ],
         'navigation_sort' => [
             'dashboard' => 10,
             'page_views' => 15,

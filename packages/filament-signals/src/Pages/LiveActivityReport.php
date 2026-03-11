@@ -113,12 +113,12 @@ final class LiveActivityReport extends Page implements HasTable
                     ->label('Session')
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('revenue_minor')
-                    ->label('Revenue')
+                    ->label($this->monetaryValueLabel())
                     ->formatStateUsing(fn (mixed $state): string => $this->formatMoney((int) $state))
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->emptyStateHeading('No live activity recorded yet')
-            ->emptyStateDescription('Recent events will appear here as soon as Signals starts capturing traffic and conversions.');
+            ->emptyStateDescription('Recent events will appear here as soon as Signals starts capturing traffic and outcomes.');
     }
 
     protected function getHeaderActions(): array

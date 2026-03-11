@@ -10,8 +10,8 @@ use AIArmada\Signals\Models\SavedSignalReport;
 use AIArmada\Signals\Models\SignalEvent;
 use AIArmada\Signals\Models\SignalIdentity;
 use AIArmada\Signals\Models\TrackedProperty;
-use AIArmada\Signals\Services\SavedSignalReportDefinition;
 use AIArmada\Signals\Services\AcquisitionReportService;
+use AIArmada\Signals\Services\SavedSignalReportDefinition;
 use Carbon\CarbonImmutable;
 
 uses(SignalsTestCase::class);
@@ -277,4 +277,71 @@ it('supports first touch and last touch acquisition attribution from saved repor
             $firstTouchReport->id => 'First Touch Acquisition',
             $lastTouchReport->id => 'Last Touch Acquisition',
         ]);
+});
+
+it('uses the configured primary outcome event when acquisition settings omit one', function (): void {
+    config()->set('signals.defaults.primary_outcome_event_name', 'registration.completed');
+
+    /** @var User $owner */
+    $owner = User::query()->create([
+        'name' => 'Primary Outcome Owner',
+        'email' => 'primary-outcome-owner@signals.test',
+        'password' => 'secret',
+    ]);
+
+    app()->instance(OwnerResolverInterface::class, new FixedOwnerResolver($owner));
+
+    $property = TrackedProperty::query()->create([
+        'name' => 'Primary Outcome Property',
+        'slug' => 'primary-outcome-property',
+        'write_key' => 'primary-outcome-key',
+    ]);
+
+    $identity = SignalIdentity::query()->create([
+        'tracked_property_id' => $property->id,
+        'external_id' => 'primary-outcome-visitor',
+        'last_seen_at' => CarbonImmutable::parse('2026-03-10 09:30:00'),
+    ]);
+
+    SignalEvent::query()->create([
+        'tracked_property_id' => $property->id,
+        'signal_identity_id' => $identity->id,
+        'occurred_at' => CarbonImmutable::parse('2026-03-10 09:00:00'),
+        'event_name' => 'page_view',
+        'event_category' => 'page_view',
+        'source' => 'community',
+        'medium' => 'referral',
+        'campaign' => 'launch',
+    ]);
+
+    SignalEvent::query()->create([
+        'tracked_property_id' => $property->id,
+        'signal_identity_id' => $identity->id,
+        'occurred_at' => CarbonImmutable::parse('2026-03-10 09:15:00'),
+        'event_name' => 'registration.completed',
+        'event_category' => 'conversion',
+        'source' => 'community',
+        'medium' => 'referral',
+        'campaign' => 'launch',
+    ]);
+
+    $savedReport = SavedSignalReport::query()->create([
+        'tracked_property_id' => $property->id,
+        'name' => 'Primary Outcome Acquisition',
+        'slug' => 'primary-outcome-acquisition',
+        'report_type' => 'acquisition',
+        'settings' => [
+            'attribution_model' => SavedSignalReportDefinition::ATTRIBUTION_MODEL_FIRST_TOUCH,
+        ],
+    ]);
+
+    $summary = app(AcquisitionReportService::class)->summary(
+        savedReportId: $savedReport->id,
+        from: '2026-03-10',
+        until: '2026-03-10',
+    );
+
+    expect($summary['attributed_events'])->toBe(1)
+        ->and($summary['conversions'])->toBe(1)
+        ->and($summary['campaigns'])->toBe(1);
 });

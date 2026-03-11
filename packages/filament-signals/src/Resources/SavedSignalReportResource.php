@@ -131,7 +131,7 @@ final class SavedSignalReportResource extends Resource
                                 ->columns(3)
                                 ->columnSpanFull()
                                 ->addActionLabel('Add Funnel Step')
-                                ->helperText('Leave empty to use the built-in checkout funnel template.'),
+                                ->helperText('Leave empty to use the built-in starter funnel template.'),
                             Forms\Components\TextInput::make('settings.step_window_minutes')
                                 ->numeric()
                                 ->minValue(1)
@@ -147,8 +147,9 @@ final class SavedSignalReportResource extends Resource
                                 ->default(SavedSignalReportDefinition::ATTRIBUTION_MODEL_EVENT)
                                 ->required(),
                             Forms\Components\TextInput::make('settings.conversion_event_name')
-                                ->default((string) config('signals.integrations.orders.event_name', 'order.paid'))
+                                ->default(SavedSignalReportDefinition::conversionEventName(null))
                                 ->required()
+                                ->helperText('Defaults to the configured primary outcome event.')
                                 ->maxLength(255),
                         ])
                         ->visible(fn (Get $get): bool => $get('report_type') === 'acquisition')

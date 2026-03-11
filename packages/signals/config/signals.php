@@ -29,6 +29,24 @@ return [
         'timezone' => 'UTC',
         'property_type' => 'website',
         'page_view_event_name' => 'page_view',
+        'primary_outcome_event_name' => env('SIGNALS_PRIMARY_OUTCOME_EVENT_NAME', 'conversion.completed'),
+        'starter_funnel' => [
+            [
+                'label' => 'Visited',
+                'event_name' => 'page_view',
+                'event_category' => 'page_view',
+            ],
+            [
+                'label' => 'Explored Further',
+                'event_name' => 'page_view',
+                'event_category' => 'page_view',
+            ],
+            [
+                'label' => 'Completed Outcome',
+                'event_name' => null,
+                'event_category' => null,
+            ],
+        ],
         'session_duration_seconds' => 1800,
     ],
 

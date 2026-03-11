@@ -119,10 +119,11 @@ final class ContentPerformanceReport extends Page implements HasTable
                     ->numeric(decimalPlaces: 0)
                     ->sortable(),
                 TextColumn::make('conversions')
+                    ->label($this->outcomesLabel())
                     ->numeric(decimalPlaces: 0)
                     ->sortable(),
                 TextColumn::make('revenue_minor')
-                    ->label('Revenue')
+                    ->label($this->monetaryValueLabel())
                     ->formatStateUsing(fn (mixed $state): string => $this->formatMoney((int) $state))
                     ->sortable(),
                 TextColumn::make('last_seen_at')
@@ -131,15 +132,15 @@ final class ContentPerformanceReport extends Page implements HasTable
                     ->sortable(),
             ])
             ->emptyStateHeading('No content performance data recorded yet')
-            ->emptyStateDescription('Page paths will appear here once pageviews and conversions start flowing through Signals.');
+            ->emptyStateDescription('Paths and outcome performance will appear here once page views and primary outcomes start flowing through Signals.');
     }
 
     protected function getHeaderActions(): array
     {
         return [
             ...$this->getDateRangeHeaderActions(
-            app(ContentPerformanceReportService::class)->getTrackedPropertyOptions(),
-            app(SignalSegmentReportFilter::class)->getSegmentOptions(),
+                app(ContentPerformanceReportService::class)->getTrackedPropertyOptions(),
+                app(SignalSegmentReportFilter::class)->getSegmentOptions(),
             ),
             Action::make('savedContentReport')
                 ->label('Saved Content Report')

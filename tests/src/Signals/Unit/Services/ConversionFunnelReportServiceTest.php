@@ -80,8 +80,8 @@ it('builds an owner-safe conversion funnel summary', function (): void {
         'tracked_property_id' => $propertyA->id,
         'signal_identity_id' => $identityA1->id,
         'occurred_at' => CarbonImmutable::parse('2026-03-10 10:05:00'),
-        'event_name' => 'checkout.started',
-        'event_category' => 'checkout',
+        'event_name' => 'page_view',
+        'event_category' => 'page_view',
         'path' => '/pricing',
     ]);
     $startedA1->assignOwner($ownerA)->save();
@@ -90,8 +90,8 @@ it('builds an owner-safe conversion funnel summary', function (): void {
         'tracked_property_id' => $propertyA->id,
         'signal_identity_id' => $identityA2->id,
         'occurred_at' => CarbonImmutable::parse('2026-03-10 11:05:00'),
-        'event_name' => 'checkout.started',
-        'event_category' => 'checkout',
+        'event_name' => 'page_view',
+        'event_category' => 'page_view',
         'path' => '/checkout',
     ]);
     $startedA2->assignOwner($ownerA)->save();
@@ -100,8 +100,8 @@ it('builds an owner-safe conversion funnel summary', function (): void {
         'tracked_property_id' => $propertyA->id,
         'signal_identity_id' => $identityA1->id,
         'occurred_at' => CarbonImmutable::parse('2026-03-10 10:15:00'),
-        'event_name' => 'checkout.completed',
-        'event_category' => 'checkout',
+        'event_name' => 'page_view',
+        'event_category' => 'page_view',
         'path' => '/pricing',
     ]);
     $completedA1->assignOwner($ownerA)->save();
@@ -110,7 +110,7 @@ it('builds an owner-safe conversion funnel summary', function (): void {
         'tracked_property_id' => $propertyA->id,
         'signal_identity_id' => $identityA1->id,
         'occurred_at' => CarbonImmutable::parse('2026-03-10 10:20:00'),
-        'event_name' => 'order.paid',
+        'event_name' => 'conversion.completed',
         'event_category' => 'conversion',
         'revenue_minor' => 12900,
         'path' => '/pricing',
@@ -123,8 +123,8 @@ it('builds an owner-safe conversion funnel summary', function (): void {
         'tracked_property_id' => $propertyB->id,
         'signal_identity_id' => $identityB->id,
         'occurred_at' => CarbonImmutable::parse('2026-03-10 12:05:00'),
-        'event_name' => 'checkout.started',
-        'event_category' => 'checkout',
+        'event_name' => 'page_view',
+        'event_category' => 'page_view',
         'path' => '/pricing',
     ]);
     $startedB->assignOwner($ownerB)->save();
@@ -145,7 +145,10 @@ it('builds an owner-safe conversion funnel summary', function (): void {
         ->and($summary['complete_drop_off'])->toBe(0)
         ->and($summary['revenue_minor'])->toBe(12900)
         ->and($stages)->toHaveCount(3)
-        ->and($stages[2]['label'])->toBe('Order Paid')
+        ->and($summary['started_label'])->toBe('Visited')
+        ->and($summary['completed_label'])->toBe('Explored Further')
+        ->and($summary['paid_label'])->toBe('Completed Outcome')
+        ->and($stages[2]['label'])->toBe('Completed Outcome')
         ->and($stages[2]['revenue_minor'])->toBe(12900)
         ->and($service->getTrackedPropertyOptions())
         ->toBe([$propertyA->id => 'Owner A Funnel Property']);
@@ -180,11 +183,11 @@ it('applies signal segments to conversion funnel metrics', function (): void {
     ]);
 
     foreach ([
-        ['identity' => $pricingIdentity->id, 'event_name' => 'checkout.started', 'event_category' => 'checkout', 'path' => '/pricing', 'revenue_minor' => 0, 'occurred_at' => '2026-03-10 10:05:00'],
-        ['identity' => $pricingIdentity->id, 'event_name' => 'checkout.completed', 'event_category' => 'checkout', 'path' => '/pricing', 'revenue_minor' => 0, 'occurred_at' => '2026-03-10 10:10:00'],
-        ['identity' => $pricingIdentity->id, 'event_name' => 'order.paid', 'event_category' => 'conversion', 'path' => '/pricing', 'revenue_minor' => 14900, 'occurred_at' => '2026-03-10 10:15:00'],
-        ['identity' => $checkoutIdentity->id, 'event_name' => 'checkout.started', 'event_category' => 'checkout', 'path' => '/checkout', 'revenue_minor' => 0, 'occurred_at' => '2026-03-10 11:05:00'],
-        ['identity' => $checkoutIdentity->id, 'event_name' => 'checkout.completed', 'event_category' => 'checkout', 'path' => '/checkout', 'revenue_minor' => 0, 'occurred_at' => '2026-03-10 11:10:00'],
+        ['identity' => $pricingIdentity->id, 'event_name' => 'page_view', 'event_category' => 'page_view', 'path' => '/pricing', 'revenue_minor' => 0, 'occurred_at' => '2026-03-10 10:05:00'],
+        ['identity' => $pricingIdentity->id, 'event_name' => 'page_view', 'event_category' => 'page_view', 'path' => '/pricing', 'revenue_minor' => 0, 'occurred_at' => '2026-03-10 10:10:00'],
+        ['identity' => $pricingIdentity->id, 'event_name' => 'conversion.completed', 'event_category' => 'conversion', 'path' => '/pricing', 'revenue_minor' => 14900, 'occurred_at' => '2026-03-10 10:15:00'],
+        ['identity' => $checkoutIdentity->id, 'event_name' => 'page_view', 'event_category' => 'page_view', 'path' => '/checkout', 'revenue_minor' => 0, 'occurred_at' => '2026-03-10 11:05:00'],
+        ['identity' => $checkoutIdentity->id, 'event_name' => 'page_view', 'event_category' => 'page_view', 'path' => '/checkout', 'revenue_minor' => 0, 'occurred_at' => '2026-03-10 11:10:00'],
     ] as $eventData) {
         SignalEvent::query()->create([
             'tracked_property_id' => $property->id,
@@ -211,6 +214,53 @@ it('applies signal segments to conversion funnel metrics', function (): void {
         ->and($summary['completed'])->toBe(1)
         ->and($summary['paid'])->toBe(1)
         ->and($summary['revenue_minor'])->toBe(14900);
+});
+
+it('matches the configured primary outcome without requiring a conversion category', function (): void {
+    config()->set('signals.defaults.primary_outcome_event_name', 'registration.completed');
+
+    /** @var User $owner */
+    $owner = User::query()->create([
+        'name' => 'Primary Outcome Funnel Owner',
+        'email' => 'primary-outcome-funnel-owner@signals.test',
+        'password' => 'secret',
+    ]);
+
+    app()->instance(OwnerResolverInterface::class, new FixedOwnerResolver($owner));
+
+    $property = TrackedProperty::query()->create([
+        'name' => 'Primary Outcome Funnel Property',
+        'slug' => 'primary-outcome-funnel-property',
+        'write_key' => 'primary-outcome-funnel-key',
+    ]);
+
+    $identity = SignalIdentity::query()->create([
+        'tracked_property_id' => $property->id,
+        'external_id' => 'primary-outcome-funnel-visitor',
+        'last_seen_at' => CarbonImmutable::parse('2026-03-10 09:30:00'),
+    ]);
+
+    foreach ([
+        ['event_name' => 'page_view', 'event_category' => 'page_view', 'occurred_at' => '2026-03-10 09:00:00'],
+        ['event_name' => 'page_view', 'event_category' => 'page_view', 'occurred_at' => '2026-03-10 09:05:00'],
+        ['event_name' => 'registration.completed', 'event_category' => 'engagement', 'occurred_at' => '2026-03-10 09:10:00'],
+    ] as $eventData) {
+        SignalEvent::query()->create([
+            'tracked_property_id' => $property->id,
+            'signal_identity_id' => $identity->id,
+            'occurred_at' => CarbonImmutable::parse($eventData['occurred_at']),
+            'event_name' => $eventData['event_name'],
+            'event_category' => $eventData['event_category'],
+            'revenue_minor' => 0,
+        ]);
+    }
+
+    $summary = app(ConversionFunnelReportService::class)->summary($property->id, '2026-03-10', '2026-03-10');
+
+    expect($summary['started'])->toBe(1)
+        ->and($summary['completed'])->toBe(1)
+        ->and($summary['paid'])->toBe(1)
+        ->and($summary['paid_label'])->toBe('Completed Outcome');
 });
 
 it('uses saved funnel definitions for custom conversion funnel reports', function (): void {

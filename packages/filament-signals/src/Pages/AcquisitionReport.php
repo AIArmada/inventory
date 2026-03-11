@@ -133,10 +133,11 @@ final class AcquisitionReport extends Page implements HasTable
                     ->numeric(decimalPlaces: 0)
                     ->sortable(),
                 TextColumn::make('conversions')
+                    ->label($this->outcomesLabel())
                     ->numeric(decimalPlaces: 0)
                     ->sortable(),
                 TextColumn::make('revenue_minor')
-                    ->label('Revenue')
+                    ->label($this->monetaryValueLabel())
                     ->formatStateUsing(fn (mixed $state): string => $this->formatMoney((int) $state))
                     ->sortable(),
                 TextColumn::make('last_seen_at')

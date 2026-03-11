@@ -30,6 +30,9 @@ function filamentSignals_invokeProtected(object $instance, string $methodName, a
 }
 
 it('renders stats and chart data for the current owner', function (): void {
+    config()->set('filament-signals.resources.labels.outcomes', 'Registrations');
+    config()->set('filament-signals.resources.labels.monetary_value', 'Donations');
+
     /** @var User $ownerA */
     $ownerA = User::query()->create([
         'name' => 'Owner A',
@@ -231,6 +234,8 @@ it('renders stats and chart data for the current owner', function (): void {
     $stats = filamentSignals_invokeProtected($statsWidget, 'getStats');
 
     expect($stats)->toHaveCount(8)
+        ->and($stats[6]->getLabel())->toBe('Registrations')
+        ->and($stats[7]->getLabel())->toBe('Donations')
         ->and($stats[0]->getValue())->toBe('1')
         ->and($stats[1]->getValue())->toBe('1')
         ->and($stats[2]->getValue())->toBe('1')
@@ -240,6 +245,7 @@ it('renders stats and chart data for the current owner', function (): void {
     $data = filamentSignals_invokeProtected($chartWidget, 'getData');
 
     expect($data['datasets'][0]['data'])->toBe([1])
+        ->and($data['datasets'][1]['label'])->toBe('Registrations')
         ->and($data['datasets'][1]['data'])->toBe([1])
         ->and(filamentSignals_invokeProtected($chartWidget, 'getType'))->toBe('line');
 });

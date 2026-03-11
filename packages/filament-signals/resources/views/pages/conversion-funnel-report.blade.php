@@ -43,7 +43,7 @@
             <x-filament::section>
                 <div class="text-center">
                     <div class="text-2xl font-bold text-success-700">{{ $this->formatMoney($summary['revenue_minor']) }}</div>
-                    <div class="text-sm text-gray-500">Revenue</div>
+                    <div class="text-sm text-gray-500">{{ $this->monetaryValueLabel() }}</div>
                 </div>
             </x-filament::section>
         </div>
@@ -59,7 +59,7 @@
                             <th class="px-4 py-3 font-medium">From Previous</th>
                             <th class="px-4 py-3 font-medium">From Start</th>
                             <th class="px-4 py-3 font-medium">Drop Off</th>
-                            <th class="px-4 py-3 font-medium">Revenue</th>
+                            <th class="px-4 py-3 font-medium">{{ $this->monetaryValueLabel() }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 dark:divide-white/5">
@@ -76,7 +76,7 @@
                         @empty
                             <tr>
                                 <td colspan="7" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                    Conversion events will appear here once checkout and order integrations start recording activity.
+                                    Funnel activity will appear here once the selected steps start recording events.
                                 </td>
                             </tr>
                         @endforelse

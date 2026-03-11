@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\FilamentSignals\Widgets;
 
+use AIArmada\FilamentSignals\Support\SignalsUiConfig;
 use AIArmada\Signals\Services\SignalsDashboardService;
 use Filament\Widgets\ChartWidget;
 
@@ -30,7 +31,7 @@ final class EventTrendWidget extends ChartWidget
                     'tension' => 0.3,
                 ],
                 [
-                    'label' => 'Conversions',
+                    'label' => SignalsUiConfig::outcomesLabel(),
                     'data' => array_map(static fn (array $row): int => $row['conversions'], $trend),
                     'borderColor' => 'rgb(22, 163, 74)',
                     'backgroundColor' => 'rgba(22, 163, 74, 0.12)',

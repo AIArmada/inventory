@@ -34,7 +34,7 @@
             <x-filament::section>
                 <div class="text-center">
                     <div class="text-2xl font-bold text-success-700">{{ $this->formatMoney($summary['revenue_minor']) }}</div>
-                    <div class="text-sm text-gray-500">Revenue</div>
+                    <div class="text-sm text-gray-500">{{ $this->monetaryValueLabel() }}</div>
                 </div>
             </x-filament::section>
 
@@ -58,7 +58,7 @@
                             <th class="px-4 py-3 font-medium">Hits</th>
                             <th class="px-4 py-3 font-medium">Visitors</th>
                             <th class="px-4 py-3 font-medium">Goal Rate</th>
-                            <th class="px-4 py-3 font-medium">Revenue</th>
+                            <th class="px-4 py-3 font-medium">{{ $this->monetaryValueLabel() }}</th>
                             <th class="px-4 py-3 font-medium">Last Hit</th>
                         </tr>
                     </thead>

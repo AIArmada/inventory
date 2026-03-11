@@ -102,7 +102,7 @@ final class ConversionFunnelReportService
     /**
      * @return list<array{label:string,event_name:string,count:int,rate_from_previous:float,rate_from_start:float,drop_off:int,revenue_minor:int}>
      */
-    private function buildStages(?string $trackedPropertyId, ?string $from, ?string $until, ?string $signalSegmentId, SavedSignalReport|null $savedReport): array
+    private function buildStages(?string $trackedPropertyId, ?string $from, ?string $until, ?string $signalSegmentId, ?SavedSignalReport $savedReport): array
     {
         $steps = $this->resolveFunnelSteps($savedReport);
 
@@ -158,7 +158,7 @@ final class ConversionFunnelReportService
      * @param  list<array{label:string,event_name:string,event_category:string|null}>  $steps
      * @return list<array{count:int,revenue_minor:int}>
      */
-    private function calculateStageProgress(?string $trackedPropertyId, ?string $from, ?string $until, ?string $signalSegmentId, array $steps, SavedSignalReport|null $savedReport): array
+    private function calculateStageProgress(?string $trackedPropertyId, ?string $from, ?string $until, ?string $signalSegmentId, array $steps, ?SavedSignalReport $savedReport): array
     {
         $stepWindowMinutes = SavedSignalReportDefinition::stepWindowMinutes($savedReport?->normalizedSettings());
         $counts = array_fill(0, count($steps), 0);
@@ -289,7 +289,7 @@ final class ConversionFunnelReportService
     /**
      * @return list<array{label:string,event_name:string,event_category:string|null}>
      */
-    private function resolveFunnelSteps(SavedSignalReport|null $savedReport): array
+    private function resolveFunnelSteps(?SavedSignalReport $savedReport): array
     {
         $steps = SavedSignalReportDefinition::funnelSteps($savedReport?->normalizedSettings());
 
@@ -297,20 +297,68 @@ final class ConversionFunnelReportService
             return $steps;
         }
 
+        $configuredSteps = config('signals.defaults.starter_funnel', []);
+
+        if (! is_array($configuredSteps)) {
+            return $this->defaultFunnelSteps();
+        }
+
+        $normalizedSteps = [];
+        $configuredSteps = array_values($configuredSteps);
+        $finalIndex = array_key_last($configuredSteps);
+
+        foreach ($configuredSteps as $index => $step) {
+            if (! is_array($step)) {
+                continue;
+            }
+
+            $eventName = $step['event_name'] ?? null;
+
+            if (! is_string($eventName) || $eventName === '') {
+                $eventName = $index === $finalIndex
+                    ? (string) config('signals.defaults.primary_outcome_event_name', 'conversion.completed')
+                    : (string) config('signals.defaults.page_view_event_name', 'page_view');
+            }
+
+            $eventCategory = $step['event_category'] ?? null;
+
+            $normalizedSteps[] = [
+                'label' => is_string($step['label'] ?? null) && $step['label'] !== ''
+                    ? $step['label']
+                    : $this->defaultFunnelSteps()[$index]['label'] ?? 'Step ' . ($index + 1),
+                'event_name' => $eventName,
+                'event_category' => is_string($eventCategory) && $eventCategory !== ''
+                    ? $eventCategory
+                    : null,
+            ];
+        }
+
+        if (count($normalizedSteps) >= 2) {
+            return $normalizedSteps;
+        }
+
+        return $this->defaultFunnelSteps();
+    }
+
+    /**
+     * @return list<array{label:string,event_name:string,event_category:string|null}>
+     */
+    private function defaultFunnelSteps(): array
+    {
         return [
             [
-                'label' => 'Checkout Started',
-                'event_name' => (string) config('signals.integrations.checkout.started_event_name', 'checkout.started'),
-                'event_category' => null,
+                'label' => 'Visited',
+                'event_name' => (string) config('signals.defaults.page_view_event_name', 'page_view'),
+                'event_category' => 'page_view',
             ],
             [
-                'label' => 'Checkout Completed',
-                'event_name' => (string) config('signals.integrations.checkout.event_name', 'checkout.completed'),
-                'event_category' => null,
+                'label' => 'Explored Further',
+                'event_name' => (string) config('signals.defaults.page_view_event_name', 'page_view'),
+                'event_category' => 'page_view',
             ],
             [
-                'label' => 'Order Paid',
-                'event_name' => (string) config('signals.integrations.orders.event_name', 'order.paid'),
+                'label' => 'Completed Outcome',
+                'event_name' => (string) config('signals.defaults.primary_outcome_event_name', 'conversion.completed'),
                 'event_category' => null,
             ],
         ];
