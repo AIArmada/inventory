@@ -50,7 +50,7 @@ class AffiliateAttributionData extends Data
 
     public readonly ?string $ownerType;
 
-    public readonly string|int|null $ownerId;
+    public readonly string | int | null $ownerId;
 
     /**
      * @var array<string, mixed>|null
@@ -75,7 +75,7 @@ class AffiliateAttributionData extends Data
         ?string $campaign = null,
         ?CarbonInterface $expiresAt = null,
         ?string $ownerType = null,
-        string|int|null $ownerId = null,
+        string | int | null $ownerId = null,
         ?array $metadata = null,
         ?string $subjectType = null,
         ?string $subjectTitleSnapshot = null,

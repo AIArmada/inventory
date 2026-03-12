@@ -194,6 +194,7 @@ final class IngestSignalEvent
 
         return is_string($occurredAt) ? CarbonImmutable::parse($occurredAt) : CarbonImmutable::now();
     }
+
     private function syncOwnerFromProperty(object $model, TrackedProperty $trackedProperty): void
     {
         if (! $trackedProperty->hasOwner()) {

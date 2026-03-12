@@ -41,6 +41,24 @@ The package is configured via `config/affiliates.php`. This document covers all 
 | `default` | Default ISO 4217 currency code |
 | `percentage_scale` | Basis points per 1% (100 = 1%) |
 
+## Features / Behavior
+
+```php
+'features' => [
+    'cart_integration' => [
+        'enabled' => env('AFFILIATES_FEATURE_CART_INTEGRATION', true),
+    ],
+    'voucher_integration' => [
+        'enabled' => env('AFFILIATES_FEATURE_VOUCHER_INTEGRATION', true),
+    ],
+    'commission_tracking' => [
+        'enabled' => env('AFFILIATES_FEATURE_COMMISSION_TRACKING', true),
+    ],
+],
+```
+
+`commission_tracking.enabled` is also used by the Filament plugin to hide payout and program surfaces when commission tracking is disabled.
+
 ## Multi-Tenancy (Owner Scoping)
 
 ```php
@@ -271,4 +289,21 @@ The package is configured via `config/affiliates.php`. This document covers all 
     'auth' => env('AFFILIATES_API_AUTH', 'token'),
     'token' => env('AFFILIATES_API_TOKEN'),
 ],
+```
+
+### Link Payload Notes
+
+`POST /api/affiliates/{code}/links` supports subject-aware link metadata:
+
+```json
+{
+    "url": "https://example.com/products/sku-1001",
+    "ttl": 3600,
+    "params": {"utm_campaign": "spring-launch"},
+    "subject_type": "product",
+    "subject_identifier": "SKU-1001",
+    "subject_instance": "web",
+    "subject_title_snapshot": "Pro Plan",
+    "subject_metadata": {"category": "subscriptions"}
+}
 ```

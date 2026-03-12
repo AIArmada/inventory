@@ -17,6 +17,10 @@ use AIArmada\Cart\Facades\Cart;
 Cart::attachAffiliate('PARTNER42', [
     'utm_source' => 'newsletter',
     'landing_url' => url()->current(),
+    'subject_type' => 'product',
+    'subject_identifier' => 'SKU-1001',
+    'subject_instance' => 'web',
+    'subject_title_snapshot' => 'Pro Plan',
 ]);
 
 // Check if cart has affiliate
@@ -89,9 +93,12 @@ use AIArmada\Cart\Facades\Cart;
 
 // Record conversion when order is placed
 Cart::recordAffiliateConversion([
-    'order_reference' => $order->reference,
+    'external_reference' => $order->reference,
+    'order_reference' => $order->reference, // compatibility alias
     'subtotal' => $order->subtotal_minor,
-    'total' => $order->total_minor,
+    'value_minor' => $order->total_minor,
+    'total' => $order->total_minor, // compatibility alias
+    'conversion_type' => 'purchase',
 ]);
 ```
 
@@ -122,15 +129,37 @@ $service = app(AffiliateService::class);
 $conversion = $service->recordConversion(
     affiliate: $affiliate,
     data: [
-        'order_reference' => 'ORD-12345',
-        'total_minor' => 15000, // $150.00
+        'external_reference' => 'ORD-12345',
+        'value_minor' => 15000, // $150.00
+        'total_minor' => 15000, // compatibility alias
         'subtotal_minor' => 14000,
+        'conversion_type' => 'purchase',
+        'subject_type' => 'product',
+        'subject_identifier' => 'SKU-1001',
+        'subject_instance' => 'web',
+        'subject_title_snapshot' => 'Pro Plan',
         'metadata' => [
             'customer_id' => $customer->id,
             'items' => $order->items->count(),
         ],
     ]
 );
+```
+
+## Creating Subject-Aware Tracking Links
+
+```php
+$link = $service->createTrackingLink($affiliate, 'https://example.com/products/sku-1001', [
+    'params' => ['utm_source' => 'affiliate-campaign'],
+    'ttl_seconds' => 3600,
+    'subject_type' => 'product',
+    'subject_identifier' => 'SKU-1001',
+    'subject_instance' => 'web',
+    'subject_title_snapshot' => 'Pro Plan',
+    'subject_metadata' => [
+        'category' => 'subscriptions',
+    ],
+]);
 ```
 
 ### Conversion Statuses

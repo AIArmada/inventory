@@ -27,8 +27,24 @@ return [
     */
 
     'widgets' => [
-        'show_conversion_rate' => true,
         'currency' => env('AFFILIATES_DEFAULT_CURRENCY', 'USD'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Features
+    |--------------------------------------------------------------------------
+    */
+
+    'features' => [
+        'admin' => [
+            'conversions' => true,
+            'payouts' => true,
+            'programs' => true,
+            'fraud_monitoring' => true,
+            'reports' => true,
+            'network_visualization' => true,
+        ],
     ],
 
     /*
@@ -38,7 +54,6 @@ return [
     */
 
     'portal' => [
-        'enabled' => env('AFFILIATES_PORTAL_ENABLED', true),
         'panel_id' => env('AFFILIATES_PORTAL_PANEL_ID', 'affiliate'),
         'path' => env('AFFILIATES_PORTAL_PATH', 'affiliate'),
         'brand_name' => env('AFFILIATES_PORTAL_BRAND_NAME', 'Affiliate Portal'),
@@ -95,9 +110,6 @@ Set the navigation group for all affiliate resources:
 
 ```php
 'widgets' => [
-    // Show conversion rate in stats widget
-    'show_conversion_rate' => true,
-
     // Currency for monetary displays
     'currency' => 'USD',
 ],
@@ -107,7 +119,6 @@ Set the navigation group for all affiliate resources:
 
 | Key | Description | Default |
 |-----|-------------|---------|
-| `enabled` | Enable affiliate self-service portal | `true` |
 | `panel_id` | Filament panel ID | `affiliate` |
 | `path` | URL path for portal | `affiliate` |
 | `brand_name` | Portal brand name | `Affiliate Portal` |
@@ -143,6 +154,23 @@ Auto-detect and enable integrations:
 ],
 ```
 
+### Admin Feature Flags
+
+```php
+'features' => [
+    'admin' => [
+        'conversions' => true,
+        'payouts' => true,
+        'programs' => true,
+        'fraud_monitoring' => true,
+        'reports' => true,
+        'network_visualization' => true,
+    ],
+],
+```
+
+`payouts` and `programs` are force-disabled by the plugin when `affiliates.features.commission_tracking.enabled` is false.
+
 ### Resource Navigation Sort
 
 Control the order of resources in navigation:
@@ -165,7 +193,6 @@ Available environment variables:
 
 ```env
 # Portal
-AFFILIATES_PORTAL_ENABLED=true
 AFFILIATES_PORTAL_PANEL_ID=affiliate
 AFFILIATES_PORTAL_PATH=affiliate
 AFFILIATES_PORTAL_BRAND_NAME="Affiliate Portal"
@@ -175,25 +202,17 @@ AFFILIATES_PORTAL_REGISTRATION_ENABLED=true
 AFFILIATES_PORTAL_AUTH_GUARD=web
 ```
 
-## Programmatic Configuration
+## Programmatic Registration
 
-Configure the plugin in your panel provider:
+Register the plugin in your panel provider:
 
 ```php
 use AIArmada\FilamentAffiliates\FilamentAffiliatesPlugin;
 
-FilamentAffiliatesPlugin::make()
-    ->navigationGroup('Partners')
-    ->navigationSort(10)
-    ->enablePortal(true)
-    ->portalPath('partners')
-    ->portalBrandName('Partner Center')
-    ->widgets([
-        \AIArmada\FilamentAffiliates\Widgets\AffiliateStatsWidget::class,
-        \AIArmada\FilamentAffiliates\Widgets\FraudAlertWidget::class,
-    ])
-    ->resources([
-        \AIArmada\FilamentAffiliates\Resources\AffiliateResource::class,
-        \AIArmada\FilamentAffiliates\Resources\AffiliateConversionResource::class,
+public function panel(Panel $panel): Panel
+{
+    return $panel->plugins([
+        FilamentAffiliatesPlugin::make(),
     ]);
+}
 ```

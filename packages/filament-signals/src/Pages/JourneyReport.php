@@ -10,8 +10,8 @@ use AIArmada\Signals\Services\JourneyReportService;
 use AIArmada\Signals\Services\SignalSegmentReportFilter;
 use BackedEnum;
 use Filament\Actions\Action;
-use Filament\Pages\Page;
 use Filament\Forms\Components\Select;
+use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -133,8 +133,8 @@ final class JourneyReport extends Page implements HasTable
     {
         return [
             ...$this->getDateRangeHeaderActions(
-            app(JourneyReportService::class)->getTrackedPropertyOptions(),
-            app(SignalSegmentReportFilter::class)->getSegmentOptions(),
+                app(JourneyReportService::class)->getTrackedPropertyOptions(),
+                app(SignalSegmentReportFilter::class)->getSegmentOptions(),
             ),
             Action::make('savedJourney')
                 ->label('Saved Journey')

@@ -114,6 +114,7 @@ final class IdentifySignalIdentity
 
         return is_string($seenAt) ? CarbonImmutable::parse($seenAt) : CarbonImmutable::now();
     }
+
     private function syncOwnerFromProperty(SignalIdentity $identity, TrackedProperty $trackedProperty): void
     {
         if (! $trackedProperty->hasOwner()) {

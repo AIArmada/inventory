@@ -88,7 +88,7 @@ final class SignalsIngestionRequestValidator
             $host = $parsedHost;
         }
 
-        return mb_strtolower(trim($host, ". \t\n\r\0\x0B"));
+        return mb_strtolower(mb_trim($host, ". \t\n\r\0\x0B"));
     }
 
     private function hostMatchesDomain(string $observedHost, string $configuredDomain): bool

@@ -25,8 +25,7 @@ final class SignalsDashboardService
         $dailyMetrics = SignalDailyMetric::query()->whereBetween('date', [$startAt->toDateString(), $endAt->toDateString()]);
         $alertRules = SignalAlertRule::query()->where('is_active', true);
         $alertLogs = SignalAlertLog::query()
-            ->where('is_read', false)
-            ->whereBetween('created_at', [$startAt, $endAt]);
+            ->where('is_read', false);
 
         if ($trackedProperty instanceof TrackedProperty) {
             $trackedProperties->whereKey($trackedProperty->getKey());

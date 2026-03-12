@@ -402,7 +402,7 @@ final class CommerceSignalsRecorder
             return null;
         }
 
-        return 'cart:'.$instanceName.':'.$cartIdentifier;
+        return 'cart:' . $instanceName . ':' . $cartIdentifier;
     }
 
     private function buildAffiliateSessionIdentifier(?string $identifier, string $instanceName): ?string
@@ -411,7 +411,7 @@ final class CommerceSignalsRecorder
             return null;
         }
 
-        return 'affiliate:'.$instanceName.':'.$identifier;
+        return 'affiliate:' . $instanceName . ':' . $identifier;
     }
 
     private function resolveAffiliateModel(
@@ -420,7 +420,7 @@ final class CommerceSignalsRecorder
         ?string $expectedAffiliateId = null,
         ?string $expectedAffiliateCode = null,
         ?string $expectedOwnerType = null,
-        string|int|null $expectedOwnerId = null,
+        string | int | null $expectedOwnerId = null,
     ): ?Model {
         if ($identifier === null || $identifier === '' || ! class_exists($modelClass) || ! is_subclass_of($modelClass, Model::class)) {
             return null;

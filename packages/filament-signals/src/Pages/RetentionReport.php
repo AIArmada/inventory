@@ -64,7 +64,7 @@ final class RetentionReport extends Page
     }
 
     /**
-        * @return array{cohorts:int,identities:int,windows:list<array{days:int,retained:int,avg_retention_rate:float}>}
+     * @return array{cohorts:int,identities:int,windows:list<array{days:int,retained:int,avg_retention_rate:float}>}
      */
     public function getSummary(): array
     {
@@ -78,7 +78,7 @@ final class RetentionReport extends Page
     }
 
     /**
-        * @return list<array{cohort_date:string,cohort_size:int,windows:list<array{days:int,retained:int,retention_rate:float}>}>
+     * @return list<array{cohort_date:string,cohort_size:int,windows:list<array{days:int,retained:int,retention_rate:float}>}>
      */
     public function getRows(): array
     {
@@ -95,8 +95,8 @@ final class RetentionReport extends Page
     {
         return [
             ...$this->getDateRangeHeaderActions(
-            app(RetentionReportService::class)->getTrackedPropertyOptions(),
-            app(SignalSegmentReportFilter::class)->getSegmentOptions(),
+                app(RetentionReportService::class)->getTrackedPropertyOptions(),
+                app(SignalSegmentReportFilter::class)->getSegmentOptions(),
             ),
             Action::make('savedRetention')
                 ->label('Saved Retention')

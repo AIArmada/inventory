@@ -63,7 +63,7 @@ class AffiliateConversionData extends Data
 
     public readonly ?string $ownerType;
 
-    public readonly string|int|null $ownerId;
+    public readonly string | int | null $ownerId;
 
     /**
      * @var array<string, mixed>|null
@@ -93,7 +93,7 @@ class AffiliateConversionData extends Data
         ?ConversionStatus $status = null,
         ?CarbonInterface $occurredAt = null,
         ?string $ownerType = null,
-        string|int|null $ownerId = null,
+        string | int | null $ownerId = null,
         ?array $metadata = null,
         ?string $subjectType = null,
         ?string $subjectTitleSnapshot = null,
@@ -175,11 +175,11 @@ class AffiliateConversionData extends Data
 
     public function getFormattedCommission(): string
     {
-        return number_format($this->commissionMinor / 100, 2).' '.$this->commissionCurrency;
+        return number_format($this->commissionMinor / 100, 2) . ' ' . $this->commissionCurrency;
     }
 
     public function getFormattedTotal(): string
     {
-        return number_format($this->totalMinor / 100, 2).' '.$this->commissionCurrency;
+        return number_format($this->totalMinor / 100, 2) . ' ' . $this->commissionCurrency;
     }
 }

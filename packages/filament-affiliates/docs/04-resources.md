@@ -70,8 +70,8 @@ Track all conversions and commissions.
 
 - Affiliate name
 - Conversion type (Sale, Lead, Click, Registration)
-- Order reference
-- Amount
+- Reference (`external_reference`)
+- Value (`value_minor`)
 - Commission (calculated)
 - Status
 - Created date
@@ -238,6 +238,17 @@ FilamentAffiliatesPlugin::make()
         // Use default for others...
     ]);
 ```
+
+## Feature-Gated Registration
+
+The plugin resolves resources from `filament-affiliates.features.admin`:
+
+- `conversions` controls `AffiliateConversionResource`
+- `payouts` controls `AffiliatePayoutResource`
+- `programs` controls `AffiliateProgramResource`
+- `fraud_monitoring` controls `AffiliateFraudSignalResource`
+
+When `affiliates.features.commission_tracking.enabled` is false, payout/program resources are automatically disabled.
 
 ## Adding Custom Columns
 

@@ -74,6 +74,10 @@ use AIArmada\Affiliates\Models\AffiliateAttribution;
 |-----------|------|-------------|
 | `affiliate_id` | uuid | The credited affiliate |
 | `affiliate_code` | string | Code used at time of attribution |
+| `subject_type` | string | Neutral subject type (`product`, `order`, etc.) |
+| `subject_identifier` | string | Neutral subject identifier |
+| `subject_instance` | string | Neutral subject instance/context |
+| `subject_title_snapshot` | string | Snapshot title for subject at attribution time |
 | `cart_identifier` | string | Cart session identifier |
 | `cart_instance` | string | Cart instance name |
 | `cookie_value` | string | Tracking cookie value |
@@ -95,6 +99,11 @@ $attribution->conversions;  // HasMany<AffiliateConversion>
 $attribution->touchpoints;  // HasMany<AffiliateTouchpoint>
 ```
 
+Compatibility aliases are maintained for legacy cart semantics:
+
+- `subject_identifier` <-> `cart_identifier`
+- `subject_instance` <-> `cart_instance`
+
 ### AffiliateConversion
 
 Records a successful conversion (sale, signup, etc.).
@@ -110,8 +119,15 @@ use AIArmada\Affiliates\Models\AffiliateConversion;
 | `affiliate_id` | uuid | The credited affiliate |
 | `affiliate_attribution_id` | uuid | Source attribution |
 | `affiliate_payout_id` | uuid | Payout batch (if paid) |
+| `subject_type` | string | Neutral subject type |
+| `subject_identifier` | string | Neutral subject identifier |
+| `subject_instance` | string | Neutral subject instance/context |
+| `subject_title_snapshot` | string | Snapshot title for subject |
+| `external_reference` | string | Neutral external reference |
 | `order_reference` | string | External order ID |
+| `conversion_type` | string | Conversion category (`purchase`, etc.) |
 | `subtotal_minor` | int | Order subtotal in minor units |
+| `value_minor` | int | Neutral conversion value in minor units |
 | `total_minor` | int | Order total in minor units |
 | `commission_minor` | int | Commission amount in minor units |
 | `commission_currency` | string | Commission currency |
@@ -126,6 +142,13 @@ $conversion->affiliate;    // BelongsTo<Affiliate>
 $conversion->attribution;  // BelongsTo<AffiliateAttribution>
 $conversion->payout;       // BelongsTo<AffiliatePayout>
 ```
+
+Compatibility aliases are provided:
+
+- `external_reference` <-> `order_reference`
+- `value_minor` <-> `total_minor`
+- `subject_identifier` <-> `cart_identifier`
+- `subject_instance` <-> `cart_instance`
 
 ### AffiliatePayout
 

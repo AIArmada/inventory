@@ -22,7 +22,6 @@ The portal is enabled by default. Configure in `config/filament-affiliates.php`:
 
 ```php
 'portal' => [
-    'enabled' => true,
     'panel_id' => 'affiliate',
     'path' => 'affiliate',
     'brand_name' => 'Affiliate Portal',
@@ -91,7 +90,8 @@ class LinksPage extends Page
 View conversion history with:
 
 - Date/time of conversion
-- Order reference
+- Reference (`external_reference`)
+- Total value (`value_minor`)
 - Commission amount
 - Status (pending, approved, paid)
 - Filter by date range and status
@@ -282,6 +282,8 @@ Disable specific features:
     ],
 ],
 ```
+
+When `affiliates.features.commission_tracking.enabled` is false, portal payouts are automatically disabled regardless of portal feature config.
 
 ## Portal Webhooks
 

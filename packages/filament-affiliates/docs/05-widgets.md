@@ -6,6 +6,13 @@ title: Widgets
 
 The plugin provides six dashboard widgets for affiliate analytics.
 
+- `AffiliateStatsWidget`
+- `PerformanceOverviewWidget`
+- `RealTimeActivityWidget`
+- `FraudAlertWidget`
+- `PayoutQueueWidget`
+- `NetworkVisualizationWidget`
+
 ## AffiliateStatsWidget
 
 Overview statistics for affiliate performance.
@@ -51,7 +58,7 @@ FilamentAffiliatesPlugin::make()
     ]);
 ```
 
-## AffiliatePerformanceWidget
+## PerformanceOverviewWidget
 
 Chart showing affiliate performance over time.
 
@@ -64,9 +71,9 @@ Chart showing affiliate performance over time.
 ### Customization
 
 ```php
-use AIArmada\FilamentAffiliates\Widgets\AffiliatePerformanceWidget;
+use AIArmada\FilamentAffiliates\Widgets\PerformanceOverviewWidget;
 
-class AffiliatePerformanceWidget extends BaseWidget
+class PerformanceOverviewWidget extends BaseWidget
 {
     protected function getData(): array
     {
@@ -122,7 +129,7 @@ class FraudAlertWidget extends BaseWidget
 }
 ```
 
-## PayoutWidget
+## PayoutQueueWidget
 
 Pending payouts overview.
 
@@ -151,7 +158,7 @@ protected function getActions(): array
 }
 ```
 
-## RealTimeWidget
+## RealTimeActivityWidget
 
 Live conversion tracking (Livewire polling).
 
@@ -165,9 +172,9 @@ Live conversion tracking (Livewire polling).
 ### Configuration
 
 ```php
-use AIArmada\FilamentAffiliates\Widgets\RealTimeWidget;
+use AIArmada\FilamentAffiliates\Widgets\RealTimeActivityWidget;
 
-class RealTimeWidget extends BaseWidget
+class RealTimeActivityWidget extends BaseWidget
 {
     // Poll interval in seconds
     protected static string $pollingInterval = '10s';
@@ -184,7 +191,7 @@ class RealTimeWidget extends BaseWidget
 }
 ```
 
-## NetworkWidget
+## NetworkVisualizationWidget
 
 MLM/Network structure visualization.
 
@@ -198,9 +205,9 @@ MLM/Network structure visualization.
 ### Customization
 
 ```php
-use AIArmada\FilamentAffiliates\Widgets\NetworkWidget;
+use AIArmada\FilamentAffiliates\Widgets\NetworkVisualizationWidget;
 
-class NetworkWidget extends BaseWidget
+class NetworkVisualizationWidget extends BaseWidget
 {
     // Maximum depth to display
     protected int $maxDepth = 5;
@@ -228,11 +235,20 @@ use AIArmada\FilamentAffiliates\Widgets;
 FilamentAffiliatesPlugin::make()
     ->widgets([
         Widgets\AffiliateStatsWidget::class,
-        Widgets\AffiliatePerformanceWidget::class,
+        Widgets\PerformanceOverviewWidget::class,
         Widgets\FraudAlertWidget::class,
-        Widgets\PayoutWidget::class,
+        Widgets\PayoutQueueWidget::class,
     ]);
 ```
+
+## Real-Time Activity Columns
+
+The live activity table uses neutral conversion fields:
+
+- `external_reference` (`Reference`)
+- `value_minor` (`Value`)
+
+and polls every 10 seconds.
 
 ### On Dashboard
 
