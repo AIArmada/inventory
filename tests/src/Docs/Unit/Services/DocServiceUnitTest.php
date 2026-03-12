@@ -10,7 +10,6 @@ use AIArmada\Docs\States\Draft;
 use AIArmada\Docs\States\Sent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-use Spatie\Browsershot\Browsershot;
 use Spatie\LaravelPdf\Facades\Pdf;
 use Spatie\LaravelPdf\PdfBuilder;
 
@@ -32,15 +31,12 @@ test('generatePdf creates and stores pdf', function (): void {
     ]);
 
     // Mock PDF Facade
-    $browsershotMock = Mockery::mock(Browsershot::class);
-    $browsershotMock->shouldReceive('showBackground')->andReturnSelf();
-    $browsershotMock->shouldReceive('pdf')->andReturn('PDF CONTENT');
-
     $pdfBuilderMock = Mockery::mock(PdfBuilder::class);
     $pdfBuilderMock->shouldReceive('format')->andReturnSelf();
     $pdfBuilderMock->shouldReceive('orientation')->andReturnSelf();
     $pdfBuilderMock->shouldReceive('margins')->andReturnSelf();
-    $pdfBuilderMock->shouldReceive('getBrowsershot')->andReturn($browsershotMock);
+    $pdfBuilderMock->shouldReceive('withBrowsershot')->andReturnSelf();
+    $pdfBuilderMock->shouldReceive('generatePdfContent')->andReturn('PDF CONTENT');
 
     Pdf::shouldReceive('view')
         ->once()
@@ -65,15 +61,12 @@ test('generatePdf sanitizes doc_number to prevent path traversal', function (): 
     ]);
 
     // Mock PDF Facade
-    $browsershotMock = Mockery::mock(Browsershot::class);
-    $browsershotMock->shouldReceive('showBackground')->andReturnSelf();
-    $browsershotMock->shouldReceive('pdf')->andReturn('PDF CONTENT');
-
     $pdfBuilderMock = Mockery::mock(PdfBuilder::class);
     $pdfBuilderMock->shouldReceive('format')->andReturnSelf();
     $pdfBuilderMock->shouldReceive('orientation')->andReturnSelf();
     $pdfBuilderMock->shouldReceive('margins')->andReturnSelf();
-    $pdfBuilderMock->shouldReceive('getBrowsershot')->andReturn($browsershotMock);
+    $pdfBuilderMock->shouldReceive('withBrowsershot')->andReturnSelf();
+    $pdfBuilderMock->shouldReceive('generatePdfContent')->andReturn('PDF CONTENT');
 
     Pdf::shouldReceive('view')->andReturn($pdfBuilderMock);
 
@@ -115,15 +108,12 @@ test('downloadPdf generates pdf if missing', function (): void {
     // File content missing in storage
 
     // Mock PDF Facade
-    $browsershotMock = Mockery::mock(Browsershot::class);
-    $browsershotMock->shouldReceive('showBackground')->andReturnSelf();
-    $browsershotMock->shouldReceive('pdf')->andReturn('PDF CONTENT');
-
     $pdfBuilderMock = Mockery::mock(PdfBuilder::class);
     $pdfBuilderMock->shouldReceive('format')->andReturnSelf();
     $pdfBuilderMock->shouldReceive('orientation')->andReturnSelf();
     $pdfBuilderMock->shouldReceive('margins')->andReturnSelf();
-    $pdfBuilderMock->shouldReceive('getBrowsershot')->andReturn($browsershotMock);
+    $pdfBuilderMock->shouldReceive('withBrowsershot')->andReturnSelf();
+    $pdfBuilderMock->shouldReceive('generatePdfContent')->andReturn('PDF CONTENT');
 
     Pdf::shouldReceive('view')->andReturn($pdfBuilderMock);
 

@@ -413,15 +413,16 @@ final class DocService implements DocServiceInterface
 
         // Ensure backgrounds (colors, gradients) are printed
         if (! empty($opts['print_background'])) {
-            // Call on underlying Browsershot instance
-            $pdf->getBrowsershot()->showBackground();
+            $pdf->withBrowsershot(static function ($browsershot): void {
+                $browsershot->showBackground();
+            });
         }
 
         if ($save) {
             $path = $this->generatePdfPath($doc);
             $disk = $this->resolveStorageDisk($docType);
 
-            Storage::disk($disk)->put($path, $pdf->getBrowsershot()->pdf());
+            Storage::disk($disk)->put($path, $pdf->generatePdfContent());
 
             $doc->update(['pdf_path' => $path]);
 
@@ -429,7 +430,7 @@ final class DocService implements DocServiceInterface
             return $path;
         }
 
-        return $pdf->getBrowsershot()->pdf();
+        return $pdf->generatePdfContent();
     }
 
     /**
