@@ -60,7 +60,7 @@ use Illuminate\Support\Carbon;
  */
 final class InventoryLevel extends Model
 {
-    /** @use HasFactory<\AIArmada\Inventory\Database\Factories\InventoryLevelFactory> */
+    /** @use HasFactory<InventoryLevelFactory> */
     use HasFactory;
 
     use HasOwner;

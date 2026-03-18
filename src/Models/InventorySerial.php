@@ -6,6 +6,7 @@ namespace AIArmada\Inventory\Models;
 
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
+use AIArmada\Inventory\Database\Factories\InventorySerialFactory;
 use AIArmada\Inventory\Enums\SerialCondition;
 use AIArmada\Inventory\States\Available;
 use AIArmada\Inventory\States\Reserved;
@@ -13,6 +14,7 @@ use AIArmada\Inventory\States\SerialStatus;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -58,11 +60,11 @@ use Spatie\ModelStates\HasStates;
  * @property-read InventoryBatch|null $batch
  * @property-read Model $inventoryable
  * @property-read Model|null $assignedTo
- * @property-read \Illuminate\Database\Eloquent\Collection<int, InventorySerialHistory> $history
+ * @property-read Collection<int, InventorySerialHistory> $history
  */
 final class InventorySerial extends Model
 {
-    /** @use HasFactory<\AIArmada\Inventory\Database\Factories\InventorySerialFactory> */
+    /** @use HasFactory<InventorySerialFactory> */
     use HasFactory;
 
     use HasOwner;
@@ -452,9 +454,9 @@ final class InventorySerial extends Model
     /**
      * Create a new factory instance for the model.
      */
-    protected static function newFactory(): \AIArmada\Inventory\Database\Factories\InventorySerialFactory
+    protected static function newFactory(): InventorySerialFactory
     {
-        return \AIArmada\Inventory\Database\Factories\InventorySerialFactory::new();
+        return InventorySerialFactory::new();
     }
 
     /**

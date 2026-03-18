@@ -7,16 +7,18 @@ namespace AIArmada\Inventory\Models;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\CostingMethod;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
  * @property string|null $location_id
  * @property CostingMethod $costing_method
- * @property \Illuminate\Support\Carbon $snapshot_date
+ * @property Carbon $snapshot_date
  * @property int $total_quantity
  * @property int $total_value_minor
  * @property int $average_unit_cost_minor
@@ -25,8 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $variance_from_previous_minor
  * @property array<string, mixed>|null $breakdown
  * @property array<string, mixed>|null $metadata
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read InventoryLocation|null $location
  */
 class InventoryValuationSnapshot extends Model
@@ -68,41 +70,41 @@ class InventoryValuationSnapshot extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeForLocation(\Illuminate\Database\Eloquent\Builder $query, string $locationId): \Illuminate\Database\Eloquent\Builder
+    public function scopeForLocation(Builder $query, string $locationId): Builder
     {
         return $query->where('location_id', $locationId);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeAllLocations(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeAllLocations(Builder $query): Builder
     {
         return $query->whereNull('location_id');
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeUsingMethod(\Illuminate\Database\Eloquent\Builder $query, CostingMethod $method): \Illuminate\Database\Eloquent\Builder
+    public function scopeUsingMethod(Builder $query, CostingMethod $method): Builder
     {
         return $query->where('costing_method', $method->value);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeOnDate(\Illuminate\Database\Eloquent\Builder $query, \Illuminate\Support\Carbon $date): \Illuminate\Database\Eloquent\Builder
+    public function scopeOnDate(Builder $query, Carbon $date): Builder
     {
         return $query->whereDate('snapshot_date', $date);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeBetweenDates(\Illuminate\Database\Eloquent\Builder $query, \Illuminate\Support\Carbon $from, \Illuminate\Support\Carbon $to): \Illuminate\Database\Eloquent\Builder
+    public function scopeBetweenDates(Builder $query, Carbon $from, Carbon $to): Builder
     {
         return $query->whereBetween('snapshot_date', [$from, $to]);
     }
@@ -110,9 +112,9 @@ class InventoryValuationSnapshot extends Model
     /**
      * Order by snapshot_date descending (most recent first).
      *
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeLatestBySnapshotDate(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeLatestBySnapshotDate(Builder $query): Builder
     {
         return $query->orderBy('snapshot_date', 'desc');
     }

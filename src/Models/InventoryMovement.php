@@ -51,7 +51,7 @@ use Illuminate\Support\Carbon;
  */
 final class InventoryMovement extends Model
 {
-    /** @use HasFactory<\AIArmada\Inventory\Database\Factories\InventoryMovementFactory> */
+    /** @use HasFactory<InventoryMovementFactory> */
     use HasFactory;
 
     use HasOwner;

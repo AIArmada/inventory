@@ -14,7 +14,9 @@ use AIArmada\Inventory\States\Fulfilled;
 use AIArmada\Inventory\States\PartiallyFulfilled;
 use AIArmada\Inventory\States\Pending;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -36,14 +38,14 @@ use Spatie\ModelStates\HasStates;
  * @property int $quantity_cancelled
  * @property BackorderStatus $status
  * @property BackorderPriority $priority
- * @property \Carbon\CarbonInterface|null $requested_at
- * @property \Carbon\CarbonInterface|null $promised_at
- * @property \Carbon\CarbonInterface|null $fulfilled_at
- * @property \Carbon\CarbonInterface|null $cancelled_at
+ * @property CarbonInterface|null $requested_at
+ * @property CarbonInterface|null $promised_at
+ * @property CarbonInterface|null $fulfilled_at
+ * @property CarbonInterface|null $cancelled_at
  * @property string|null $notes
  * @property array<string, mixed>|null $metadata
- * @property \Carbon\CarbonInterface|null $created_at
- * @property \Carbon\CarbonInterface|null $updated_at
+ * @property CarbonInterface|null $created_at
+ * @property CarbonInterface|null $updated_at
  * @property-read Model $inventoryable
  * @property-read InventoryLocation|null $location
  */
@@ -160,9 +162,9 @@ class InventoryBackorder extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeOpen(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeOpen(Builder $query): Builder
     {
         return $query->whereIn('status', [
             BackorderStatus::normalize(Pending::class),
@@ -171,34 +173,34 @@ class InventoryBackorder extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopePending(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopePending(Builder $query): Builder
     {
         return $query->where('status', BackorderStatus::normalize(Pending::class));
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeByPriority(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeByPriority(Builder $query): Builder
     {
         return $query->orderByRaw("CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 WHEN 'low' THEN 4 ELSE 5 END");
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeForModel(\Illuminate\Database\Eloquent\Builder $query, Model $model): \Illuminate\Database\Eloquent\Builder
+    public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeOverdue(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeOverdue(Builder $query): Builder
     {
         return $query->open()
             ->whereNotNull('promised_at')
@@ -206,9 +208,9 @@ class InventoryBackorder extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeDueWithin(\Illuminate\Database\Eloquent\Builder $query, int $days): \Illuminate\Database\Eloquent\Builder
+    public function scopeDueWithin(Builder $query, int $days): Builder
     {
         return $query->open()
             ->whereNotNull('promised_at')

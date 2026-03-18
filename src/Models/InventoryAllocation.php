@@ -37,7 +37,7 @@ use Illuminate\Support\Carbon;
  */
 final class InventoryAllocation extends Model
 {
-    /** @use HasFactory<\AIArmada\Inventory\Database\Factories\InventoryAllocationFactory> */
+    /** @use HasFactory<InventoryAllocationFactory> */
     use HasFactory;
 
     use HasOwner;

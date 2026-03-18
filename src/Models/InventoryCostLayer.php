@@ -9,11 +9,13 @@ use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -30,9 +32,9 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string $currency
  * @property string|null $reference
  * @property CostingMethod $costing_method
- * @property \Illuminate\Support\Carbon $layer_date
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon $layer_date
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read int $units
  * @property-read int $value
  * @property-read Model $inventoryable
@@ -183,42 +185,42 @@ class InventoryCostLayer extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeWithRemainingQuantity(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeWithRemainingQuantity(Builder $query): Builder
     {
         return $query->where('remaining_quantity', '>', 0);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeForModel(\Illuminate\Database\Eloquent\Builder $query, Model $model): \Illuminate\Database\Eloquent\Builder
+    public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeFifoOrder(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeFifoOrder(Builder $query): Builder
     {
         return $query->orderBy('layer_date', 'asc')->orderBy('created_at', 'asc');
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeLifoOrder(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeLifoOrder(Builder $query): Builder
     {
         return $query->orderBy('layer_date', 'desc')->orderBy('created_at', 'desc');
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeUsingMethod(\Illuminate\Database\Eloquent\Builder $query, CostingMethod $method): \Illuminate\Database\Eloquent\Builder
+    public function scopeUsingMethod(Builder $query, CostingMethod $method): Builder
     {
         return $query->where('costing_method', $method->value);
     }

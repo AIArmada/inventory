@@ -8,10 +8,12 @@ use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -21,13 +23,13 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int|string|null $owner_id
  * @property int $standard_cost_minor
  * @property string $currency
- * @property \Illuminate\Support\Carbon $effective_from
- * @property \Illuminate\Support\Carbon|null $effective_to
+ * @property Carbon $effective_from
+ * @property Carbon|null $effective_to
  * @property string|null $approved_by
  * @property string|null $notes
  * @property array<string, mixed>|null $metadata
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read Model $inventoryable
  */
 class InventoryStandardCost extends Model
@@ -96,18 +98,18 @@ class InventoryStandardCost extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeForModel(\Illuminate\Database\Eloquent\Builder $query, Model $model): \Illuminate\Database\Eloquent\Builder
+    public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeCurrent(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeCurrent(Builder $query): Builder
     {
         return $query->where('effective_from', '<=', now())
             ->where(function ($q): void {
@@ -117,9 +119,9 @@ class InventoryStandardCost extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeEffectiveAt(\Illuminate\Database\Eloquent\Builder $query, \Illuminate\Support\Carbon $date): \Illuminate\Database\Eloquent\Builder
+    public function scopeEffectiveAt(Builder $query, Carbon $date): Builder
     {
         return $query->where('effective_from', '<=', $date)
             ->where(function ($q) use ($date): void {
@@ -129,17 +131,17 @@ class InventoryStandardCost extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeFuture(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeFuture(Builder $query): Builder
     {
         return $query->where('effective_from', '>', now());
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeExpired(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeExpired(Builder $query): Builder
     {
         return $query->whereNotNull('effective_to')
             ->where('effective_to', '<=', now());

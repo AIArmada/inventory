@@ -9,6 +9,7 @@ use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryCostLayer;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -261,9 +262,9 @@ final class FifoCostService
     /**
      * Get all active layers for a model.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, InventoryCostLayer>
+     * @return Collection<int, InventoryCostLayer>
      */
-    public function getActiveLayers(Model $model, ?string $locationId = null): \Illuminate\Database\Eloquent\Collection
+    public function getActiveLayers(Model $model, ?string $locationId = null): Collection
     {
         $query = InventoryCostLayer::query()
             ->forModel($model)

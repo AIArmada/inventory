@@ -8,6 +8,7 @@ use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\ValuationService;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Model;
@@ -58,7 +59,7 @@ final class CreateValuationSnapshotCommand extends Command
             $this->info('Location: All locations');
         }
 
-        if (\AIArmada\Inventory\Support\InventoryOwnerScope::isEnabled() && OwnerContext::resolve() === null) {
+        if (InventoryOwnerScope::isEnabled() && OwnerContext::resolve() === null) {
             if ($locationId !== null) {
                 $location = InventoryLocation::query()
                     ->withoutOwnerScope()

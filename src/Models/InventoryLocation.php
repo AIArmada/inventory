@@ -60,7 +60,7 @@ use Illuminate\Support\Carbon;
  */
 final class InventoryLocation extends Model
 {
-    /** @use HasFactory<\AIArmada\Inventory\Database\Factories\InventoryLocationFactory> */
+    /** @use HasFactory<InventoryLocationFactory> */
     use HasFactory;
 
     use HasLocationHierarchy;

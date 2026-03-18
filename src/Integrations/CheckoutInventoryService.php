@@ -10,6 +10,8 @@ use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Services\InventoryAllocationService;
 use AIArmada\Inventory\Services\InventoryService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use AIArmada\Products\Models\Product;
+use AIArmada\Products\Models\Variant;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 use RuntimeException;
@@ -239,7 +241,7 @@ final class CheckoutInventoryService implements CheckoutInventoryServiceInterfac
         return config('inventory.models.product')
             ?? config('checkout.models.product')
             ?? config('products.models.product')
-            ?? \AIArmada\Products\Models\Product::class;
+            ?? Product::class;
     }
 
     /**
@@ -250,7 +252,7 @@ final class CheckoutInventoryService implements CheckoutInventoryServiceInterfac
         return config('inventory.models.variant')
             ?? config('checkout.models.variant')
             ?? config('products.models.variant')
-            ?? \AIArmada\Products\Models\Variant::class;
+            ?? Variant::class;
     }
 
     /**

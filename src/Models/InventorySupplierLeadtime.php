@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -30,11 +31,11 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string $currency
  * @property bool $is_primary
  * @property bool $is_active
- * @property \Illuminate\Support\Carbon|null $last_order_at
- * @property \Illuminate\Support\Carbon|null $last_received_at
+ * @property Carbon|null $last_order_at
+ * @property Carbon|null $last_received_at
  * @property array<string, mixed>|null $metadata
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read Model $inventoryable
  */
 class InventorySupplierLeadtime extends Model
@@ -128,42 +129,42 @@ class InventorySupplierLeadtime extends Model
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeForModel(\Illuminate\Database\Eloquent\Builder $query, Model $model): \Illuminate\Database\Eloquent\Builder
+    public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeActive(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopePrimary(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopePrimary(Builder $query): Builder
     {
         return $query->where('is_primary', true);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeOrderedByLeadTime(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeOrderedByLeadTime(Builder $query): Builder
     {
         return $query->orderBy('lead_time_days', 'asc');
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
-    public function scopeOrderedByCost(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeOrderedByCost(Builder $query): Builder
     {
         return $query->orderBy('unit_cost_minor', 'asc');
     }
