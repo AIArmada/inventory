@@ -48,6 +48,8 @@ jobs:
           - products
           - promotions
           - shipping
+          - signals
+          - filament-signals
           - tax
           - vouchers
 
