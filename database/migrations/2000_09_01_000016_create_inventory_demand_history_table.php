@@ -25,7 +25,7 @@ return new class extends Migration
             $table->integer('quantity_fulfilled');
             $table->integer('quantity_lost')->default(0);
             $table->integer('order_count')->default(0);
-            $jsonType = config('inventory.database.json_column_type', 'json');
+            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'json'));
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
             $table->timestamps();

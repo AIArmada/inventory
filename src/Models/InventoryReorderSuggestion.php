@@ -62,8 +62,6 @@ class InventoryReorderSuggestion extends Model
         'inventoryable_id',
         'location_id',
         'supplier_leadtime_id',
-        'owner_type',
-        'owner_id',
         'status',
         'current_stock',
         'reorder_point',
@@ -148,7 +146,7 @@ class InventoryReorderSuggestion extends Model
 
     public function getTable(): string
     {
-        return config('inventory.table_names.reorder_suggestions', 'inventory_reorder_suggestions');
+        return config('inventory.database.tables.reorder_suggestions', 'inventory_reorder_suggestions');
     }
 
     /**

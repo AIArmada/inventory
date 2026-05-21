@@ -63,8 +63,6 @@ class InventoryBackorder extends Model
         'inventoryable_type',
         'inventoryable_id',
         'location_id',
-        'owner_type',
-        'owner_id',
         'order_id',
         'customer_id',
         'quantity_requested',
@@ -142,7 +140,7 @@ class InventoryBackorder extends Model
 
     public function getTable(): string
     {
-        return config('inventory.table_names.backorders', 'inventory_backorders');
+        return config('inventory.database.tables.backorders', 'inventory_backorders');
     }
 
     /**

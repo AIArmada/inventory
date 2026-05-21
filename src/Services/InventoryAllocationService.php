@@ -590,13 +590,13 @@ final class InventoryAllocationService
         return match ($strategy) {
             AllocationStrategy::Priority => $query
                 ->join(
-                    config('inventory.table_names.locations', 'inventory_locations'),
-                    config('inventory.table_names.levels', 'inventory_levels') . '.location_id',
+                    config('inventory.database.tables.locations', 'inventory_locations'),
+                    config('inventory.database.tables.levels', 'inventory_levels') . '.location_id',
                     '=',
-                    config('inventory.table_names.locations', 'inventory_locations') . '.id'
+                    config('inventory.database.tables.locations', 'inventory_locations') . '.id'
                 )
-                ->orderByDesc(config('inventory.table_names.locations', 'inventory_locations') . '.priority')
-                ->select(config('inventory.table_names.levels', 'inventory_levels') . '.*')
+                ->orderByDesc(config('inventory.database.tables.locations', 'inventory_locations') . '.priority')
+                ->select(config('inventory.database.tables.levels', 'inventory_levels') . '.*')
                 ->get(),
 
             AllocationStrategy::FIFO => $query
@@ -610,13 +610,13 @@ final class InventoryAllocationService
 
             AllocationStrategy::SingleLocation => $query
                 ->join(
-                    config('inventory.table_names.locations', 'inventory_locations'),
-                    config('inventory.table_names.levels', 'inventory_levels') . '.location_id',
+                    config('inventory.database.tables.locations', 'inventory_locations'),
+                    config('inventory.database.tables.levels', 'inventory_levels') . '.location_id',
                     '=',
-                    config('inventory.table_names.locations', 'inventory_locations') . '.id'
+                    config('inventory.database.tables.locations', 'inventory_locations') . '.id'
                 )
-                ->orderByDesc(config('inventory.table_names.locations', 'inventory_locations') . '.priority')
-                ->select(config('inventory.table_names.levels', 'inventory_levels') . '.*')
+                ->orderByDesc(config('inventory.database.tables.locations', 'inventory_locations') . '.priority')
+                ->select(config('inventory.database.tables.levels', 'inventory_levels') . '.*')
                 ->get(),
         };
     }

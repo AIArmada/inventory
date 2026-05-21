@@ -31,7 +31,7 @@ return new class extends Migration
             $table->boolean('is_active')->default(true);
             $table->timestamp('last_order_at')->nullable();
             $table->timestamp('last_received_at')->nullable();
-            $jsonType = config('inventory.database.json_column_type', 'json');
+            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'json'));
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
             $table->timestamps();

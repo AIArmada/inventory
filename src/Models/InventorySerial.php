@@ -86,8 +86,6 @@ final class InventorySerial extends Model
         'sku',
         'location_id',
         'batch_id',
-        'owner_type',
-        'owner_id',
         'status',
         'condition',
         'unit_cost_minor',
@@ -112,7 +110,7 @@ final class InventorySerial extends Model
      */
     public function getTable(): string
     {
-        return config('inventory.table_names.serials', 'inventory_serials');
+        return config('inventory.database.tables.serials', 'inventory_serials');
     }
 
     /**

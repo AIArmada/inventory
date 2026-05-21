@@ -50,8 +50,6 @@ class InventorySupplierLeadtime extends Model
     protected $fillable = [
         'inventoryable_type',
         'inventoryable_id',
-        'owner_type',
-        'owner_id',
         'supplier_id',
         'supplier_name',
         'lead_time_days',
@@ -117,7 +115,7 @@ class InventorySupplierLeadtime extends Model
 
     public function getTable(): string
     {
-        return config('inventory.table_names.supplier_leadtimes', 'inventory_supplier_leadtimes');
+        return config('inventory.database.tables.supplier_leadtimes', 'inventory_supplier_leadtimes');
     }
 
     /**

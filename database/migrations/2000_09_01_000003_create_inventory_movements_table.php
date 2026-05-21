@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create(config('inventory.table_names.movements', 'inventory_movements'), function (Blueprint $table): void {
+        Schema::create(config('inventory.database.tables.movements', 'inventory_movements'), function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuidMorphs('inventoryable');
             $table->foreignUuid('from_location_id')->nullable();
@@ -48,6 +48,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists(config('inventory.table_names.movements', 'inventory_movements'));
+        Schema::dropIfExists(config('inventory.database.tables.movements', 'inventory_movements'));
     }
 };

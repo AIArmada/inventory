@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Console;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\CommerceSupport\Support\OwnerTuple\OwnerTupleColumns;
+use AIArmada\CommerceSupport\Support\OwnerTuple\OwnerTupleParser;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\InventoryAllocationService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Console\Command;
-use Illuminate\Database\Eloquent\Model;
 
 final class CleanupExpiredAllocationsCommand extends Command
 {
@@ -42,6 +43,8 @@ final class CleanupExpiredAllocationsCommand extends Command
                 ->distinct()
                 ->get();
 
+            $ownerTupleColumns = OwnerTupleColumns::forModelClass(InventoryLocation::class);
+
             if ($owners->isEmpty()) {
                 $this->processScoped($allocationService, (bool) $isDryRun);
 
@@ -49,7 +52,8 @@ final class CleanupExpiredAllocationsCommand extends Command
             }
 
             foreach ($owners as $row) {
-                $owner = $this->resolveOwnerFromRow($row);
+                $ownerTuple = OwnerTupleParser::fromRow($row, $ownerTupleColumns);
+                $owner = $ownerTuple->toOwnerModel();
 
                 OwnerContext::withOwner($owner, function () use ($allocationService, $isDryRun): void {
                     $this->processScoped($allocationService, (bool) $isDryRun);
@@ -85,16 +89,5 @@ final class CleanupExpiredAllocationsCommand extends Command
             : $allocationService->cleanupExpiredGlobal();
 
         $this->info("Cleaned up {$count} expired allocations.");
-    }
-
-    private function resolveOwnerFromRow(object $row): ?Model
-    {
-        $ownerType = $row->owner_type ?? null;
-        $ownerId = $row->owner_id ?? null;
-
-        return OwnerContext::fromTypeAndId(
-            is_string($ownerType) ? $ownerType : null,
-            is_string($ownerId) || is_int($ownerId) ? $ownerId : null
-        );
     }
 }

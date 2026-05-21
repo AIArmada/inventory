@@ -41,8 +41,6 @@ class InventoryValuationSnapshot extends Model
     protected static string $ownerScopeConfigKey = 'inventory.owner';
 
     protected $fillable = [
-        'owner_type',
-        'owner_id',
         'location_id',
         'costing_method',
         'snapshot_date',
@@ -58,7 +56,7 @@ class InventoryValuationSnapshot extends Model
 
     public function getTable(): string
     {
-        return config('inventory.table_names.valuation_snapshots', 'inventory_valuation_snapshots');
+        return config('inventory.database.tables.valuation_snapshots', 'inventory_valuation_snapshots');
     }
 
     /**

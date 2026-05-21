@@ -63,7 +63,7 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 'owner' => [
     'enabled' => env('INVENTORY_OWNER_ENABLED', false),
     'include_global' => env('INVENTORY_OWNER_INCLUDE_GLOBAL', false),
-    'auto_assign_on_create' => env('INVENTORY_OWNER_AUTO_ASSIGN', true),
+    'auto_assign_on_create' => env('INVENTORY_OWNER_AUTO_ASSIGN_ON_CREATE', true),
 ],
 ```
 
@@ -162,7 +162,7 @@ INVENTORY_ALLOW_SPLIT=true
 # Multi-Tenancy
 INVENTORY_OWNER_ENABLED=false
 INVENTORY_OWNER_INCLUDE_GLOBAL=false
-INVENTORY_OWNER_AUTO_ASSIGN=true
+INVENTORY_OWNER_AUTO_ASSIGN_ON_CREATE=true
 
 # Cart
 INVENTORY_CART_ENABLED=true

@@ -72,8 +72,6 @@ final class InventoryMovement extends Model
         'from_location_id',
         'to_location_id',
         'batch_id',
-        'owner_type',
-        'owner_id',
         'quantity',
         'type',
         'reason',
@@ -88,7 +86,7 @@ final class InventoryMovement extends Model
      */
     public function getTable(): string
     {
-        return config('inventory.table_names.movements', 'inventory_movements');
+        return config('inventory.database.tables.movements', 'inventory_movements');
     }
 
     /**

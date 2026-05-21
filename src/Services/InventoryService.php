@@ -49,20 +49,6 @@ use InvalidArgumentException;
 final class InventoryService
 {
     /**
-     * Cached availability data keyed by model identity.
-     *
-     * @var array<string, array<string, int>>
-     */
-    private array $availabilityCache = [];
-
-    /**
-     * Cached total available quantities keyed by model identity.
-     *
-     * @var array<string, int>
-     */
-    private array $totalAvailableCache = [];
-
-    /**
      * Receive inventory at a location.
      *
      * Creates an inventory level record if one doesn't exist, increments
@@ -305,23 +291,18 @@ final class InventoryService
      */
     public function getAvailability(Model $model): array
     {
-        $cacheKey = $this->availabilityCacheKey($model);
         $scope = $this->ownerScope();
 
-        if (! isset($this->availabilityCache[$cacheKey])) {
-            $this->availabilityCache[$cacheKey] = InventoryLevel::query()
-                ->where('inventoryable_type', $model->getMorphClass())
-                ->where('inventoryable_id', $model->getKey())
-                ->whereHas('location', function (Builder $query) use ($scope): void {
-                    $query->where('is_active', true);
-                    $this->applyOwnerScopeToLocationQuery($query, $scope);
-                })
-                ->get()
-                ->mapWithKeys(fn (InventoryLevel $level): array => [$level->location_id => $level->available])
-                ->toArray();
-        }
-
-        return $this->availabilityCache[$cacheKey];
+        return InventoryLevel::query()
+            ->where('inventoryable_type', $model->getMorphClass())
+            ->where('inventoryable_id', $model->getKey())
+            ->whereHas('location', function (Builder $query) use ($scope): void {
+                $query->where('is_active', true);
+                $this->applyOwnerScopeToLocationQuery($query, $scope);
+            })
+            ->get()
+            ->mapWithKeys(fn (InventoryLevel $level): array => [$level->location_id => $level->available])
+            ->toArray();
     }
 
     /**
@@ -332,22 +313,17 @@ final class InventoryService
      */
     public function getTotalAvailable(Model $model): int
     {
-        $cacheKey = $this->availabilityCacheKey($model);
         $scope = $this->ownerScope();
 
-        if (! isset($this->totalAvailableCache[$cacheKey])) {
-            $this->totalAvailableCache[$cacheKey] = InventoryLevel::query()
-                ->where('inventoryable_type', $model->getMorphClass())
-                ->where('inventoryable_id', $model->getKey())
-                ->whereHas('location', function (Builder $query) use ($scope): void {
-                    $query->where('is_active', true);
-                    $this->applyOwnerScopeToLocationQuery($query, $scope);
-                })
-                ->get()
-                ->sum(fn (InventoryLevel $level): int => $level->available);
-        }
-
-        return $this->totalAvailableCache[$cacheKey];
+        return InventoryLevel::query()
+            ->where('inventoryable_type', $model->getMorphClass())
+            ->where('inventoryable_id', $model->getKey())
+            ->whereHas('location', function (Builder $query) use ($scope): void {
+                $query->where('is_active', true);
+                $this->applyOwnerScopeToLocationQuery($query, $scope);
+            })
+            ->get()
+            ->sum(fn (InventoryLevel $level): int => $level->available);
     }
 
     /**
@@ -386,24 +362,7 @@ final class InventoryService
      */
     public function clearCache(?Model $model = null): void
     {
-        if ($model === null) {
-            $this->availabilityCache = [];
-            $this->totalAvailableCache = [];
-        } else {
-            $modelCacheKey = $this->modelCacheKey($model);
-
-            foreach (array_keys($this->availabilityCache) as $cacheKey) {
-                if ($cacheKey === $modelCacheKey || str_starts_with($cacheKey, $modelCacheKey . '|')) {
-                    unset($this->availabilityCache[$cacheKey]);
-                }
-            }
-
-            foreach (array_keys($this->totalAvailableCache) as $cacheKey) {
-                if ($cacheKey === $modelCacheKey || str_starts_with($cacheKey, $modelCacheKey . '|')) {
-                    unset($this->totalAvailableCache[$cacheKey]);
-                }
-            }
-        }
+        // No-op: availability is derived from fresh queries to remain safe under long-lived workers.
     }
 
     /**
@@ -551,28 +510,6 @@ final class InventoryService
         $includeGlobal = $scope['includeGlobal'];
 
         OwnerQuery::applyToEloquentBuilder($query, $owner, $includeGlobal);
-    }
-
-    private function modelCacheKey(Model $model): string
-    {
-        return $model->getMorphClass() . ':' . $model->getKey();
-    }
-
-    private function availabilityCacheKey(Model $model): string
-    {
-        $cacheKey = $this->modelCacheKey($model);
-        $scope = $this->ownerScope();
-
-        if (! $scope['enabled']) {
-            return $cacheKey;
-        }
-
-        $owner = $scope['owner'];
-        $ownerKey = $owner === null
-            ? 'null'
-            : $owner->getMorphClass() . ':' . $owner->getKey();
-
-        return $cacheKey . '|owner=' . $ownerKey . '|includeGlobal=' . ($scope['includeGlobal'] ? '1' : '0');
     }
 
     /**

@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create(config('inventory.table_names.allocations', 'inventory_allocations'), function (Blueprint $table): void {
+        Schema::create(config('inventory.database.tables.allocations', 'inventory_allocations'), function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuidMorphs('inventoryable');
             $table->foreignUuid('location_id');
@@ -41,6 +41,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists(config('inventory.table_names.allocations', 'inventory_allocations'));
+        Schema::dropIfExists(config('inventory.database.tables.allocations', 'inventory_allocations'));
     }
 };

@@ -24,7 +24,7 @@ return new class extends Migration
             $table->timestamp('effective_to')->nullable();
             $table->string('approved_by')->nullable();
             $table->text('notes')->nullable();
-            $jsonType = config('inventory.database.json_column_type', 'json');
+            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'json'));
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
             $table->timestamps();

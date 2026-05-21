@@ -78,8 +78,6 @@ final class InventoryLevel extends Model
         'inventoryable_type',
         'inventoryable_id',
         'location_id',
-        'owner_type',
-        'owner_id',
         'quantity_on_hand',
         'quantity_reserved',
         'quantity_on_hand_decimal',
@@ -103,7 +101,7 @@ final class InventoryLevel extends Model
      */
     public function getTable(): string
     {
-        return config('inventory.table_names.levels', 'inventory_levels');
+        return config('inventory.database.tables.levels', 'inventory_levels');
     }
 
     /**

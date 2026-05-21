@@ -45,6 +45,11 @@ final class InventoryOwnerScope
         $owner = self::resolveOwner();
         $includeGlobal = self::includeGlobal();
 
+        if (method_exists($query->getModel(), 'scopeForOwner')) {
+            /** @phpstan-ignore-next-line dynamic scope from HasOwner trait */
+            return $query->forOwner($owner, $includeGlobal);
+        }
+
         return OwnerQuery::applyToEloquentBuilder($query, $owner, $includeGlobal);
     }
 
@@ -85,5 +90,20 @@ final class InventoryOwnerScope
     public static function isCurrentContextGlobalOnly(): bool
     {
         return self::isEnabled() && self::resolveOwner() === null;
+    }
+
+    public static function cacheKeySuffix(): string
+    {
+        if (! self::isEnabled()) {
+            return 'owner=disabled';
+        }
+
+        $owner = self::resolveOwner();
+
+        $ownerKey = $owner === null
+            ? 'null'
+            : $owner->getMorphClass() . ':' . $owner->getKey();
+
+        return 'owner=' . $ownerKey . '|includeGlobal=' . (self::includeGlobal() ? '1' : '0');
     }
 }

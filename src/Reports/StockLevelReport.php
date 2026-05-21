@@ -319,7 +319,7 @@ final class StockLevelReport
     public function getDeadStock(int $daysThreshold = 90, int $limit = 50): Collection
     {
         $cutoffDate = CarbonImmutable::now()->subDays($daysThreshold);
-        $tableName = config('inventory.table_names.levels', 'inventory_levels');
+        $tableName = config('inventory.database.tables.levels', 'inventory_levels');
 
         $query = InventoryLevel::query()
             ->select([

@@ -178,8 +178,8 @@ final class DeductInventoryFromOrder
             ->orderByDesc(
                 InventoryLevel::query()
                     ->selectRaw('priority')
-                    ->from(config('inventory.table_names.locations', 'inventory_locations'))
-                    ->whereColumn('id', config('inventory.table_names.levels', 'inventory_levels') . '.location_id')
+                    ->from(config('inventory.database.tables.locations', 'inventory_locations'))
+                    ->whereColumn('id', config('inventory.database.tables.levels', 'inventory_levels') . '.location_id')
                     ->limit(1)
             )
             ->first();

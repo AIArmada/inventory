@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Listeners;
 
+use AIArmada\Cashier\Events\PaymentSucceeded as CashierPaymentSucceeded;
+use AIArmada\CashierChip\Events\PaymentSucceeded as CashierChipPaymentSucceeded;
+use AIArmada\Inventory\Contracts\ProvidesInventoryCommitContext;
 use AIArmada\Inventory\Services\InventoryAllocationService;
 
 final class CommitInventoryOnPayment
@@ -30,35 +33,23 @@ final class CommitInventoryOnPayment
      */
     private function getCartIdentifier(object $event): ?string
     {
-        // Try common property names
-        $properties = ['cartId', 'cart_id', 'cartIdentifier', 'cart_identifier'];
-
-        foreach ($properties as $prop) {
-            if (property_exists($event, $prop) && $event->{$prop} !== null) {
-                return (string) $event->{$prop};
-            }
+        if ($event instanceof ProvidesInventoryCommitContext) {
+            return $event->inventoryCartId();
         }
 
-        // Try to get from cart object
-        if (property_exists($event, 'cart')) {
-            $cart = $event->cart;
+        if ($event instanceof CashierPaymentSucceeded) {
+            $metadataKey = config('cashier.cart.metadata_key', 'cart_id');
+            $metadata = $event->metadata();
 
-            if (method_exists($cart, 'getId') && $cart->getId() !== null) {
-                return (string) $cart->getId();
-            }
+            $cartId = $metadata[$metadataKey] ?? null;
 
-            if (method_exists($cart, 'getIdentifier') && method_exists($cart, 'instance')) {
-                return sprintf('%s_%s', $cart->getIdentifier(), $cart->instance());
-            }
+            return is_string($cartId) && $cartId !== '' ? $cartId : null;
         }
 
-        // Try to get from payment/purchase object
-        if (property_exists($event, 'payment') && property_exists($event->payment, 'cart_id')) {
-            return $event->payment->cart_id;
-        }
+        if ($event instanceof CashierChipPaymentSucceeded) {
+            $cartId = $event->metadata()['cart_id'] ?? null;
 
-        if (property_exists($event, 'purchase') && property_exists($event->purchase, 'cart_id')) {
-            return $event->purchase->cart_id;
+            return is_string($cartId) && $cartId !== '' ? $cartId : null;
         }
 
         return null;
@@ -69,38 +60,21 @@ final class CommitInventoryOnPayment
      */
     private function getOrderReference(object $event): ?string
     {
-        // Try common property names
-        $properties = ['orderId', 'order_id', 'orderReference', 'order_reference', 'reference'];
-
-        foreach ($properties as $prop) {
-            if (property_exists($event, $prop) && $event->{$prop} !== null) {
-                return (string) $event->{$prop};
-            }
+        if ($event instanceof ProvidesInventoryCommitContext) {
+            return $event->inventoryOrderReference();
         }
 
-        // Try to get from payment/purchase object
-        if (property_exists($event, 'payment')) {
-            $payment = $event->payment;
+        if ($event instanceof CashierPaymentSucceeded) {
+            $metadataKey = config('cashier.cart.order_id_key', 'order_id');
+            $metadata = $event->metadata();
 
-            if (property_exists($payment, 'order_id')) {
-                return $payment->order_id;
-            }
+            $orderReference = $metadata[$metadataKey] ?? $event->payment->id();
 
-            if (property_exists($payment, 'reference')) {
-                return $payment->reference;
-            }
-
-            if (method_exists($payment, 'getKey')) {
-                return (string) $payment->getKey();
-            }
+            return is_string($orderReference) && $orderReference !== '' ? $orderReference : null;
         }
 
-        if (property_exists($event, 'purchase')) {
-            $purchase = $event->purchase;
-
-            if (method_exists($purchase, 'getKey')) {
-                return (string) $purchase->getKey();
-            }
+        if ($event instanceof CashierChipPaymentSucceeded) {
+            return $event->reference();
         }
 
         return null;

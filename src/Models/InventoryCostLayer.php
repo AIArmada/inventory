@@ -55,8 +55,6 @@ class InventoryCostLayer extends Model
         'inventoryable_id',
         'location_id',
         'batch_id',
-        'owner_type',
-        'owner_id',
         'quantity',
         'remaining_quantity',
         'unit_cost_minor',
@@ -157,7 +155,7 @@ class InventoryCostLayer extends Model
 
     public function getTable(): string
     {
-        return config('inventory.table_names.cost_layers', 'inventory_cost_layers');
+        return config('inventory.database.tables.cost_layers', 'inventory_cost_layers');
     }
 
     /**

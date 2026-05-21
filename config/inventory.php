@@ -33,9 +33,6 @@ return [
         'tables' => $tables,
     ],
 
-    // Legacy compatibility for existing references
-    'table_names' => $tables,
-
     /*
     |--------------------------------------------------------------------------
     | Defaults
@@ -63,7 +60,7 @@ return [
     'owner' => [
         'enabled' => env('INVENTORY_OWNER_ENABLED', false),
         'include_global' => env('INVENTORY_OWNER_INCLUDE_GLOBAL', false),
-        'auto_assign_on_create' => env('INVENTORY_OWNER_AUTO_ASSIGN', true),
+        'auto_assign_on_create' => env('INVENTORY_OWNER_AUTO_ASSIGN_ON_CREATE', true),
     ],
 
     /*

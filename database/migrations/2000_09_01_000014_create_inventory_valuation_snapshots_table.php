@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('currency', 3)->default('MYR');
             $table->integer('sku_count');
             $table->integer('variance_from_previous_minor')->nullable();
-            $jsonType = config('inventory.database.json_column_type', 'json');
+            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'json'));
             $table->addColumn($jsonType, 'breakdown')->nullable();
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');

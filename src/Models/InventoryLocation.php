@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
+use AIArmada\CommerceSupport\Traits\HasOwnerScopeKey;
 use AIArmada\Inventory\Database\Factories\InventoryLocationFactory;
 use AIArmada\Inventory\Enums\TemperatureZone;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
@@ -68,9 +70,15 @@ final class InventoryLocation extends Model
         scopeForOwner as baseScopeForOwner;
     }
     use HasOwnerScopeConfig;
+    use HasOwnerScopeKey;
     use HasUuids;
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
+
+    /** @var list<string> */
+    protected $hidden = [
+        'owner_scope',
+    ];
 
     public const DEFAULT_LOCATION_CODE = 'DEFAULT';
 
@@ -101,8 +109,6 @@ final class InventoryLocation extends Model
         'pick_sequence',
         'capacity',
         'current_utilization',
-        'owner_type',
-        'owner_id',
         'metadata',
     ];
 
@@ -111,6 +117,13 @@ final class InventoryLocation extends Model
      */
     public static function getOrCreateDefault(): self
     {
+        if (InventoryOwnerScope::isEnabled()) {
+            OwnerContext::assertResolvedOrExplicitGlobal(
+                InventoryOwnerScope::resolveOwner(),
+                'InventoryLocation::getOrCreateDefault() requires an owner context or explicit global context.',
+            );
+        }
+
         return self::firstOrCreate(
             ['code' => self::DEFAULT_LOCATION_CODE],
             [
@@ -126,7 +139,7 @@ final class InventoryLocation extends Model
      */
     public function getTable(): string
     {
-        return config('inventory.table_names.locations', 'inventory_locations');
+        return config('inventory.database.tables.locations', 'inventory_locations');
     }
 
     /**

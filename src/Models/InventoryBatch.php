@@ -6,6 +6,7 @@ namespace AIArmada\Inventory\Models;
 
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
+use AIArmada\CommerceSupport\Traits\HasOwnerScopeKey;
 use AIArmada\Inventory\Database\Factories\InventoryBatchFactory;
 use AIArmada\Inventory\Enums\BatchStatus;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
@@ -68,9 +69,15 @@ final class InventoryBatch extends Model
 
     use HasOwner;
     use HasOwnerScopeConfig;
+    use HasOwnerScopeKey;
     use HasUuids;
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
+
+    /** @var list<string> */
+    protected $hidden = [
+        'owner_scope',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -84,8 +91,6 @@ final class InventoryBatch extends Model
         'lot_number',
         'supplier_batch_number',
         'location_id',
-        'owner_type',
-        'owner_id',
         'quantity_received',
         'quantity_on_hand',
         'quantity_reserved',
@@ -112,7 +117,7 @@ final class InventoryBatch extends Model
      */
     public function getTable(): string
     {
-        return config('inventory.table_names.batches', 'inventory_batches');
+        return config('inventory.database.tables.batches', 'inventory_batches');
     }
 
     /**

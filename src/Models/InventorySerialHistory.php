@@ -61,8 +61,6 @@ final class InventorySerialHistory extends Model
         'new_status',
         'from_location_id',
         'to_location_id',
-        'owner_type',
-        'owner_id',
         'related_to_type',
         'related_to_id',
         'reference',
@@ -78,7 +76,7 @@ final class InventorySerialHistory extends Model
      */
     public function getTable(): string
     {
-        return config('inventory.table_names.serial_history', 'inventory_serial_history');
+        return config('inventory.database.tables.serial_history', 'inventory_serial_history');
     }
 
     /**

@@ -13,8 +13,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create(config('inventory.table_names.batches', 'inventory_batches'), function (Blueprint $table): void {
+        Schema::create(config('inventory.database.tables.batches', 'inventory_batches'), function (Blueprint $table): void {
             $table->uuid('id')->primary();
+            $table->string('owner_scope')->default('global');
 
             // The inventoryable item this batch is for
             $table->uuidMorphs('inventoryable');
@@ -60,7 +61,7 @@ return new class extends Migration
             $table->timestamp('recalled_at')->nullable();
 
             // Metadata
-            $jsonType = config('inventory.database.json_column_type', config('inventory.json_column_type', 'json'));
+            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'json'));
             $table->{$jsonType}('metadata')->nullable();
 
             $table->nullableUuidMorphs('owner');
@@ -69,8 +70,8 @@ return new class extends Migration
 
             // Unique constraint for batch within inventoryable and location
             $table->unique(
-                ['inventoryable_type', 'inventoryable_id', 'location_id', 'batch_number'],
-                'inventory_batches_unique'
+                ['owner_scope', 'inventoryable_type', 'inventoryable_id', 'location_id', 'batch_number'],
+                'inventory_batches_owner_scope_unique'
             );
 
             // Indexes
@@ -89,6 +90,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists(config('inventory.table_names.batches', 'inventory_batches'));
+        Schema::dropIfExists(config('inventory.database.tables.batches', 'inventory_batches'));
     }
 };

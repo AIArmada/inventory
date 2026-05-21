@@ -57,8 +57,6 @@ final class InventoryAllocation extends Model
         'location_id',
         'level_id',
         'batch_id',
-        'owner_type',
-        'owner_id',
         'cart_id',
         'quantity',
         'expires_at',
@@ -69,7 +67,7 @@ final class InventoryAllocation extends Model
      */
     public function getTable(): string
     {
-        return config('inventory.table_names.allocations', 'inventory_allocations');
+        return config('inventory.database.tables.allocations', 'inventory_allocations');
     }
 
     /**

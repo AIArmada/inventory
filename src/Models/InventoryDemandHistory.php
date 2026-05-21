@@ -49,8 +49,6 @@ class InventoryDemandHistory extends Model
         'inventoryable_type',
         'inventoryable_id',
         'location_id',
-        'owner_type',
-        'owner_id',
         'period_date',
         'period_type',
         'quantity_demanded',
@@ -116,7 +114,7 @@ class InventoryDemandHistory extends Model
 
     public function getTable(): string
     {
-        return config('inventory.table_names.demand_history', 'inventory_demand_history');
+        return config('inventory.database.tables.demand_history', 'inventory_demand_history');
     }
 
     /**

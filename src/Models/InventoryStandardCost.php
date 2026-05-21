@@ -44,8 +44,6 @@ class InventoryStandardCost extends Model
     protected $fillable = [
         'inventoryable_type',
         'inventoryable_id',
-        'owner_type',
-        'owner_id',
         'standard_cost_minor',
         'currency',
         'effective_from',
@@ -86,7 +84,7 @@ class InventoryStandardCost extends Model
 
     public function getTable(): string
     {
-        return config('inventory.table_names.standard_costs', 'inventory_standard_costs');
+        return config('inventory.database.tables.standard_costs', 'inventory_standard_costs');
     }
 
     /**
