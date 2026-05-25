@@ -47,16 +47,19 @@ final class StockLevelReport
             InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
         }
 
-        return $query->get()
-            ->map(fn ($row) => [
-                'location_id' => $row->location_id,
-                'location_name' => $row->location?->name ?? 'Unknown',
+        /** @var Collection<int, array{location_id: string, location_name: string, sku_count: int, total_quantity: int, total_value: int, low_stock_count: int, out_of_stock_count: int}> $stockByLocation */
+        $stockByLocation = $query->get()
+            ->map(fn ($row): array => [
+                'location_id' => (string) $row->location_id,
+                'location_name' => (string) ($row->location?->name ?? 'Unknown'),
                 'sku_count' => (int) $row->sku_count,
                 'total_quantity' => (int) $row->total_quantity,
-                'total_value' => 0, // Requires cost layer integration
-                'low_stock_count' => 0,
-                'out_of_stock_count' => 0,
+                'total_value' => (int) 0, // Requires cost layer integration
+                'low_stock_count' => (int) 0,
+                'out_of_stock_count' => (int) 0,
             ]);
+
+        return $stockByLocation;
     }
 
     /**
@@ -95,7 +98,8 @@ final class StockLevelReport
 
         $cumulativeValue = 0;
 
-        return $stocks->map(function ($stock) use ($totalQuantity, &$cumulativeValue) {
+        /** @var Collection<int, array{inventoryable_type: string, inventoryable_id: string, total_value: int, cumulative_percentage: float, classification: string}> $analysis */
+        $analysis = $stocks->map(function ($stock) use ($totalQuantity, &$cumulativeValue): array {
             $cumulativeValue += $stock->total_quantity;
             $cumulativePercentage = ($cumulativeValue / $totalQuantity) * 100;
 
@@ -106,13 +110,15 @@ final class StockLevelReport
             };
 
             return [
-                'inventoryable_type' => $stock->inventoryable_type,
-                'inventoryable_id' => $stock->inventoryable_id,
+                'inventoryable_type' => (string) $stock->inventoryable_type,
+                'inventoryable_id' => (string) $stock->inventoryable_id,
                 'total_value' => (int) $stock->total_quantity,
                 'cumulative_percentage' => round($cumulativePercentage, 2),
-                'classification' => $classification,
+                'classification' => (string) $classification,
             ];
         });
+
+        return $analysis;
     }
 
     /**
@@ -148,7 +154,7 @@ final class StockLevelReport
             'Over 1 year' => [366, PHP_INT_MAX],
         ];
 
-        return collect($ranges)->map(function ($range, $label) use ($batches, $now) {
+        return collect($ranges)->map(function ($range, $label) use ($batches, $now): array {
             $filtered = $batches->filter(function ($batch) use ($range, $now) {
                 $age = CarbonImmutable::parse($batch->manufactured_at)->diffInDays($now);
 
@@ -161,11 +167,11 @@ final class StockLevelReport
             )->count();
 
             return [
-                'age_range' => $label,
-                'batch_count' => $filtered->count(),
-                'total_quantity' => $filtered->sum('quantity'),
-                'total_value' => $filtered->sum(fn ($b) => $b->quantity * ($b->unit_cost_minor ?? 0)),
-                'expiring_soon' => $expiringSoon,
+                'age_range' => (string) $label,
+                'batch_count' => (int) $filtered->count(),
+                'total_quantity' => (int) $filtered->sum('quantity'),
+                'total_value' => (int) $filtered->sum(fn ($b) => $b->quantity * ($b->unit_cost_minor ?? 0)),
+                'expiring_soon' => (int) $expiringSoon,
             ];
         })->values();
     }
@@ -291,15 +297,15 @@ final class StockLevelReport
         }
 
         return $query->get()
-            ->map(fn ($row) => [
-                'inventoryable_type' => $row->inventoryable_type,
-                'inventoryable_id' => $row->inventoryable_id,
+            ->map(fn ($row): array => [
+                'inventoryable_type' => (string) $row->inventoryable_type,
+                'inventoryable_id' => (string) $row->inventoryable_id,
                 'location_count' => (int) $row->location_count,
                 'total_quantity' => (int) $row->total_quantity,
                 'max_location_quantity' => (int) $row->max_quantity,
                 'min_location_quantity' => (int) $row->min_quantity,
-                'concentration_ratio' => $row->total_quantity > 0
-                    ? round(($row->max_quantity / $row->total_quantity) * 100, 2)
+                'concentration_ratio' => (int) $row->total_quantity > 0
+                    ? round(((int) $row->max_quantity / (int) $row->total_quantity) * 100, 2)
                     : 0.0,
             ]);
     }
@@ -338,15 +344,18 @@ final class StockLevelReport
             InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
         }
 
-        return $query->get()
-            ->map(fn ($row) => [
-                'inventoryable_type' => $row->inventoryable_type,
-                'inventoryable_id' => $row->inventoryable_id,
+        /** @var Collection<int, array{inventoryable_type: string, inventoryable_id: string, quantity: int, value: int, location_id: string, days_stagnant: int}> $deadStock */
+        $deadStock = $query->get()
+            ->map(fn ($row): array => [
+                'inventoryable_type' => (string) $row->inventoryable_type,
+                'inventoryable_id' => (string) $row->inventoryable_id,
                 'quantity' => (int) $row->quantity,
-                'value' => 0, // Requires cost layer integration
-                'location_id' => $row->location_id,
-                'days_stagnant' => CarbonImmutable::parse($row->updated_at)->diffInDays(now()),
+                'value' => (int) 0, // Requires cost layer integration
+                'location_id' => (string) $row->location_id,
+                'days_stagnant' => (int) CarbonImmutable::parse($row->updated_at)->diffInDays(now()),
             ]);
+
+        return $deadStock;
     }
 
     /**

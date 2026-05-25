@@ -9,10 +9,10 @@ use AIArmada\Inventory\Models\InventorySerial;
 use AIArmada\Inventory\States\SerialStatus;
 use AIArmada\Inventory\States\Sold;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 final class SerialLookupService
 {
@@ -238,7 +238,7 @@ final class SerialLookupService
      * Advanced search with multiple criteria.
      *
      * @param  array<string, mixed>  $criteria
-     * @return LengthAwarePaginator<InventorySerial>
+     * @return LengthAwarePaginator<int, InventorySerial>
      */
     public function search(array $criteria, int $perPage = 25): LengthAwarePaginator
     {

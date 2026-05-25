@@ -6,7 +6,6 @@ namespace AIArmada\Inventory\Cart;
 
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Contracts\CartManagerInterface;
-use AIArmada\Cart\Storage\StorageInterface;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Services\InventoryAllocationService;
@@ -109,11 +108,6 @@ final class CartManagerWithInventory implements CartManagerInterface
     public function getOwnerId(): string | int | null
     {
         return $this->manager->getOwnerId();
-    }
-
-    public function session(?string $sessionKey = null): StorageInterface
-    {
-        return $this->manager->session($sessionKey);
     }
 
     public function getById(string $uuid): ?Cart

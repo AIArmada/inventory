@@ -60,13 +60,16 @@ final class MovementAnalysisReport
             InventoryOwnerScope::applyToMovementQuery($query);
         }
 
-        return $query->get()
-            ->map(fn ($row) => [
-                'movement_type' => $row->type,
+        /** @var Collection<int, array{movement_type: string, count: int, total_quantity: int, total_value: int}> $summary */
+        $summary = $query->get()
+            ->map(fn ($row): array => [
+                'movement_type' => (string) $row->type,
                 'count' => (int) $row->count,
                 'total_quantity' => (int) $row->total_quantity,
-                'total_value' => 0, // Value requires cost layer integration
+                'total_value' => (int) 0, // Value requires cost layer integration
             ]);
+
+        return $summary;
     }
 
     /**
@@ -160,9 +163,9 @@ final class MovementAnalysisReport
         }
 
         return $query->get()
-            ->map(fn ($row) => [
-                'inventoryable_type' => $row->inventoryable_type,
-                'inventoryable_id' => $row->inventoryable_id,
+            ->map(fn ($row): array => [
+                'inventoryable_type' => (string) $row->inventoryable_type,
+                'inventoryable_id' => (string) $row->inventoryable_id,
                 'movement_count' => (int) $row->movement_count,
                 'total_quantity_moved' => (int) $row->total_quantity_moved,
                 'avg_quantity_per_movement' => round((float) $row->avg_quantity, 2),
@@ -227,32 +230,43 @@ final class MovementAnalysisReport
             InventoryOwnerScope::applyToQueryByLocationRelation($levelsQuery, 'location');
         }
 
-        return $levelsQuery->get()
-            ->filter(function ($level) use ($lastMovements, $inventoryablesWithAnyMovement) {
-                $key = $level->inventoryable_type . ':' . $level->inventoryable_id;
+        /** @var list<array{inventoryable_type: string, inventoryable_id: string, current_quantity: int, last_movement_at: string|null, days_since_movement: int}> $slowMovers */
+        $slowMovers = [];
 
-                return $lastMovements->has($key) || ! $inventoryablesWithAnyMovement->has($key);
-            })
-            ->map(function ($level) use ($lastMovements) {
-                $key = $level->inventoryable_type . ':' . $level->inventoryable_id;
-                $lastMovement = $lastMovements->get($key);
+        foreach ($levelsQuery->get() as $level) {
+            $key = $level->inventoryable_type . ':' . $level->inventoryable_id;
 
-                $lastOccurredAt = $lastMovement?->last_occurred_at;
-                $daysSince = $lastOccurredAt !== null
-                    ? CarbonImmutable::parse($lastOccurredAt)->diffInDays(now())
-                    : 999;
+            if (! $lastMovements->has($key) && $inventoryablesWithAnyMovement->has($key)) {
+                continue;
+            }
 
-                return [
-                    'inventoryable_type' => $level->inventoryable_type,
-                    'inventoryable_id' => $level->inventoryable_id,
-                    'current_quantity' => (int) $level->current_quantity,
-                    'last_movement_at' => $lastOccurredAt,
-                    'days_since_movement' => (int) $daysSince,
-                ];
-            })
-            ->sortByDesc('days_since_movement')
-            ->take($limit)
-            ->values();
+            $lastMovement = $lastMovements->get($key);
+
+            $lastOccurredAt = $lastMovement?->last_occurred_at;
+            $lastMovementAt = $lastOccurredAt !== null
+                ? CarbonImmutable::parse($lastOccurredAt)->toDateTimeString()
+                : null;
+            $daysSince = $lastOccurredAt !== null
+                ? CarbonImmutable::parse($lastOccurredAt)->diffInDays(now())
+                : 999;
+
+            $slowMovers[] = [
+                'inventoryable_type' => (string) $level->inventoryable_type,
+                'inventoryable_id' => (string) $level->inventoryable_id,
+                'current_quantity' => (int) $level->current_quantity,
+                'last_movement_at' => $lastMovementAt,
+                'days_since_movement' => (int) $daysSince,
+            ];
+        }
+
+        usort($slowMovers, static function (array $left, array $right): int {
+            return $right['days_since_movement'] <=> $left['days_since_movement'];
+        });
+
+        $slowMovers = array_slice($slowMovers, 0, $limit);
+
+        // @phpstan-ignore return.type
+        return collect($slowMovers);
     }
 
     /**
@@ -340,19 +354,29 @@ final class MovementAnalysisReport
             InventoryOwnerScope::applyToMovementQuery($query);
         }
 
-        return $query->get()
-            ->groupBy(fn ($m) => $m->reason ?? 'unknown')
-            ->map(function ($movements, $reason) {
+        /** @var Collection<int, array{reason: string, count: int, total_positive: int, total_negative: int, net_adjustment: int}> $analysis */
+        $analysis = $query->get()
+            ->groupBy(fn ($m) => (string) ($m->reason ?? 'unknown'))
+            ->map(function ($movements, $reason): array {
+                $totalPositive = (int) $movements
+                    ->filter(fn ($movement) => $movement->quantity > 0)
+                    ->sum('quantity');
+                $totalNegative = abs((int) $movements
+                    ->filter(fn ($movement) => $movement->quantity < 0)
+                    ->sum('quantity'));
+
                 return [
-                    'reason' => $reason,
-                    'count' => $movements->count(),
-                    'total_positive' => (int) $movements->sum('quantity'),
-                    'total_negative' => 0,
+                    'reason' => (string) $reason,
+                    'count' => (int) $movements->count(),
+                    'total_positive' => $totalPositive,
+                    'total_negative' => $totalNegative,
                     'net_adjustment' => (int) $movements->sum('quantity'),
                 ];
             })
             ->sortByDesc('count')
             ->values();
+
+        return $analysis;
     }
 
     private function getScopedLocationOrFail(string $locationId): InventoryLocation

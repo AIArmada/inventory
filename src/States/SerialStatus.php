@@ -60,7 +60,7 @@ abstract class SerialStatus extends State
             return $status->getValue();
         }
 
-        if (is_string($status) && class_exists($status) && is_subclass_of($status, SerialStatus::class)) {
+        if (class_exists($status) && is_subclass_of($status, SerialStatus::class)) {
             return $status::getMorphClass();
         }
 

@@ -66,7 +66,12 @@ final class FefoStrategy implements AllocationStrategyInterface
         }
 
         if ($context->excludeExpiringSoon) {
-            $query->notExpiringSoon($context->minDaysToExpiry);
+            $minimumExpiryDate = now()->addDays($context->minDaysToExpiry);
+
+            $query->where(function ($expiryQuery) use ($minimumExpiryDate): void {
+                $expiryQuery->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', $minimumExpiryDate);
+            });
         }
 
         $batches = $query->get();
@@ -105,7 +110,12 @@ final class FefoStrategy implements AllocationStrategyInterface
         }
 
         if ($context->excludeExpiringSoon) {
-            $query->notExpiringSoon($context->minDaysToExpiry);
+            $minimumExpiryDate = now()->addDays($context->minDaysToExpiry);
+
+            $query->where(function ($expiryQuery) use ($minimumExpiryDate): void {
+                $expiryQuery->whereNull('expires_at')
+                    ->orWhere('expires_at', '>', $minimumExpiryDate);
+            });
         }
 
         $available = $query->sum('available_quantity');

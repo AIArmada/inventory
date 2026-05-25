@@ -82,7 +82,7 @@ final class BackorderService
     {
         $query = InventoryBackorder::query()
             ->forModel($model)
-            ->open()
+            ->whereIn('status', InventoryBackorder::openStatuses())
             ->byPriority()
             ->orderBy('requested_at');
 
@@ -99,7 +99,7 @@ final class BackorderService
     public function getAllOpenBackorders(): Collection
     {
         $query = InventoryBackorder::query()
-            ->open()
+            ->whereIn('status', InventoryBackorder::openStatuses())
             ->byPriority()
             ->orderBy('requested_at');
 
@@ -150,7 +150,7 @@ final class BackorderService
         return DB::transaction(function () use ($model, $availableQuantity, $locationId): array {
             $query = InventoryBackorder::query()
                 ->forModel($model)
-                ->open()
+                ->whereIn('status', InventoryBackorder::openStatuses())
                 ->byPriority()
                 ->orderBy('requested_at');
 
@@ -225,7 +225,7 @@ final class BackorderService
         $cutoff = now()->subDays($daysOld);
 
         $oldBackordersQuery = InventoryBackorder::query()
-            ->open()
+            ->whereIn('status', InventoryBackorder::openStatuses())
             ->where('requested_at', '<', $cutoff);
 
         $this->applyOwnerScopeToBackorderQuery($oldBackordersQuery);
@@ -250,7 +250,7 @@ final class BackorderService
      */
     public function getStatistics(): array
     {
-        $openBackordersQuery = InventoryBackorder::query()->open();
+        $openBackordersQuery = InventoryBackorder::query()->whereIn('status', InventoryBackorder::openStatuses());
         $this->applyOwnerScopeToBackorderQuery($openBackordersQuery);
 
         $openBackorders = $openBackordersQuery->get();
@@ -278,7 +278,7 @@ final class BackorderService
     public function getFulfillableBackorders(): Collection
     {
         $backordersQuery = InventoryBackorder::query()
-            ->open()
+            ->whereIn('status', InventoryBackorder::openStatuses())
             ->byPriority()
             ->orderBy('requested_at');
 
@@ -319,7 +319,7 @@ final class BackorderService
     {
         $query = InventoryBackorder::query()
             ->forModel($model)
-            ->open()
+            ->whereIn('status', InventoryBackorder::openStatuses())
             ->selectRaw('SUM(quantity_requested - quantity_fulfilled - quantity_cancelled) as total');
 
         $this->applyOwnerScopeToBackorderQuery($query);

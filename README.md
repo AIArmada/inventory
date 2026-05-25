@@ -233,7 +233,7 @@ return [
 
 ## Documentation
 
-- [Configuration Guide](docs/configuration.md)
+- [Configuration Guide](docs/03-configuration.md)
 - [Allocation Strategies](docs/allocation-strategies.md)
 - [Cart Integration](docs/cart-integration.md)
 - [Events & Listeners](docs/events.md)

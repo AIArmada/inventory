@@ -1,5 +1,7 @@
 # Vision Implementation Progress
 
+> **Archived vision document:** this file captures the earlier inventory implementation roadmap and completion tracker. Prefer the current package docs in `packages/inventory/docs/` for active behavior and configuration.
+
 > **Package:** `aiarmada/inventory` + `aiarmada/filament-inventory`  
 > **Total Phases:** 9  
 > **Estimated Duration:** 21 weeks

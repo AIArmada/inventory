@@ -193,14 +193,22 @@ final class FulfillmentLocationService
      */
     private function getItemRequirements(Order $order): Collection
     {
-        return $order->items
+        /** @var Collection<int, array{model: Model, quantity: int, key: string}> $requirements */
+        $requirements = $order->items
             ->filter(fn ($item) => $item->purchasable instanceof Model)
             ->filter(fn ($item) => $this->tracksInventory($item->purchasable))
-            ->map(fn ($item) => [
-                'model' => $item->purchasable,
-                'quantity' => $item->quantity,
-                'key' => $item->purchasable->getMorphClass() . ':' . $item->purchasable->getKey(),
-            ]);
+            ->map(function ($item): array {
+                /** @var Model $purchasable */
+                $purchasable = $item->purchasable;
+
+                return [
+                    'model' => $purchasable,
+                    'quantity' => (int) $item->quantity,
+                    'key' => $purchasable->getMorphClass() . ':' . (string) $purchasable->getKey(),
+                ];
+            });
+
+        return $requirements;
     }
 
     /**

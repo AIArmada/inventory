@@ -4,7 +4,42 @@ title: Overview
 
 # Inventory Package
 
-A comprehensive, enterprise-grade inventory management system for Laravel applications. Supports multi-location warehouses, batch/lot tracking, serial number management, multiple costing methods, demand forecasting, and seamless cart integration.
+## Purpose
+
+The `aiarmada/inventory` package owns stock state, warehouse structure, allocation, costing, and replenishment workflows for the Commerce ecosystem.
+
+## What this package owns
+
+- Inventory locations, levels, movements, allocations, batches, serials, cost layers, valuation snapshots, backorders, demand history, supplier lead times, and reorder suggestions
+- Stock receipt, shipment, transfer, adjustment, cycle count, and allocation workflows
+- Inventory validation and reservation hooks used by cart and checkout integrations
+- Valuation, threshold monitoring, expiry handling, forecasting, and replenishment services
+
+## What this package does not own
+
+- Product or variant catalog records (`aiarmada/products`)
+- Cart UI or admin panel surfaces (`aiarmada/cart`, `aiarmada/filament-inventory`)
+- Checkout, payment, or order orchestration (`aiarmada/checkout`, `aiarmada/orders`, `aiarmada/cashier`, `aiarmada/chip`)
+- Shipping carrier workflows and fulfilment integrations (`aiarmada/shipping`, `aiarmada/jnt`)
+
+## Related packages
+
+- [`aiarmada/filament-inventory`](../../filament-inventory/docs/01-overview.md) — Filament admin resources, widgets, and actions for inventory operations
+- [`aiarmada/cart`](../../cart/docs/01-overview.md) — basket and allocation entry points
+- [`aiarmada/orders`](../../orders/docs/01-overview.md) — order lifecycle hooks that commit or release inventory
+- [`aiarmada/commerce-support`](../../commerce-support/docs/01-overview.md) — owner scoping, shared helpers, and common contracts
+
+## Main models services or surfaces
+
+- **Models** — `InventoryLocation`, `InventoryLevel`, `InventoryMovement`, `InventoryAllocation`, `InventoryBatch`, `InventorySerial`, `InventoryCostLayer`, `InventoryValuationSnapshot`, `InventoryBackorder`, `InventoryDemandHistory`, `InventorySupplierLeadtime`, `InventoryReorderSuggestion`
+- **Facades** — `Inventory`, `InventoryAllocation`
+- **Actions and services** — receiving, shipping, transferring, adjusting, forecasting, replenishment, batch allocation, serial tracking, valuation, and threshold monitoring
+
+## Owner scoping and security notes
+
+- Owner enforcement is controlled by `inventory.owner.enabled`, `inventory.owner.include_global`, and `inventory.owner.auto_assign_on_create`
+- Non-request surfaces such as jobs and commands should set owner context explicitly through `commerce-support`
+- UI filtering is not authorization; integrations that submit location, batch, allocation, or serial identifiers must still validate them server-side within the current owner scope
 
 ## Key Features
 
@@ -124,13 +159,20 @@ Inventory::ship($product, 5, $location->id, [
 ]);
 ```
 
+## Read next
+
+- [Installation](02-installation.md)
+- [Configuration](03-configuration.md)
+- [Usage](04-usage.md)
+- [Troubleshooting](99-troubleshooting.md)
+- [Filament Inventory overview](../../filament-inventory/docs/01-overview.md)
+
 ## Requirements
 
 - PHP 8.4+
-- Laravel 12.x
 - `aiarmada/commerce-support` (required)
 - `aiarmada/cart` (optional, for cart integration)
 
 ## License
 
-MIT License. See [LICENSE](../LICENSE) for details.
+MIT License. See [LICENSE](../../../LICENSE) for details.

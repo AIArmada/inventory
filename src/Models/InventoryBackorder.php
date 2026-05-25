@@ -160,14 +160,22 @@ class InventoryBackorder extends Model
     }
 
     /**
+     * @return list<string>
+     */
+    public static function openStatuses(): array
+    {
+        return [
+            BackorderStatus::normalize(Pending::class),
+            BackorderStatus::normalize(PartiallyFulfilled::class),
+        ];
+    }
+
+    /**
      * @return Builder<static>
      */
     public function scopeOpen(Builder $query): Builder
     {
-        return $query->whereIn('status', [
-            BackorderStatus::normalize(Pending::class),
-            BackorderStatus::normalize(PartiallyFulfilled::class),
-        ]);
+        return $query->whereIn('status', self::openStatuses());
     }
 
     /**
@@ -200,7 +208,7 @@ class InventoryBackorder extends Model
      */
     public function scopeOverdue(Builder $query): Builder
     {
-        return $query->open()
+        return $query->whereIn('status', self::openStatuses())
             ->whereNotNull('promised_at')
             ->where('promised_at', '<', now());
     }
@@ -210,7 +218,7 @@ class InventoryBackorder extends Model
      */
     public function scopeDueWithin(Builder $query, int $days): Builder
     {
-        return $query->open()
+        return $query->whereIn('status', self::openStatuses())
             ->whereNotNull('promised_at')
             ->where('promised_at', '<=', now()->addDays($days));
     }

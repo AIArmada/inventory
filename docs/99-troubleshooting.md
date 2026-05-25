@@ -263,9 +263,10 @@ foreach ($allocations as $alloc) {
 
 ## Getting Help
 
-1. Check the [AUDIT.md](AUDIT.md) for known issues and fixes
+1. Review the current package docs in this folder first
 2. Review the test suite in `tests/src/Inventory/` for usage examples
-3. Open an issue on GitHub with:
+3. If you need historical fix context, see the [archived audit](archive/AUDIT-2025-12-15.md)
+4. Open an issue on GitHub with:
    - Laravel version
    - Package version
    - Minimal reproduction code
