@@ -37,7 +37,7 @@ return new class extends Migration
 
             // Details
             $table->text('notes')->nullable();
-            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'json'));
+            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
             $table->{$jsonType}('metadata')->nullable();
 
             $table->nullableUuidMorphs('owner');

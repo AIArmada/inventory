@@ -38,7 +38,7 @@ return new class extends Migration
             $table->unsignedInteger('capacity')->nullable();
             $table->unsignedInteger('current_utilization')->default(0);
             $table->nullableUuidMorphs('owner');
-            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'json'));
+            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
             $table->{$jsonType}('metadata')->nullable();
             $table->timestamps();
 
