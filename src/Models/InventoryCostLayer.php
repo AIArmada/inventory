@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
+use AIArmada\CommerceSupport\Concerns\LogsCommerceActivity;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\CostingMethod;
@@ -16,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
+use OwenIt\Auditing\Contracts\Auditable;
 
 /**
  * @property string $id
@@ -41,12 +44,14 @@ use Illuminate\Support\Carbon;
  * @property-read InventoryLocation|null $location
  * @property-read InventoryBatch|null $batch
  */
-class InventoryCostLayer extends Model
+class InventoryCostLayer extends Model implements Auditable
 {
+    use HasCommerceAudit;
     use HasFactory;
     use HasOwner;
     use HasOwnerScopeConfig;
     use HasUuids;
+    use LogsCommerceActivity;
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
 

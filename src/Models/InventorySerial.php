@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
+use AIArmada\CommerceSupport\Concerns\LogsCommerceActivity;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Database\Factories\InventorySerialFactory;
@@ -23,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
 use InvalidArgumentException;
+use OwenIt\Auditing\Contracts\Auditable;
 use Spatie\ModelStates\HasStates;
 
 /**
@@ -62,8 +65,10 @@ use Spatie\ModelStates\HasStates;
  * @property-read Model|null $assignedTo
  * @property-read Collection<int, InventorySerialHistory> $history
  */
-final class InventorySerial extends Model
+final class InventorySerial extends Model implements Auditable
 {
+    use HasCommerceAudit;
+
     /** @use HasFactory<InventorySerialFactory> */
     use HasFactory;
 
@@ -71,6 +76,7 @@ final class InventorySerial extends Model
     use HasOwnerScopeConfig;
     use HasStates;
     use HasUuids;
+    use LogsCommerceActivity;
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
 
@@ -104,6 +110,35 @@ final class InventorySerial extends Model
         'notes',
         'metadata',
     ];
+
+    public function getAuditInclude(): array
+    {
+        return [
+            'inventoryable_type',
+            'inventoryable_id',
+            'serial_number',
+            'sku',
+            'location_id',
+            'batch_id',
+            'status',
+            'condition',
+            'unit_cost_minor',
+            'currency',
+            'warranty_expires_at',
+            'manufactured_at',
+            'received_at',
+            'assigned_to_type',
+            'assigned_to_id',
+            'assigned_at',
+            'order_id',
+            'sold_at',
+            'customer_id',
+            'supplier_id',
+            'purchase_order_number',
+            'notes',
+            'metadata',
+        ];
+    }
 
     /**
      * Get the table associated with the model.
@@ -216,6 +251,11 @@ final class InventorySerial extends Model
         return $this->days_until_warranty_expires;
     }
 
+    protected function getActivityLogName(): string
+    {
+        return 'inventory';
+    }
+
     /**
      * Check if serial is available for sale.
      */
@@ -236,7 +276,7 @@ final class InventorySerial extends Model
     /**
      * Update status with validation.
      */
-    public function transitionTo(string | SerialStatus $newStatus): self
+    public function transitionStatusTo(string | SerialStatus $newStatus): self
     {
         if (! $this->canTransitionTo($newStatus)) {
             $targetClass = SerialStatus::resolveStateClass($newStatus instanceof SerialStatus ? $newStatus->getValue() : $newStatus);

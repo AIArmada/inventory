@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
+use AIArmada\CommerceSupport\Concerns\LogsCommerceActivity;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
@@ -14,6 +16,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
+use OwenIt\Auditing\Contracts\Auditable;
 
 /**
  * @property string $id
@@ -38,12 +41,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Model $inventoryable
  */
-class InventorySupplierLeadtime extends Model
+class InventorySupplierLeadtime extends Model implements Auditable
 {
+    use HasCommerceAudit;
     use HasFactory;
     use HasOwner;
     use HasOwnerScopeConfig;
     use HasUuids;
+    use LogsCommerceActivity;
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
 
@@ -64,6 +69,27 @@ class InventorySupplierLeadtime extends Model
         'last_received_at',
         'metadata',
     ];
+
+    public function getAuditInclude(): array
+    {
+        return [
+            'inventoryable_type',
+            'inventoryable_id',
+            'supplier_id',
+            'supplier_name',
+            'lead_time_days',
+            'lead_time_variance_days',
+            'minimum_order_quantity',
+            'order_multiple',
+            'unit_cost_minor',
+            'currency',
+            'is_primary',
+            'is_active',
+            'last_order_at',
+            'last_received_at',
+            'metadata',
+        ];
+    }
 
     protected static function booted(): void
     {
@@ -260,5 +286,10 @@ class InventorySupplierLeadtime extends Model
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
+    }
+
+    protected function getActivityLogName(): string
+    {
+        return 'inventory';
     }
 }

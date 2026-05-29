@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
+use AIArmada\CommerceSupport\Concerns\LogsCommerceActivity;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\ReorderSuggestionStatus;
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Carbon;
+use OwenIt\Auditing\Contracts\Auditable;
 
 /**
  * @property string $id
@@ -48,12 +51,14 @@ use Illuminate\Support\Carbon;
  * @property-read InventoryLocation|null $location
  * @property-read InventorySupplierLeadtime|null $supplierLeadtime
  */
-class InventoryReorderSuggestion extends Model
+class InventoryReorderSuggestion extends Model implements Auditable
 {
+    use HasCommerceAudit;
     use HasFactory;
     use HasOwner;
     use HasOwnerScopeConfig;
     use HasUuids;
+    use LogsCommerceActivity;
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
 
@@ -79,6 +84,32 @@ class InventoryReorderSuggestion extends Model
         'calculation_details',
         'metadata',
     ];
+
+    public function getAuditInclude(): array
+    {
+        return [
+            'inventoryable_type',
+            'inventoryable_id',
+            'location_id',
+            'supplier_leadtime_id',
+            'status',
+            'current_stock',
+            'reorder_point',
+            'suggested_quantity',
+            'economic_order_quantity',
+            'average_daily_demand',
+            'lead_time_days',
+            'expected_stockout_date',
+            'urgency',
+            'trigger_reason',
+            'approved_by',
+            'approved_at',
+            'order_id',
+            'ordered_at',
+            'calculation_details',
+            'metadata',
+        ];
+    }
 
     protected static function booted(): void
     {
@@ -265,6 +296,11 @@ class InventoryReorderSuggestion extends Model
             'status' => ReorderSuggestionStatus::Rejected,
             'metadata' => $metadata,
         ]);
+    }
+
+    protected function getActivityLogName(): string
+    {
+        return 'inventory';
     }
 
     /**

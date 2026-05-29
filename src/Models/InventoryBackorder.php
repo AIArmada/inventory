@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
+use AIArmada\CommerceSupport\Concerns\LogsCommerceActivity;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\BackorderPriority;
@@ -22,6 +24,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use OwenIt\Auditing\Contracts\Auditable;
 use Spatie\ModelStates\HasStates;
 
 /**
@@ -49,13 +52,15 @@ use Spatie\ModelStates\HasStates;
  * @property-read Model $inventoryable
  * @property-read InventoryLocation|null $location
  */
-class InventoryBackorder extends Model
+class InventoryBackorder extends Model implements Auditable
 {
+    use HasCommerceAudit;
     use HasFactory;
     use HasOwner;
     use HasOwnerScopeConfig;
     use HasStates;
     use HasUuids;
+    use LogsCommerceActivity;
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
+use AIArmada\CommerceSupport\Concerns\LogsCommerceActivity;
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
@@ -21,6 +23,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use OwenIt\Auditing\Contracts\Auditable;
 
 /**
  * @property string $id
@@ -60,8 +63,10 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, InventoryLocation> $ancestors
  * @property-read string|null $owner_display_name
  */
-final class InventoryLocation extends Model
+final class InventoryLocation extends Model implements Auditable
 {
+    use HasCommerceAudit;
+
     /** @use HasFactory<InventoryLocationFactory> */
     use HasFactory;
 
@@ -72,6 +77,7 @@ final class InventoryLocation extends Model
     use HasOwnerScopeConfig;
     use HasOwnerScopeKey;
     use HasUuids;
+    use LogsCommerceActivity;
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
 

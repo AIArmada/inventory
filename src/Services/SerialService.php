@@ -221,7 +221,7 @@ final class SerialService
         }
 
         $previousStatus = $serial->status->getValue();
-        $serial->transitionTo(Reserved::class);
+        $serial->transitionStatusTo(Reserved::class);
 
         $this->logEvent($serial, SerialEventType::Reserved, [
             'previous_status' => $previousStatus,
@@ -245,7 +245,7 @@ final class SerialService
         }
 
         $previousStatus = $serial->status->getValue();
-        $serial->transitionTo(Available::class);
+        $serial->transitionStatusTo(Available::class);
 
         $this->logEvent($serial, SerialEventType::Released, [
             'previous_status' => $previousStatus,
@@ -273,7 +273,7 @@ final class SerialService
 
         $previousStatus = $serial->status->getValue();
 
-        $serial->transitionTo(Sold::class);
+        $serial->transitionStatusTo(Sold::class);
 
         $serial->update([
             'order_id' => $orderId,
@@ -305,7 +305,7 @@ final class SerialService
         $previousStatus = $serial->status->getValue();
         $previousLocation = $serial->location_id;
 
-        $serial->transitionTo(Shipped::class);
+        $serial->transitionStatusTo(Shipped::class);
 
         $serial->update([
             'location_id' => null,
@@ -342,7 +342,7 @@ final class SerialService
         $previousStatus = $serial->status->getValue();
         $previousCondition = $serial->condition;
 
-        $serial->transitionTo(Returned::class);
+        $serial->transitionStatusTo(Returned::class);
 
         $serial->update([
             'location_id' => $locationId,
@@ -376,7 +376,7 @@ final class SerialService
         }
 
         $previousStatus = $serial->status->getValue();
-        $serial->transitionTo(InRepair::class);
+        $serial->transitionStatusTo(InRepair::class);
 
         $this->logEvent($serial, SerialEventType::RepairStarted, [
             'previous_status' => $previousStatus,

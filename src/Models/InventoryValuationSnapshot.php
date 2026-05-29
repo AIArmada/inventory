@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Concerns\HasCommerceAudit;
+use AIArmada\CommerceSupport\Concerns\LogsCommerceActivity;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\CostingMethod;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use OwenIt\Auditing\Contracts\Auditable;
 
 /**
  * @property string $id
@@ -31,12 +34,14 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read InventoryLocation|null $location
  */
-class InventoryValuationSnapshot extends Model
+class InventoryValuationSnapshot extends Model implements Auditable
 {
+    use HasCommerceAudit;
     use HasFactory;
     use HasOwner;
     use HasOwnerScopeConfig;
     use HasUuids;
+    use LogsCommerceActivity;
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
 
@@ -53,6 +58,23 @@ class InventoryValuationSnapshot extends Model
         'breakdown',
         'metadata',
     ];
+
+    public function getAuditInclude(): array
+    {
+        return [
+            'location_id',
+            'costing_method',
+            'snapshot_date',
+            'total_quantity',
+            'total_value_minor',
+            'average_unit_cost_minor',
+            'currency',
+            'sku_count',
+            'variance_from_previous_minor',
+            'breakdown',
+            'metadata',
+        ];
+    }
 
     public function getTable(): string
     {
@@ -173,5 +195,10 @@ class InventoryValuationSnapshot extends Model
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
+    }
+
+    protected function getActivityLogName(): string
+    {
+        return 'inventory';
     }
 }
