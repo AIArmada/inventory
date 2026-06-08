@@ -26,15 +26,15 @@ return new class extends Migration
             $table->integer('quantity_cancelled')->default(0);
             $table->string('status')->default('pending');
             $table->string('priority')->default('normal');
-            $table->timestamp('requested_at');
-            $table->timestamp('promised_at')->nullable();
-            $table->timestamp('fulfilled_at')->nullable();
-            $table->timestamp('cancelled_at')->nullable();
+            $table->timestampTz('requested_at');
+            $table->timestampTz('promised_at')->nullable();
+            $table->timestampTz('fulfilled_at')->nullable();
+            $table->timestampTz('cancelled_at')->nullable();
             $table->text('notes')->nullable();
             $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->index(['inventoryable_type', 'inventoryable_id', 'status']);
             $table->index(['status', 'priority']);

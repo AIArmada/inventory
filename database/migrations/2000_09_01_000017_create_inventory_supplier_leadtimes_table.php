@@ -29,12 +29,12 @@ return new class extends Migration
             $table->string('currency', 3)->default('MYR');
             $table->boolean('is_primary')->default(false);
             $table->boolean('is_active')->default(true);
-            $table->timestamp('last_order_at')->nullable();
-            $table->timestamp('last_received_at')->nullable();
+            $table->timestampTz('last_order_at')->nullable();
+            $table->timestampTz('last_received_at')->nullable();
             $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->index(['inventoryable_type', 'inventoryable_id', 'is_active'], 'inv_supp_lead_invable_active_idx');
             $table->index('is_primary');

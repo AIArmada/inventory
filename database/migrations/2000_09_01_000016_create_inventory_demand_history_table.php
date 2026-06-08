@@ -28,7 +28,7 @@ return new class extends Migration
             $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->unique(['inventoryable_type', 'inventoryable_id', 'location_id', 'period_date', 'period_type'], 'demand_unique');
             $table->index(['period_date', 'period_type']);

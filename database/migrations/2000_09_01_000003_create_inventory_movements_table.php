@@ -25,9 +25,9 @@ return new class extends Migration
             $table->string('reference')->nullable();
             $table->foreignUuid('user_id')->nullable();
             $table->text('note')->nullable();
-            $table->timestamp('occurred_at')->useCurrent();
+            $table->timestampTz('occurred_at')->useCurrent();
             $table->nullableUuidMorphs('owner');
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->index('type');
             $table->index('reason');

@@ -26,8 +26,8 @@ return new class extends Migration
             $table->integer('max_stock')->nullable();
             $table->string('allocation_strategy')->nullable();
             $table->string('alert_status')->nullable();
-            $table->timestamp('last_alert_at')->nullable();
-            $table->timestamp('last_stock_check_at')->nullable();
+            $table->timestampTz('last_alert_at')->nullable();
+            $table->timestampTz('last_stock_check_at')->nullable();
             $table->string('unit_of_measure')->default('each');
             $table->decimal('unit_conversion_factor', 10, 4)->default(1);
             $table->unsignedInteger('lead_time_days')->nullable();
@@ -35,7 +35,7 @@ return new class extends Migration
             $table->nullableUuidMorphs('owner');
             $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
             $table->{$jsonType}('metadata')->nullable();
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->unique(
                 ['inventoryable_type', 'inventoryable_id', 'location_id'],

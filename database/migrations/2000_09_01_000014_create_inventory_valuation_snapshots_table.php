@@ -30,7 +30,7 @@ return new class extends Migration
             $table->addColumn($jsonType, 'breakdown')->nullable();
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->index(['snapshot_date', 'location_id']);
             $table->index('costing_method');

@@ -21,9 +21,9 @@ return new class extends Migration
             $table->foreignUuid('batch_id')->nullable();
             $table->string('cart_id');
             $table->integer('quantity');
-            $table->timestamp('expires_at');
+            $table->timestampTz('expires_at');
             $table->nullableUuidMorphs('owner');
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->index('cart_id');
             $table->index('expires_at');

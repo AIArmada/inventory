@@ -42,8 +42,8 @@ return new class extends Migration
 
             $table->nullableUuidMorphs('owner');
 
-            $table->timestamp('occurred_at')->useCurrent();
-            $table->timestamps();
+            $table->timestampTz('occurred_at')->useCurrent();
+            $table->timestampsTz();
 
             // Indexes
             $table->index('serial_id');

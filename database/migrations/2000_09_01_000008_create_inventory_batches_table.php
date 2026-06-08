@@ -52,13 +52,13 @@ return new class extends Migration
             // Quality/Compliance
             $table->boolean('is_quarantined')->default(false);
             $table->string('quarantine_reason')->nullable();
-            $table->timestamp('quality_checked_at')->nullable();
+            $table->timestampTz('quality_checked_at')->nullable();
             $table->string('quality_status')->nullable();
 
             // Recall tracking
             $table->boolean('is_recalled')->default(false);
             $table->string('recall_reason')->nullable();
-            $table->timestamp('recalled_at')->nullable();
+            $table->timestampTz('recalled_at')->nullable();
 
             // Metadata
             $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
@@ -66,7 +66,7 @@ return new class extends Migration
 
             $table->nullableUuidMorphs('owner');
 
-            $table->timestamps();
+            $table->timestampsTz();
 
             // Unique constraint for batch within inventoryable and location
             $table->unique(

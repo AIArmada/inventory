@@ -20,14 +20,14 @@ return new class extends Migration
             $table->uuidMorphs('inventoryable');
             $table->integer('standard_cost_minor');
             $table->string('currency', 3)->default('MYR');
-            $table->timestamp('effective_from');
-            $table->timestamp('effective_to')->nullable();
+            $table->timestampTz('effective_from');
+            $table->timestampTz('effective_to')->nullable();
             $table->string('approved_by')->nullable();
             $table->text('notes')->nullable();
             $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->index(['inventoryable_type', 'inventoryable_id', 'effective_from']);
             $table->index('effective_from');

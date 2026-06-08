@@ -40,7 +40,7 @@ return new class extends Migration
             $table->nullableUuidMorphs('owner');
             $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
             $table->{$jsonType}('metadata')->nullable();
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->index('is_active');
             $table->index('priority');

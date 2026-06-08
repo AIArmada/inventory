@@ -27,9 +27,9 @@ return new class extends Migration
             $table->string('currency', 3)->default('MYR');
             $table->string('reference')->nullable();
             $table->string('costing_method');
-            $table->timestamp('layer_date');
+            $table->timestampTz('layer_date');
             $table->nullableUuidMorphs('owner');
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->index(['inventoryable_type', 'inventoryable_id', 'layer_date']);
             $table->index('remaining_quantity');

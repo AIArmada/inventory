@@ -42,11 +42,11 @@ return new class extends Migration
 
             // Ownership/Assignment
             $table->nullableUuidMorphs('assigned_to');
-            $table->timestamp('assigned_at')->nullable();
+            $table->timestampTz('assigned_at')->nullable();
 
             // Sales tracking
             $table->foreignUuid('order_id')->nullable();
-            $table->timestamp('sold_at')->nullable();
+            $table->timestampTz('sold_at')->nullable();
             $table->foreignUuid('customer_id')->nullable();
 
             // Supplier info
@@ -60,7 +60,7 @@ return new class extends Migration
 
             $table->nullableUuidMorphs('owner');
 
-            $table->timestamps();
+            $table->timestampsTz();
 
             // Indexes
             $table->index('location_id');

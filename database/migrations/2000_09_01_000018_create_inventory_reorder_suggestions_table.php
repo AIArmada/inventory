@@ -31,14 +31,14 @@ return new class extends Migration
             $table->string('urgency')->default('normal');
             $table->string('trigger_reason');
             $table->foreignUuid('approved_by')->nullable();
-            $table->timestamp('approved_at')->nullable();
+            $table->timestampTz('approved_at')->nullable();
             $table->foreignUuid('order_id')->nullable();
-            $table->timestamp('ordered_at')->nullable();
+            $table->timestampTz('ordered_at')->nullable();
             $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
             $table->addColumn($jsonType, 'calculation_details')->nullable();
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
-            $table->timestamps();
+            $table->timestampsTz();
 
             $table->index(['status', 'urgency']);
             $table->index(['inventoryable_type', 'inventoryable_id', 'status'], 'inv_reorder_invable_status_idx');
