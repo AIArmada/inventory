@@ -175,42 +175,27 @@ class InventoryBackorder extends Model implements Auditable
         ];
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeOpen(Builder $query): Builder
     {
         return $query->whereIn('status', self::openStatuses());
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', BackorderStatus::normalize(Pending::class));
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeByPriority(Builder $query): Builder
     {
         return $query->orderByRaw("CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 WHEN 'low' THEN 4 ELSE 5 END");
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeOverdue(Builder $query): Builder
     {
         return $query->whereIn('status', self::openStatuses())
@@ -218,9 +203,6 @@ class InventoryBackorder extends Model implements Auditable
             ->where('promised_at', '<', now());
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeDueWithin(Builder $query, int $days): Builder
     {
         return $query->whereIn('status', self::openStatuses())

@@ -152,42 +152,27 @@ class InventorySupplierLeadtime extends Model implements Auditable
         return $this->morphTo();
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopePrimary(Builder $query): Builder
     {
         return $query->where('is_primary', true);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeOrderedByLeadTime(Builder $query): Builder
     {
         return $query->orderBy('lead_time_days', 'asc');
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeOrderedByCost(Builder $query): Builder
     {
         return $query->orderBy('unit_cost_minor', 'asc');

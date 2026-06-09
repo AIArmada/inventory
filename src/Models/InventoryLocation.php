@@ -194,7 +194,6 @@ final class InventoryLocation extends Model implements Auditable
      * @param  Builder<static>  $query
      * @param  EloquentModel|null  $owner  The owner to scope to
      * @param  bool  $includeGlobal  Whether to include global (ownerless) records
-     * @return Builder<static>
      */
     public function scopeForOwner(Builder $query, ?EloquentModel $owner, bool $includeGlobal = true): Builder
     {

@@ -6,6 +6,7 @@ namespace AIArmada\Inventory\Actions;
 
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Services\InventoryService;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -29,7 +30,8 @@ final class ReceiveInventory
         int $quantity,
         ?string $reason = null,
         ?string $note = null,
-        ?string $userId = null
+        ?string $userId = null,
+        ?DateTimeInterface $occurredAt = null,
     ): InventoryMovement {
         return $this->inventoryService->receive(
             model: $model,
@@ -37,7 +39,8 @@ final class ReceiveInventory
             quantity: $quantity,
             reason: $reason,
             note: $note,
-            userId: $userId
+            userId: $userId,
+            occurredAt: $occurredAt,
         );
     }
 }

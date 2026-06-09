@@ -187,42 +187,27 @@ class InventoryCostLayer extends Model implements Auditable
         return $this->belongsTo(InventoryBatch::class, 'batch_id');
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeWithRemainingQuantity(Builder $query): Builder
     {
         return $query->where('remaining_quantity', '>', 0);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeFifoOrder(Builder $query): Builder
     {
         return $query->orderBy('layer_date', 'asc')->orderBy('created_at', 'asc');
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeLifoOrder(Builder $query): Builder
     {
         return $query->orderBy('layer_date', 'desc')->orderBy('created_at', 'desc');
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeUsingMethod(Builder $query, CostingMethod $method): Builder
     {
         return $query->where('costing_method', $method->value);

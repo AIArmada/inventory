@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AIArmada\Inventory\Services;
+namespace AIArmada\Inventory\Services\Batch;
 
 use AIArmada\Inventory\Models\InventoryBatch;
-use AIArmada\Inventory\Services\Batch\BatchService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Collection;
 

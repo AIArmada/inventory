@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Console;
 
-use AIArmada\CommerceSupport\Support\OwnerContext;
-use AIArmada\CommerceSupport\Support\OwnerTuple\OwnerTupleColumns;
-use AIArmada\CommerceSupport\Support\OwnerTuple\OwnerTupleParser;
+use AIArmada\CommerceSupport\Support\OwnerBatchRunner;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\InventoryAllocationService;
@@ -15,20 +13,14 @@ use Illuminate\Console\Command;
 
 final class CleanupExpiredAllocationsCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     */
     protected $signature = 'inventory:cleanup-allocations
                             {--dry-run : Show what would be cleaned up without actually cleaning}';
 
-    /**
-     * The console command description.
-     */
     protected $description = 'Clean up expired inventory allocations';
 
     public function handle(InventoryAllocationService $allocationService): int
     {
-        $isDryRun = $this->option('dry-run');
+        $isDryRun = (bool) $this->option('dry-run');
 
         if ($isDryRun) {
             $this->info('Running in dry-run mode (no changes will be made)');
@@ -36,34 +28,14 @@ final class CleanupExpiredAllocationsCommand extends Command
 
         $this->info('Cleaning up expired inventory allocations...');
 
-        if (InventoryOwnerScope::isEnabled() && OwnerContext::resolve() === null) {
-            $owners = InventoryLocation::query()
-                ->withoutOwnerScope()
-                ->select(['owner_type', 'owner_id'])
-                ->distinct()
-                ->get();
+        $runner = new OwnerBatchRunner(
+            InventoryLocation::class,
+            ['enabled' => 'inventory.owner.enabled'],
+        );
 
-            $ownerTupleColumns = OwnerTupleColumns::forModelClass(InventoryLocation::class);
-
-            if ($owners->isEmpty()) {
-                $this->processScoped($allocationService, (bool) $isDryRun);
-
-                return self::SUCCESS;
-            }
-
-            foreach ($owners as $row) {
-                $ownerTuple = OwnerTupleParser::fromRow($row, $ownerTupleColumns);
-                $owner = $ownerTuple->toOwnerModel();
-
-                OwnerContext::withOwner($owner, function () use ($allocationService, $isDryRun): void {
-                    $this->processScoped($allocationService, (bool) $isDryRun);
-                });
-            }
-
-            return self::SUCCESS;
-        }
-
-        $this->processScoped($allocationService, (bool) $isDryRun);
+        $runner->run(function () use ($allocationService, $isDryRun): void {
+            $this->processScoped($allocationService, $isDryRun);
+        });
 
         return self::SUCCESS;
     }

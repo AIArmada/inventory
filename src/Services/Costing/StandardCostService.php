@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AIArmada\Inventory\Services;
+namespace AIArmada\Inventory\Services\Costing;
 
 use AIArmada\Inventory\Models\InventoryStandardCost;
 use Illuminate\Database\Eloquent\Collection;

@@ -204,26 +204,17 @@ class InventoryReorderSuggestion extends Model implements Auditable
         return $this->belongsTo(InventorySupplierLeadtime::class, 'supplier_leadtime_id');
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', ReorderSuggestionStatus::Pending->value);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeActionable(Builder $query): Builder
     {
         return $query->whereIn('status', [
@@ -232,17 +223,11 @@ class InventoryReorderSuggestion extends Model implements Auditable
         ]);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeByUrgency(Builder $query): Builder
     {
         return $query->orderByRaw("CASE urgency WHEN 'critical' THEN 1 WHEN 'high' THEN 2 WHEN 'normal' THEN 3 WHEN 'low' THEN 4 ELSE 5 END");
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeCritical(Builder $query): Builder
     {
         return $query->where('urgency', ReorderUrgency::Critical->value);

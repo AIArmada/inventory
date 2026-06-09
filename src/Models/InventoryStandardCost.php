@@ -100,18 +100,12 @@ class InventoryStandardCost extends Model implements Auditable
         return $this->morphTo();
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeCurrent(Builder $query): Builder
     {
         return $query->where('effective_from', '<=', now())
@@ -121,9 +115,6 @@ class InventoryStandardCost extends Model implements Auditable
             });
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeEffectiveAt(Builder $query, Carbon $date): Builder
     {
         return $query->where('effective_from', '<=', $date)
@@ -133,17 +124,11 @@ class InventoryStandardCost extends Model implements Auditable
             });
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeFuture(Builder $query): Builder
     {
         return $query->where('effective_from', '>', now());
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeExpired(Builder $query): Builder
     {
         return $query->whereNotNull('effective_to')

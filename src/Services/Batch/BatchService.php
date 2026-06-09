@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AIArmada\Inventory\Services;
+namespace AIArmada\Inventory\Services\Batch;
 
 use AIArmada\Inventory\Enums\BatchStatus;
 use AIArmada\Inventory\Events\BatchCreated;

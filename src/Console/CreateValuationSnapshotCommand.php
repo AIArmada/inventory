@@ -5,34 +5,21 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Console;
 
 use AIArmada\CommerceSupport\Support\MoneyFormatter;
-use AIArmada\CommerceSupport\Support\OwnerContext;
-use AIArmada\CommerceSupport\Support\OwnerTuple\OwnerTupleColumns;
-use AIArmada\CommerceSupport\Support\OwnerTuple\OwnerTupleParser;
+use AIArmada\CommerceSupport\Support\OwnerBatchRunner;
 use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Models\InventoryLocation;
-use AIArmada\Inventory\Services\ValuationService;
-use AIArmada\Inventory\Support\InventoryOwnerScope;
+use AIArmada\Inventory\Services\Costing\ValuationService;
 use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 
 final class CreateValuationSnapshotCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'inventory:create-valuation-snapshot
                             {--method=fifo : The costing method (fifo, weighted_average, standard)}
                             {--location= : The location ID to create snapshot for (null for all locations)}
                             {--date= : The snapshot date (defaults to today)}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Create a valuation snapshot for inventory reporting';
 
     public function handle(ValuationService $valuationService): int
@@ -52,61 +39,25 @@ final class CreateValuationSnapshotCommand extends Command
             ? Carbon::parse($this->option('date'))
             : null;
 
-        $this->info('Creating valuation snapshot for date: ' . ($date?->format('Y-m-d') ?? 'today'));
+        if ($locationId !== null) {
+            return $this->createSnapshot($valuationService, $method, $locationId, $date);
+        }
+
+        $this->info('Creating valuation snapshots...');
         $this->info("Costing method: {$method->label()}");
 
-        if ($locationId !== null) {
-            $this->info("Location: {$locationId}");
-        } else {
-            $this->info('Location: All locations');
-        }
+        $runner = new OwnerBatchRunner(
+            InventoryLocation::class,
+            ['enabled' => 'inventory.owner.enabled'],
+        );
 
-        if (InventoryOwnerScope::isEnabled() && OwnerContext::resolve() === null) {
-            if ($locationId !== null) {
-                $location = InventoryLocation::query()
-                    ->withoutOwnerScope()
-                    ->whereKey($locationId)
-                    ->first();
+        $result = $runner->forEach(function () use ($valuationService, $method, $date): int {
+            return $this->createSnapshot($valuationService, $method, null, $date);
+        });
 
-                if ($location === null) {
-                    $this->error('Unable to resolve the specified location.');
+        $failed = $result->contains(static fn (int $r): bool => $r !== self::SUCCESS);
 
-                    return self::FAILURE;
-                }
-
-                $owner = $location->owner;
-
-                return OwnerContext::withOwner($owner, fn (): int => $this->createSnapshot($valuationService, $method, $locationId, $date));
-            }
-
-            $owners = InventoryLocation::query()
-                ->withoutOwnerScope()
-                ->select(['owner_type', 'owner_id'])
-                ->distinct()
-                ->get();
-
-            $ownerTupleColumns = OwnerTupleColumns::forModelClass(InventoryLocation::class);
-
-            if ($owners->isEmpty()) {
-                return $this->createSnapshot($valuationService, $method, $locationId, $date);
-            }
-
-            $failed = false;
-
-            foreach ($owners as $row) {
-                $ownerTuple = OwnerTupleParser::fromRow($row, $ownerTupleColumns);
-                $owner = $ownerTuple->toOwnerModel();
-                $result = OwnerContext::withOwner($owner, fn (): int => $this->createSnapshot($valuationService, $method, $locationId, $date));
-
-                if ($result !== self::SUCCESS) {
-                    $failed = true;
-                }
-            }
-
-            return $failed ? self::FAILURE : self::SUCCESS;
-        }
-
-        return $this->createSnapshot($valuationService, $method, $locationId, $date);
+        return $failed ? self::FAILURE : self::SUCCESS;
     }
 
     private function createSnapshot(
@@ -119,7 +70,7 @@ final class CreateValuationSnapshotCommand extends Command
             $snapshot = $valuationService->createSnapshot($method, $locationId, $date);
 
             $this->newLine();
-            $this->info('✅ Valuation snapshot created successfully!');
+            $this->info('Valuation snapshot created successfully!');
             $this->newLine();
 
             $this->table(

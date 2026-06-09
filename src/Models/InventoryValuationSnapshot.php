@@ -89,41 +89,26 @@ class InventoryValuationSnapshot extends Model implements Auditable
         return $this->belongsTo(InventoryLocation::class, 'location_id');
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeForLocation(Builder $query, string $locationId): Builder
     {
         return $query->where('location_id', $locationId);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeAllLocations(Builder $query): Builder
     {
         return $query->whereNull('location_id');
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeUsingMethod(Builder $query, CostingMethod $method): Builder
     {
         return $query->where('costing_method', $method->value);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeOnDate(Builder $query, Carbon $date): Builder
     {
         return $query->whereDate('snapshot_date', $date);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeBetweenDates(Builder $query, Carbon $from, Carbon $to): Builder
     {
         return $query->whereBetween('snapshot_date', [$from, $to]);
@@ -131,8 +116,6 @@ class InventoryValuationSnapshot extends Model implements Auditable
 
     /**
      * Order by snapshot_date descending (most recent first).
-     *
-     * @return Builder<static>
      */
     public function scopeLatestBySnapshotDate(Builder $query): Builder
     {

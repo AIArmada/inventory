@@ -8,6 +8,7 @@ use AIArmada\Inventory\Exceptions\InsufficientInventoryException;
 use AIArmada\Inventory\Exceptions\InsufficientStockException;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Services\InventoryService;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Model;
 use Lorisleiva\Actions\Concerns\AsAction;
 
@@ -34,7 +35,8 @@ final class ShipInventory
         ?string $reason = null,
         ?string $reference = null,
         ?string $note = null,
-        ?string $userId = null
+        ?string $userId = null,
+        ?DateTimeInterface $occurredAt = null,
     ): InventoryMovement {
         try {
             return $this->inventoryService->ship(
@@ -44,7 +46,8 @@ final class ShipInventory
                 reason: $reason,
                 reference: $reference,
                 note: $note,
-                userId: $userId
+                userId: $userId,
+                occurredAt: $occurredAt,
             );
         } catch (InsufficientStockException $exception) {
             throw new InsufficientInventoryException(

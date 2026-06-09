@@ -133,50 +133,32 @@ class InventoryDemandHistory extends Model
         return $this->belongsTo(InventoryLocation::class, 'location_id');
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeForModel(Builder $query, Model $model): Builder
     {
         return $query->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey());
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeDaily(Builder $query): Builder
     {
         return $query->where('period_type', DemandPeriodType::Daily->value);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeWeekly(Builder $query): Builder
     {
         return $query->where('period_type', DemandPeriodType::Weekly->value);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeMonthly(Builder $query): Builder
     {
         return $query->where('period_type', DemandPeriodType::Monthly->value);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeBetweenDates(Builder $query, Carbon $from, Carbon $to): Builder
     {
         return $query->whereBetween('period_date', [$from, $to]);
     }
 
-    /**
-     * @return Builder<static>
-     */
     public function scopeLastDays(Builder $query, int $days): Builder
     {
         return $query->where('period_date', '>=', now()->subDays($days));
