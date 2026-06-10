@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -37,21 +38,20 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int $quantity_received
  * @property int $quantity_on_hand
  * @property int $quantity_reserved
- * @property Carbon|null $manufactured_at
- * @property Carbon $received_at
- * @property Carbon|null $expires_at
+ * @property CarbonImmutable|null $manufactured_at
+ * @property CarbonImmutable $received_at
+ * @property CarbonImmutable|null $expires_at
  * @property string $status
  * @property int|null $unit_cost_minor
  * @property string $currency
  * @property string|null $supplier_id
  * @property string|null $purchase_order_number
- * @property bool $is_quarantined
  * @property string|null $quarantine_reason
- * @property Carbon|null $quality_checked_at
+ * @property CarbonImmutable|null $quarantined_at
+ * @property CarbonImmutable|null $quality_checked_at
  * @property string|null $quality_status
- * @property bool $is_recalled
  * @property string|null $recall_reason
- * @property Carbon|null $recalled_at
+ * @property CarbonImmutable|null $recalled_at
  * @property array<string, mixed>|null $metadata
  * @property Carbon $created_at
  * @property Carbon $updated_at
@@ -108,11 +108,10 @@ final class InventoryBatch extends Model implements Auditable
         'currency',
         'supplier_id',
         'purchase_order_number',
-        'is_quarantined',
         'quarantine_reason',
+        'quarantined_at',
         'quality_checked_at',
         'quality_status',
-        'is_recalled',
         'recall_reason',
         'recalled_at',
         'metadata',
@@ -251,8 +250,8 @@ final class InventoryBatch extends Model implements Auditable
     {
         $this->update([
             'status' => BatchStatus::Quarantined->value,
-            'is_quarantined' => true,
             'quarantine_reason' => $reason,
+            'quarantined_at' => now(),
         ]);
 
         return $this;
@@ -265,8 +264,8 @@ final class InventoryBatch extends Model implements Auditable
     {
         $this->update([
             'status' => BatchStatus::Active->value,
-            'is_quarantined' => false,
             'quarantine_reason' => null,
+            'quarantined_at' => null,
         ]);
 
         return $this;
@@ -279,7 +278,6 @@ final class InventoryBatch extends Model implements Auditable
     {
         $this->update([
             'status' => BatchStatus::Recalled->value,
-            'is_recalled' => true,
             'recall_reason' => $reason,
             'recalled_at' => now(),
         ]);
@@ -492,13 +490,12 @@ final class InventoryBatch extends Model implements Auditable
             'quantity_on_hand' => 'integer',
             'quantity_reserved' => 'integer',
             'unit_cost_minor' => 'integer',
-            'is_quarantined' => 'boolean',
-            'is_recalled' => 'boolean',
-            'manufactured_at' => 'date',
-            'received_at' => 'date',
-            'expires_at' => 'date',
-            'quality_checked_at' => 'datetime',
-            'recalled_at' => 'datetime',
+            'manufactured_at' => 'immutable_datetime',
+            'received_at' => 'immutable_datetime',
+            'expires_at' => 'immutable_datetime',
+            'quarantined_at' => 'immutable_datetime',
+            'quality_checked_at' => 'immutable_datetime',
+            'recalled_at' => 'immutable_datetime',
             'metadata' => 'array',
         ];
     }

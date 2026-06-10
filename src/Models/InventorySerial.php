@@ -266,20 +266,23 @@ final class InventorySerial extends Model implements Auditable
     }
 
     /**
-     * Check if transition to new status is allowed.
+     * Check if transition to new status is allowed, delegating to the state object.
      */
     public function canTransitionTo(string | SerialStatus $newStatus): bool
     {
-        return $this->getStatusEnum()->canTransitionTo($newStatus);
+        $targetClass = SerialStatus::resolveStateClass($newStatus instanceof SerialStatus ? $newStatus->getValue() : $newStatus);
+
+        return $this->status->canTransitionTo($targetClass);
     }
 
     /**
-     * Update status with validation.
+     * Update status with validation via the state object.
      */
     public function transitionStatusTo(string | SerialStatus $newStatus): self
     {
-        if (! $this->canTransitionTo($newStatus)) {
-            $targetClass = SerialStatus::resolveStateClass($newStatus instanceof SerialStatus ? $newStatus->getValue() : $newStatus);
+        $targetClass = SerialStatus::resolveStateClass($newStatus instanceof SerialStatus ? $newStatus->getValue() : $newStatus);
+
+        if (! $this->status->canTransitionTo($targetClass)) {
             $target = new $targetClass($this);
 
             throw new InvalidArgumentException(
@@ -510,8 +513,8 @@ final class InventorySerial extends Model implements Auditable
             'warranty_expires_at' => 'date',
             'manufactured_at' => 'date',
             'received_at' => 'date',
-            'assigned_at' => 'datetime',
-            'sold_at' => 'datetime',
+            'assigned_at' => 'immutable_datetime',
+            'sold_at' => 'immutable_datetime',
             'metadata' => 'array',
         ];
     }

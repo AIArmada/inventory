@@ -208,7 +208,7 @@ final class InventorySerialHistory extends Model
     protected function casts(): array
     {
         return [
-            'occurred_at' => 'datetime',
+            'occurred_at' => 'immutable_datetime',
             'metadata' => 'array',
         ];
     }

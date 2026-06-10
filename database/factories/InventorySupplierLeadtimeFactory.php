@@ -39,9 +39,6 @@ final class InventorySupplierLeadtimeFactory extends Factory
         ];
     }
 
-    /**
-     * Set the inventoryable model for this supplier leadtime.
-     */
     public function forModel(Model $model): static
     {
         return $this->state(fn (array $attributes): array => [
@@ -61,6 +58,7 @@ final class InventorySupplierLeadtimeFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => [
             'is_active' => false,
+            'deactivated_at' => now(),
         ]);
     }
 

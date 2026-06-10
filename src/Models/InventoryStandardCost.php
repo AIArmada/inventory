@@ -162,11 +162,11 @@ class InventoryStandardCost extends Model implements Auditable
     {
         return [
             'standard_cost_minor' => 'integer',
-            'effective_from' => 'datetime',
-            'effective_to' => 'datetime',
+            'effective_from' => 'immutable_datetime',
+            'effective_to' => 'immutable_datetime',
             'metadata' => 'array',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
         ];
     }
 }

@@ -299,7 +299,7 @@ final class InventoryMovement extends Model implements Auditable
     {
         return [
             'quantity' => 'integer',
-            'occurred_at' => 'datetime',
+            'occurred_at' => 'immutable_datetime',
         ];
     }
 

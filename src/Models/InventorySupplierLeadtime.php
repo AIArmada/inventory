@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
@@ -34,8 +35,9 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $currency
  * @property bool $is_primary
  * @property bool $is_active
- * @property Carbon|null $last_order_at
- * @property Carbon|null $last_received_at
+ * @property CarbonImmutable|null $deactivated_at
+ * @property CarbonImmutable|null $last_order_at
+ * @property CarbonImmutable|null $last_received_at
  * @property array<string, mixed>|null $metadata
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -65,6 +67,7 @@ class InventorySupplierLeadtime extends Model implements Auditable
         'currency',
         'is_primary',
         'is_active',
+        'deactivated_at',
         'last_order_at',
         'last_received_at',
         'metadata',
@@ -160,7 +163,8 @@ class InventorySupplierLeadtime extends Model implements Auditable
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true);
+        return $query->where('is_active', true)
+            ->whereNull('deactivated_at');
     }
 
     public function scopePrimary(Builder $query): Builder
@@ -265,11 +269,10 @@ class InventorySupplierLeadtime extends Model implements Auditable
             'unit_cost_minor' => 'integer',
             'is_primary' => 'boolean',
             'is_active' => 'boolean',
-            'last_order_at' => 'datetime',
-            'last_received_at' => 'datetime',
+            'deactivated_at' => 'immutable_datetime',
+            'last_order_at' => 'immutable_datetime',
+            'last_received_at' => 'immutable_datetime',
             'metadata' => 'array',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
         ];
     }
 

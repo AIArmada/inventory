@@ -252,7 +252,7 @@ final class InventoryAllocation extends Model implements Auditable
     {
         return [
             'quantity' => 'integer',
-            'expires_at' => 'datetime',
+            'expires_at' => 'immutable_datetime',
         ];
     }
 }

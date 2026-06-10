@@ -412,8 +412,8 @@ final class InventoryLevel extends Model implements Auditable
             'max_stock' => 'integer',
             'lead_time_days' => 'integer',
             'unit_conversion_factor' => 'decimal:4',
-            'last_alert_at' => 'datetime',
-            'last_stock_check_at' => 'datetime',
+            'last_alert_at' => 'immutable_datetime',
+            'last_stock_check_at' => 'immutable_datetime',
             'metadata' => 'array',
         ];
     }

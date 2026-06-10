@@ -262,9 +262,9 @@ class InventoryCostLayer extends Model implements Auditable
             'unit_cost_minor' => 'integer',
             'total_cost_minor' => 'integer',
             'costing_method' => CostingMethod::class,
-            'layer_date' => 'datetime',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
+            'layer_date' => 'immutable_datetime',
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
         ];
     }
 }

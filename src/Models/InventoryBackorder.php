@@ -334,13 +334,13 @@ class InventoryBackorder extends Model implements Auditable
             'quantity_cancelled' => 'integer',
             'status' => BackorderStatus::class,
             'priority' => BackorderPriority::class,
-            'requested_at' => 'datetime',
-            'promised_at' => 'datetime',
-            'fulfilled_at' => 'datetime',
-            'cancelled_at' => 'datetime',
+            'requested_at' => 'immutable_datetime',
+            'promised_at' => 'immutable_datetime',
+            'fulfilled_at' => 'immutable_datetime',
+            'cancelled_at' => 'immutable_datetime',
             'metadata' => 'array',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
         ];
     }
 }

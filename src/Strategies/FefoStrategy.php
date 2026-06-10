@@ -9,7 +9,7 @@ use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 
 /**
@@ -35,7 +35,7 @@ final class FefoStrategy implements AllocationStrategyInterface
     }
 
     /**
-     * @return array<int, array{batch_id: string, location_id: string|null, quantity: int, expires_at: Carbon|null}>
+     * @return array<int, array{batch_id: string, location_id: string|null, quantity: int, expires_at: CarbonImmutable|null}>
      */
     public function allocate(Model $model, int $quantity, ?AllocationContext $context = null): array
     {
@@ -161,7 +161,7 @@ final class FefoStrategy implements AllocationStrategyInterface
 
     /**
      * @param  Collection<int, InventoryBatch>  $batches
-     * @return array<int, array{batch_id: string, location_id: string|null, quantity: int, expires_at: Carbon|null}>
+     * @return array<int, array{batch_id: string, location_id: string|null, quantity: int, expires_at: CarbonImmutable|null}>
      */
     private function buildAllocations(Collection $batches, int $quantity): array
     {

@@ -344,12 +344,12 @@ class InventoryReorderSuggestion extends Model implements Auditable
             'average_daily_demand' => 'integer',
             'lead_time_days' => 'integer',
             'expected_stockout_date' => 'date',
-            'approved_at' => 'datetime',
-            'ordered_at' => 'datetime',
+            'approved_at' => 'immutable_datetime',
+            'ordered_at' => 'immutable_datetime',
             'calculation_details' => 'array',
             'metadata' => 'array',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
         ];
     }
 }

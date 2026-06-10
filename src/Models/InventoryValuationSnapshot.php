@@ -175,8 +175,8 @@ class InventoryValuationSnapshot extends Model implements Auditable
             'variance_from_previous_minor' => 'integer',
             'breakdown' => 'array',
             'metadata' => 'array',
-            'created_at' => 'datetime',
-            'updated_at' => 'datetime',
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
         ];
     }
 

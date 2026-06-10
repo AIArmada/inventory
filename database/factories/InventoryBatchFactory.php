@@ -37,15 +37,10 @@ class InventoryBatchFactory extends Factory
             'status' => BatchStatus::Active->value,
             'unit_cost_minor' => $this->faker->numberBetween(100, 10000),
             'currency' => 'USD',
-            'is_quarantined' => false,
-            'is_recalled' => false,
             'metadata' => null,
         ];
     }
 
-    /**
-     * Set specific location.
-     */
     public function forLocation(InventoryLocation | string $location): static
     {
         return $this->state(fn (array $attributes): array => [
@@ -54,8 +49,6 @@ class InventoryBatchFactory extends Factory
     }
 
     /**
-     * Set specific inventoryable.
-     *
      * @param  class-string  $type
      */
     public function forInventoryable(string $type, string $id): static
@@ -66,9 +59,6 @@ class InventoryBatchFactory extends Factory
         ]);
     }
 
-    /**
-     * Make batch expiring soon.
-     */
     public function expiringSoon(int $days = 14): static
     {
         return $this->state(fn (array $attributes): array => [
@@ -76,9 +66,6 @@ class InventoryBatchFactory extends Factory
         ]);
     }
 
-    /**
-     * Make batch expired.
-     */
     public function expired(): static
     {
         return $this->state(fn (array $attributes): array => [
@@ -87,34 +74,24 @@ class InventoryBatchFactory extends Factory
         ]);
     }
 
-    /**
-     * Make batch quarantined.
-     */
     public function quarantined(string $reason = 'Quality issue'): static
     {
         return $this->state(fn (array $attributes): array => [
             'status' => BatchStatus::Quarantined->value,
-            'is_quarantined' => true,
             'quarantine_reason' => $reason,
+            'quarantined_at' => now(),
         ]);
     }
 
-    /**
-     * Make batch recalled.
-     */
     public function recalled(string $reason = 'Safety recall'): static
     {
         return $this->state(fn (array $attributes): array => [
             'status' => BatchStatus::Recalled->value,
-            'is_recalled' => true,
             'recall_reason' => $reason,
             'recalled_at' => now(),
         ]);
     }
 
-    /**
-     * Make batch depleted.
-     */
     public function depleted(): static
     {
         return $this->state(fn (array $attributes): array => [
@@ -124,9 +101,6 @@ class InventoryBatchFactory extends Factory
         ]);
     }
 
-    /**
-     * Make batch with reserved quantity.
-     */
     public function withReserved(int $reserved): static
     {
         return $this->state(fn (array $attributes): array => [
@@ -134,9 +108,6 @@ class InventoryBatchFactory extends Factory
         ]);
     }
 
-    /**
-     * Make batch without expiry.
-     */
     public function nonPerishable(): static
     {
         return $this->state(fn (array $attributes): array => [

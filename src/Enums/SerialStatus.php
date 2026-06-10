@@ -82,32 +82,4 @@ enum SerialStatus: string
     {
         return in_array($this, [self::Available, self::Reserved], true);
     }
-
-    /**
-     * Get allowed transitions from this status.
-     *
-     * @return array<self>
-     */
-    public function allowedTransitions(): array
-    {
-        return match ($this) {
-            self::Available => [self::Reserved, self::Sold, self::InRepair, self::Disposed, self::Lost],
-            self::Reserved => [self::Available, self::Sold, self::Shipped],
-            self::Sold => [self::Shipped, self::Returned],
-            self::Shipped => [self::Returned],
-            self::Returned => [self::Available, self::InRepair, self::Disposed],
-            self::InRepair => [self::Available, self::Disposed],
-            self::Disposed => [],
-            self::Lost => [self::Available],
-            self::Recalled => [self::Disposed, self::Available],
-        };
-    }
-
-    /**
-     * Check if transition to another status is allowed.
-     */
-    public function canTransitionTo(self $newStatus): bool
-    {
-        return in_array($newStatus, $this->allowedTransitions(), true);
-    }
 }
