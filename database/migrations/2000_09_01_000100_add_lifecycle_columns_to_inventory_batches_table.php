@@ -20,6 +20,11 @@ return new class extends Migration
         DB::statement("UPDATE {$tableName} SET quarantined_at = updated_at WHERE is_quarantined = true");
 
         Schema::table($tableName, function (Blueprint $table): void {
+            $table->dropIndex(['is_quarantined']);
+            $table->dropIndex(['is_recalled']);
+        });
+
+        Schema::table($tableName, function (Blueprint $table): void {
             $table->dropColumn(['is_quarantined', 'is_recalled']);
 
             $table->index('quarantined_at');

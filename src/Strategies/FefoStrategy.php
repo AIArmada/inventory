@@ -7,9 +7,9 @@ namespace AIArmada\Inventory\Strategies;
 use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\CarbonImmutable;
 use InvalidArgumentException;
 
 /**
