@@ -7,7 +7,7 @@ namespace AIArmada\Inventory\Integrations;
 use AIArmada\Inventory\Contracts\CheckoutInventoryServiceInterface;
 use AIArmada\Inventory\Exceptions\InsufficientInventoryException;
 use AIArmada\Inventory\Models\InventoryAllocation;
-use AIArmada\Inventory\Services\InventoryAllocationService;
+use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Services\InventoryService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Products\Models\Product;

@@ -8,7 +8,7 @@ use AIArmada\Inventory\Enums\AllocationStrategy;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryMovement;
-use AIArmada\Inventory\Services\InventoryAllocationService;
+use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Services\InventoryService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphMany;

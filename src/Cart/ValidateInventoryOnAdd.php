@@ -6,7 +6,7 @@ namespace AIArmada\Inventory\Cart;
 
 use AIArmada\Cart\Events\ItemAdded;
 use AIArmada\Inventory\Exceptions\InsufficientInventoryException;
-use AIArmada\Inventory\Services\InventoryAllocationService;
+use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use Illuminate\Database\Eloquent\Model;
 
 /**

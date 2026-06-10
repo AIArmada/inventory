@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Listeners;
 
-use AIArmada\Inventory\Services\InventoryAllocationService;
+use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 
 final class ReleaseInventoryOnCartClear
 {

@@ -8,7 +8,7 @@ use AIArmada\Cart\Cart;
 use AIArmada\Cart\Contracts\CartValidationResult;
 use AIArmada\Cart\Contracts\CartValidatorInterface;
 use AIArmada\Cart\Models\CartItem;
-use AIArmada\Inventory\Services\InventoryAllocationService;
+use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use Illuminate\Database\Eloquent\Model;
 
 /**

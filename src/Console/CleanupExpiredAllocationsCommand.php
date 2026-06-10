@@ -7,7 +7,7 @@ namespace AIArmada\Inventory\Console;
 use AIArmada\CommerceSupport\Support\OwnerBatchRunner;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryLocation;
-use AIArmada\Inventory\Services\InventoryAllocationService;
+use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Console\Command;
 
