@@ -124,6 +124,32 @@ Inventory::receive($product, 100, $location->id);
 echo $product->getAvailableStock(); // 100
 ```
 
+## Extending Contracts and Registries
+
+The package defines **6 contracts** in `Contracts/` that you can implement to extend behaviour:
+
+| Contract | Purpose |
+|----------|---------|
+| `InventoryableInterface` | Make any model inventory-trackable |
+| `CheckoutInventoryServiceInterface` | Simplified checkout integration |
+| `CostingMethodInterface` | Custom costing strategy |
+| `ExportInterface` | Custom export formats |
+| `ReportInterface` | Custom report types |
+
+Register your implementations through the **Support registries** in `Support/`:
+
+```php
+use AIArmada\Inventory\Support\CostingMethodRegistry;
+
+app(CostingMethodRegistry::class)->register(new MyCustomCostService());
+
+use AIArmada\Inventory\Support\AllocationStrategyRegistry;
+use AIArmada\Inventory\Support\ExportRegistry;
+use AIArmada\Inventory\Support\ReportRegistry;
+```
+
+Each registry provides `register()` and `get()` methods, making the package fully extensible without modifying core code.
+
 ## Next Steps
 
 - [Configuration](03-configuration.md) - Customize all options

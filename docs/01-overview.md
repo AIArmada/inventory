@@ -32,8 +32,11 @@ The `aiarmada/inventory` package owns stock state, warehouse structure, allocati
 ## Main models services or surfaces
 
 - **Models** — `InventoryLocation`, `InventoryLevel`, `InventoryMovement`, `InventoryAllocation`, `InventoryBatch`, `InventorySerial`, `InventoryCostLayer`, `InventoryValuationSnapshot`, `InventoryBackorder`, `InventoryDemandHistory`, `InventorySupplierLeadtime`, `InventoryReorderSuggestion`
+- **Actions (16)** — `ReceiveInventory`, `ShipInventory`, `TransferInventory`, `AdjustInventory`, `AllocateStock`, `CommitStock`, `ReleaseStock`, `CreateBatch`, `RecordSerial`, `CreateBackorder`, `ResolveBackorder`, `ProcessExpiredBatches`, `CheckLowInventory`, `ApproveReorderSuggestion`, `RejectReorderSuggestion`, `CreateValuationSnapshot`
+- **Contracts (6)** — `InventoryableInterface`, `CheckoutInventoryServiceInterface`, `CostingMethodInterface`, `ProvidesInventoryCommitContext`, `ExportInterface`, `ReportInterface`
 - **Facades** — `Inventory`, `InventoryAllocation`
-- **Actions and services** — receiving, shipping, transferring, adjusting, forecasting, replenishment, batch allocation, serial tracking, valuation, and threshold monitoring
+- **Services** — reorganized into subdirectories: `Batch/`, `Costing/`, `Serial/`, `Stock/`
+- **Support registries** — `AllocationStrategyRegistry`, `CostingMethodRegistry`, `ExportRegistry`, `ReportRegistry`
 
 ## Owner scoping and security notes
 
@@ -101,26 +104,47 @@ The `aiarmada/inventory` package owns stock state, warehouse structure, allocati
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Facades                                  │
+│                      Facades                                    │
 │    Inventory::receive()    InventoryAllocation::allocate()      │
 └─────────────────────────────────────────────────────────────────┘
                                 │
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Actions                                  │
-│   ReceiveInventory  ShipInventory  TransferInventory  Adjust... │
+│                   Contracts (6)                                 │
+│  InventoryableInterface       CheckoutInventoryServiceInterface │
+│  CostingMethodInterface       ProvidesInventoryCommitContext    │
+│  ExportInterface              ReportInterface                   │
 └─────────────────────────────────────────────────────────────────┘
                                 │
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Services                                 │
-│  InventoryService      InventoryAllocationService               │
-│  BatchService          SerialService                            │
-│  ValuationService      FifoCostService                          │
-│  DemandForecastService ReplenishmentService                     │
-│  StockThresholdService AlertDispatchService                     │
-│  LocationTreeService   SerialLookupService                      │
-│  ExpiryMonitorService  BackorderService                         │
-│  BatchAllocationService WeightedAverageCostService              │
-│  StandardCostService                                            │
+│                 Actions (16, via AsAction)                       │
+│  ReceiveInventory  ShipInventory  TransferInventory             │
+│  AdjustInventory   AllocateStock   CommitStock                  │
+│  ReleaseStock      CreateBatch    RecordSerial                  │
+│  CreateBackorder   ResolveBackorder  ProcessExpiredBatches      │
+│  CheckLowInventory  ApproveReorderSuggestion                    │
+│  RejectReorderSuggestion  CreateValuationSnapshot               │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+┌─────────────────────────────────────────────────────────────────┐
+│                   Services (subdirectories)                      │
+│  Stock/                     Batch/                              │
+│    InventoryAllocationService   BatchService                    │
+│    BackorderService             BatchAllocationService          │
+│    ReplenishmentService         ExpiryMonitorService            │
+│    DemandForecastService                                        │
+│    StockThresholdService    Costing/                            │
+│    AlertDispatchService        FifoCostService                  │
+│    LocationTreeService         WeightedAverageCostService       │
+│                                StandardCostService              │
+│  Serial/                      ValuationService                  │
+│    SerialService                                                 │
+│    SerialLookupService    InventoryService (core ops)            │
+└─────────────────────────────────────────────────────────────────┘
+                                │
+┌─────────────────────────────────────────────────────────────────┐
+│               Support Registries                                 │
+│  AllocationStrategyRegistry  CostingMethodRegistry              │
+│  ExportRegistry              ReportRegistry                     │
 └─────────────────────────────────────────────────────────────────┘
                                 │
 ┌─────────────────────────────────────────────────────────────────┐

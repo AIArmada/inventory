@@ -6,8 +6,8 @@ namespace AIArmada\Inventory\Listeners;
 
 use AIArmada\Inventory\Enums\MovementType;
 use AIArmada\Inventory\Models\InventoryMovement;
-use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Services\InventoryService;
+use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Orders\Events\InventoryReleaseRequired;
 use AIArmada\Orders\Models\Order;
 use Illuminate\Support\Facades\DB;

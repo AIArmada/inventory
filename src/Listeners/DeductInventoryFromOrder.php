@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Listeners;
 
 use AIArmada\Inventory\Models\InventoryLevel;
-use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Services\InventoryService;
+use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Orders\Events\InventoryDeductionRequired;
 use AIArmada\Orders\Models\Order;

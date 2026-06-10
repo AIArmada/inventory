@@ -4,7 +4,145 @@ title: Usage
 
 # Usage
 
-## Basic Operations
+## Canonical API: Actions
+
+The primary API surface is the **Action** classes. Each Action is a self-contained unit of work that can be called standalone via `::run()` or composed into workflows.
+
+### Receiving Inventory
+
+```php
+use AIArmada\Inventory\Actions\ReceiveInventory;
+
+// Basic receive
+ReceiveInventory::run($product, $locationId, quantity: 100);
+
+// With options
+ReceiveInventory::run($product, $locationId, quantity: 100, reason: 'PO-2024-001');
+```
+
+### Shipping Inventory
+
+```php
+use AIArmada\Inventory\Actions\ShipInventory;
+
+ShipInventory::run($product, $locationId, quantity: 10, reference: 'ORD-2024-001');
+```
+
+### Transferring Between Locations
+
+```php
+use AIArmada\Inventory\Actions\TransferInventory;
+
+TransferInventory::run(
+    $product,
+    fromLocationId: $warehouseA->id,
+    toLocationId: $warehouseB->id,
+    quantity: 25,
+    note: 'TRF-001',
+);
+```
+
+### Adjusting Inventory to a Specific Quantity
+
+```php
+use AIArmada\Inventory\Actions\AdjustInventory;
+
+// Set stock to exact count
+AdjustInventory::run($product, $locationId, newQuantity: 50, reason: 'Stock count reconciliation');
+```
+
+### Stock Allocation & Commitment
+
+```php
+use AIArmada\Inventory\Actions\AllocateStock;
+use AIArmada\Inventory\Actions\CommitStock;
+use AIArmada\Inventory\Actions\ReleaseStock;
+
+// Reserve stock for a cart
+AllocateStock::run($product, quantity: 5, cartId: $cartId, ttlMinutes: 30);
+
+// Commit on successful payment
+CommitStock::run(cartId: $cartId, orderId: $orderId);
+
+// Release if cart abandond
+ReleaseStock::run($product, $cartId);
+// Or release everything for a cart
+ReleaseStock::make()->releaseAllForCart($cartId);
+```
+
+### Batch & Serial Operations
+
+```php
+use AIArmada\Inventory\Actions\CreateBatch;
+use AIArmada\Inventory\Actions\RecordSerial;
+
+// Create a batch/lot
+CreateBatch::run($product, batchNumber: 'LOT-2024-001', locationId: $locationId, quantity: 500, expiresAt: now()->addYear());
+
+// Record a serial number
+RecordSerial::run($product, serialNumber: 'SN-001-ABC', locationId: $locationId);
+```
+
+### Backorder Management
+
+```php
+use AIArmada\Inventory\Actions\CreateBackorder;
+use AIArmada\Inventory\Actions\ResolveBackorder;
+
+// Create a backorder
+CreateBackorder::run($product, quantity: 20, orderId: $orderId, customerId: $customerId);
+
+// Fulfill part of a backorder
+ResolveBackorder::make()->fulfill($backorder, quantity: 10);
+
+// Cancel a backorder
+ResolveBackorder::make()->cancel($backorder, reason: 'Customer cancelled');
+
+// Auto-fulfill from available stock
+ResolveBackorder::make()->autoFulfill($product, $availableQuantity);
+```
+
+### Reorder Suggestions
+
+```php
+use AIArmada\Inventory\Actions\ApproveReorderSuggestion;
+use AIArmada\Inventory\Actions\RejectReorderSuggestion;
+
+ApproveReorderSuggestion::run($suggestion, userId: auth()->id());
+
+RejectReorderSuggestion::run($suggestion, reason: 'Not enough budget');
+```
+
+### Check Low Inventory
+
+```php
+use AIArmada\Inventory\Actions\CheckLowInventory;
+
+// Returns true if stock is below reorder point and dispatches LowInventoryDetected event
+CheckLowInventory::run($product, $level);
+```
+
+### Process Expired Batches
+
+```php
+use AIArmada\Inventory\Actions\ProcessExpiredBatches;
+
+// Returns count of batches marked as expired
+ProcessExpiredBatches::run();
+```
+
+### Valuation Snapshots
+
+```php
+use AIArmada\Inventory\Actions\CreateValuationSnapshot;
+use AIArmada\Inventory\Enums\CostingMethod;
+
+CreateValuationSnapshot::run(method: CostingMethod::Fifo);
+```
+
+> These Actions replace the legacy Facade-based approach. The Facade examples below still work but are provided for backward compatibility.
+
+## Legacy Facade Operations (Compatibility)
 
 ### Receiving Inventory
 
