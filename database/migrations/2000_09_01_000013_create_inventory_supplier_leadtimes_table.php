@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('currency', 3)->default('MYR');
             $table->boolean('is_primary')->default(false);
             $table->boolean('is_active')->default(true);
+            $table->timestampTz('deactivated_at')->nullable();
             $table->timestampTz('last_order_at')->nullable();
             $table->timestampTz('last_received_at')->nullable();
             $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
@@ -38,6 +39,7 @@ return new class extends Migration
 
             $table->index(['inventoryable_type', 'inventoryable_id', 'is_active'], 'inv_supp_lead_invable_active_idx');
             $table->index('is_primary');
+            $table->index('deactivated_at', $tableName . '_deactivated_at_idx');
             $table->index(['owner_type', 'owner_id'], $tableName . '_owner_idx');
         });
     }
