@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Actions;
 
 use AIArmada\Inventory\Exceptions\InsufficientInventoryException;
-use AIArmada\Inventory\Exceptions\InsufficientStockException;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Services\InventoryService;
 use DateTimeInterface;
@@ -37,23 +36,14 @@ final class TransferInventory
         ?string $userId = null,
         ?DateTimeInterface $occurredAt = null,
     ): InventoryMovement {
-        try {
-            return $this->inventoryService->transfer(
-                model: $model,
-                fromLocationId: $fromLocationId,
-                toLocationId: $toLocationId,
-                quantity: $quantity,
-                note: $note,
-                userId: $userId,
-                occurredAt: $occurredAt,
-            );
-        } catch (InsufficientStockException $exception) {
-            throw new InsufficientInventoryException(
-                $exception->getMessage(),
-                (string) $model->getKey(),
-                $quantity,
-                $exception->available
-            );
-        }
+        return $this->inventoryService->transfer(
+            model: $model,
+            fromLocationId: $fromLocationId,
+            toLocationId: $toLocationId,
+            quantity: $quantity,
+            note: $note,
+            userId: $userId,
+            occurredAt: $occurredAt,
+        );
     }
 }

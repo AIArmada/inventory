@@ -36,7 +36,7 @@ use Illuminate\Support\Carbon;
  * @property-read Model $inventoryable
  * @property-read InventoryLocation|null $location
  */
-class InventoryDemandHistory extends Model
+final class InventoryDemandHistory extends Model
 {
     use HasFactory;
     use HasOwner;

@@ -43,7 +43,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property Carbon|null $updated_at
  * @property-read Model $inventoryable
  */
-class InventorySupplierLeadtime extends Model implements Auditable
+final class InventorySupplierLeadtime extends Model implements Auditable
 {
     use HasCommerceAudit;
     use HasFactory;

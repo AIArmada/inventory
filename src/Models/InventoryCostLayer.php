@@ -44,7 +44,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property-read InventoryLocation|null $location
  * @property-read InventoryBatch|null $batch
  */
-class InventoryCostLayer extends Model implements Auditable
+final class InventoryCostLayer extends Model implements Auditable
 {
     use HasCommerceAudit;
     use HasFactory;

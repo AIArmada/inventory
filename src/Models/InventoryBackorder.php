@@ -52,7 +52,7 @@ use Spatie\ModelStates\HasStates;
  * @property-read Model $inventoryable
  * @property-read InventoryLocation|null $location
  */
-class InventoryBackorder extends Model implements Auditable
+final class InventoryBackorder extends Model implements Auditable
 {
     use HasCommerceAudit;
     use HasFactory;

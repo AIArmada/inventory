@@ -34,7 +34,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property Carbon|null $updated_at
  * @property-read InventoryLocation|null $location
  */
-class InventoryValuationSnapshot extends Model implements Auditable
+final class InventoryValuationSnapshot extends Model implements Auditable
 {
     use HasCommerceAudit;
     use HasFactory;

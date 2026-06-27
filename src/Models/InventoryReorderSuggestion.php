@@ -51,7 +51,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property-read InventoryLocation|null $location
  * @property-read InventorySupplierLeadtime|null $supplierLeadtime
  */
-class InventoryReorderSuggestion extends Model implements Auditable
+final class InventoryReorderSuggestion extends Model implements Auditable
 {
     use HasCommerceAudit;
     use HasFactory;
