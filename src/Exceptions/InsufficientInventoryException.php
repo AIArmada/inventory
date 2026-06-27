@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Exceptions;
 
-use Exception;
-
 /**
  * Exception thrown when there is insufficient inventory for an operation.
  *
@@ -27,7 +25,7 @@ use Exception;
  * );
  * ```
  */
-class InsufficientInventoryException extends Exception
+class InsufficientInventoryException extends InventoryException
 {
     public function __construct(
         string $message,
