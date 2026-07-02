@@ -11,7 +11,7 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 ```php
 'database' => [
     'table_prefix' => env('INVENTORY_TABLE_PREFIX', 'inventory_'),
-    'json_column_type' => env('INVENTORY_JSON_COLUMN_TYPE', 'json'),
+    'json_column_type' => env('INVENTORY_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'jsonb')),
     'tables' => [
         'locations' => 'inventory_locations',
         'levels' => 'inventory_levels',
@@ -24,14 +24,14 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 | Option | Default | Description |
 |--------|---------|-------------|
 | `table_prefix` | `inventory_` | Prefix for all inventory tables |
-| `json_column_type` | `json` | Column type for JSON fields (`json` or `jsonb`) |
+| `json_column_type` | `jsonb` | Column type for JSON fields (`json` or `jsonb`) |
 | `tables` | Array | Override individual table names |
 
 ## Defaults
 
 ```php
 'defaults' => [
-    'currency' => env('INVENTORY_CURRENCY', 'MYR'),
+    'currency' => env('INVENTORY_CURRENCY', env('COMMERCE_CURRENCY', 'MYR')),
 ],
 
 'default_reorder_point' => env('INVENTORY_DEFAULT_REORDER_POINT', 10),
@@ -150,7 +150,7 @@ By default, the package listens to Cashier/CashierChip payment events. Add custo
 ```bash
 # Database
 INVENTORY_TABLE_PREFIX=inventory_
-INVENTORY_JSON_COLUMN_TYPE=json
+INVENTORY_JSON_COLUMN_TYPE=jsonb
 
 # Defaults
 INVENTORY_CURRENCY=MYR

@@ -6,6 +6,4 @@ namespace AIArmada\Inventory\Exceptions;
 
 use Exception;
 
-abstract class InventoryException extends Exception
-{
-}
+abstract class InventoryException extends Exception {}
