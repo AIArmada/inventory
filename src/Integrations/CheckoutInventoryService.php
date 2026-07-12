@@ -237,11 +237,7 @@ final class CheckoutInventoryService implements CheckoutInventoryServiceInterfac
      */
     private function getProductModelClass(): ?string
     {
-        // Check inventory config first, then checkout config, then default
-        return config('inventory.models.product')
-            ?? config('checkout.models.product')
-            ?? config('products.models.product')
-            ?? Product::class;
+        return config('inventory.models.product') ?? Product::class;
     }
 
     /**
@@ -249,10 +245,7 @@ final class CheckoutInventoryService implements CheckoutInventoryServiceInterfac
      */
     private function getVariantModelClass(): ?string
     {
-        return config('inventory.models.variant')
-            ?? config('checkout.models.variant')
-            ?? config('products.models.variant')
-            ?? Variant::class;
+        return config('inventory.models.variant') ?? Variant::class;
     }
 
     /**

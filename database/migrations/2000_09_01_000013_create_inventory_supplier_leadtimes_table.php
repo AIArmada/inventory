@@ -32,7 +32,7 @@ return new class extends Migration
             $table->timestampTz('deactivated_at')->nullable();
             $table->timestampTz('last_order_at')->nullable();
             $table->timestampTz('last_received_at')->nullable();
-            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
+            $jsonType = commerce_json_column_type('inventory', 'jsonb');
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
             $table->timestampsTz();

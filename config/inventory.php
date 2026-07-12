@@ -29,7 +29,6 @@ return [
     */
     'database' => [
         'table_prefix' => $tablePrefix,
-        'json_column_type' => env('INVENTORY_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'jsonb')),
         'tables' => $tables,
     ],
 
@@ -40,6 +39,12 @@ return [
     */
     'defaults' => [
         'currency' => env('INVENTORY_CURRENCY', env('COMMERCE_CURRENCY', 'MYR')),
+    ],
+
+    /* Optional integration model overrides */
+    'models' => [
+        'product' => null,
+        'variant' => null,
     ],
 
     'default_reorder_point' => env('INVENTORY_DEFAULT_REORDER_POINT', 10),

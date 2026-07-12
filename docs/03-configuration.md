@@ -11,7 +11,6 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 ```php
 'database' => [
     'table_prefix' => env('INVENTORY_TABLE_PREFIX', 'inventory_'),
-    'json_column_type' => env('INVENTORY_JSON_COLUMN_TYPE', env('COMMERCE_JSON_COLUMN_TYPE', 'jsonb')),
     'tables' => [
         'locations' => 'inventory_locations',
         'levels' => 'inventory_levels',
@@ -24,7 +23,6 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 | Option | Default | Description |
 |--------|---------|-------------|
 | `table_prefix` | `inventory_` | Prefix for all inventory tables |
-| `json_column_type` | `jsonb` | Column type for JSON fields (`json` or `jsonb`) |
 | `tables` | Array | Override individual table names |
 
 ## Defaults
@@ -47,6 +45,19 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 | `allocation_strategy` | `priority` | How to select locations when allocating |
 | `allocation_ttl_minutes` | `30` | How long cart allocations last |
 | `allow_split_allocation` | `true` | Allow splitting orders across locations |
+
+## Product model integration
+
+The checkout bridge uses the Products package models by default when that optional package is installed. Applications with replacement product models can publish the config and set one or both overrides:
+
+```php
+'models' => [
+    'product' => App\Models\Product::class,
+    'variant' => App\Models\Variant::class,
+],
+```
+
+Leave either value as `null` to use the corresponding `AIArmada\Products` model. The Inventory package does not read model overrides from Checkout or Products config files.
 
 ### Allocation Strategies
 

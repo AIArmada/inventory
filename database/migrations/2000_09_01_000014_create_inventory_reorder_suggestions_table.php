@@ -34,7 +34,7 @@ return new class extends Migration
             $table->timestampTz('approved_at')->nullable();
             $table->foreignUuid('order_id')->nullable();
             $table->timestampTz('ordered_at')->nullable();
-            $jsonType = config('inventory.database.json_column_type', commerce_json_column_type('inventory', 'jsonb'));
+            $jsonType = commerce_json_column_type('inventory', 'jsonb');
             $table->addColumn($jsonType, 'calculation_details')->nullable();
             $table->addColumn($jsonType, 'metadata')->nullable();
             $table->nullableUuidMorphs('owner');
