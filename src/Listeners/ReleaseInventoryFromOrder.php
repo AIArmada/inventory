@@ -6,10 +6,12 @@ namespace AIArmada\Inventory\Listeners;
 
 use AIArmada\Inventory\Enums\MovementType;
 use AIArmada\Inventory\Models\InventoryMovement;
+use AIArmada\Inventory\Models\InventoryOperation;
 use AIArmada\Inventory\Services\InventoryService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Orders\Events\InventoryReleaseRequired;
 use AIArmada\Orders\Models\Order;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -39,13 +41,55 @@ final class ReleaseInventoryFromOrder
             return;
         }
 
-        DB::transaction(function () use ($order): void {
-            // First, release any pending allocations
-            $this->releaseAllocations($order);
+        $operation = $this->resolveOrCreateOperation($order, InventoryOperation::KIND_RELEASE);
 
-            // Then, restore inventory for shipped items
+        if ($operation->status === InventoryOperation::STATUS_COMPLETED) {
+            Log::info('Inventory release already completed for order', [
+                'order_id' => $order->id,
+                'operation_id' => $operation->id,
+            ]);
+
+            return;
+        }
+
+        DB::transaction(function () use ($order, $operation): void {
+            $operation = InventoryOperation::lockForUpdate()->findOrFail($operation->id);
+
+            if ($operation->status === InventoryOperation::STATUS_COMPLETED) {
+                return;
+            }
+
+            $this->releaseAllocations($order);
             $this->restoreShippedInventory($order);
+
+            $operation->update([
+                'status' => InventoryOperation::STATUS_COMPLETED,
+                'completed_at' => now(),
+            ]);
         });
+    }
+
+    private function resolveOrCreateOperation(Order $order, string $kind): InventoryOperation
+    {
+        $existing = InventoryOperation::where('order_id', $order->id)
+            ->where('kind', $kind)
+            ->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        try {
+            return InventoryOperation::create([
+                'order_id' => $order->id,
+                'kind' => $kind,
+                'status' => InventoryOperation::STATUS_PENDING,
+            ]);
+        } catch (QueryException $e) {
+            return InventoryOperation::where('order_id', $order->id)
+                ->where('kind', $kind)
+                ->firstOrFail();
+        }
     }
 
     /**

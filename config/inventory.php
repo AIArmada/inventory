@@ -19,6 +19,7 @@ $tables = [
     'demand_history' => env('INVENTORY_DEMAND_HISTORY_TABLE', $tablePrefix . 'demand_history'),
     'supplier_leadtimes' => env('INVENTORY_SUPPLIER_LEADTIMES_TABLE', $tablePrefix . 'supplier_leadtimes'),
     'reorder_suggestions' => env('INVENTORY_REORDER_SUGGESTIONS_TABLE', $tablePrefix . 'reorder_suggestions'),
+    'reservations' => env('INVENTORY_RESERVATIONS_TABLE', $tablePrefix . 'reservations'),
 ];
 
 return [

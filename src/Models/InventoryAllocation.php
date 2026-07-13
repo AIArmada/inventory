@@ -27,6 +27,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string $location_id
  * @property string $level_id
  * @property string|null $batch_id
+ * @property string|null $reservation_group_id
  * @property string|null $owner_type
  * @property int|string|null $owner_id
  * @property string $cart_id
@@ -37,6 +38,7 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property-read InventoryLocation $location
  * @property-read InventoryLevel $level
  * @property-read Model $inventoryable
+ * @property-read InventoryReservation|null $reservationGroup
  */
 final class InventoryAllocation extends Model implements Auditable
 {
@@ -63,6 +65,7 @@ final class InventoryAllocation extends Model implements Auditable
         'location_id',
         'level_id',
         'batch_id',
+        'reservation_group_id',
         'cart_id',
         'quantity',
         'expires_at',
@@ -110,6 +113,14 @@ final class InventoryAllocation extends Model implements Auditable
     public function batch(): BelongsTo
     {
         return $this->belongsTo(InventoryBatch::class, 'batch_id');
+    }
+
+    /**
+     * @return BelongsTo<InventoryReservation, $this>
+     */
+    public function reservationGroup(): BelongsTo
+    {
+        return $this->belongsTo(InventoryReservation::class, 'reservation_group_id');
     }
 
     /**

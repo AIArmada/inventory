@@ -277,6 +277,34 @@ final class InventoryAllocationService
     }
 
     /**
+     * Release only the allocations owned by one checkout reservation group.
+     */
+    public function releaseAllForReservationGroup(string $reservationGroupId): int
+    {
+        return DB::transaction(function () use ($reservationGroupId): int {
+            $allocationsQuery = InventoryAllocation::query()
+                ->where('reservation_group_id', $reservationGroupId)
+                ->with(['level', 'location'])
+                ->lockForUpdate();
+
+            $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
+            $totalReleased = 0;
+
+            foreach ($allocations as $allocation) {
+                $allocation->level->decrementReserved($allocation->quantity);
+                $totalReleased += $allocation->quantity;
+                $allocation->delete();
+            }
+
+            if ($totalReleased > 0) {
+                $this->inventoryService->clearCache();
+            }
+
+            return $totalReleased;
+        });
+    }
+
+    /**
      * Commit allocations (convert to shipments after payment).
      *
      * Call this after a successful payment to convert reserved stock into
@@ -334,6 +362,51 @@ final class InventoryAllocationService
     }
 
     /**
+     * Commit only the allocations owned by one checkout reservation group.
+     *
+     * @return array<InventoryMovement>
+     */
+    public function commitReservationGroup(string $reservationGroupId, string $reference, ?string $orderId = null): array
+    {
+        return DB::transaction(function () use ($reservationGroupId, $reference, $orderId): array {
+            $allocationsQuery = InventoryAllocation::query()
+                ->where('reservation_group_id', $reservationGroupId)
+                ->with(['level', 'inventoryable', 'location'])
+                ->lockForUpdate();
+
+            $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
+            $movements = [];
+
+            foreach ($allocations as $allocation) {
+                $allocation->level->decrementOnHand($allocation->quantity);
+                $allocation->level->decrementReserved($allocation->quantity);
+
+                $movement = InventoryMovement::create([
+                    'inventoryable_type' => $allocation->inventoryable_type,
+                    'inventoryable_id' => $allocation->inventoryable_id,
+                    'from_location_id' => $allocation->location_id,
+                    'quantity' => $allocation->quantity,
+                    'type' => MovementType::Shipment->value,
+                    'reason' => 'sale',
+                    'reference' => $orderId,
+                    'note' => sprintf('Committed from checkout reference %s', $reference),
+                    'occurred_at' => now(),
+                ]);
+
+                $movements[] = $movement;
+                $this->checkLowInventory($allocation->inventoryable, $allocation->level);
+                $allocation->delete();
+            }
+
+            if ($movements !== []) {
+                $this->inventoryService->clearCache();
+            }
+
+            return $movements;
+        });
+    }
+
+    /**
      * Extend allocations for a cart.
      *
      * Pushes the expiration time forward. Call this when a customer
@@ -352,6 +425,15 @@ final class InventoryAllocationService
         );
 
         return $query->update(['expires_at' => $newExpiry]);
+    }
+
+    public function extendReservationGroupAllocations(string $reservationGroupId, int $minutes): int
+    {
+        return InventoryOwnerScope::applyToQueryByLocationRelation(
+            InventoryAllocation::query()
+                ->where('reservation_group_id', $reservationGroupId)
+                ->with('location')
+        )->update(['expires_at' => now()->addMinutes($minutes)]);
     }
 
     /**

@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Listeners;
 
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Models\InventoryOperation;
 use AIArmada\Inventory\Services\InventoryService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Orders\Events\InventoryDeductionRequired;
 use AIArmada\Orders\Models\Order;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -41,19 +43,69 @@ final class DeductInventoryFromOrder
             return;
         }
 
-        // Try to commit allocations first (if cart was used)
-        $cartId = $this->extractCartId($order);
+        $operation = $this->resolveOrCreateOperation($order, InventoryOperation::KIND_DEDUCTION);
 
-        if ($cartId !== null) {
-            $committed = $this->tryCommitAllocations($cartId, $order);
+        if ($operation->status === InventoryOperation::STATUS_COMPLETED) {
+            Log::info('Inventory deduction already completed for order', [
+                'order_id' => $order->id,
+                'operation_id' => $operation->id,
+            ]);
 
-            if ($committed) {
-                return;
-            }
+            return;
         }
 
-        // No allocations found - deduct directly
-        $this->deductDirectly($order);
+        DB::transaction(function () use ($order, $operation): void {
+            $operation = InventoryOperation::lockForUpdate()->findOrFail($operation->id);
+
+            if ($operation->status === InventoryOperation::STATUS_COMPLETED) {
+                return;
+            }
+
+            $cartId = $this->extractCartId($order);
+
+            if ($cartId !== null) {
+                $committed = $this->tryCommitAllocations($cartId, $order);
+
+                if ($committed) {
+                    $operation->update([
+                        'status' => InventoryOperation::STATUS_COMPLETED,
+                        'completed_at' => now(),
+                    ]);
+
+                    return;
+                }
+            }
+
+            $this->deductDirectly($order);
+
+            $operation->update([
+                'status' => InventoryOperation::STATUS_COMPLETED,
+                'completed_at' => now(),
+            ]);
+        });
+    }
+
+    private function resolveOrCreateOperation(Order $order, string $kind): InventoryOperation
+    {
+        $existing = InventoryOperation::where('order_id', $order->id)
+            ->where('kind', $kind)
+            ->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        try {
+            return InventoryOperation::create([
+                'order_id' => $order->id,
+                'kind' => $kind,
+                'status' => InventoryOperation::STATUS_PENDING,
+            ]);
+        } catch (QueryException $e) {
+            return InventoryOperation::where('order_id', $order->id)
+                ->where('kind', $kind)
+                ->firstOrFail();
+        }
     }
 
     /**

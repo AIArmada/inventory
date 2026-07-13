@@ -15,11 +15,10 @@ use AIArmada\Inventory\Cart\CartManagerWithInventory;
 use AIArmada\Inventory\Cart\ValidateInventoryOnAdd;
 use AIArmada\Inventory\Console\CleanupExpiredAllocationsCommand;
 use AIArmada\Inventory\Console\CreateValuationSnapshotCommand;
-use AIArmada\Inventory\Contracts\CheckoutInventoryServiceInterface;
+use AIArmada\Inventory\Contracts\CheckoutReservationServiceInterface;
 use AIArmada\Inventory\Contracts\CostingMethodInterface;
 use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Exports\ExportService;
-use AIArmada\Inventory\Integrations\CheckoutInventoryService;
 use AIArmada\Inventory\Integrations\FulfillmentLocationService;
 use AIArmada\Inventory\Listeners\CommitInventoryOnPayment;
 use AIArmada\Inventory\Listeners\DeductInventoryFromOrder;
@@ -37,6 +36,7 @@ use AIArmada\Inventory\Services\InventoryService;
 use AIArmada\Inventory\Services\Serial\SerialLookupService;
 use AIArmada\Inventory\Services\Serial\SerialService;
 use AIArmada\Inventory\Services\Stock\BackorderService;
+use AIArmada\Inventory\Services\Stock\CheckoutReservationService;
 use AIArmada\Inventory\Services\Stock\DemandForecastService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Services\Stock\ReplenishmentService;
@@ -110,8 +110,8 @@ final class InventoryServiceProvider extends PackageServiceProvider
             StockLevelReport::class,
             ExportService::class,
             FulfillmentLocationService::class,
-            CheckoutInventoryService::class,
-            CheckoutInventoryServiceInterface::class,
+            CheckoutReservationServiceInterface::class,
+            CheckoutReservationService::class,
             'inventory',
             'inventory.allocations',
         ];
@@ -185,9 +185,9 @@ final class InventoryServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(FulfillmentLocationService::class);
 
-        // Checkout integration service
-        $this->app->singleton(CheckoutInventoryService::class);
-        $this->app->bind(CheckoutInventoryServiceInterface::class, CheckoutInventoryService::class);
+        // Checkout reservation group service
+        $this->app->singleton(CheckoutReservationService::class);
+        $this->app->bind(CheckoutReservationServiceInterface::class, CheckoutReservationService::class);
     }
 
     private function registerRegistries(): void
