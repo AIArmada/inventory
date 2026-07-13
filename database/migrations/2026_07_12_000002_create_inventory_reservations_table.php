@@ -12,12 +12,13 @@ return new class extends Migration
     {
         $tableName = config('inventory.database.tables.reservations', 'inventory_reservations');
         $allocationTable = config('inventory.database.tables.allocations', 'inventory_allocations');
+        $jsonType = commerce_json_column_type('inventory', 'jsonb');
 
-        Schema::create($tableName, function (Blueprint $table): void {
+        Schema::create($tableName, function (Blueprint $table) use ($jsonType): void {
             $table->uuid('id')->primary();
             $table->string('reference');
             $table->string('state')->default('reserved');
-            $table->json('line_snapshot');
+            $table->{$jsonType}('line_snapshot');
             $table->nullableMorphs('owner');
             $table->uuid('order_id')->nullable();
             $table->integer('ttl_seconds')->default(900);
