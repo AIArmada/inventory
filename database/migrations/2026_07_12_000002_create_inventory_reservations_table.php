@@ -17,7 +17,7 @@ return new class extends Migration
         Schema::create($tableName, function (Blueprint $table) use ($jsonType): void {
             $table->uuid('id')->primary();
             $table->string('reference');
-            $table->string('state')->default('reserved');
+            $table->string('status')->default('reserved');
             $table->{$jsonType}('line_snapshot');
             $table->nullableMorphs('owner');
             $table->uuid('order_id')->nullable();
@@ -26,7 +26,7 @@ return new class extends Migration
             $table->timestampsTz();
 
             $table->unique(['reference', 'owner_type', 'owner_id'], 'inventory_reservations_ref_owner_unique');
-            $table->index('state');
+            $table->index('status');
             $table->index('expires_at');
         });
 

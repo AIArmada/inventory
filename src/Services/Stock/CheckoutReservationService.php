@@ -36,14 +36,14 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
             $existing = $this->findGroup($reference);
 
             if ($existing !== null) {
-                if ($existing->state === InventoryReservation::STATE_RESERVED
+                if ($existing->status === InventoryReservation::STATE_RESERVED
                     && $existing->line_snapshot === $this->lineSnapshot($lines)) {
                     return $this->outcome($existing);
                 }
 
                 throw new ReservationReferenceConflict(
                     $reference,
-                    'A reservation for this reference already exists in state: ' . $existing->state,
+                    'A reservation for this reference already exists in state: ' . $existing->status,
                 );
             }
 
@@ -52,7 +52,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
             $group = InventoryReservation::create([
                 'reference' => $reference,
-                'state' => InventoryReservation::STATE_RESERVED,
+                'status' => InventoryReservation::STATE_RESERVED,
                 'line_snapshot' => $this->lineSnapshot($lines),
                 'ttl_seconds' => $ttlSeconds,
                 'expires_at' => $expiresAt,
@@ -94,16 +94,16 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
             $this->expireIfNeeded($group);
 
-            if ($group->state === InventoryReservation::STATE_RELEASED || $group->state === InventoryReservation::STATE_EXPIRED) {
+            if ($group->status === InventoryReservation::STATE_RELEASED || $group->status === InventoryReservation::STATE_EXPIRED) {
                 return $this->outcome($group);
             }
 
-            if ($group->state !== InventoryReservation::STATE_RESERVED) {
-                throw new InvalidReservationTransition($reference, $group->state, InventoryReservation::STATE_RELEASED);
+            if ($group->status !== InventoryReservation::STATE_RESERVED) {
+                throw new InvalidReservationTransition($reference, $group->status, InventoryReservation::STATE_RELEASED);
             }
 
             $this->allocationService->releaseAllForReservationGroup($group->id);
-            $group->update(['state' => InventoryReservation::STATE_RELEASED, 'expires_at' => now()]);
+            $group->update(['status' => InventoryReservation::STATE_RELEASED, 'expires_at' => now()]);
 
             return $this->outcome($group);
         });
@@ -120,7 +120,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
             $this->expireIfNeeded($group);
 
-            if ($group->state === InventoryReservation::STATE_COMMITTED) {
+            if ($group->status === InventoryReservation::STATE_COMMITTED) {
                 if ($group->order_id !== $orderId) {
                     throw new ReservationReferenceConflict($reference, 'The reservation has already been committed to another order.');
                 }
@@ -128,12 +128,12 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
                 return $this->outcome($group);
             }
 
-            if ($group->state !== InventoryReservation::STATE_RESERVED) {
-                throw new InvalidReservationTransition($reference, $group->state, InventoryReservation::STATE_COMMITTED);
+            if ($group->status !== InventoryReservation::STATE_RESERVED) {
+                throw new InvalidReservationTransition($reference, $group->status, InventoryReservation::STATE_COMMITTED);
             }
 
             $this->allocationService->commitReservationGroup($group->id, $reference, $orderId);
-            $group->update(['state' => InventoryReservation::STATE_COMMITTED, 'order_id' => $orderId]);
+            $group->update(['status' => InventoryReservation::STATE_COMMITTED, 'order_id' => $orderId]);
 
             return $this->outcome($group);
         });
@@ -150,7 +150,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
             $this->expireIfNeeded($group);
 
-            if ($group->state !== InventoryReservation::STATE_RESERVED) {
+            if ($group->status !== InventoryReservation::STATE_RESERVED) {
                 return $this->outcome($group);
             }
 
@@ -180,7 +180,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
     {
         return new ReservationOutcome(
             reference: $group->reference,
-            state: $group->state,
+            state: $group->status,
             expiresAt: $group->expires_at?->toIso8601String(),
             orderId: $group->order_id,
             lines: $group->line_snapshot,
@@ -214,12 +214,12 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
     private function expireIfNeeded(InventoryReservation $group): void
     {
-        if (! $group->isExpired() || $group->state === InventoryReservation::STATE_EXPIRED) {
+        if (! $group->isExpired() || $group->status === InventoryReservation::STATE_EXPIRED) {
             return;
         }
 
         $this->allocationService->releaseAllForReservationGroup($group->id);
-        $group->update(['state' => InventoryReservation::STATE_EXPIRED]);
+        $group->update(['status' => InventoryReservation::STATE_EXPIRED]);
         $group->refresh();
     }
 

@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  *
  * @property string $id
  * @property string $reference
- * @property string $state
+ * @property string $status
  * @property array<string, array{requested: int, reserved: int}> $line_snapshot
  * @property string|null $owner_type
  * @property string|int|null $owner_id
@@ -49,7 +49,7 @@ final class InventoryReservation extends Model
 
     protected $fillable = [
         'reference',
-        'state',
+        'status',
         'line_snapshot',
         'order_id',
         'ttl_seconds',
@@ -77,17 +77,17 @@ final class InventoryReservation extends Model
 
     public function isActive(): bool
     {
-        return $this->state === self::STATE_RESERVED && $this->expires_at !== null && $this->expires_at->isFuture();
+        return $this->status === self::STATE_RESERVED && $this->expires_at !== null && $this->expires_at->isFuture();
     }
 
     public function isExpired(): bool
     {
-        return $this->state === self::STATE_EXPIRED
-            || ($this->state === self::STATE_RESERVED && $this->expires_at !== null && $this->expires_at->isPast());
+        return $this->status === self::STATE_EXPIRED
+            || ($this->status === self::STATE_RESERVED && $this->expires_at !== null && $this->expires_at->isPast());
     }
 
     public function isTerminal(): bool
     {
-        return in_array($this->state, [self::STATE_COMMITTED, self::STATE_RELEASED, self::STATE_EXPIRED], true);
+        return in_array($this->status, [self::STATE_COMMITTED, self::STATE_RELEASED, self::STATE_EXPIRED], true);
     }
 }
