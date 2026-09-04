@@ -178,9 +178,9 @@ use AIArmada\Inventory\Enums\CostingMethod;
 CreateValuationSnapshot::run(method: CostingMethod::Fifo);
 ```
 
-> These Actions replace the legacy Facade-based approach. The Facade examples below still work but are provided for backward compatibility.
+> These Actions are the preferred orchestration path. The Facade examples below remain available as a public API for direct calls.
 
-## Legacy Facade Operations (Compatibility)
+## Facade Operations
 
 ### Receiving Inventory
 
