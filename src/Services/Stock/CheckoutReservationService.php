@@ -15,6 +15,7 @@ use AIArmada\Inventory\Models\InventoryReservation;
 use AIArmada\Products\Models\Product;
 use AIArmada\Products\Models\Variant;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
 
 final class CheckoutReservationService implements CheckoutReservationServiceInterface
@@ -61,7 +62,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
             ]);
 
             foreach ($lines as $line) {
-                $model = $this->resolveInventoryModel($line->productId, $line->variantId);
+                $model = $this->resolveInventoryModel($line);
 
                 if ($model === null) {
                     throw new ReservationReferenceConflict($reference, 'Inventory model could not be resolved for a requested line.');
@@ -200,7 +201,9 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
                 continue;
             }
 
-            $key = $line->productId . ':' . ($line->variantId ?? '');
+            $key = $line->inventoryableType !== null && $line->inventoryableId !== null
+                ? $line->inventoryableType . ':' . $line->inventoryableId . ':' . ($line->variantId ?? '')
+                : $line->productId . ':' . ($line->variantId ?? '');
             $current = $snapshot[$key] ?? ['requested' => 0, 'reserved' => 0];
             $current['requested'] += $line->quantity;
             $current['reserved'] += $line->quantity;
@@ -254,13 +257,26 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
         ];
     }
 
-    private function resolveInventoryModel(string $productId, ?string $variantId): ?Model
+    private function resolveInventoryModel(ReservationLine $line): ?Model
     {
-        if ($variantId !== null) {
+        if ($line->inventoryableType !== null && $line->inventoryableId !== null) {
+            $inventoryableClass = Relation::getMorphedModel($line->inventoryableType) ?? $line->inventoryableType;
+
+            if (class_exists($inventoryableClass) && is_a($inventoryableClass, Model::class, true)) {
+                /** @var class-string<Model> $inventoryableClass */
+                $inventoryable = $inventoryableClass::query()->find($line->inventoryableId);
+
+                if ($inventoryable instanceof Model) {
+                    return $inventoryable;
+                }
+            }
+        }
+
+        if ($line->variantId !== null) {
             $variantClass = config('inventory.models.variant') ?? Variant::class;
 
             if (class_exists($variantClass)) {
-                $variant = $variantClass::query()->find($variantId);
+                $variant = $variantClass::query()->find($line->variantId);
 
                 if ($variant !== null) {
                     return $variant;
@@ -274,6 +290,6 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
             return null;
         }
 
-        return $productClass::query()->find($productId);
+        return $productClass::query()->find($line->productId);
     }
 }

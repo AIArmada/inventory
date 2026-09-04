@@ -12,5 +12,7 @@ final class ReservationLine extends Data
         public string $productId,
         public ?string $variantId = null,
         public int $quantity = 1,
+        public ?string $inventoryableType = null,
+        public ?string $inventoryableId = null,
     ) {}
 }
