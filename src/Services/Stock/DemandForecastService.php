@@ -8,8 +8,8 @@ use AIArmada\Inventory\Enums\DemandPeriodType;
 use AIArmada\Inventory\Models\InventoryDemandHistory;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -24,7 +24,7 @@ final class DemandForecastService
         int $fulfilledQuantity,
         ?string $locationId = null,
         DemandPeriodType $periodType = DemandPeriodType::Daily,
-        ?Carbon $periodDate = null
+        ?CarbonImmutable $periodDate = null
     ): InventoryDemandHistory {
         $periodDate = $periodDate ?? today();
         $lostQuantity = max(0, $quantity - $fulfilledQuantity);

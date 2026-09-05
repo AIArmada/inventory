@@ -16,6 +16,7 @@ use AIArmada\Inventory\States\Fulfilled;
 use AIArmada\Inventory\States\PartiallyFulfilled;
 use AIArmada\Inventory\States\Pending;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
@@ -87,7 +88,7 @@ final class InventoryBackorder extends Model implements Auditable
     {
         static::creating(function (InventoryBackorder $backorder): void {
             if ($backorder->requested_at === null) {
-                $backorder->requested_at = now();
+                $backorder->requested_at = CarbonImmutable::now();
             }
         });
 
@@ -200,14 +201,14 @@ final class InventoryBackorder extends Model implements Auditable
     {
         return $query->whereIn('status', self::openStatuses())
             ->whereNotNull('promised_at')
-            ->where('promised_at', '<', now());
+            ->where('promised_at', '<', CarbonImmutable::now());
     }
 
     public function scopeDueWithin(Builder $query, int $days): Builder
     {
         return $query->whereIn('status', self::openStatuses())
             ->whereNotNull('promised_at')
-            ->where('promised_at', '<=', now()->addDays($days));
+            ->where('promised_at', '<=', CarbonImmutable::now()->addDays($days));
     }
 
     public function quantityRemaining(): int
@@ -229,7 +230,7 @@ final class InventoryBackorder extends Model implements Auditable
     {
         return $this->isOpen()
             && $this->promised_at !== null
-            && $this->promised_at < now();
+            && $this->promised_at < CarbonImmutable::now();
     }
 
     public function canFulfill(): bool
@@ -261,7 +262,7 @@ final class InventoryBackorder extends Model implements Auditable
         return $this->update([
             'quantity_fulfilled' => $newFulfilled,
             'status' => $newStatus,
-            'fulfilled_at' => $newStatus === Fulfilled::class ? now() : null,
+            'fulfilled_at' => $newStatus === Fulfilled::class ? CarbonImmutable::now() : null,
         ]);
     }
 
@@ -292,7 +293,7 @@ final class InventoryBackorder extends Model implements Auditable
         return $this->update([
             'quantity_cancelled' => $newCancelled,
             'status' => $newStatus,
-            'cancelled_at' => $newStatus === Cancelled::class ? now() : null,
+            'cancelled_at' => $newStatus === Cancelled::class ? CarbonImmutable::now() : null,
             'metadata' => $metadata,
         ]);
     }
@@ -308,7 +309,7 @@ final class InventoryBackorder extends Model implements Auditable
 
         return $this->update([
             'status' => Expired::class,
-            'cancelled_at' => now(),
+            'cancelled_at' => CarbonImmutable::now(),
         ]);
     }
 

@@ -9,8 +9,8 @@ use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryCostLayer;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -28,7 +28,7 @@ final class WeightedAverageCostService
         ?string $locationId = null,
         ?string $batchId = null,
         ?string $reference = null,
-        ?Carbon $layerDate = null
+        ?CarbonImmutable $layerDate = null
     ): array {
         return DB::transaction(function () use ($model, $quantity, $unitCostMinor, $locationId, $batchId, $reference, $layerDate): array {
             if (InventoryOwnerScope::isEnabled()) {
@@ -75,7 +75,7 @@ final class WeightedAverageCostService
                 'currency' => config('inventory.defaults.currency', 'MYR'),
                 'reference' => $reference,
                 'costing_method' => CostingMethod::WeightedAverage,
-                'layer_date' => $layerDate ?? now(),
+                'layer_date' => $layerDate ?? CarbonImmutable::now(),
             ]);
 
             $this->updateExistingLayers($model, $newAverageCost, $locationId);

@@ -7,6 +7,7 @@ namespace AIArmada\Inventory\Cart;
 use AIArmada\Cart\Events\ItemAdded;
 use AIArmada\Inventory\Exceptions\InsufficientInventoryException;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -77,7 +78,7 @@ final class ValidateInventoryOnAdd
     {
         // Auto-allocate if configured
         if (config('inventory.cart.auto_allocate_on_add', false)) {
-            $ttl = config('inventory.cart.allocation_ttl_minutes', 30);
+            $ttl = config('inventory.allocation_ttl_minutes', 30);
             $cartId = (string) $cart->getId();
 
             $this->allocationService->allocate(
@@ -92,7 +93,7 @@ final class ValidateInventoryOnAdd
             $cart->setMetadata($metadataKey . '.' . $item->id, [
                 'allocated' => true,
                 'quantity' => $item->quantity,
-                'allocated_at' => now()->toISOString(),
+                'allocated_at' => CarbonImmutable::now()->toISOString(),
             ]);
         }
     }
@@ -128,12 +129,12 @@ final class ValidateInventoryOnAdd
             'is_backorder' => true,
             'available_quantity' => $availableQuantity,
             'backorder_quantity' => $backorderQuantity,
-            'marked_at' => now()->toISOString(),
+            'marked_at' => CarbonImmutable::now()->toISOString(),
         ]);
 
         // Auto-allocate available stock if configured
         if (config('inventory.cart.auto_allocate_on_add', false) && $availableQuantity > 0) {
-            $ttl = config('inventory.cart.allocation_ttl_minutes', 30);
+            $ttl = config('inventory.allocation_ttl_minutes', 30);
             $cartId = (string) $cart->getId();
 
             $this->allocationService->allocate(

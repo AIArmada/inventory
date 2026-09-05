@@ -7,6 +7,7 @@ namespace AIArmada\Inventory\Listeners;
 use AIArmada\Cart\Cart;
 use AIArmada\Inventory\Exceptions\InsufficientInventoryException;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -46,7 +47,7 @@ class ReserveStockOnCheckout
         }
 
         $cartId = (string) $cart->getId();
-        $ttlMinutes = (int) config('inventory.cart.checkout_reservation_ttl_minutes', 30);
+        $ttlMinutes = (int) config('inventory.allocation_ttl_minutes', 30);
         $allocations = [];
         $errors = [];
 
@@ -71,7 +72,7 @@ class ReserveStockOnCheckout
                         'item_name' => $item->name,
                         'quantity' => $item->quantity,
                         'allocation_count' => $itemAllocations->count(),
-                        'allocated_at' => now()->toISOString(),
+                        'allocated_at' => CarbonImmutable::now()->toISOString(),
                     ];
                 }
             } catch (InsufficientInventoryException $e) {
@@ -91,8 +92,8 @@ class ReserveStockOnCheckout
             $cart->setMetadata(self::ALLOCATION_METADATA_KEY, [
                 'allocations' => $allocations,
                 'errors' => $errors,
-                'reserved_at' => now()->toISOString(),
-                'expires_at' => now()->addMinutes($ttlMinutes)->toISOString(),
+                'reserved_at' => CarbonImmutable::now()->toISOString(),
+                'expires_at' => CarbonImmutable::now()->addMinutes($ttlMinutes)->toISOString(),
             ]);
         }
     }

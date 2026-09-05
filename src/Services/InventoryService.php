@@ -17,6 +17,7 @@ use AIArmada\Inventory\Exceptions\InsufficientInventoryException;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryMovement;
+use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -92,7 +93,7 @@ final class InventoryService
                 'reason' => $reason,
                 'user_id' => $userId,
                 'note' => $note,
-                'occurred_at' => $occurredAt ?? now(),
+                'occurred_at' => $occurredAt ?? CarbonImmutable::now(),
             ]);
 
             Event::dispatch(new InventoryReceived($model, $level, $movement));
@@ -153,7 +154,7 @@ final class InventoryService
                 'reference' => $reference,
                 'user_id' => $userId,
                 'note' => $note,
-                'occurred_at' => $occurredAt ?? now(),
+                'occurred_at' => $occurredAt ?? CarbonImmutable::now(),
             ]);
 
             Event::dispatch(new InventoryShipped($model, $level, $movement));
@@ -221,7 +222,7 @@ final class InventoryService
                 'type' => MovementType::Transfer->value,
                 'user_id' => $userId,
                 'note' => $note,
-                'occurred_at' => $occurredAt ?? now(),
+                'occurred_at' => $occurredAt ?? CarbonImmutable::now(),
             ]);
 
             Event::dispatch(new InventoryTransferred($model, $fromLevel, $toLevel, $movement));
@@ -270,7 +271,7 @@ final class InventoryService
                 'reason' => $reason,
                 'user_id' => $userId,
                 'note' => $note ?? sprintf('Adjusted from %d to %d', $oldQuantity, $newQuantity),
-                'occurred_at' => $occurredAt ?? now(),
+                'occurred_at' => $occurredAt ?? CarbonImmutable::now(),
             ]);
 
             Event::dispatch(new InventoryAdjusted($model, $level, $movement, $oldQuantity, $newQuantity));

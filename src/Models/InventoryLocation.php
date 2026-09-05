@@ -14,6 +14,7 @@ use AIArmada\Inventory\Database\Factories\InventoryLocationFactory;
 use AIArmada\Inventory\Enums\TemperatureZone;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Inventory\Traits\HasLocationHierarchy;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -22,7 +23,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -51,8 +51,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $owner_type
  * @property int|string|null $owner_id
  * @property array<string, mixed>|null $metadata
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property CarbonImmutable $created_at
+ * @property CarbonImmutable $updated_at
  * @property-read Collection<int, InventoryLevel> $inventoryLevels
  * @property-read Collection<int, InventoryMovement> $movementsFrom
  * @property-read Collection<int, InventoryMovement> $movementsTo

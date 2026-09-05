@@ -40,7 +40,7 @@ Increase the TTL in config:
 
 ```php
 // config/inventory.php
-'allocation_ttl_minutes' => env('INVENTORY_ALLOCATION_TTL', 60), // Increase from 30
+'allocation_ttl_minutes' => 60,
 ```
 
 Or extend allocations programmatically:

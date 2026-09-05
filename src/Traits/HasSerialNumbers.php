@@ -8,9 +8,9 @@ use AIArmada\Inventory\Enums\SerialCondition;
 use AIArmada\Inventory\Models\InventorySerial;
 use AIArmada\Inventory\States\Available;
 use AIArmada\Inventory\States\SerialStatus;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property-read Collection<int, InventorySerial> $serials
@@ -94,7 +94,7 @@ trait HasSerialNumbers
         ?string $batchId = null,
         SerialCondition $condition = SerialCondition::New,
         ?int $unitCostMinor = null,
-        ?Carbon $warrantyExpiresAt = null
+        ?CarbonImmutable $warrantyExpiresAt = null
     ): InventorySerial {
         return $this->serials()->create([
             'serial_number' => $serialNumber,
@@ -104,7 +104,7 @@ trait HasSerialNumbers
             'condition' => $condition->value,
             'unit_cost_minor' => $unitCostMinor,
             'warranty_expires_at' => $warrantyExpiresAt,
-            'received_at' => now(),
+            'received_at' => CarbonImmutable::now(),
         ]);
     }
 
@@ -120,7 +120,7 @@ trait HasSerialNumbers
         ?string $batchId = null,
         SerialCondition $condition = SerialCondition::New,
         ?int $unitCostMinor = null,
-        ?Carbon $warrantyExpiresAt = null
+        ?CarbonImmutable $warrantyExpiresAt = null
     ): Collection {
         $serials = new Collection;
 
@@ -282,8 +282,8 @@ trait HasSerialNumbers
     {
         return $this->serials()
             ->whereNotNull('warranty_expires_at')
-            ->where('warranty_expires_at', '>', now())
-            ->where('warranty_expires_at', '<=', now()->addDays($daysAhead))
+            ->where('warranty_expires_at', '>', CarbonImmutable::now())
+            ->where('warranty_expires_at', '<=', CarbonImmutable::now()->addDays($daysAhead))
             ->orderBy('warranty_expires_at')
             ->get();
     }
@@ -297,7 +297,7 @@ trait HasSerialNumbers
     {
         return $this->serials()
             ->whereNotNull('warranty_expires_at')
-            ->where('warranty_expires_at', '>', now())
+            ->where('warranty_expires_at', '>', CarbonImmutable::now())
             ->get();
     }
 }

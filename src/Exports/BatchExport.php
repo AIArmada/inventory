@@ -57,7 +57,7 @@ final class BatchExport implements ExportableInterface
             $expiryDate = CarbonImmutable::now()->addDays($this->expiringWithinDays);
             $query->whereNotNull('expires_at')
                 ->where('expires_at', '<=', $expiryDate)
-                ->where('expires_at', '>', now());
+                ->where('expires_at', '>', CarbonImmutable::now());
         }
 
         foreach ($query->cursor() as $batch) {

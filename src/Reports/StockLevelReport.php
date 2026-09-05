@@ -352,7 +352,7 @@ final class StockLevelReport
                 'quantity' => (int) $row->quantity,
                 'value' => (int) 0, // Requires cost layer integration
                 'location_id' => (string) $row->location_id,
-                'days_stagnant' => (int) CarbonImmutable::parse($row->updated_at)->diffInDays(now()),
+                'days_stagnant' => (int) CarbonImmutable::parse($row->updated_at)->diffInDays(CarbonImmutable::now()),
             ]);
 
         return $deadStock;

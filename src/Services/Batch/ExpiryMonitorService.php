@@ -6,6 +6,7 @@ namespace AIArmada\Inventory\Services\Batch;
 
 use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 
 final class ExpiryMonitorService
@@ -34,7 +35,7 @@ final class ExpiryMonitorService
         $query = InventoryBatch::query()
             ->active()
             ->whereNotNull('expires_at')
-            ->whereBetween('expires_at', [now(), now()->addDays($days)])
+            ->whereBetween('expires_at', [CarbonImmutable::now(), CarbonImmutable::now()->addDays($days)])
             ->orderBy('expires_at');
 
         InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
@@ -85,7 +86,7 @@ final class ExpiryMonitorService
         $warningQuery = InventoryBatch::query()
             ->active()
             ->whereNotNull('expires_at')
-            ->whereBetween('expires_at', [now()->addDays(8), now()->addDays(30)]);
+            ->whereBetween('expires_at', [CarbonImmutable::now()->addDays(8), CarbonImmutable::now()->addDays(30)]);
 
         InventoryOwnerScope::applyToQueryByLocationRelation($warningQuery, 'location');
 
@@ -94,7 +95,7 @@ final class ExpiryMonitorService
         $attentionQuery = InventoryBatch::query()
             ->active()
             ->whereNotNull('expires_at')
-            ->whereBetween('expires_at', [now()->addDays(31), now()->addDays(90)]);
+            ->whereBetween('expires_at', [CarbonImmutable::now()->addDays(31), CarbonImmutable::now()->addDays(90)]);
 
         InventoryOwnerScope::applyToQueryByLocationRelation($attentionQuery, 'location');
 
@@ -122,7 +123,7 @@ final class ExpiryMonitorService
         $query = InventoryBatch::query()
             ->active()
             ->whereNotNull('expires_at')
-            ->where('expires_at', '>', now());
+            ->where('expires_at', '>', CarbonImmutable::now());
 
         InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
 
@@ -213,7 +214,7 @@ final class ExpiryMonitorService
         $warningQuery = InventoryBatch::query()
             ->active()
             ->whereNotNull('expires_at')
-            ->whereBetween('expires_at', [now()->addDays(8), now()->addDays(30)]);
+            ->whereBetween('expires_at', [CarbonImmutable::now()->addDays(8), CarbonImmutable::now()->addDays(30)]);
 
         InventoryOwnerScope::applyToQueryByLocationRelation($warningQuery, 'location');
 

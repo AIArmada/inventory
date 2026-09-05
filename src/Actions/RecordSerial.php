@@ -7,8 +7,8 @@ namespace AIArmada\Inventory\Actions;
 use AIArmada\Inventory\Enums\SerialCondition;
 use AIArmada\Inventory\Models\InventorySerial;
 use AIArmada\Inventory\Services\Serial\SerialService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 final class RecordSerial
@@ -26,7 +26,7 @@ final class RecordSerial
         ?string $batchId = null,
         SerialCondition $condition = SerialCondition::New,
         ?int $unitCostMinor = null,
-        ?Carbon $warrantyExpiresAt = null,
+        ?CarbonImmutable $warrantyExpiresAt = null,
         ?string $userId = null,
     ): InventorySerial {
         return $this->serialService->register(

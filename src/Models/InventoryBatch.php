@@ -22,7 +22,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -53,8 +52,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $recall_reason
  * @property CarbonImmutable|null $recalled_at
  * @property array<string, mixed>|null $metadata
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property CarbonImmutable $created_at
+ * @property CarbonImmutable $updated_at
  * @property-read int $available
  * @property-read int $quantity
  * @property-read int $available_quantity
@@ -192,7 +191,7 @@ final class InventoryBatch extends Model implements Auditable
             return null;
         }
 
-        return (int) now()->diffInDays($this->expires_at, false);
+        return (int) CarbonImmutable::now()->diffInDays($this->expires_at, false);
     }
 
     /**
@@ -251,7 +250,7 @@ final class InventoryBatch extends Model implements Auditable
         $this->update([
             'status' => BatchStatus::Quarantined->value,
             'quarantine_reason' => $reason,
-            'quarantined_at' => now(),
+            'quarantined_at' => CarbonImmutable::now(),
         ]);
 
         return $this;
@@ -279,7 +278,7 @@ final class InventoryBatch extends Model implements Auditable
         $this->update([
             'status' => BatchStatus::Recalled->value,
             'recall_reason' => $reason,
-            'recalled_at' => now(),
+            'recalled_at' => CarbonImmutable::now(),
         ]);
 
         return $this;
@@ -374,7 +373,7 @@ final class InventoryBatch extends Model implements Auditable
         return $query->where('status', BatchStatus::Active->value)
             ->where(function (Builder $q): void {
                 $q->whereNull('expires_at')
-                    ->orWhere('expires_at', '>', now());
+                    ->orWhere('expires_at', '>', CarbonImmutable::now());
             })
             ->whereRaw('(quantity_on_hand - quantity_reserved) > 0');
     }
@@ -388,7 +387,7 @@ final class InventoryBatch extends Model implements Auditable
     public function scopeExpiringSoon(Builder $query, int $days = 30): Builder
     {
         return $query->whereNotNull('expires_at')
-            ->whereBetween('expires_at', [now(), now()->addDays($days)]);
+            ->whereBetween('expires_at', [CarbonImmutable::now(), CarbonImmutable::now()->addDays($days)]);
     }
 
     /**
@@ -400,7 +399,7 @@ final class InventoryBatch extends Model implements Auditable
     public function scopeExpired(Builder $query): Builder
     {
         return $query->whereNotNull('expires_at')
-            ->where('expires_at', '<', now());
+            ->where('expires_at', '<', CarbonImmutable::now());
     }
 
     /**

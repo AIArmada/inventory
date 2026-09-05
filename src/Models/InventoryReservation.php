@@ -6,11 +6,11 @@ namespace AIArmada\Inventory\Models;
 
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * Durable reservation-group aggregate for checkout references.
@@ -26,9 +26,9 @@ use Illuminate\Support\Carbon;
  * @property string|int|null $owner_id
  * @property string|null $order_id
  * @property int $ttl_seconds
- * @property Carbon|null $expires_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $expires_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read Collection<int, InventoryAllocation> $allocations
  */
 final class InventoryReservation extends Model

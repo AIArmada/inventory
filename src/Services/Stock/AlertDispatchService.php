@@ -7,6 +7,7 @@ namespace AIArmada\Inventory\Services\Stock;
 use AIArmada\Inventory\Enums\AlertStatus;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
 
@@ -143,7 +144,7 @@ final class AlertDispatchService
     public function acknowledgeAlert(InventoryLevel $level, ?string $note = null): void
     {
         $metadata = $level->metadata ?? [];
-        $metadata['last_acknowledged_at'] = now()->toIso8601String();
+        $metadata['last_acknowledged_at'] = CarbonImmutable::now()->toIso8601String();
         $metadata['acknowledged_note'] = $note;
 
         $level->update(['metadata' => $metadata]);

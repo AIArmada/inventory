@@ -11,6 +11,7 @@ use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Database\Factories\InventoryMovementFactory;
 use AIArmada\Inventory\Enums\MovementType;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -19,7 +20,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Foundation\Auth\User;
-use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -37,15 +37,15 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $reference
  * @property string|null $user_id
  * @property string|null $note
- * @property Carbon $occurred_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property CarbonImmutable $occurred_at
+ * @property CarbonImmutable $created_at
+ * @property CarbonImmutable $updated_at
  * @property-read int $count
  * @property-read int $movement_count
  * @property-read int $total_quantity
  * @property-read int $total_quantity_moved
  * @property-read float $avg_quantity
- * @property-read Carbon|null $last_occurred_at
+ * @property-read CarbonImmutable|null $last_occurred_at
  * @property-read InventoryLocation|null $fromLocation
  * @property-read InventoryLocation|null $toLocation
  * @property-read Model $inventoryable

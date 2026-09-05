@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Services\Costing;
 
 use AIArmada\Inventory\Models\InventoryStandardCost;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -19,8 +19,8 @@ final class StandardCostService
     public function setStandardCost(
         Model $model,
         int $standardCostMinor,
-        Carbon $effectiveFrom,
-        ?Carbon $effectiveTo = null,
+        CarbonImmutable $effectiveFrom,
+        ?CarbonImmutable $effectiveTo = null,
         ?string $approvedBy = null,
         ?string $notes = null,
         ?array $metadata = null
@@ -35,7 +35,7 @@ final class StandardCostService
             $metadata
         ): InventoryStandardCost {
             $currentCost = $this->getCurrentStandardCost($model);
-            if ($currentCost !== null && $effectiveFrom <= now()) {
+            if ($currentCost !== null && $effectiveFrom <= CarbonImmutable::now()) {
                 $currentCost->update(['effective_to' => $effectiveFrom]);
             }
 
@@ -67,7 +67,7 @@ final class StandardCostService
     /**
      * Get standard cost effective at a specific date.
      */
-    public function getStandardCostAt(Model $model, Carbon $date): ?InventoryStandardCost
+    public function getStandardCostAt(Model $model, CarbonImmutable $date): ?InventoryStandardCost
     {
         return InventoryStandardCost::query()
             ->forModel($model)
@@ -88,7 +88,7 @@ final class StandardCostService
     /**
      * Get cost value at a specific date.
      */
-    public function getCostValueAt(Model $model, Carbon $date): ?int
+    public function getCostValueAt(Model $model, CarbonImmutable $date): ?int
     {
         $cost = $this->getStandardCostAt($model, $date);
 
@@ -198,11 +198,11 @@ final class StandardCostService
     public function scheduleCostChange(
         Model $model,
         int $newCostMinor,
-        Carbon $effectiveFrom,
+        CarbonImmutable $effectiveFrom,
         ?string $approvedBy = null,
         ?string $notes = null
     ): InventoryStandardCost {
-        if ($effectiveFrom <= now()) {
+        if ($effectiveFrom <= CarbonImmutable::now()) {
             throw new InvalidArgumentException('Scheduled cost changes must be in the future');
         }
 

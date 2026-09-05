@@ -9,9 +9,9 @@ use AIArmada\CommerceSupport\Support\OwnerBatchRunner;
 use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Services\Costing\ValuationService;
+use Carbon\CarbonImmutable;
 use Exception;
 use Illuminate\Console\Command;
-use Illuminate\Support\Carbon;
 
 final class CreateValuationSnapshotCommand extends Command
 {
@@ -36,7 +36,7 @@ final class CreateValuationSnapshotCommand extends Command
 
         $locationId = $this->option('location');
         $date = $this->option('date')
-            ? Carbon::parse($this->option('date'))
+            ? CarbonImmutable::parse($this->option('date'))
             : null;
 
         if ($locationId !== null) {
@@ -64,7 +64,7 @@ final class CreateValuationSnapshotCommand extends Command
         ValuationService $valuationService,
         CostingMethod $method,
         ?string $locationId,
-        ?Carbon $date,
+        ?CarbonImmutable $date,
     ): int {
         try {
             $snapshot = $valuationService->createSnapshot($method, $locationId, $date);

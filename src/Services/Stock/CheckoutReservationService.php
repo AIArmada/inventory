@@ -14,6 +14,7 @@ use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryReservation;
 use AIArmada\Products\Models\Product;
 use AIArmada\Products\Models\Variant;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
@@ -49,7 +50,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
             }
 
             $owner = $this->resolveOwner();
-            $expiresAt = now()->addSeconds($ttlSeconds);
+            $expiresAt = CarbonImmutable::now()->addSeconds($ttlSeconds);
 
             $group = InventoryReservation::create([
                 'reference' => $reference,
@@ -104,7 +105,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
             }
 
             $this->allocationService->releaseAllForReservationGroup($group->id);
-            $group->update(['status' => InventoryReservation::STATE_RELEASED, 'expires_at' => now()]);
+            $group->update(['status' => InventoryReservation::STATE_RELEASED, 'expires_at' => CarbonImmutable::now()]);
 
             return $this->outcome($group);
         });
@@ -155,7 +156,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
                 return $this->outcome($group);
             }
 
-            $newExpiry = now()->addSeconds($ttlSeconds);
+            $newExpiry = CarbonImmutable::now()->addSeconds($ttlSeconds);
             $group->update(['ttl_seconds' => $ttlSeconds, 'expires_at' => $newExpiry]);
 
             $this->allocationService->extendReservationGroupAllocations($group->id, max(1, (int) ceil($ttlSeconds / 60)));

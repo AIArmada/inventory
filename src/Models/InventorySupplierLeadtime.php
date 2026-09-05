@@ -16,7 +16,6 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -39,8 +38,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property CarbonImmutable|null $last_order_at
  * @property CarbonImmutable|null $last_received_at
  * @property array<string, mixed>|null $metadata
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read Model $inventoryable
  */
 final class InventorySupplierLeadtime extends Model implements Auditable
@@ -248,7 +247,7 @@ final class InventorySupplierLeadtime extends Model implements Auditable
      */
     public function recordOrder(): bool
     {
-        return $this->update(['last_order_at' => now()]);
+        return $this->update(['last_order_at' => CarbonImmutable::now()]);
     }
 
     /**
@@ -256,7 +255,7 @@ final class InventorySupplierLeadtime extends Model implements Auditable
      */
     public function recordReceipt(): bool
     {
-        return $this->update(['last_received_at' => now()]);
+        return $this->update(['last_received_at' => CarbonImmutable::now()]);
     }
 
     protected function casts(): array

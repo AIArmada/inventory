@@ -10,7 +10,7 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 
 ```php
 'database' => [
-    'table_prefix' => env('INVENTORY_TABLE_PREFIX', 'inventory_'),
+    'table_prefix' => 'inventory_',
     'tables' => [
         'locations' => 'inventory_locations',
         'levels' => 'inventory_levels',
@@ -29,13 +29,13 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 
 ```php
 'defaults' => [
-    'currency' => env('INVENTORY_CURRENCY', env('COMMERCE_CURRENCY', 'MYR')),
+    'currency' => 'MYR',
 ],
 
-'default_reorder_point' => env('INVENTORY_DEFAULT_REORDER_POINT', 10),
-'allocation_strategy' => env('INVENTORY_ALLOCATION_STRATEGY', 'priority'),
-'allocation_ttl_minutes' => env('INVENTORY_ALLOCATION_TTL', 30),
-'allow_split_allocation' => env('INVENTORY_ALLOW_SPLIT', true),
+'default_reorder_point' => 10,
+'allocation_strategy' => 'priority',
+'allocation_ttl_minutes' => 30,
+'allow_split_allocation' => true,
 ```
 
 | Option | Default | Description |
@@ -72,9 +72,9 @@ Leave either value as `null` to use the corresponding `AIArmada\Products` model.
 
 ```php
 'owner' => [
-    'enabled' => env('INVENTORY_OWNER_ENABLED', false),
-    'include_global' => env('INVENTORY_OWNER_INCLUDE_GLOBAL', false),
-    'auto_assign_on_create' => env('INVENTORY_OWNER_AUTO_ASSIGN_ON_CREATE', true),
+    'enabled' => false,
+    'include_global' => false,
+    'auto_assign_on_create' => true,
 ],
 ```
 
@@ -90,13 +90,12 @@ When enabled, all inventory operations are automatically scoped to the current o
 
 ```php
 'cart' => [
-    'enabled' => env('INVENTORY_CART_ENABLED', true),
-    'validate_on_add' => env('INVENTORY_VALIDATE_ON_ADD', false),
-    'auto_allocate_on_add' => env('INVENTORY_AUTO_ALLOCATE_ON_ADD', false),
-    'reserve_on_checkout' => env('INVENTORY_RESERVE_ON_CHECKOUT', true),
-    'block_checkout_on_insufficient' => env('INVENTORY_BLOCK_CHECKOUT_ON_INSUFFICIENT', true),
-    'allocation_ttl_minutes' => env('INVENTORY_ALLOCATION_TTL', 30),
-    'allow_backorder' => env('INVENTORY_ALLOW_BACKORDER', false),
+    'enabled' => true,
+    'validate_on_add' => false,
+    'auto_allocate_on_add' => false,
+    'reserve_on_checkout' => true,
+    'block_checkout_on_insufficient' => true,
+    'allow_backorder' => false,
     'max_backorder_quantity' => null,
     'allocation_metadata_key' => 'inventory_allocated',
     'backorder_metadata_key' => 'is_backorder',
@@ -110,7 +109,6 @@ When enabled, all inventory operations are automatically scoped to the current o
 | `auto_allocate_on_add` | `false` | Reserve stock immediately on add |
 | `reserve_on_checkout` | `true` | Reserve stock at checkout start |
 | `block_checkout_on_insufficient` | `true` | Block checkout if insufficient stock |
-| `allocation_ttl_minutes` | `30` | TTL for cart allocations |
 | `allow_backorder` | `false` | Allow adding out-of-stock items |
 | `max_backorder_quantity` | `null` | Max backorder qty per item (null=unlimited) |
 
@@ -118,7 +116,7 @@ When enabled, all inventory operations are automatically scoped to the current o
 
 ```php
 'payment' => [
-    'auto_commit' => env('INVENTORY_AUTO_COMMIT', true),
+    'auto_commit' => true,
     'events' => [],
 ],
 ```
@@ -134,8 +132,8 @@ By default, the package listens to Cashier/CashierChip payment events. Add custo
 
 ```php
 'events' => [
-    'low_inventory' => env('INVENTORY_EVENT_LOW', true),
-    'out_of_inventory' => env('INVENTORY_EVENT_OUT', true),
+    'low_inventory' => true,
+    'out_of_inventory' => true,
 ],
 ```
 
@@ -148,48 +146,10 @@ By default, the package listens to Cashier/CashierChip payment events. Add custo
 
 ```php
 'cleanup' => [
-    'keep_expired_for_minutes' => env('INVENTORY_KEEP_EXPIRED', 0),
+    'keep_expired_for_minutes' => 0,
 ],
 ```
 
 | Option | Default | Description |
 |--------|---------|-------------|
 | `keep_expired_for_minutes` | `0` | Keep expired allocations for this long before cleanup |
-
-## Environment Variables Summary
-
-```bash
-# Database
-INVENTORY_TABLE_PREFIX=inventory_
-INVENTORY_JSON_COLUMN_TYPE=jsonb
-
-# Defaults
-INVENTORY_CURRENCY=MYR
-INVENTORY_DEFAULT_REORDER_POINT=10
-INVENTORY_ALLOCATION_STRATEGY=priority
-INVENTORY_ALLOCATION_TTL=30
-INVENTORY_ALLOW_SPLIT=true
-
-# Multi-Tenancy
-INVENTORY_OWNER_ENABLED=false
-INVENTORY_OWNER_INCLUDE_GLOBAL=false
-INVENTORY_OWNER_AUTO_ASSIGN_ON_CREATE=true
-
-# Cart
-INVENTORY_CART_ENABLED=true
-INVENTORY_VALIDATE_ON_ADD=false
-INVENTORY_AUTO_ALLOCATE_ON_ADD=false
-INVENTORY_RESERVE_ON_CHECKOUT=true
-INVENTORY_BLOCK_CHECKOUT_ON_INSUFFICIENT=true
-INVENTORY_ALLOW_BACKORDER=false
-
-# Payment
-INVENTORY_AUTO_COMMIT=true
-
-# Events
-INVENTORY_EVENT_LOW=true
-INVENTORY_EVENT_OUT=true
-
-# Cleanup
-INVENTORY_KEEP_EXPIRED=0
-```

@@ -15,7 +15,7 @@ return new class extends Migration
 
         $tableName = $tables['valuation_snapshots'] ?? $prefix . 'valuation_snapshots';
 
-        Schema::create($tableName, function (Blueprint $table): void {
+        commerce_schema_create_if_missing($tableName, function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('location_id')->nullable();
             $table->string('costing_method');

@@ -19,10 +19,10 @@ use AIArmada\Inventory\States\SerialStatus;
 use AIArmada\Inventory\States\Shipped;
 use AIArmada\Inventory\States\Sold;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -40,7 +40,7 @@ use InvalidArgumentException;
  *     serialNumber: 'SN-2024-ABC123',
  *     locationId: $warehouse->id,
  *     condition: SerialCondition::New,
- *     warrantyExpiresAt: now()->addYear(),
+ *     warrantyExpiresAt: CarbonImmutable::now()->addYear(),
  * );
  * ```
  * @example Sell a serial (assign to customer)
@@ -73,7 +73,7 @@ final class SerialService
      * @param  string|null  $batchId  Associated batch (if applicable)
      * @param  SerialCondition  $condition  Physical condition
      * @param  int|null  $unitCostMinor  Cost in minor units (cents)
-     * @param  Carbon|null  $warrantyExpiresAt  Warranty expiration date
+     * @param  CarbonImmutable|null  $warrantyExpiresAt  Warranty expiration date
      * @param  string|null  $userId  User performing registration
      * @return InventorySerial The registered serial record
      */
@@ -84,7 +84,7 @@ final class SerialService
         ?string $batchId = null,
         SerialCondition $condition = SerialCondition::New,
         ?int $unitCostMinor = null,
-        ?Carbon $warrantyExpiresAt = null,
+        ?CarbonImmutable $warrantyExpiresAt = null,
         ?string $userId = null
     ): InventorySerial {
         return DB::transaction(function () use (
@@ -110,7 +110,7 @@ final class SerialService
                 'condition' => $condition->value,
                 'unit_cost_minor' => $unitCostMinor,
                 'warranty_expires_at' => $warrantyExpiresAt,
-                'received_at' => now(),
+                'received_at' => CarbonImmutable::now(),
             ]);
 
             $this->logEvent($serial, SerialEventType::Registered, [
@@ -278,7 +278,7 @@ final class SerialService
         $serial->update([
             'order_id' => $orderId,
             'customer_id' => $customerId,
-            'sold_at' => now(),
+            'sold_at' => CarbonImmutable::now(),
         ]);
 
         $this->logEvent($serial, SerialEventType::Sold, [
@@ -451,7 +451,7 @@ final class SerialService
      */
     public function updateWarranty(
         InventorySerial $serial,
-        Carbon $newExpiryDate,
+        CarbonImmutable $newExpiryDate,
         ?string $notes = null,
         ?string $userId = null
     ): InventorySerial {
@@ -512,7 +512,7 @@ final class SerialService
             'actor_name' => $data['actor_name'] ?? null,
             'notes' => $data['notes'] ?? null,
             'metadata' => $data['metadata'] ?? null,
-            'occurred_at' => now(),
+            'occurred_at' => CarbonImmutable::now(),
         ]);
     }
 

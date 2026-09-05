@@ -10,6 +10,7 @@ use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Database\Factories\InventoryAllocationFactory;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,7 +18,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -32,9 +32,9 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|string|null $owner_id
  * @property string $cart_id
  * @property int $quantity
- * @property Carbon $expires_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property CarbonImmutable $expires_at
+ * @property CarbonImmutable $created_at
+ * @property CarbonImmutable $updated_at
  * @property-read InventoryLocation $location
  * @property-read InventoryLevel $level
  * @property-read Model $inventoryable
@@ -145,7 +145,7 @@ final class InventoryAllocation extends Model implements Auditable
     public function extend(int $minutes): self
     {
         $this->update([
-            'expires_at' => now()->addMinutes($minutes),
+            'expires_at' => CarbonImmutable::now()->addMinutes($minutes),
         ]);
 
         return $this;
@@ -170,7 +170,7 @@ final class InventoryAllocation extends Model implements Auditable
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('expires_at', '>', now());
+        return $query->where('expires_at', '>', CarbonImmutable::now());
     }
 
     /**
@@ -181,7 +181,7 @@ final class InventoryAllocation extends Model implements Auditable
      */
     public function scopeExpired(Builder $query): Builder
     {
-        return $query->where('expires_at', '<=', now());
+        return $query->where('expires_at', '<=', CarbonImmutable::now());
     }
 
     /**

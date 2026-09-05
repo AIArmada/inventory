@@ -18,6 +18,7 @@ use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Services\InventoryService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -93,7 +94,7 @@ final class InventoryAllocationService
             /** @var Collection<int, InventoryAllocation> $allocations */
             $allocations = new Collection;
             $remaining = $quantity;
-            $expiresAt = now()->addMinutes($ttlMinutes);
+            $expiresAt = CarbonImmutable::now()->addMinutes($ttlMinutes);
 
             foreach ($levels as $level) {
                 if ($remaining <= 0) {
@@ -342,7 +343,7 @@ final class InventoryAllocationService
                     'reason' => 'sale',
                     'reference' => $orderId,
                     'note' => sprintf('Committed from cart %s', $cartId),
-                    'occurred_at' => now(),
+                    'occurred_at' => CarbonImmutable::now(),
                 ]);
 
                 $movements[] = $movement;
@@ -390,7 +391,7 @@ final class InventoryAllocationService
                     'reason' => 'sale',
                     'reference' => $orderId,
                     'note' => sprintf('Committed from checkout reference %s', $reference),
-                    'occurred_at' => now(),
+                    'occurred_at' => CarbonImmutable::now(),
                 ]);
 
                 $movements[] = $movement;
@@ -418,7 +419,7 @@ final class InventoryAllocationService
      */
     public function extendAllocations(string $cartId, int $minutes): int
     {
-        $newExpiry = now()->addMinutes($minutes);
+        $newExpiry = CarbonImmutable::now()->addMinutes($minutes);
 
         $query = InventoryOwnerScope::applyToQueryByLocationRelation(
             InventoryAllocation::query()->forCart($cartId)->with('location')
@@ -433,7 +434,7 @@ final class InventoryAllocationService
             InventoryAllocation::query()
                 ->where('reservation_group_id', $reservationGroupId)
                 ->with('location')
-        )->update(['expires_at' => now()->addMinutes($minutes)]);
+        )->update(['expires_at' => CarbonImmutable::now()->addMinutes($minutes)]);
     }
 
     /**

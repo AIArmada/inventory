@@ -65,9 +65,9 @@ Then in `config/inventory.php`, enable cart features:
 'cart' => [
     'validate_on_add' => true,
     'auto_allocate_on_add' => true,
-    'allocation_ttl_minutes' => 30,
     'allow_backorder' => false,
 ],
+'allocation_ttl_minutes' => 30,
 ```
 
 ## Optional: Multi-Tenancy

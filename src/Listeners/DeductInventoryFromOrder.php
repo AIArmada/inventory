@@ -11,6 +11,7 @@ use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Orders\Events\InventoryDeductionRequired;
 use AIArmada\Orders\Models\Order;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -69,7 +70,7 @@ final class DeductInventoryFromOrder
                 if ($committed) {
                     $operation->update([
                         'status' => InventoryOperation::STATUS_COMPLETED,
-                        'completed_at' => now(),
+                        'completed_at' => CarbonImmutable::now(),
                     ]);
 
                     return;
@@ -80,7 +81,7 @@ final class DeductInventoryFromOrder
 
             $operation->update([
                 'status' => InventoryOperation::STATUS_COMPLETED,
-                'completed_at' => now(),
+                'completed_at' => CarbonImmutable::now(),
             ]);
         });
     }

@@ -11,6 +11,7 @@ use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\ReorderSuggestionStatus;
 use AIArmada\Inventory\Enums\ReorderUrgency;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -18,7 +19,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -36,17 +36,17 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $economic_order_quantity
  * @property int|null $average_daily_demand
  * @property int|null $lead_time_days
- * @property Carbon|null $expected_stockout_date
+ * @property CarbonImmutable|null $expected_stockout_date
  * @property ReorderUrgency $urgency
  * @property string $trigger_reason
  * @property string|null $approved_by
- * @property Carbon|null $approved_at
+ * @property CarbonImmutable|null $approved_at
  * @property string|null $order_id
- * @property Carbon|null $ordered_at
+ * @property CarbonImmutable|null $ordered_at
  * @property array<string, mixed>|null $calculation_details
  * @property array<string, mixed>|null $metadata
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read Model $inventoryable
  * @property-read InventoryLocation|null $location
  * @property-read InventorySupplierLeadtime|null $supplierLeadtime
@@ -244,7 +244,7 @@ final class InventoryReorderSuggestion extends Model implements Auditable
             return null;
         }
 
-        return (int) now()->diffInDays($this->expected_stockout_date, false);
+        return (int) CarbonImmutable::now()->diffInDays($this->expected_stockout_date, false);
     }
 
     /**
@@ -259,7 +259,7 @@ final class InventoryReorderSuggestion extends Model implements Auditable
         return $this->update([
             'status' => ReorderSuggestionStatus::Approved,
             'approved_by' => $approvedBy,
-            'approved_at' => now(),
+            'approved_at' => CarbonImmutable::now(),
         ]);
     }
 
@@ -300,7 +300,7 @@ final class InventoryReorderSuggestion extends Model implements Auditable
         return $this->update([
             'status' => ReorderSuggestionStatus::Ordered,
             'order_id' => $orderId,
-            'ordered_at' => now(),
+            'ordered_at' => CarbonImmutable::now(),
         ]);
     }
 

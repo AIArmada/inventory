@@ -10,10 +10,10 @@ use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\States\Pending;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -29,7 +29,7 @@ final class BackorderService
         ?string $orderId = null,
         ?string $customerId = null,
         BackorderPriority $priority = BackorderPriority::Normal,
-        ?Carbon $promisedAt = null,
+        ?CarbonImmutable $promisedAt = null,
         ?string $notes = null
     ): InventoryBackorder {
         if ($locationId !== null && InventoryOwnerScope::isEnabled()) {
@@ -51,7 +51,7 @@ final class BackorderService
             'quantity_cancelled' => 0,
             'status' => Pending::class,
             'priority' => $priority,
-            'requested_at' => now(),
+            'requested_at' => CarbonImmutable::now(),
             'promised_at' => $promisedAt,
             'notes' => $notes,
         ]);
@@ -222,7 +222,7 @@ final class BackorderService
      */
     public function expireOld(int $daysOld = 90): int
     {
-        $cutoff = now()->subDays($daysOld);
+        $cutoff = CarbonImmutable::now()->subDays($daysOld);
 
         $oldBackordersQuery = InventoryBackorder::query()
             ->whereIn('status', InventoryBackorder::openStatuses())
@@ -307,7 +307,7 @@ final class BackorderService
     /**
      * Update promised date.
      */
-    public function updatePromisedDate(InventoryBackorder $backorder, Carbon $promisedAt): bool
+    public function updatePromisedDate(InventoryBackorder $backorder, CarbonImmutable $promisedAt): bool
     {
         return $backorder->update(['promised_at' => $promisedAt]);
     }

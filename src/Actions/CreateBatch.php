@@ -6,8 +6,8 @@ namespace AIArmada\Inventory\Actions;
 
 use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Services\Batch\BatchService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 final class CreateBatch
@@ -23,8 +23,8 @@ final class CreateBatch
         string $batchNumber,
         string $locationId,
         int $quantity,
-        ?Carbon $expiresAt = null,
-        ?Carbon $manufacturedAt = null,
+        ?CarbonImmutable $expiresAt = null,
+        ?CarbonImmutable $manufacturedAt = null,
         ?string $lotNumber = null,
         ?int $unitCostMinor = null,
         ?string $supplierId = null,

@@ -12,6 +12,7 @@ use AIArmada\Inventory\Events\SafetyStockBreached;
 use AIArmada\Inventory\Events\StockRestored;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
@@ -194,7 +195,7 @@ final class StockThresholdService
     {
         $level->update([
             'alert_status' => $status->value,
-            'last_alert_at' => now(),
+            'last_alert_at' => CarbonImmutable::now(),
         ]);
     }
 

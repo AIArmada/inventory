@@ -9,6 +9,7 @@ use AIArmada\Inventory\Models\InventorySerial;
 use AIArmada\Inventory\States\SerialStatus;
 use AIArmada\Inventory\States\Sold;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -206,8 +207,8 @@ final class SerialLookupService
     {
         $query = InventorySerial::query()
             ->whereNotNull('warranty_expires_at')
-            ->where('warranty_expires_at', '>', now())
-            ->where('warranty_expires_at', '<=', now()->addDays($daysAhead))
+            ->where('warranty_expires_at', '>', CarbonImmutable::now())
+            ->where('warranty_expires_at', '<=', CarbonImmutable::now()->addDays($daysAhead))
             ->orderBy('warranty_expires_at');
 
         InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
@@ -226,7 +227,7 @@ final class SerialLookupService
             ->where('customer_id', $customerId)
             ->where('status', SerialStatus::normalize(Sold::class))
             ->whereNotNull('warranty_expires_at')
-            ->where('warranty_expires_at', '>', now())
+            ->where('warranty_expires_at', '>', CarbonImmutable::now())
             ->orderBy('warranty_expires_at');
 
         InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
@@ -450,7 +451,7 @@ final class SerialLookupService
 
         if (isset($criteria['under_warranty']) && $criteria['under_warranty']) {
             $query->whereNotNull('warranty_expires_at')
-                ->where('warranty_expires_at', '>', now());
+                ->where('warranty_expires_at', '>', CarbonImmutable::now());
         }
 
         if (isset($criteria['min_cost'])) {

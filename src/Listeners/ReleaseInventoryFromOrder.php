@@ -11,6 +11,7 @@ use AIArmada\Inventory\Services\InventoryService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Orders\Events\InventoryReleaseRequired;
 use AIArmada\Orders\Models\Order;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -64,7 +65,7 @@ final class ReleaseInventoryFromOrder
 
             $operation->update([
                 'status' => InventoryOperation::STATUS_COMPLETED,
-                'completed_at' => now(),
+                'completed_at' => CarbonImmutable::now(),
             ]);
         });
     }

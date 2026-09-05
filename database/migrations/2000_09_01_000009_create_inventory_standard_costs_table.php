@@ -15,7 +15,7 @@ return new class extends Migration
 
         $tableName = $tables['standard_costs'] ?? $prefix . 'standard_costs';
 
-        Schema::create($tableName, function (Blueprint $table) use ($tableName): void {
+        commerce_schema_create_if_missing($tableName, function (Blueprint $table) use ($tableName): void {
             $table->uuid('id')->primary();
             $table->uuidMorphs('inventoryable');
             $table->integer('standard_cost_minor');

@@ -9,13 +9,13 @@ use AIArmada\CommerceSupport\Concerns\LogsCommerceActivity;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -26,13 +26,13 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|string|null $owner_id
  * @property int $standard_cost_minor
  * @property string $currency
- * @property Carbon $effective_from
- * @property Carbon|null $effective_to
+ * @property CarbonImmutable $effective_from
+ * @property CarbonImmutable|null $effective_to
  * @property string|null $approved_by
  * @property string|null $notes
  * @property array<string, mixed>|null $metadata
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read Model $inventoryable
  */
 final class InventoryStandardCost extends Model implements Auditable
@@ -108,14 +108,14 @@ final class InventoryStandardCost extends Model implements Auditable
 
     public function scopeCurrent(Builder $query): Builder
     {
-        return $query->where('effective_from', '<=', now())
+        return $query->where('effective_from', '<=', CarbonImmutable::now())
             ->where(function ($q): void {
                 $q->whereNull('effective_to')
-                    ->orWhere('effective_to', '>', now());
+                    ->orWhere('effective_to', '>', CarbonImmutable::now());
             });
     }
 
-    public function scopeEffectiveAt(Builder $query, Carbon $date): Builder
+    public function scopeEffectiveAt(Builder $query, CarbonImmutable $date): Builder
     {
         return $query->where('effective_from', '<=', $date)
             ->where(function ($q) use ($date): void {
@@ -126,18 +126,18 @@ final class InventoryStandardCost extends Model implements Auditable
 
     public function scopeFuture(Builder $query): Builder
     {
-        return $query->where('effective_from', '>', now());
+        return $query->where('effective_from', '>', CarbonImmutable::now());
     }
 
     public function scopeExpired(Builder $query): Builder
     {
         return $query->whereNotNull('effective_to')
-            ->where('effective_to', '<=', now());
+            ->where('effective_to', '<=', CarbonImmutable::now());
     }
 
     public function isCurrent(): bool
     {
-        $now = now();
+        $now = CarbonImmutable::now();
 
         return $this->effective_from <= $now
             && ($this->effective_to === null || $this->effective_to > $now);
@@ -145,17 +145,17 @@ final class InventoryStandardCost extends Model implements Auditable
 
     public function isFuture(): bool
     {
-        return $this->effective_from > now();
+        return $this->effective_from > CarbonImmutable::now();
     }
 
     public function isExpired(): bool
     {
-        return $this->effective_to !== null && $this->effective_to <= now();
+        return $this->effective_to !== null && $this->effective_to <= CarbonImmutable::now();
     }
 
     public function expire(): bool
     {
-        return $this->update(['effective_to' => now()]);
+        return $this->update(['effective_to' => CarbonImmutable::now()]);
     }
 
     protected function casts(): array

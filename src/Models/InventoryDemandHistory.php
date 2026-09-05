@@ -8,6 +8,7 @@ use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\DemandPeriodType;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -15,7 +16,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -24,15 +24,15 @@ use Illuminate\Support\Carbon;
  * @property string|null $location_id
  * @property string|null $owner_type
  * @property int|string|null $owner_id
- * @property Carbon $period_date
+ * @property CarbonImmutable $period_date
  * @property DemandPeriodType $period_type
  * @property int $quantity_demanded
  * @property int $quantity_fulfilled
  * @property int $quantity_lost
  * @property int $order_count
  * @property array<string, mixed>|null $metadata
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read Model $inventoryable
  * @property-read InventoryLocation|null $location
  */
@@ -154,14 +154,14 @@ final class InventoryDemandHistory extends Model
         return $query->where('period_type', DemandPeriodType::Monthly->value);
     }
 
-    public function scopeBetweenDates(Builder $query, Carbon $from, Carbon $to): Builder
+    public function scopeBetweenDates(Builder $query, CarbonImmutable $from, CarbonImmutable $to): Builder
     {
         return $query->whereBetween('period_date', [$from, $to]);
     }
 
     public function scopeLastDays(Builder $query, int $days): Builder
     {
-        return $query->where('period_date', '>=', now()->subDays($days));
+        return $query->where('period_date', '>=', CarbonImmutable::now()->subDays($days));
     }
 
     public function fulfillmentRate(): float

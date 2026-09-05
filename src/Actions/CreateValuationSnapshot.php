@@ -7,7 +7,7 @@ namespace AIArmada\Inventory\Actions;
 use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Models\InventoryValuationSnapshot;
 use AIArmada\Inventory\Services\Costing\ValuationService;
-use Illuminate\Support\Carbon;
+use Carbon\CarbonImmutable;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 final class CreateValuationSnapshot
@@ -21,7 +21,7 @@ final class CreateValuationSnapshot
     public function handle(
         CostingMethod $method,
         ?string $locationId = null,
-        ?Carbon $snapshotDate = null,
+        ?CarbonImmutable $snapshotDate = null,
     ): InventoryValuationSnapshot {
         return $this->valuationService->createSnapshot(
             method: $method,

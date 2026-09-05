@@ -7,8 +7,8 @@ namespace AIArmada\Inventory\Actions;
 use AIArmada\Inventory\Enums\BackorderPriority;
 use AIArmada\Inventory\Models\InventoryBackorder;
 use AIArmada\Inventory\Services\Stock\BackorderService;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 final class CreateBackorder
@@ -26,7 +26,7 @@ final class CreateBackorder
         ?string $orderId = null,
         ?string $customerId = null,
         BackorderPriority $priority = BackorderPriority::Normal,
-        ?Carbon $promisedAt = null,
+        ?CarbonImmutable $promisedAt = null,
         ?string $notes = null,
     ): InventoryBackorder {
         return $this->backorderService->create(

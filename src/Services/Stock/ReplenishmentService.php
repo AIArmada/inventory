@@ -11,6 +11,7 @@ use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryReorderSuggestion;
 use AIArmada\Inventory\Models\InventorySupplierLeadtime;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -243,7 +244,7 @@ final class ReplenishmentService
      */
     public function expireOld(int $daysOld = 14): int
     {
-        $cutoff = now()->subDays($daysOld);
+        $cutoff = CarbonImmutable::now()->subDays($daysOld);
 
         $oldQuery = InventoryReorderSuggestion::query()
             ->actionable()

@@ -15,7 +15,7 @@ return new class extends Migration
 
         $tableName = $tables['supplier_leadtimes'] ?? $prefix . 'supplier_leadtimes';
 
-        Schema::create($tableName, function (Blueprint $table) use ($tableName): void {
+        commerce_schema_create_if_missing($tableName, function (Blueprint $table) use ($tableName): void {
             $table->uuid('id')->primary();
             $table->string('inventoryable_type');
             $table->uuid('inventoryable_id');

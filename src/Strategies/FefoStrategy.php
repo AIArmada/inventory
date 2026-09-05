@@ -66,7 +66,7 @@ final class FefoStrategy implements AllocationStrategyInterface
         }
 
         if ($context->excludeExpiringSoon) {
-            $minimumExpiryDate = now()->addDays($context->minDaysToExpiry);
+            $minimumExpiryDate = CarbonImmutable::now()->addDays($context->minDaysToExpiry);
 
             $query->where(function ($expiryQuery) use ($minimumExpiryDate): void {
                 $expiryQuery->whereNull('expires_at')
@@ -110,7 +110,7 @@ final class FefoStrategy implements AllocationStrategyInterface
         }
 
         if ($context->excludeExpiringSoon) {
-            $minimumExpiryDate = now()->addDays($context->minDaysToExpiry);
+            $minimumExpiryDate = CarbonImmutable::now()->addDays($context->minDaysToExpiry);
 
             $query->where(function ($expiryQuery) use ($minimumExpiryDate): void {
                 $expiryQuery->whereNull('expires_at')

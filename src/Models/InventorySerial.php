@@ -14,6 +14,7 @@ use AIArmada\Inventory\States\Available;
 use AIArmada\Inventory\States\Reserved;
 use AIArmada\Inventory\States\SerialStatus;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -23,7 +24,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use InvalidArgumentException;
 use OwenIt\Auditing\Contracts\Auditable;
 use Spatie\ModelStates\HasStates;
@@ -42,21 +42,21 @@ use Spatie\ModelStates\HasStates;
  * @property string $condition
  * @property int|null $unit_cost_minor
  * @property string $currency
- * @property Carbon|null $warranty_expires_at
- * @property Carbon|null $manufactured_at
- * @property Carbon|null $received_at
+ * @property CarbonImmutable|null $warranty_expires_at
+ * @property CarbonImmutable|null $manufactured_at
+ * @property CarbonImmutable|null $received_at
  * @property string|null $assigned_to_type
  * @property string|null $assigned_to_id
- * @property Carbon|null $assigned_at
+ * @property CarbonImmutable|null $assigned_at
  * @property string|null $order_id
- * @property Carbon|null $sold_at
+ * @property CarbonImmutable|null $sold_at
  * @property string|null $customer_id
  * @property string|null $supplier_id
  * @property string|null $purchase_order_number
  * @property string|null $notes
  * @property array<string, mixed>|null $metadata
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property CarbonImmutable $created_at
+ * @property CarbonImmutable $updated_at
  * @property-read bool $is_warranty_active
  * @property-read int|null $days_until_warranty_expires
  * @property-read InventoryLocation|null $location
@@ -232,7 +232,7 @@ final class InventorySerial extends Model implements Auditable
             return null;
         }
 
-        return (int) now()->diffInDays($this->warranty_expires_at, false);
+        return (int) CarbonImmutable::now()->diffInDays($this->warranty_expires_at, false);
     }
 
     /**
@@ -382,7 +382,7 @@ final class InventorySerial extends Model implements Auditable
      */
     public function scopeUnderWarranty(Builder $query): Builder
     {
-        return $query->where('warranty_expires_at', '>', now());
+        return $query->where('warranty_expires_at', '>', CarbonImmutable::now());
     }
 
     /**
@@ -394,7 +394,7 @@ final class InventorySerial extends Model implements Auditable
     public function scopeWarrantyExpiringSoon(Builder $query, int $days = 30): Builder
     {
         return $query->whereNotNull('warranty_expires_at')
-            ->whereBetween('warranty_expires_at', [now(), now()->addDays($days)]);
+            ->whereBetween('warranty_expires_at', [CarbonImmutable::now(), CarbonImmutable::now()->addDays($days)]);
     }
 
     /**

@@ -9,9 +9,9 @@ use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryCostLayer;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -27,7 +27,7 @@ final class FifoCostService
         ?string $locationId = null,
         ?string $batchId = null,
         ?string $reference = null,
-        ?Carbon $layerDate = null
+        ?CarbonImmutable $layerDate = null
     ): InventoryCostLayer {
         if (InventoryOwnerScope::isEnabled()) {
             if ($locationId === null && InventoryOwnerScope::resolveOwner() !== null) {
@@ -67,7 +67,7 @@ final class FifoCostService
             'currency' => config('inventory.defaults.currency', 'MYR'),
             'reference' => $reference,
             'costing_method' => CostingMethod::Fifo,
-            'layer_date' => $layerDate ?? now(),
+            'layer_date' => $layerDate ?? CarbonImmutable::now(),
         ]);
     }
 

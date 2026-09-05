@@ -10,9 +10,9 @@ use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryValuationSnapshot;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -157,7 +157,7 @@ final class ValuationService
     public function createSnapshot(
         CostingMethod $method,
         ?string $locationId = null,
-        ?Carbon $snapshotDate = null
+        ?CarbonImmutable $snapshotDate = null
     ): InventoryValuationSnapshot {
         $snapshotDate = $snapshotDate ?? today();
 
@@ -226,8 +226,8 @@ final class ValuationService
      */
     public function getSnapshotsForRange(
         CostingMethod $method,
-        Carbon $from,
-        Carbon $to,
+        CarbonImmutable $from,
+        CarbonImmutable $to,
         ?string $locationId = null
     ): Collection {
         $query = InventoryValuationSnapshot::query()

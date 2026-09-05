@@ -247,7 +247,7 @@ final class MovementAnalysisReport
                 ? CarbonImmutable::parse($lastOccurredAt)->toDateTimeString()
                 : null;
             $daysSince = $lastOccurredAt !== null
-                ? CarbonImmutable::parse($lastOccurredAt)->diffInDays(now())
+                ? CarbonImmutable::parse($lastOccurredAt)->diffInDays(CarbonImmutable::now())
                 : 999;
 
             $slowMovers[] = [

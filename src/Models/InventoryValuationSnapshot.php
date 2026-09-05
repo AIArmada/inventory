@@ -9,19 +9,19 @@ use AIArmada\CommerceSupport\Concerns\LogsCommerceActivity;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\CostingMethod;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
  * @property string $id
  * @property string|null $location_id
  * @property CostingMethod $costing_method
- * @property Carbon $snapshot_date
+ * @property CarbonImmutable $snapshot_date
  * @property int $total_quantity
  * @property int $total_value_minor
  * @property int $average_unit_cost_minor
@@ -30,8 +30,8 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $variance_from_previous_minor
  * @property array<string, mixed>|null $breakdown
  * @property array<string, mixed>|null $metadata
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
+ * @property CarbonImmutable|null $created_at
+ * @property CarbonImmutable|null $updated_at
  * @property-read InventoryLocation|null $location
  */
 final class InventoryValuationSnapshot extends Model implements Auditable
@@ -104,12 +104,12 @@ final class InventoryValuationSnapshot extends Model implements Auditable
         return $query->where('costing_method', $method->value);
     }
 
-    public function scopeOnDate(Builder $query, Carbon $date): Builder
+    public function scopeOnDate(Builder $query, CarbonImmutable $date): Builder
     {
         return $query->whereDate('snapshot_date', $date);
     }
 
-    public function scopeBetweenDates(Builder $query, Carbon $from, Carbon $to): Builder
+    public function scopeBetweenDates(Builder $query, CarbonImmutable $from, CarbonImmutable $to): Builder
     {
         return $query->whereBetween('snapshot_date', [$from, $to]);
     }

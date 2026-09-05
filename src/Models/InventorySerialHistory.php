@@ -8,13 +8,13 @@ use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use AIArmada\Inventory\Enums\SerialEventType;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -33,9 +33,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $owner_type
  * @property int|string|null $owner_id
  * @property array<string, mixed>|null $metadata
- * @property Carbon $occurred_at
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property CarbonImmutable $occurred_at
+ * @property CarbonImmutable $created_at
+ * @property CarbonImmutable $updated_at
  * @property-read InventorySerial $serial
  * @property-read InventoryLocation|null $fromLocation
  * @property-read InventoryLocation|null $toLocation
@@ -142,7 +142,7 @@ final class InventorySerialHistory extends Model
      * @param  Builder<self>  $query
      * @return Builder<self>
      */
-    public function scopeBetweenDates(Builder $query, Carbon $start, Carbon $end): Builder
+    public function scopeBetweenDates(Builder $query, CarbonImmutable $start, CarbonImmutable $end): Builder
     {
         return $query->whereBetween('occurred_at', [$start, $end]);
     }

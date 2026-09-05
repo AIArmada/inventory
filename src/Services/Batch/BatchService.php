@@ -11,9 +11,9 @@ use AIArmada\Inventory\Events\BatchRecalled;
 use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
@@ -32,7 +32,7 @@ use InvalidArgumentException;
  *     batchNumber: 'LOT-2024-001',
  *     locationId: $warehouse->id,
  *     quantity: 100,
- *     expiresAt: now()->addMonths(6),
+ *     expiresAt: CarbonImmutable::now()->addMonths(6),
  *     lotNumber: 'MFG-2024-A1',
  *     unitCostMinor: 1500,  // $15.00
  * );
@@ -57,8 +57,8 @@ final class BatchService
      * @param  string  $batchNumber  Unique batch/lot identifier
      * @param  string  $locationId  Location UUID where batch is stored
      * @param  int  $quantity  Initial quantity received
-     * @param  Carbon|null  $expiresAt  Expiration date (null = never expires)
-     * @param  Carbon|null  $manufacturedAt  Manufacturing/production date
+     * @param  CarbonImmutable|null  $expiresAt  Expiration date (null = never expires)
+     * @param  CarbonImmutable|null  $manufacturedAt  Manufacturing/production date
      * @param  string|null  $lotNumber  Additional lot number (if different from batch)
      * @param  int|null  $unitCostMinor  Unit cost in minor units (cents)
      * @param  string|null  $supplierId  Supplier/vendor identifier
@@ -72,8 +72,8 @@ final class BatchService
         string $batchNumber,
         string $locationId,
         int $quantity,
-        ?Carbon $expiresAt = null,
-        ?Carbon $manufacturedAt = null,
+        ?CarbonImmutable $expiresAt = null,
+        ?CarbonImmutable $manufacturedAt = null,
         ?string $lotNumber = null,
         ?int $unitCostMinor = null,
         ?string $supplierId = null,
@@ -115,7 +115,7 @@ final class BatchService
                 'quantity_on_hand' => $quantity,
                 'quantity_reserved' => 0,
                 'manufactured_at' => $manufacturedAt,
-                'received_at' => now(),
+                'received_at' => CarbonImmutable::now(),
                 'expires_at' => $expiresAt,
                 'status' => BatchStatus::Active->value,
                 'unit_cost_minor' => $unitCostMinor,
@@ -309,7 +309,7 @@ final class BatchService
                 'quantity_on_hand' => $quantityToSplit,
                 'quantity_reserved' => 0,
                 'manufactured_at' => $batch->manufactured_at,
-                'received_at' => now(),
+                'received_at' => CarbonImmutable::now(),
                 'expires_at' => $batch->expires_at,
                 'status' => $batch->status,
                 'unit_cost_minor' => $batch->unit_cost_minor,
@@ -317,7 +317,7 @@ final class BatchService
                 'supplier_id' => $batch->supplier_id,
                 'metadata' => [
                     'split_from' => $batch->batch_number,
-                    'split_at' => now()->toIso8601String(),
+                    'split_at' => CarbonImmutable::now()->toIso8601String(),
                 ],
             ]);
 
@@ -374,12 +374,12 @@ final class BatchService
                 'quantity_received' => $totalQuantity,
                 'quantity_on_hand' => $totalQuantity,
                 'quantity_reserved' => 0,
-                'received_at' => now(),
+                'received_at' => CarbonImmutable::now(),
                 'expires_at' => $earliestExpiry,
                 'status' => BatchStatus::Active->value,
                 'metadata' => [
                     'merged_from' => $batches->pluck('batch_number')->toArray(),
-                    'merged_at' => now()->toIso8601String(),
+                    'merged_at' => CarbonImmutable::now()->toIso8601String(),
                 ],
             ]);
 

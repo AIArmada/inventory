@@ -12,6 +12,7 @@ use AIArmada\Inventory\Database\Factories\InventoryLevelFactory;
 use AIArmada\Inventory\Enums\AlertStatus;
 use AIArmada\Inventory\Enums\AllocationStrategy;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,7 +22,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Illuminate\Support\Carbon;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -39,16 +39,16 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $safety_stock
  * @property int|null $max_stock
  * @property string|null $alert_status
- * @property Carbon|null $last_alert_at
- * @property Carbon|null $last_stock_check_at
+ * @property CarbonImmutable|null $last_alert_at
+ * @property CarbonImmutable|null $last_stock_check_at
  * @property string $unit_of_measure
  * @property float $unit_conversion_factor
  * @property int|null $lead_time_days
  * @property string|null $preferred_supplier_id
  * @property string|null $allocation_strategy
  * @property array<string, mixed>|null $metadata
- * @property Carbon $created_at
- * @property Carbon $updated_at
+ * @property CarbonImmutable $created_at
+ * @property CarbonImmutable $updated_at
  * @property-read int $available
  * @property-read int $current_quantity
  * @property-read int $quantity

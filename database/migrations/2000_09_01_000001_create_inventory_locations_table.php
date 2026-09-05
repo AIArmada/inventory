@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create(config('inventory.database.tables.locations', 'inventory_locations'), function (Blueprint $table): void {
+        commerce_schema_create_if_missing(config('inventory.database.tables.locations', 'inventory_locations'), function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->string('owner_scope')->default('global');
             $table->string('name');
