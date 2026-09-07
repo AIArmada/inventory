@@ -402,6 +402,23 @@ $serialService->return($serial, 'Customer changed mind');
 $serialService->dispose($serial, 'Damaged beyond repair');
 ```
 
+### Serial Status Values
+
+Serial status is a Spatie state cast. Use the state classes for persisted values
+and `SerialStatus::options()` for labelled select options:
+
+```php
+use AIArmada\Inventory\States\Available;
+use AIArmada\Inventory\States\SerialStatus;
+
+$serial->status = Available::getMorphClass();
+$serial->save();
+
+$value = $serial->status->getValue(); // 'available'
+$label = $serial->status->label(); // 'Available'
+$options = SerialStatus::options();
+```
+
 ### Serial Lookup
 
 ```php
