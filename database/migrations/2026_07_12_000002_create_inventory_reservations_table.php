@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
         $tableName = config('inventory.database.tables.reservations', 'inventory_reservations');
-        $allocationTable = config('inventory.database.tables.allocations', 'inventory_allocations');
         $jsonType = commerce_json_column_type('inventory', 'jsonb');
 
         commerce_schema_create_if_missing($tableName, function (Blueprint $table) use ($jsonType): void {
@@ -29,21 +27,5 @@ return new class extends Migration
             $table->index('status');
             $table->index('expires_at');
         });
-
-        if (! Schema::hasTable($allocationTable)) {
-            return;
-        }
-
-        if (! Schema::hasColumn($allocationTable, 'reservation_group_id')) {
-            Schema::table($allocationTable, function (Blueprint $table): void {
-                $table->foreignUuid('reservation_group_id')->nullable();
-            });
-        }
-
-        if (! Schema::hasIndex($allocationTable, 'inv_allocations_reservation_group_idx')) {
-            Schema::table($allocationTable, function (Blueprint $table): void {
-                $table->index('reservation_group_id', 'inv_allocations_reservation_group_idx');
-            });
-        }
     }
 };

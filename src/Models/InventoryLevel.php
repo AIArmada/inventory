@@ -33,8 +33,6 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|string|null $owner_id
  * @property int $quantity_on_hand
  * @property int $quantity_reserved
- * @property float|null $quantity_on_hand_decimal
- * @property float|null $quantity_reserved_decimal
  * @property int|null $reorder_point
  * @property int|null $safety_stock
  * @property int|null $max_stock
@@ -86,8 +84,6 @@ final class InventoryLevel extends Model implements Auditable
         'location_id',
         'quantity_on_hand',
         'quantity_reserved',
-        'quantity_on_hand_decimal',
-        'quantity_reserved_decimal',
         'reorder_point',
         'safety_stock',
         'max_stock',
@@ -405,8 +401,6 @@ final class InventoryLevel extends Model implements Auditable
         return [
             'quantity_on_hand' => 'integer',
             'quantity_reserved' => 'integer',
-            'quantity_on_hand_decimal' => 'decimal:4',
-            'quantity_reserved_decimal' => 'decimal:4',
             'reorder_point' => 'integer',
             'safety_stock' => 'integer',
             'max_stock' => 'integer',
