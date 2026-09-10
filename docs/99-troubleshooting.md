@@ -45,7 +45,7 @@ Increase the TTL in config:
 
 Or extend allocations programmatically:
 ```php
-InventoryAllocation::extendForCart($cartId, additionalMinutes: 30);
+InventoryAllocation::extendAllocations($cartId, minutes: 30);
 ```
 
 ### Batch/FEFO allocation fails despite available stock

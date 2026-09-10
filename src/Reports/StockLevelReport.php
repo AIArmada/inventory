@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Reports;
 
 use AIArmada\Inventory\Enums\MovementType;
+use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryBatch;
 use AIArmada\Inventory\Models\InventoryLevel;
+use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Models\InventoryReorderSuggestion;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +22,94 @@ use Illuminate\Support\Facades\DB;
  */
 final class StockLevelReport
 {
+    /**
+     * Get the summary used by inventory dashboards.
+     *
+     * @return array{total_locations: int, active_locations: int, total_skus: int, total_on_hand: int, total_reserved: int, active_allocations: int}
+     */
+    public function getOverview(): array
+    {
+        $locationTotals = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
+            ->selectRaw('COUNT(*) as total_locations')
+            ->selectRaw('SUM(CASE WHEN is_active = ? THEN 1 ELSE 0 END) as active_locations', [true])
+            ->toBase()
+            ->first();
+
+        $levelTotals = InventoryOwnerScope::applyToLocationQuery(InventoryLevel::query())
+            ->selectRaw('COALESCE(SUM(quantity_on_hand), 0) as total_on_hand')
+            ->selectRaw('COALESCE(SUM(quantity_reserved), 0) as total_reserved')
+            ->toBase()
+            ->first();
+
+        $distinctSkus = InventoryOwnerScope::applyToLocationQuery(InventoryLevel::query())
+            ->select('inventoryable_type', 'inventoryable_id')
+            ->distinct();
+
+        return [
+            'total_locations' => (int) ($locationTotals->total_locations ?? 0),
+            'active_locations' => (int) ($locationTotals->active_locations ?? 0),
+            'total_skus' => (int) DB::query()
+                ->fromSub($distinctSkus->toBase(), 'distinct_skus')
+                ->count(),
+            'total_on_hand' => (int) ($levelTotals->total_on_hand ?? 0),
+            'total_reserved' => (int) ($levelTotals->total_reserved ?? 0),
+            'active_allocations' => InventoryOwnerScope::applyToLocationQuery(
+                InventoryAllocation::query()->active()
+            )->count(),
+        ];
+    }
+
+    /**
+     * Count active levels below an available-quantity threshold.
+     */
+    public function getLowInventoryCount(?int $threshold = null): int
+    {
+        $threshold ??= config('inventory.default_reorder_point', 10);
+
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLevel::query())
+            ->whereRaw('(quantity_on_hand - quantity_reserved) <= ?', [$threshold])
+            ->whereHas('location', fn (Builder $query): Builder => $query->where('is_active', true))
+            ->count();
+    }
+
+    /**
+     * Count active levels with no available quantity.
+     */
+    public function getOutOfStockCount(): int
+    {
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLevel::query())
+            ->whereRaw('(quantity_on_hand - quantity_reserved) <= 0')
+            ->whereHas('location', fn (Builder $query): Builder => $query->where('is_active', true))
+            ->count();
+    }
+
+    /**
+     * Count active levels below their configured reorder point.
+     */
+    public function getLowStockCount(): int
+    {
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLevel::query())
+            ->whereRaw('quantity_on_hand - quantity_reserved <= reorder_point')
+            ->where('reorder_point', '>', 0)
+            ->count();
+    }
+
+    /**
+     * Get active levels that need replenishment.
+     *
+     * @return Builder<InventoryLevel>
+     */
+    public function getLowStockQuery(): Builder
+    {
+        return InventoryOwnerScope::applyToLocationQuery(InventoryLevel::query())
+            ->with('location')
+            ->whereHas('location', fn (Builder $query): Builder => $query->where('is_active', true))
+            ->whereRaw('quantity_on_hand - quantity_reserved <= reorder_point')
+            ->where('reorder_point', '>', 0)
+            ->addSelect(DB::raw('(reorder_point - (quantity_on_hand - quantity_reserved)) AS deficit'))
+            ->orderByRaw('reorder_point - (quantity_on_hand - quantity_reserved) DESC');
+    }
+
     /**
      * Get current stock summary by location.
      *
@@ -34,18 +125,16 @@ final class StockLevelReport
      */
     public function getStockByLocation(): Collection
     {
-        $query = InventoryLevel::query()
-            ->select([
-                'location_id',
-                DB::raw('COUNT(DISTINCT CONCAT(inventoryable_type, inventoryable_id)) as sku_count'),
-                DB::raw('SUM(quantity_on_hand) as total_quantity'),
-            ])
-            ->with('location:id,name')
-            ->groupBy('location_id');
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->select([
+                    'location_id',
+                    DB::raw('COUNT(DISTINCT CONCAT(inventoryable_type, inventoryable_id)) as sku_count'),
+                    DB::raw('SUM(quantity_on_hand) as total_quantity'),
+                ])
+                ->with('location:id,name')
+                ->groupBy('location_id')
+        );
 
         /** @var Collection<int, array{location_id: string, location_name: string, sku_count: int, total_quantity: int, total_value: int, low_stock_count: int, out_of_stock_count: int}> $stockByLocation */
         $stockByLocation = $query->get()
@@ -75,19 +164,16 @@ final class StockLevelReport
      */
     public function getAbcAnalysis(): Collection
     {
-        $stocksQuery = InventoryLevel::query()
-            ->select([
-                'inventoryable_type',
-                'inventoryable_id',
-                DB::raw('SUM(quantity_on_hand) as total_quantity'),
-            ])
-            ->groupBy('inventoryable_type', 'inventoryable_id')
-
-            ->orderByDesc('total_quantity');
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($stocksQuery, 'location');
-        }
+        $stocksQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->select([
+                    'inventoryable_type',
+                    'inventoryable_id',
+                    DB::raw('SUM(quantity_on_hand) as total_quantity'),
+                ])
+                ->groupBy('inventoryable_type', 'inventoryable_id')
+                ->orderByDesc('total_quantity')
+        );
 
         $stocks = $stocksQuery->get();
 
@@ -136,12 +222,9 @@ final class StockLevelReport
     {
         $now = CarbonImmutable::now();
 
-        $batchesQuery = InventoryBatch::query()
-            ->whereNotNull('manufactured_at');
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($batchesQuery, 'location');
-        }
+        $batchesQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()->whereNotNull('manufactured_at')
+        );
 
         $batches = $batchesQuery->get();
 
@@ -189,67 +272,54 @@ final class StockLevelReport
      */
     public function getReorderStatus(): array
     {
-        $belowReorderPointQuery = InventoryLevel::query()
-            ->needsReorder();
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($belowReorderPointQuery, 'location');
-        }
+        $belowReorderPointQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()->needsReorder()
+        );
 
         $belowReorderPoint = (int) $belowReorderPointQuery
             ->selectRaw('COUNT(DISTINCT CONCAT(inventoryable_type, ":", inventoryable_id)) as aggregate')
             ->value('aggregate');
 
-        $pendingSuggestionsQuery = InventoryReorderSuggestion::query()
-            ->pending();
+        $pendingSuggestionsQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryReorderSuggestion::query()->pending()
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $pendingSuggestionsQuery->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $pendingSuggestionsQuery->whereNotNull('location_id');
+            }
         }
 
         $pendingSuggestions = $pendingSuggestionsQuery->count();
 
-        $approvedSuggestionsQuery = InventoryReorderSuggestion::query()
-            ->where('status', 'approved');
+        $approvedSuggestionsQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryReorderSuggestion::query()->where('status', 'approved')
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $approvedSuggestionsQuery->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $approvedSuggestionsQuery->whereNotNull('location_id');
+            }
         }
 
         $approvedSuggestions = $approvedSuggestionsQuery->count();
 
         $suggestedValue = 0; // Requires cost integration
 
-        $urgentReordersQuery = InventoryReorderSuggestion::query()
-            ->pending()
-            ->critical();
+        $urgentReordersQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryReorderSuggestion::query()->pending()->critical()
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $urgentReordersQuery->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $urgentReordersQuery->whereNotNull('location_id');
+            }
         }
 
         $urgentReorders = $urgentReordersQuery->count();
@@ -278,23 +348,21 @@ final class StockLevelReport
      */
     public function getStockDistribution(int $limit = 20): Collection
     {
-        $query = InventoryLevel::query()
-            ->select([
-                'inventoryable_type',
-                'inventoryable_id',
-                DB::raw('COUNT(DISTINCT location_id) as location_count'),
-                DB::raw('SUM(quantity_on_hand) as total_quantity'),
-                DB::raw('MAX(quantity_on_hand) as max_quantity'),
-                DB::raw('MIN(quantity_on_hand) as min_quantity'),
-            ])
-            ->groupBy('inventoryable_type', 'inventoryable_id')
-            ->having('location_count', '>', 1)
-            ->orderByDesc('total_quantity')
-            ->limit($limit);
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->select([
+                    'inventoryable_type',
+                    'inventoryable_id',
+                    DB::raw('COUNT(DISTINCT location_id) as location_count'),
+                    DB::raw('SUM(quantity_on_hand) as total_quantity'),
+                    DB::raw('MAX(quantity_on_hand) as max_quantity'),
+                    DB::raw('MIN(quantity_on_hand) as min_quantity'),
+                ])
+                ->groupBy('inventoryable_type', 'inventoryable_id')
+                ->having('location_count', '>', 1)
+                ->orderByDesc('total_quantity')
+                ->limit($limit)
+        );
 
         return $query->get()
             ->map(fn ($row): array => [
@@ -327,22 +395,20 @@ final class StockLevelReport
         $cutoffDate = CarbonImmutable::now()->subDays($daysThreshold);
         $tableName = config('inventory.database.tables.levels', 'inventory_levels');
 
-        $query = InventoryLevel::query()
-            ->select([
-                "{$tableName}.inventoryable_type",
-                "{$tableName}.inventoryable_id",
-                "{$tableName}.quantity_on_hand as quantity",
-                "{$tableName}.location_id",
-                "{$tableName}.updated_at",
-            ])
-            ->where("{$tableName}.quantity_on_hand", '>', 0)
-            ->where("{$tableName}.updated_at", '<', $cutoffDate)
-            ->orderBy("{$tableName}.updated_at")
-            ->limit($limit);
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->select([
+                    "{$tableName}.inventoryable_type",
+                    "{$tableName}.inventoryable_id",
+                    "{$tableName}.quantity_on_hand as quantity",
+                    "{$tableName}.location_id",
+                    "{$tableName}.updated_at",
+                ])
+                ->where("{$tableName}.quantity_on_hand", '>', 0)
+                ->where("{$tableName}.updated_at", '<', $cutoffDate)
+                ->orderBy("{$tableName}.updated_at")
+                ->limit($limit)
+        );
 
         /** @var Collection<int, array{inventoryable_type: string, inventoryable_id: string, quantity: int, value: int, location_id: string, days_stagnant: int}> $deadStock */
         $deadStock = $query->get()

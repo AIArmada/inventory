@@ -42,12 +42,9 @@ final class BatchExport implements ExportableInterface
 
     public function getRows(): iterable
     {
-        $query = InventoryBatch::query()
-            ->with('location:id,name');
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()->with('location:id,name')
+        );
 
         if ($this->status !== null) {
             $query->where('status', $this->status);

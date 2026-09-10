@@ -16,8 +16,6 @@ use AIArmada\Inventory\Cart\ValidateInventoryOnAdd;
 use AIArmada\Inventory\Console\CleanupExpiredAllocationsCommand;
 use AIArmada\Inventory\Console\CreateValuationSnapshotCommand;
 use AIArmada\Inventory\Contracts\CheckoutReservationServiceInterface;
-use AIArmada\Inventory\Contracts\CostingMethodInterface;
-use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Exports\ExportService;
 use AIArmada\Inventory\Integrations\FulfillmentLocationService;
 use AIArmada\Inventory\Listeners\CommitInventoryOnPayment;
@@ -25,6 +23,7 @@ use AIArmada\Inventory\Listeners\DeductInventoryFromOrder;
 use AIArmada\Inventory\Listeners\ReleaseInventoryFromOrder;
 use AIArmada\Inventory\Listeners\ReleaseInventoryOnCartClear;
 use AIArmada\Inventory\Reports\InventoryKpiService;
+use AIArmada\Inventory\Reports\InventoryReconciliationReport;
 use AIArmada\Inventory\Reports\MovementAnalysisReport;
 use AIArmada\Inventory\Reports\StockLevelReport;
 use AIArmada\Inventory\Services\Batch\BatchService;
@@ -40,15 +39,9 @@ use AIArmada\Inventory\Services\Stock\CheckoutReservationService;
 use AIArmada\Inventory\Services\Stock\DemandForecastService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Services\Stock\ReplenishmentService;
-use AIArmada\Inventory\Strategies\FefoStrategy;
-use AIArmada\Inventory\Strategies\NearestLocationStrategy;
-use AIArmada\Inventory\Support\AllocationStrategyRegistry;
-use AIArmada\Inventory\Support\CostingMethodRegistry;
 use AIArmada\Orders\Events\InventoryDeductionRequired;
 use AIArmada\Orders\Events\InventoryReleaseRequired;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
-use RuntimeException;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -76,8 +69,6 @@ final class InventoryServiceProvider extends PackageServiceProvider
         $this->registerReplenishmentServices();
         $this->registerReportServices();
         $this->registerIntegrationServices();
-        $this->registerRegistries();
-        $this->registerAllocationStrategies();
     }
 
     public function packageBooted(): void
@@ -106,6 +97,7 @@ final class InventoryServiceProvider extends PackageServiceProvider
             DemandForecastService::class,
             ReplenishmentService::class,
             InventoryKpiService::class,
+            InventoryReconciliationReport::class,
             MovementAnalysisReport::class,
             StockLevelReport::class,
             ExportService::class,
@@ -173,6 +165,7 @@ final class InventoryServiceProvider extends PackageServiceProvider
     private function registerReportServices(): void
     {
         $this->app->singleton(InventoryKpiService::class);
+        $this->app->singleton(InventoryReconciliationReport::class);
         $this->app->singleton(MovementAnalysisReport::class);
         $this->app->singleton(StockLevelReport::class);
         $this->app->singleton(ExportService::class);
@@ -188,112 +181,6 @@ final class InventoryServiceProvider extends PackageServiceProvider
         // Checkout reservation group service
         $this->app->singleton(CheckoutReservationService::class);
         $this->app->bind(CheckoutReservationServiceInterface::class, CheckoutReservationService::class);
-    }
-
-    private function registerRegistries(): void
-    {
-        $this->app->singleton(CostingMethodRegistry::class, function ($app): CostingMethodRegistry {
-            $registry = new CostingMethodRegistry;
-
-            $fifo = $app->make(FifoCostService::class);
-            $registry->register(new class($fifo) implements CostingMethodInterface
-            {
-                public function __construct(private FifoCostService $service) {}
-
-                public function supports(): CostingMethod
-                {
-                    return CostingMethod::Fifo;
-                }
-
-                public function calculateValuation(Model $model, ?string $locationId = null): array
-                {
-                    return $this->service->calculateValuation($model, $locationId);
-                }
-
-                public function consume(Model $model, int $quantity, ?string $locationId = null): array
-                {
-                    return $this->service->consume($model, $quantity, $locationId);
-                }
-
-                public function estimateCogs(Model $model, int $quantity, ?string $locationId = null): int
-                {
-                    return $this->service->estimateCogs($model, $quantity, $locationId);
-                }
-            });
-
-            $weighted = $app->make(WeightedAverageCostService::class);
-            $registry->register(new class($weighted) implements CostingMethodInterface
-            {
-                public function __construct(private WeightedAverageCostService $service) {}
-
-                public function supports(): CostingMethod
-                {
-                    return CostingMethod::WeightedAverage;
-                }
-
-                public function calculateValuation(Model $model, ?string $locationId = null): array
-                {
-                    return $this->service->calculateValuation($model, $locationId);
-                }
-
-                public function consume(Model $model, int $quantity, ?string $locationId = null): array
-                {
-                    throw new RuntimeException('Weighted average does not support layer-level consume.');
-                }
-
-                public function estimateCogs(Model $model, int $quantity, ?string $locationId = null): int
-                {
-                    $valuation = $this->service->calculateValuation($model, $locationId);
-
-                    return $valuation['average_cost'] * $quantity;
-                }
-            });
-
-            $standard = $app->make(StandardCostService::class);
-            $registry->register(new class($standard) implements CostingMethodInterface
-            {
-                public function __construct(private StandardCostService $service) {}
-
-                public function supports(): CostingMethod
-                {
-                    return CostingMethod::Standard;
-                }
-
-                public function calculateValuation(Model $model, ?string $locationId = null): array
-                {
-                    $unitCost = $this->service->getCurrentCostValue($model);
-
-                    return ['quantity' => 0, 'value' => 0, 'average_cost' => $unitCost ?? 0];
-                }
-
-                public function consume(Model $model, int $quantity, ?string $locationId = null): array
-                {
-                    throw new RuntimeException('Standard cost does not support layer-level consume.');
-                }
-
-                public function estimateCogs(Model $model, int $quantity, ?string $locationId = null): int
-                {
-                    $unitCost = $this->service->getCurrentCostValue($model);
-
-                    return $unitCost !== null ? $unitCost * $quantity : 0;
-                }
-            });
-
-            return $registry;
-        });
-
-        $this->app->singleton(AllocationStrategyRegistry::class, function ($app): AllocationStrategyRegistry {
-            $registry = new AllocationStrategyRegistry;
-            $registry->register(new FefoStrategy);
-            $registry->register(new NearestLocationStrategy);
-
-            return $registry;
-        });
-    }
-
-    private function registerAllocationStrategies(): void
-    {
-        // Allocation strategies are registered via AllocationStrategyRegistry
     }
 
     /**

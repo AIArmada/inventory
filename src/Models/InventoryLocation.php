@@ -392,6 +392,22 @@ final class InventoryLocation extends Model implements Auditable
      */
     protected static function booted(): void
     {
+        static::creating(function (InventoryLocation $location): void {
+            $location->updatePathAndDepth();
+        });
+
+        static::updating(function (InventoryLocation $location): void {
+            if ($location->isDirty('parent_id')) {
+                $location->updatePathAndDepth();
+            }
+        });
+
+        static::saved(function (InventoryLocation $location): void {
+            if ($location->wasChanged('path')) {
+                $location->rebuildDescendantPaths();
+            }
+        });
+
         static::saving(function (InventoryLocation $location): void {
             if (! InventoryOwnerScope::isEnabled()) {
                 return;
@@ -426,10 +442,51 @@ final class InventoryLocation extends Model implements Auditable
             $location->assignOwner($owner);
         });
 
+        static::deleting(function (InventoryLocation $location): void {
+            $location->children()->update([
+                'parent_id' => $location->parent_id,
+            ]);
+        });
+
         self::deleting(function (InventoryLocation $location): void {
             $location->inventoryLevels()->delete();
             $location->allocations()->delete();
         });
+    }
+
+    /**
+     * Update path and depth from the current parent.
+     */
+    protected function updatePathAndDepth(): void
+    {
+        if ($this->parent_id === null) {
+            $this->path = $this->id ?? 'temp';
+            $this->depth = 0;
+
+            return;
+        }
+
+        $parent = InventoryOwnerScope::applyToLocationQuery(self::query())
+            ->whereKey($this->parent_id)
+            ->first();
+
+        if ($parent !== null) {
+            $this->path = $parent->path . '/' . $this->id;
+            $this->depth = $parent->depth + 1;
+        }
+    }
+
+    /**
+     * Rebuild descendant paths after a hierarchy change.
+     */
+    protected function rebuildDescendantPaths(): void
+    {
+        foreach ($this->children()->get() as $child) {
+            $child->path = $this->path . '/' . $child->id;
+            $child->depth = $this->depth + 1;
+            $child->saveQuietly();
+            $child->rebuildDescendantPaths();
+        }
     }
 
     /**

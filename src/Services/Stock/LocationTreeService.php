@@ -165,15 +165,6 @@ final class LocationTreeService
 
             $location->save();
 
-            // Update path after we have ID
-            if ($parent !== null) {
-                $location->path = $parent->path . '/' . $location->id;
-            } else {
-                $location->path = $location->id;
-            }
-
-            $location->saveQuietly();
-
             return $location;
         });
     }
@@ -214,7 +205,8 @@ final class LocationTreeService
         }
 
         return DB::transaction(function () use ($location, $newParent): InventoryLocation {
-            $location->moveTo($newParent);
+            $location->parent_id = $newParent?->id;
+            $location->save();
 
             return $location->fresh() ?? $location;
         });

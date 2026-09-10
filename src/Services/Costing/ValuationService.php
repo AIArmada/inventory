@@ -6,7 +6,6 @@ namespace AIArmada\Inventory\Services\Costing;
 
 use AIArmada\Inventory\Enums\CostingMethod;
 use AIArmada\Inventory\Models\InventoryCostLayer;
-use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryValuationSnapshot;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
@@ -49,9 +48,9 @@ use InvalidArgumentException;
 final class ValuationService
 {
     public function __construct(
-        private FifoCostService $fifoCostService,
-        private WeightedAverageCostService $weightedAverageCostService,
-        private StandardCostService $standardCostService
+        private FifoCostingMethod $fifoCostingMethod,
+        private WeightedAverageCostingMethod $weightedAverageCostingMethod,
+        private StandardCostingMethod $standardCostingMethod,
     ) {}
 
     /**
@@ -65,10 +64,10 @@ final class ValuationService
         ?string $locationId = null
     ): array {
         return match ($method) {
-            CostingMethod::Fifo => $this->fifoCostService->calculateValuation($model, $locationId),
-            CostingMethod::WeightedAverage => $this->weightedAverageCostService->calculateValuation($model, $locationId),
-            CostingMethod::Standard => $this->calculateStandardValuation($model, $locationId),
-            default => $this->fifoCostService->calculateValuation($model, $locationId),
+            CostingMethod::Fifo => $this->fifoCostingMethod->calculateValuation($model, $locationId),
+            CostingMethod::WeightedAverage => $this->weightedAverageCostingMethod->calculateValuation($model, $locationId),
+            CostingMethod::Standard => $this->standardCostingMethod->calculateValuation($model, $locationId),
+            default => $this->fifoCostingMethod->calculateValuation($model, $locationId),
         };
     }
 
@@ -81,11 +80,12 @@ final class ValuationService
     {
         $this->getScopedLocationOrFail($locationId);
 
-        $layers = InventoryCostLayer::query()
-            ->where('location_id', $locationId)
-            ->withRemainingQuantity()
-            ->usingMethod($method)
-            ->get();
+        $layers = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->where('location_id', $locationId)
+                ->withRemainingQuantity()
+                ->usingMethod($method)
+        )->get();
 
         $totalQuantity = 0;
         $totalValue = 0;
@@ -111,20 +111,18 @@ final class ValuationService
      */
     public function getTotalValuation(CostingMethod $method): array
     {
-        $query = InventoryCostLayer::query()
-            ->withRemainingQuantity()
-            ->usingMethod($method);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->withRemainingQuantity()
+                ->usingMethod($method)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         $layers = $query->get();
@@ -330,59 +328,26 @@ final class ValuationService
     }
 
     /**
-     * Calculate valuation using standard cost.
-     *
-     * @return array{quantity: int, value: int, average_cost: int}
-     */
-    private function calculateStandardValuation(Model $model, ?string $locationId = null): array
-    {
-        $query = InventoryLevel::query()
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey());
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
-
-        if ($locationId !== null) {
-            $this->getScopedLocationOrFail($locationId);
-            $query->where('location_id', $locationId);
-        }
-
-        $quantity = (int) $query->sum('quantity_on_hand');
-
-        $standardCost = $this->standardCostService->getCurrentCostValue($model) ?? 0;
-
-        return [
-            'quantity' => $quantity,
-            'value' => $quantity * $standardCost,
-            'average_cost' => $standardCost,
-        ];
-    }
-
-    /**
      * Get breakdown by category/type.
      *
      * @return array<string, array{units: int, value: int}>
      */
     private function getBreakdownByCategory(CostingMethod $method, ?string $locationId = null): array
     {
-        $query = InventoryCostLayer::query()
-            ->withRemainingQuantity()
-            ->usingMethod($method)
-            ->selectRaw('inventoryable_type, SUM(remaining_quantity) as units, SUM(remaining_quantity * unit_cost_minor) as value')
-            ->groupBy('inventoryable_type');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->withRemainingQuantity()
+                ->usingMethod($method)
+                ->selectRaw('inventoryable_type, SUM(remaining_quantity) as units, SUM(remaining_quantity * unit_cost_minor) as value')
+                ->groupBy('inventoryable_type')
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {

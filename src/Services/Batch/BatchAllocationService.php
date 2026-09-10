@@ -55,15 +55,13 @@ final class BatchAllocationService
             }
         }
 
-        $query = InventoryBatch::query()
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->allocatable()
-            ->fifo();
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->allocatable()
+                ->fifo()
+        );
 
         if ($locationId !== null) {
             $query->atLocation($locationId);

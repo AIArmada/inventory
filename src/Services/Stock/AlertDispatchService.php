@@ -100,11 +100,9 @@ final class AlertDispatchService
         $summary = [];
 
         foreach (AlertStatus::cases() as $status) {
-            $query = InventoryLevel::query()->where('alert_status', $status->value);
-
-            if (InventoryOwnerScope::isEnabled()) {
-                InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-            }
+            $query = InventoryOwnerScope::applyToLocationQuery(
+                InventoryLevel::query()->where('alert_status', $status->value)
+            );
 
             $count = $query->count();
 
@@ -123,17 +121,15 @@ final class AlertDispatchService
      */
     public function getCriticalAlerts(): Collection
     {
-        $query = InventoryLevel::query()
-            ->whereIn('alert_status', array_map(
-                fn (AlertStatus $s): string => $s->value,
-                AlertStatus::criticalStatuses()
-            ))
-            ->with(['location', 'inventoryable'])
-            ->orderByDesc('last_alert_at');
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->whereIn('alert_status', array_map(
+                    fn (AlertStatus $s): string => $s->value,
+                    AlertStatus::criticalStatuses()
+                ))
+                ->with(['location', 'inventoryable'])
+                ->orderByDesc('last_alert_at')
+        );
 
         return $query->get();
     }

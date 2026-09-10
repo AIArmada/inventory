@@ -51,15 +51,13 @@ final class FefoStrategy implements AllocationStrategyInterface
             }
         }
 
-        $query = InventoryBatch::query()
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->allocatable()
-            ->fefo();
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->allocatable()
+                ->fefo()
+        );
 
         if ($context->locationId !== null) {
             $query->atLocation($context->locationId);
@@ -96,14 +94,12 @@ final class FefoStrategy implements AllocationStrategyInterface
             }
         }
 
-        $query = InventoryBatch::query()
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->allocatable();
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->allocatable()
+        );
 
         if ($context->locationId !== null) {
             $query->atLocation($context->locationId);
@@ -142,15 +138,13 @@ final class FefoStrategy implements AllocationStrategyInterface
             }
         }
 
-        $query = InventoryBatch::query()
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->allocatable()
-            ->fefo();
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->allocatable()
+                ->fefo()
+        );
 
         if ($context->locationId !== null) {
             $query->atLocation($context->locationId);

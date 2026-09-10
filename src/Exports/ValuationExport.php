@@ -39,21 +39,19 @@ final class ValuationExport implements ExportableInterface
 
     public function getRows(): iterable
     {
-        $query = InventoryValuationSnapshot::query()
-            ->with('location:id,name')
-            ->whereBetween('snapshot_date', [$this->startDate, $this->endDate])
-            ->orderBy('snapshot_date', 'desc');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryValuationSnapshot::query()
+                ->with('location:id,name')
+                ->whereBetween('snapshot_date', [$this->startDate, $this->endDate])
+                ->orderBy('snapshot_date', 'desc')
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         foreach ($query->cursor() as $snapshot) {

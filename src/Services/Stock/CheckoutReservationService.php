@@ -12,6 +12,7 @@ use AIArmada\Inventory\Exceptions\InvalidReservationTransition;
 use AIArmada\Inventory\Exceptions\ReservationReferenceConflict;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryReservation;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Products\Models\Product;
 use AIArmada\Products\Models\Variant;
 use Carbon\CarbonImmutable;
@@ -178,6 +179,56 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
         return $this->outcome($group->refresh());
     }
 
+    /**
+     * Release expired allocations and remove reservation groups past retention.
+     *
+     * @return int Number of reservation groups removed.
+     */
+    public function cleanupExpiredReservations(): int
+    {
+        $now = CarbonImmutable::now();
+        $cutoff = $now->subMinutes(max(0, (int) config('inventory.cleanup.keep_expired_for_minutes', 0)));
+
+        return DB::transaction(function () use ($now, $cutoff): int {
+            $groups = InventoryOwnerScope::applyToLocationQuery(
+                InventoryReservation::query()
+                    ->where(function ($query) use ($now, $cutoff): void {
+                        $query
+                            ->where(function ($reserved) use ($now): void {
+                                $reserved
+                                    ->where('status', InventoryReservation::STATE_RESERVED)
+                                    ->whereNotNull('expires_at')
+                                    ->where('expires_at', '<=', $now);
+                            })
+                            ->orWhere(function ($terminal) use ($cutoff): void {
+                                $terminal
+                                    ->whereIn('status', [
+                                        InventoryReservation::STATE_COMMITTED,
+                                        InventoryReservation::STATE_RELEASED,
+                                        InventoryReservation::STATE_EXPIRED,
+                                    ])
+                                    ->where('updated_at', '<=', $cutoff);
+                            });
+                    })
+                    ->lockForUpdate()
+            )->get();
+
+            $deleted = 0;
+
+            foreach ($groups as $group) {
+                if ($group->status === InventoryReservation::STATE_RESERVED) {
+                    $this->expireIfNeeded($group);
+                }
+
+                $this->allocationService->releaseAllForReservationGroup($group->id);
+                $group->delete();
+                $deleted++;
+            }
+
+            return $deleted;
+        });
+    }
+
     private function outcome(InventoryReservation $group): ReservationOutcome
     {
         return new ReservationOutcome(
@@ -229,16 +280,20 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
     private function findGroup(string $reference): ?InventoryReservation
     {
-        $query = InventoryReservation::query()->where('reference', $reference);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryReservation::query()->where('reference', $reference)
+        );
 
         return $query->first();
     }
 
     private function lockGroup(string $reference): ?InventoryReservation
     {
-        $query = InventoryReservation::query()
-            ->where('reference', $reference)
-            ->lockForUpdate();
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryReservation::query()
+                ->where('reference', $reference)
+                ->lockForUpdate()
+        );
 
         return $query->first();
     }

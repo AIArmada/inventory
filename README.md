@@ -56,14 +56,11 @@ use AIArmada\Inventory\Facades\Inventory;
 $product = Product::find($id);
 $location = InventoryLocation::where('code', 'WAREHOUSE-A')->first();
 
-// Receive inventory
-$product->receive($location->id, 100, 'Initial stock');
-
-// Ship inventory
-$product->ship($location->id, 5, 'sale', 'ORDER-123');
-
-// Transfer between locations
-$product->transfer($fromLocationId, $toLocationId, 20);
+// Mutations go through the domain service
+$inventory = app(\AIArmada\Inventory\Services\InventoryService::class);
+$inventory->receive($product, $location->id, 100, 'Initial stock');
+$inventory->ship($product, $location->id, 5, 'sale', 'ORDER-123');
+$inventory->transfer($product, $fromLocationId, $toLocationId, 20);
 
 // Check availability
 $total = $product->getTotalAvailable();          // All locations

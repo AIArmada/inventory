@@ -9,6 +9,7 @@ use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Models\InventoryOperation;
 use AIArmada\Inventory\Services\InventoryService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
+use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Orders\Events\InventoryReleaseRequired;
 use AIArmada\Orders\Models\Order;
 use Carbon\CarbonImmutable;
@@ -54,7 +55,11 @@ final class ReleaseInventoryFromOrder
         }
 
         DB::transaction(function () use ($order, $operation): void {
-            $operation = InventoryOperation::lockForUpdate()->findOrFail($operation->id);
+            $operation = InventoryOwnerScope::applyToLocationQuery(
+                InventoryOperation::query()
+                    ->whereKey($operation->id)
+                    ->lockForUpdate()
+            )->firstOrFail();
 
             if ($operation->status === InventoryOperation::STATUS_COMPLETED) {
                 return;
@@ -72,7 +77,8 @@ final class ReleaseInventoryFromOrder
 
     private function resolveOrCreateOperation(Order $order, string $kind): InventoryOperation
     {
-        $existing = InventoryOperation::where('order_id', $order->id)
+        $existing = InventoryOwnerScope::applyToLocationQuery(InventoryOperation::query())
+            ->where('order_id', $order->id)
             ->where('kind', $kind)
             ->first();
 
@@ -87,7 +93,8 @@ final class ReleaseInventoryFromOrder
                 'status' => InventoryOperation::STATUS_PENDING,
             ]);
         } catch (QueryException $e) {
-            return InventoryOperation::where('order_id', $order->id)
+            return InventoryOwnerScope::applyToLocationQuery(InventoryOperation::query())
+                ->where('order_id', $order->id)
                 ->where('kind', $kind)
                 ->firstOrFail();
         }

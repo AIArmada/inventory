@@ -152,7 +152,7 @@ final class SerialService
             ->where('inventoryable_id', $model->getKey())
             ->orderBy('created_at');
 
-        $query = InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        InventoryOwnerScope::applyToLocationQuery($query);
 
         return $query->get();
     }
@@ -171,7 +171,7 @@ final class SerialService
             ->where('inventoryable_id', $model->getKey())
             ->sellable();
 
-        $query = InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        InventoryOwnerScope::applyToLocationQuery($query);
 
         if ($locationId !== null) {
             $query->atLocation($locationId);
@@ -592,7 +592,7 @@ final class SerialService
             return;
         }
 
-        $isAllowed = InventoryOwnerScope::applyToQueryByLocationRelation(InventoryBatch::query(), 'location')
+        $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryBatch::query())
             ->whereKey($batchId)
             ->exists();
 

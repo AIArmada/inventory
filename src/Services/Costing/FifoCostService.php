@@ -45,7 +45,7 @@ final class FifoCostService
             }
 
             if ($batchId !== null) {
-                $isAllowed = InventoryOwnerScope::applyToQueryByLocationRelation(InventoryBatch::query(), 'location')
+                $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryBatch::query())
                     ->whereKey($batchId)
                     ->exists();
 
@@ -82,22 +82,20 @@ final class FifoCostService
         ?string $locationId = null
     ): array {
         return DB::transaction(function () use ($model, $quantity, $locationId): array {
-            $query = InventoryCostLayer::query()
-                ->forModel($model)
-                ->withRemainingQuantity()
-                ->usingMethod(CostingMethod::Fifo)
-                ->fifoOrder();
+            $query = InventoryOwnerScope::applyToLocationQuery(
+                InventoryCostLayer::query()
+                    ->forModel($model)
+                    ->withRemainingQuantity()
+                    ->usingMethod(CostingMethod::Fifo)
+                    ->fifoOrder()
+            );
 
             if (InventoryOwnerScope::isEnabled()) {
                 $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-                $query->where(function ($builder) use ($includeNullLocation): void {
-                    InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                    if ($includeNullLocation) {
-                        $builder->orWhereNull('location_id');
-                    }
-                });
+                if (! $includeNullLocation) {
+                    $query->whereNotNull('location_id');
+                }
             }
 
             if ($locationId !== null) {
@@ -153,21 +151,19 @@ final class FifoCostService
      */
     public function calculateValuation(Model $model, ?string $locationId = null): array
     {
-        $query = InventoryCostLayer::query()
-            ->forModel($model)
-            ->withRemainingQuantity()
-            ->usingMethod(CostingMethod::Fifo);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->forModel($model)
+                ->withRemainingQuantity()
+                ->usingMethod(CostingMethod::Fifo)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -209,22 +205,20 @@ final class FifoCostService
      */
     public function estimateCogs(Model $model, int $quantity, ?string $locationId = null): int
     {
-        $query = InventoryCostLayer::query()
-            ->forModel($model)
-            ->withRemainingQuantity()
-            ->usingMethod(CostingMethod::Fifo)
-            ->fifoOrder();
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->forModel($model)
+                ->withRemainingQuantity()
+                ->usingMethod(CostingMethod::Fifo)
+                ->fifoOrder()
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -266,22 +260,20 @@ final class FifoCostService
      */
     public function getActiveLayers(Model $model, ?string $locationId = null): Collection
     {
-        $query = InventoryCostLayer::query()
-            ->forModel($model)
-            ->withRemainingQuantity()
-            ->usingMethod(CostingMethod::Fifo)
-            ->fifoOrder();
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->forModel($model)
+                ->withRemainingQuantity()
+                ->usingMethod(CostingMethod::Fifo)
+                ->fifoOrder()
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -306,22 +298,20 @@ final class FifoCostService
      */
     public function getOldestLayer(Model $model, ?string $locationId = null): ?InventoryCostLayer
     {
-        $query = InventoryCostLayer::query()
-            ->forModel($model)
-            ->withRemainingQuantity()
-            ->usingMethod(CostingMethod::Fifo)
-            ->fifoOrder();
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->forModel($model)
+                ->withRemainingQuantity()
+                ->usingMethod(CostingMethod::Fifo)
+                ->fifoOrder()
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -346,21 +336,19 @@ final class FifoCostService
      */
     public function hasAvailableQuantity(Model $model, int $quantity, ?string $locationId = null): bool
     {
-        $query = InventoryCostLayer::query()
-            ->forModel($model)
-            ->withRemainingQuantity()
-            ->usingMethod(CostingMethod::Fifo);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->forModel($model)
+                ->withRemainingQuantity()
+                ->usingMethod(CostingMethod::Fifo)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {

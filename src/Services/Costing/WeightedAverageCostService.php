@@ -47,7 +47,7 @@ final class WeightedAverageCostService
                 }
 
                 if ($batchId !== null) {
-                    $isAllowed = InventoryOwnerScope::applyToQueryByLocationRelation(InventoryBatch::query(), 'location')
+                    $isAllowed = InventoryOwnerScope::applyToLocationQuery(InventoryBatch::query())
                         ->whereKey($batchId)
                         ->exists();
 
@@ -107,22 +107,20 @@ final class WeightedAverageCostService
             $unitCost = $valuation['average_cost'];
             $totalCost = $quantity * $unitCost;
 
-            $query = InventoryCostLayer::query()
-                ->forModel($model)
-                ->withRemainingQuantity()
-                ->usingMethod(CostingMethod::WeightedAverage)
-                ->orderBy('layer_date', 'asc');
+            $query = InventoryOwnerScope::applyToLocationQuery(
+                InventoryCostLayer::query()
+                    ->forModel($model)
+                    ->withRemainingQuantity()
+                    ->usingMethod(CostingMethod::WeightedAverage)
+                    ->orderBy('layer_date', 'asc')
+            );
 
             if (InventoryOwnerScope::isEnabled()) {
                 $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-                $query->where(function ($builder) use ($includeNullLocation): void {
-                    InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                    if ($includeNullLocation) {
-                        $builder->orWhereNull('location_id');
-                    }
-                });
+                if (! $includeNullLocation) {
+                    $query->whereNotNull('location_id');
+                }
             }
 
             if ($locationId !== null) {
@@ -166,21 +164,19 @@ final class WeightedAverageCostService
      */
     public function calculateValuation(Model $model, ?string $locationId = null): array
     {
-        $query = InventoryCostLayer::query()
-            ->forModel($model)
-            ->withRemainingQuantity()
-            ->usingMethod(CostingMethod::WeightedAverage);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->forModel($model)
+                ->withRemainingQuantity()
+                ->usingMethod(CostingMethod::WeightedAverage)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -224,21 +220,19 @@ final class WeightedAverageCostService
      */
     public function recalculate(Model $model, ?string $locationId = null): int
     {
-        $query = InventoryCostLayer::query()
-            ->forModel($model)
-            ->withRemainingQuantity()
-            ->usingMethod(CostingMethod::WeightedAverage);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->forModel($model)
+                ->withRemainingQuantity()
+                ->usingMethod(CostingMethod::WeightedAverage)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -276,21 +270,19 @@ final class WeightedAverageCostService
      */
     public function hasAvailableQuantity(Model $model, int $quantity, ?string $locationId = null): bool
     {
-        $query = InventoryCostLayer::query()
-            ->forModel($model)
-            ->withRemainingQuantity()
-            ->usingMethod(CostingMethod::WeightedAverage);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->forModel($model)
+                ->withRemainingQuantity()
+                ->usingMethod(CostingMethod::WeightedAverage)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -315,21 +307,19 @@ final class WeightedAverageCostService
      */
     private function updateExistingLayers(Model $model, int $newAverageCost, ?string $locationId = null): void
     {
-        $query = InventoryCostLayer::query()
-            ->forModel($model)
-            ->withRemainingQuantity()
-            ->usingMethod(CostingMethod::WeightedAverage);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryCostLayer::query()
+                ->forModel($model)
+                ->withRemainingQuantity()
+                ->usingMethod(CostingMethod::WeightedAverage)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {

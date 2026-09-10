@@ -243,40 +243,32 @@ final class InventoryKpiService
      */
     public function getDashboardKpis(): array
     {
-        $stockLevelsQuery = InventoryLevel::query()
-            ->select([
-                'inventoryable_type',
-                'inventoryable_id',
-                DB::raw('SUM(quantity_on_hand) as total_quantity'),
-            ])
-            ->groupBy('inventoryable_type', 'inventoryable_id');
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($stockLevelsQuery, 'location');
-        }
+        $stockLevelsQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->select([
+                    'inventoryable_type',
+                    'inventoryable_id',
+                    DB::raw('SUM(quantity_on_hand) as total_quantity'),
+                ])
+                ->groupBy('inventoryable_type', 'inventoryable_id')
+        );
 
         $stockLevels = $stockLevelsQuery->get();
 
         $totalSkus = $stockLevels->count();
         $totalValue = 0; // Value calculation requires cost layer integration
 
-        $lowStockQuery = InventoryLevel::query()
-            ->lowStock();
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($lowStockQuery, 'location');
-        }
+        $lowStockQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()->lowStock()
+        );
 
         $lowStockItems = (int) $lowStockQuery
             ->selectRaw("COUNT(DISTINCT CONCAT(inventoryable_type, ':', inventoryable_id)) as aggregate")
             ->value('aggregate');
 
-        $outOfStockQuery = InventoryLevel::query()
-            ->where('quantity_on_hand', '<=', 0);
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($outOfStockQuery, 'location');
-        }
+        $outOfStockQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()->where('quantity_on_hand', '<=', 0)
+        );
 
         $outOfStockItems = (int) $outOfStockQuery
             ->selectRaw("COUNT(DISTINCT CONCAT(inventoryable_type, ':', inventoryable_id)) as aggregate")
@@ -352,13 +344,11 @@ final class InventoryKpiService
         CarbonImmutable $endDate,
     ): int {
         // Get current stock level as approximation
-        $query = InventoryLevel::query()
-            ->where('inventoryable_type', $inventoryableType)
-            ->where('inventoryable_id', $inventoryableId);
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->where('inventoryable_type', $inventoryableType)
+                ->where('inventoryable_id', $inventoryableId)
+        );
 
         $currentStock = (int) $query->sum('quantity_on_hand');
 
@@ -385,11 +375,7 @@ final class InventoryKpiService
 
         $totalCogs = (int) $totalCogsQuery->sum('quantity');
 
-        $totalInventoryQuery = InventoryLevel::query();
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($totalInventoryQuery, 'location');
-        }
+        $totalInventoryQuery = InventoryOwnerScope::applyToLocationQuery(InventoryLevel::query());
 
         $totalInventory = (int) $totalInventoryQuery->sum('quantity_on_hand');
 

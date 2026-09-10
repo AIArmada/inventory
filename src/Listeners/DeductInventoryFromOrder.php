@@ -56,7 +56,11 @@ final class DeductInventoryFromOrder
         }
 
         DB::transaction(function () use ($order, $operation): void {
-            $operation = InventoryOperation::lockForUpdate()->findOrFail($operation->id);
+            $operation = InventoryOwnerScope::applyToLocationQuery(
+                InventoryOperation::query()
+                    ->whereKey($operation->id)
+                    ->lockForUpdate()
+            )->firstOrFail();
 
             if ($operation->status === InventoryOperation::STATUS_COMPLETED) {
                 return;
@@ -88,7 +92,8 @@ final class DeductInventoryFromOrder
 
     private function resolveOrCreateOperation(Order $order, string $kind): InventoryOperation
     {
-        $existing = InventoryOperation::where('order_id', $order->id)
+        $existing = InventoryOwnerScope::applyToLocationQuery(InventoryOperation::query())
+            ->where('order_id', $order->id)
             ->where('kind', $kind)
             ->first();
 
@@ -103,7 +108,8 @@ final class DeductInventoryFromOrder
                 'status' => InventoryOperation::STATUS_PENDING,
             ]);
         } catch (QueryException $e) {
-            return InventoryOperation::where('order_id', $order->id)
+            return InventoryOwnerScope::applyToLocationQuery(InventoryOperation::query())
+                ->where('order_id', $order->id)
                 ->where('kind', $kind)
                 ->firstOrFail();
         }
@@ -220,22 +226,21 @@ final class DeductInventoryFromOrder
         }
 
         // Find location with sufficient stock (priority-based)
-        $level = InventoryOwnerScope::applyToQueryByLocationRelation(
+        $level = InventoryOwnerScope::applyToLocationQuery(
             InventoryLevel::query()
                 ->where('inventoryable_type', $model->getMorphClass())
                 ->where('inventoryable_id', $model->getKey())
                 ->whereHas('location', fn ($q) => $q->where('is_active', true))
                 ->whereRaw('(quantity_on_hand - quantity_reserved) >= ?', [$quantity])
                 ->with('location')
-        )
-            ->orderByDesc(
-                InventoryLevel::query()
-                    ->selectRaw('priority')
-                    ->from(config('inventory.database.tables.locations', 'inventory_locations'))
-                    ->whereColumn('id', config('inventory.database.tables.levels', 'inventory_levels') . '.location_id')
-                    ->limit(1)
-            )
-            ->first();
+                ->orderByDesc(
+                    InventoryLevel::query()
+                        ->selectRaw('priority')
+                        ->from(config('inventory.database.tables.locations', 'inventory_locations'))
+                        ->whereColumn('id', config('inventory.database.tables.levels', 'inventory_levels') . '.location_id')
+                        ->limit(1)
+                )
+        )->first();
 
         return $level?->location_id;
     }
@@ -245,7 +250,7 @@ final class DeductInventoryFromOrder
      */
     private function getLevelAtLocation(Model $model, string $locationId): ?InventoryLevel
     {
-        return InventoryOwnerScope::applyToQueryByLocationRelation(
+        return InventoryOwnerScope::applyToLocationQuery(
             InventoryLevel::query()
                 ->where('inventoryable_type', $model->getMorphClass())
                 ->where('inventoryable_id', $model->getKey())

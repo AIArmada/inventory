@@ -36,7 +36,7 @@ The `aiarmada/inventory` package owns stock state, warehouse structure, allocati
 - **Contracts (6)** — `InventoryableInterface`, `CheckoutInventoryServiceInterface`, `CostingMethodInterface`, `ProvidesInventoryCommitContext`, `ExportInterface`, `ReportInterface`
 - **Facades** — `Inventory`, `InventoryAllocation`
 - **Services** — reorganized into subdirectories: `Batch/`, `Costing/`, `Serial/`, `Stock/`
-- **Support registries** — `AllocationStrategyRegistry`, `CostingMethodRegistry`, `ExportRegistry`, `ReportRegistry`
+- **Support registries** — `ExportRegistry`, `ReportRegistry`
 
 ## Owner scoping and security notes
 
@@ -143,7 +143,6 @@ The `aiarmada/inventory` package owns stock state, warehouse structure, allocati
                                 │
 ┌─────────────────────────────────────────────────────────────────┐
 │               Support Registries                                 │
-│  AllocationStrategyRegistry  CostingMethodRegistry              │
 │  ExportRegistry              ReportRegistry                     │
 └─────────────────────────────────────────────────────────────────┘
                                 │
@@ -165,22 +164,17 @@ use AIArmada\Inventory\Facades\Inventory;
 use AIArmada\Inventory\Facades\InventoryAllocation;
 
 // Receive inventory
-Inventory::receive($product, 100, $location->id, [
-    'reference' => 'PO-2024-001',
-    'unit_cost_minor' => 1500, // $15.00
-]);
+Inventory::receive($product, $location->id, 100, 'purchase order');
 
 // Check availability
 $available = Inventory::getAvailability($product);
-// ['total' => 100, 'reserved' => 0, 'available' => 100]
+// ['location-uuid' => 100]
 
 // Allocate for a cart
 InventoryAllocation::allocate($product, 5, $cartId, ttlMinutes: 30);
 
 // Ship after payment
-Inventory::ship($product, 5, $location->id, [
-    'reference' => 'ORD-2024-001',
-]);
+Inventory::ship($product, $location->id, 5, 'sale', 'ORD-2024-001');
 ```
 
 ## Read next

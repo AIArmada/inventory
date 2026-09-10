@@ -134,12 +134,9 @@ final class BatchService
      */
     public function findByBatchNumber(string $batchNumber): ?InventoryBatch
     {
-        return InventoryOwnerScope::applyToQueryByLocationRelation(
-            InventoryBatch::query(),
-            'location'
-        )
-            ->where('batch_number', $batchNumber)
-            ->first();
+        return InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()->where('batch_number', $batchNumber)
+        )->first();
     }
 
     /**
@@ -149,15 +146,13 @@ final class BatchService
      */
     public function getBatchesForModel(Model $model): Collection
     {
-        return InventoryOwnerScope::applyToQueryByLocationRelation(
-            InventoryBatch::query(),
-            'location'
-        )
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->orderBy('expires_at')
-            ->orderBy('received_at')
-            ->get();
+        return InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->orderBy('expires_at')
+                ->orderBy('received_at')
+        )->get();
     }
 
     /**
@@ -167,14 +162,13 @@ final class BatchService
      */
     public function getAllocatableBatches(Model $model, ?string $locationId = null): Collection
     {
-        $query = InventoryOwnerScope::applyToQueryByLocationRelation(
-            InventoryBatch::query(),
-            'location'
-        )
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->allocatable()
-            ->fefo();
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->allocatable()
+                ->fefo()
+        );
 
         if ($locationId !== null) {
             $query->atLocation($locationId);
@@ -188,13 +182,12 @@ final class BatchService
      */
     public function getTotalAvailable(Model $model, ?string $locationId = null): int
     {
-        $query = InventoryOwnerScope::applyToQueryByLocationRelation(
-            InventoryBatch::query(),
-            'location'
-        )
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->allocatable();
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->allocatable()
+        );
 
         if ($locationId !== null) {
             $query->atLocation($locationId);
@@ -399,12 +392,13 @@ final class BatchService
      */
     public function getExpiringBatches(int $days = 30): Collection
     {
-        return InventoryBatch::query()
-            ->active()
-            ->expiringSoon($days)
-            ->with(['location', 'inventoryable'])
-            ->orderBy('expires_at')
-            ->get();
+        return InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->active()
+                ->expiringSoon($days)
+                ->with(['location', 'inventoryable'])
+                ->orderBy('expires_at')
+        )->get();
     }
 
     /**
@@ -413,10 +407,11 @@ final class BatchService
     public function processExpiredBatches(): int
     {
         return DB::transaction(function (): int {
-            $expiredBatches = InventoryBatch::query()
-                ->where('status', BatchStatus::Active->value)
-                ->expired()
-                ->get();
+            $expiredBatches = InventoryOwnerScope::applyToLocationQuery(
+                InventoryBatch::query()
+                    ->where('status', BatchStatus::Active->value)
+                    ->expired()
+            )->get();
 
             foreach ($expiredBatches as $batch) {
                 $batch->markExpired();

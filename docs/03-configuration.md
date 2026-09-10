@@ -152,4 +152,4 @@ By default, the package listens to Cashier/CashierChip payment events. Add custo
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `keep_expired_for_minutes` | `0` | Keep expired allocations for this long before cleanup |
+| `keep_expired_for_minutes` | `0` | Keep expired allocations and terminal reservation groups for this long before cleanup |

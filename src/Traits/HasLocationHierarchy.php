@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use InvalidArgumentException;
 
 /**
  * @mixin InventoryLocation
@@ -25,35 +24,6 @@ use InvalidArgumentException;
  */
 trait HasLocationHierarchy
 {
-    /**
-     * Boot the trait.
-     */
-    public static function bootHasLocationHierarchy(): void
-    {
-        static::creating(function (InventoryLocation $location): void {
-            $location->updatePathAndDepth();
-        });
-
-        static::updating(function (InventoryLocation $location): void {
-            if ($location->isDirty('parent_id')) {
-                $location->updatePathAndDepth();
-            }
-        });
-
-        static::saved(function (InventoryLocation $location): void {
-            if ($location->wasChanged('path')) {
-                $location->rebuildDescendantPaths();
-            }
-        });
-
-        static::deleting(function (InventoryLocation $location): void {
-            // Move children to parent (or make them root)
-            $location->children()->update([
-                'parent_id' => $location->parent_id,
-            ]);
-        });
-    }
-
     /**
      * Get the parent location.
      *
@@ -252,53 +222,5 @@ trait HasLocationHierarchy
         $ancestors->push($this);
 
         return $ancestors;
-    }
-
-    /**
-     * Move to a new parent.
-     */
-    public function moveTo(?InventoryLocation $newParent): self
-    {
-        if ($newParent !== null && $this->isAncestorOf($newParent)) {
-            throw new InvalidArgumentException('Cannot move a location to its own descendant');
-        }
-
-        $this->parent_id = $newParent?->id;
-        $this->save();
-
-        return $this;
-    }
-
-    /**
-     * Update path and depth based on parent.
-     */
-    public function updatePathAndDepth(): void
-    {
-        if ($this->parent_id === null) {
-            $this->path = $this->id ?? 'temp';
-            $this->depth = 0;
-        } else {
-            $parent = $this->parent ?? InventoryLocation::find($this->parent_id);
-
-            if ($parent !== null) {
-                $this->path = $parent->path . '/' . $this->id;
-                $this->depth = $parent->depth + 1;
-            }
-        }
-    }
-
-    /**
-     * Rebuild paths for all descendants after a move.
-     */
-    protected function rebuildDescendantPaths(): void
-    {
-        $descendants = $this->children()->get();
-
-        foreach ($descendants as $child) {
-            $child->path = $this->path . '/' . $child->id;
-            $child->depth = $this->depth + 1;
-            $child->saveQuietly();
-            $child->rebuildDescendantPaths();
-        }
     }
 }

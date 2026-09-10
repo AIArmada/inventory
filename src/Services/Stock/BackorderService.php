@@ -287,15 +287,15 @@ final class BackorderService
         $backorders = $backordersQuery->get();
 
         return $backorders->filter(function ($backorder): bool {
-            $query = InventoryLevel::query()
-                ->where('inventoryable_type', $backorder->inventoryable_type)
-                ->where('inventoryable_id', $backorder->inventoryable_id);
+            $query = InventoryOwnerScope::applyToLocationQuery(
+                InventoryLevel::query()
+                    ->where('inventoryable_type', $backorder->inventoryable_type)
+                    ->where('inventoryable_id', $backorder->inventoryable_id)
+            );
 
             if ($backorder->location_id !== null) {
                 $query->where('location_id', $backorder->location_id);
             }
-
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
 
             // quantity_available is computed as (quantity_on_hand - quantity_reserved)
             $available = (int) $query->sum(DB::raw('quantity_on_hand - quantity_reserved'));
@@ -332,18 +332,14 @@ final class BackorderService
      */
     private function applyOwnerScopeToBackorderQuery(Builder $query): void
     {
-        if (! InventoryOwnerScope::isEnabled()) {
-            return;
-        }
+        InventoryOwnerScope::applyToLocationQuery($query);
 
-        $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::resolveOwner() === null;
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::resolveOwner() === null;
 
-        $query->where(function (Builder $builder) use ($includeNullLocation): void {
-            $builder->whereHas('location', fn (Builder $locationQuery): Builder => InventoryOwnerScope::applyToLocationQuery($locationQuery));
-
-            if ($includeNullLocation) {
-                $builder->orWhereNull('location_id');
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
             }
-        });
+        }
     }
 }

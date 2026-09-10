@@ -20,6 +20,7 @@ $tables = [
     'supplier_leadtimes' => $tablePrefix . 'supplier_leadtimes',
     'reorder_suggestions' => $tablePrefix . 'reorder_suggestions',
     'reservations' => $tablePrefix . 'reservations',
+    'operations' => $tablePrefix . 'operations',
 ];
 
 return [

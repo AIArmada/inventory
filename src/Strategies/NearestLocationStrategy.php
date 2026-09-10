@@ -49,11 +49,11 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
     {
         $context = $context ?? new AllocationContext;
 
-        $query = InventoryLevel::query()
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey());
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+        );
 
         if ($context->excludeLocationIds !== null) {
             $query->whereNotIn('location_id', $context->excludeLocationIds);
@@ -95,9 +95,7 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
     public function getLocationsByDistance(float $originX, float $originY, ?float $originZ = null): Collection
     {
         $locationsQuery = InventoryOwnerScope::applyToLocationQuery(InventoryLocation::query())
-            ->where('is_active', true)
-            ->whereNotNull('coordinate_x')
-            ->whereNotNull('coordinate_y');
+            ->where('is_active', true);
 
         $locations = $locationsQuery->get();
 
@@ -106,8 +104,8 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
                 $originX,
                 $originY,
                 $originZ,
-                (float) $location->coordinate_x,
-                (float) $location->coordinate_y,
+                $location->coordinate_x !== null ? (float) $location->coordinate_x : null,
+                $location->coordinate_y !== null ? (float) $location->coordinate_y : null,
                 $location->coordinate_z !== null ? (float) $location->coordinate_z : null
             );
         })->values();
@@ -118,13 +116,13 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
      */
     private function getAvailableLevels(Model $model, AllocationContext $context): Collection
     {
-        $query = InventoryLevel::query()
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->whereRaw('(quantity_on_hand - quantity_reserved) > 0')
-            ->with('location');
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->whereRaw('(quantity_on_hand - quantity_reserved) > 0')
+                ->with('location')
+        );
 
         if ($context->excludeLocationIds !== null) {
             $query->whereNotIn('location_id', $context->excludeLocationIds);

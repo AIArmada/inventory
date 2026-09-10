@@ -41,12 +41,9 @@ final class StockLevelExport implements ExportableInterface
 
     public function getRows(): iterable
     {
-        $query = InventoryLevel::query()
-            ->with('location:id,name');
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()->with('location:id,name')
+        );
 
         if (isset($this->filters['location_id'])) {
             $locationId = (string) $this->filters['location_id'];

@@ -88,17 +88,15 @@ final class StockThresholdService
      */
     public function getLevelsNeedingReorder(): Collection
     {
-        $query = InventoryLevel::query()
-            ->whereIn('alert_status', [
-                AlertStatus::LowStock->value,
-                AlertStatus::SafetyBreached->value,
-                AlertStatus::OutOfStock->value,
-            ])
-            ->with('location');
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
-        }
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->whereIn('alert_status', [
+                    AlertStatus::LowStock->value,
+                    AlertStatus::SafetyBreached->value,
+                    AlertStatus::OutOfStock->value,
+                ])
+                ->with('location')
+        );
 
         return $query->get();
     }

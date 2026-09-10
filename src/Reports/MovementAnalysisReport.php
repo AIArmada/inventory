@@ -20,6 +20,41 @@ use InvalidArgumentException;
 final class MovementAnalysisReport
 {
     /**
+     * Get movement totals for the dashboard period.
+     *
+     * @return array{receipts: int, shipments: int, transfers: int, adjustments: int, total: int}
+     */
+    public function getStats(int $days = 30): array
+    {
+        $since = CarbonImmutable::now()->subDays($days);
+
+        $query = InventoryMovement::query()
+            ->where('occurred_at', '>=', $since)
+            ->selectRaw('type, SUM(quantity) as total')
+            ->groupBy('type');
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($query);
+        }
+
+        $movements = $query->pluck('total', 'type')->toArray();
+
+        $totalQuery = InventoryMovement::query()->where('occurred_at', '>=', $since);
+
+        if (InventoryOwnerScope::isEnabled()) {
+            InventoryOwnerScope::applyToMovementQuery($totalQuery);
+        }
+
+        return [
+            'receipts' => (int) ($movements[MovementType::Receipt->value] ?? 0),
+            'shipments' => (int) ($movements[MovementType::Shipment->value] ?? 0),
+            'transfers' => (int) ($movements[MovementType::Transfer->value] ?? 0),
+            'adjustments' => (int) ($movements[MovementType::Adjustment->value] ?? 0),
+            'total' => $totalQuery->count(),
+        ];
+    }
+
+    /**
      * Get movement summary by type for a period.
      *
      * @return Collection<int, array{
@@ -217,18 +252,16 @@ final class MovementAnalysisReport
             ->get()
             ->keyBy(fn ($row) => $row->inventoryable_type . ':' . $row->inventoryable_id);
 
-        $levelsQuery = InventoryLevel::query()
-            ->select([
-                'inventoryable_type',
-                'inventoryable_id',
-                DB::raw('SUM(quantity_on_hand) as current_quantity'),
-            ])
-            ->where('quantity_on_hand', '>', 0)
-            ->groupBy('inventoryable_type', 'inventoryable_id');
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($levelsQuery, 'location');
-        }
+        $levelsQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->select([
+                    'inventoryable_type',
+                    'inventoryable_id',
+                    DB::raw('SUM(quantity_on_hand) as current_quantity'),
+                ])
+                ->where('quantity_on_hand', '>', 0)
+                ->groupBy('inventoryable_type', 'inventoryable_id')
+        );
 
         /** @var list<array{inventoryable_type: string, inventoryable_id: string, current_quantity: int, last_movement_at: string|null, days_since_movement: int}> $slowMovers */
         $slowMovers = [];
@@ -307,11 +340,7 @@ final class MovementAnalysisReport
 
         $shipments = (int) $shipmentsQuery->sum('quantity');
 
-        $currentStockQuery = InventoryLevel::query();
-
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToQueryByLocationRelation($currentStockQuery, 'location');
-        }
+        $currentStockQuery = InventoryOwnerScope::applyToLocationQuery(InventoryLevel::query());
 
         $currentStock = (int) $currentStockQuery->sum('quantity_on_hand');
 

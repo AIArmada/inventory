@@ -59,21 +59,6 @@ final class InventoryOwnerScope
      * @param  Builder<TModel>  $query
      * @return Builder<TModel>
      */
-    public static function applyToQueryByLocationRelation(Builder $query, string $relation = 'location'): Builder
-    {
-        if (! self::isEnabled()) {
-            return $query;
-        }
-
-        return $query->whereHas($relation, fn (Builder $locationQuery): Builder => self::applyToLocationQuery($locationQuery));
-    }
-
-    /**
-     * @template TModel of Model
-     *
-     * @param  Builder<TModel>  $query
-     * @return Builder<TModel>
-     */
     public static function applyToMovementQuery(Builder $query): Builder
     {
         if (! self::isEnabled()) {

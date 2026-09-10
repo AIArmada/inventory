@@ -241,25 +241,17 @@ Inventory::adjust($product, -3, $location->id, [
 ### Checking Availability
 
 ```php
-// Get detailed availability
+// Get availability by location
 $availability = Inventory::getAvailability($product);
-// [
-//     'total' => 150,
-//     'reserved' => 25,
-//     'available' => 125,
-//     'locations' => [
-//         ['location_id' => 'uuid', 'on_hand' => 100, 'reserved' => 20, 'available' => 80],
-//         ['location_id' => 'uuid', 'on_hand' => 50, 'reserved' => 5, 'available' => 45],
-//     ]
-// ]
+// ['location-uuid' => 80, 'another-location-uuid' => 45]
 
 // Simple check
-$hasStock = Inventory::hasAvailableStock($product, 10);
+$hasStock = Inventory::hasInventory($product, 10);
 
 // Using the trait on your model
-$product->getAvailableStock(); // 125
-$product->isInStock(); // true
-$product->isInStock(200); // false
+$product->getTotalAvailable(); // 125
+$product->hasInventory(10); // true
+$product->hasInventory(200); // false
 ```
 
 ## Allocations (Reservations)
@@ -273,13 +265,13 @@ use AIArmada\Inventory\Facades\InventoryAllocation;
 InventoryAllocation::allocate($product, 5, $cartId, ttlMinutes: 30);
 
 // 2. Check what's allocated
-$allocations = InventoryAllocation::getForCart($cartId);
+$allocations = InventoryAllocation::getAllocationsForCart($cartId);
 
 // 3. Extend allocation if customer is still shopping
-InventoryAllocation::extendForCart($cartId, additionalMinutes: 15);
+InventoryAllocation::extendAllocations($cartId, minutes: 15);
 
 // 4a. Commit on successful payment
-InventoryAllocation::commitForCart($cartId);
+InventoryAllocation::commit($cartId);
 
 // 4b. Or release if cart is abandoned
 InventoryAllocation::releaseAllForCart($cartId);
@@ -288,17 +280,16 @@ InventoryAllocation::releaseAllForCart($cartId);
 ### Manual Allocation Control
 
 ```php
-// Allocate with specific strategy
+// Allocate using the configured or product-specific strategy
 $allocation = InventoryAllocation::allocate(
     $product, 
     10, 
     $cartId,
-    ttlMinutes: 60,
-    strategy: AllocationStrategy::FIFO
+    ttlMinutes: 60
 );
 
 // Release specific allocation
-InventoryAllocation::release($allocation);
+InventoryAllocation::releaseAllocation($allocation->first());
 
 // Get available quantity (considers allocations)
 $available = InventoryAllocation::getTotalAvailable($product);
@@ -642,14 +633,22 @@ class Product extends Model
     use HasInventory;
 }
 
-// Now you can:
+// Now you can read:
 $product->inventoryLevels;
 $product->inventoryMovements;
-$product->getAvailableStock();
-$product->isInStock();
-$product->receive(100, $locationId);
-$product->ship(10, $locationId);
+$product->getTotalAvailable();
+$product->hasInventory(10);
 ```
+
+`HasInventory` is intentionally read-oriented. Use `InventoryService` for stock
+mutations and `InventoryAllocationService` or the checkout reservation contract
+for cart and checkout reservations; those services enforce location and owner
+validation at the write boundary.
+
+Inventory coordinates are stored as nullable `decimal(10,2)` values and exposed
+with matching `decimal:2` casts. Distance calculations convert those values to
+floats at the calculation boundary. Locations missing either horizontal
+coordinate remain valid and sort after coordinate-aware locations.
 
 ### HasSerialNumbers Trait
 

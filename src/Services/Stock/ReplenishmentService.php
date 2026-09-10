@@ -38,11 +38,9 @@ final class ReplenishmentService
             }
         }
 
-        $query = InventoryLevel::query()
-            ->needsReorder()
-            ->with(['location']);
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()->needsReorder()->with(['location'])
+        );
 
         if ($locationId !== null) {
             $query->where('location_id', $locationId);
@@ -57,11 +55,12 @@ final class ReplenishmentService
                 continue;
             }
 
-            $existing = InventoryReorderSuggestion::query()
-                ->forModel($model)
-                ->where('location_id', $level->location_id)
-                ->actionable()
-                ->exists();
+            $existing = InventoryOwnerScope::applyToLocationQuery(
+                InventoryReorderSuggestion::query()
+                    ->forModel($model)
+                    ->where('location_id', $level->location_id)
+                    ->actionable()
+            )->exists();
 
             if ($existing) {
                 continue;
@@ -167,16 +166,18 @@ final class ReplenishmentService
      */
     public function getPrimarySupplier(Model $model): ?InventorySupplierLeadtime
     {
-        return InventorySupplierLeadtime::query()
-            ->forModel($model)
-            ->active()
-            ->primary()
-            ->first()
-            ?? InventorySupplierLeadtime::query()
+        return InventoryOwnerScope::applyToLocationQuery(
+            InventorySupplierLeadtime::query()
                 ->forModel($model)
                 ->active()
-                ->orderedByLeadTime()
-                ->first();
+                ->primary()
+        )->first()
+            ?? InventoryOwnerScope::applyToLocationQuery(
+                InventorySupplierLeadtime::query()
+                    ->forModel($model)
+                    ->active()
+                    ->orderedByLeadTime()
+            )->first();
     }
 
     /**
@@ -310,19 +311,15 @@ final class ReplenishmentService
      */
     private function applyOwnerScopeToSuggestionQuery(Builder $query): void
     {
-        if (! InventoryOwnerScope::isEnabled()) {
-            return;
-        }
+        InventoryOwnerScope::applyToLocationQuery($query);
 
-        $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::resolveOwner() === null;
+        if (InventoryOwnerScope::isEnabled()) {
+            $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::resolveOwner() === null;
 
-        $query->where(function (Builder $builder) use ($includeNullLocation): void {
-            $builder->whereHas('location', fn (Builder $locationQuery): Builder => InventoryOwnerScope::applyToLocationQuery($locationQuery));
-
-            if ($includeNullLocation) {
-                $builder->orWhereNull('location_id');
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
             }
-        });
+        }
     }
 
     /**

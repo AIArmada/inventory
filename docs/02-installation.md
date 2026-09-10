@@ -100,10 +100,12 @@ class Product extends Model
 This provides:
 - `$product->inventoryLevels()` - Stock levels across locations
 - `$product->inventoryMovements()` - Movement history
-- `$product->inventoryAllocations()` - Current allocations
 - `$product->batches()` - Batch/lot records
 - `$product->serials()` - Serial numbers
-- And helper methods like `getAvailableStock()`, `isInStock()`, etc.
+- And read helpers such as `getTotalAvailable()` and `hasInventory()`
+
+Stock mutations belong to `InventoryService`; cart allocations belong to
+`InventoryAllocationService` or the checkout reservation contract.
 
 ## Verify Installation
 
@@ -118,10 +120,10 @@ $location = \AIArmada\Inventory\Models\InventoryLocation::create([
 ]);
 
 // Receive some inventory
-Inventory::receive($product, 100, $location->id);
+Inventory::receive($product, $location->id, 100);
 
 // Check it worked
-echo $product->getAvailableStock(); // 100
+echo $product->getTotalAvailable(); // 100
 ```
 
 ## Extending Contracts and Registries
@@ -132,23 +134,23 @@ The package defines **6 contracts** in `Contracts/` that you can implement to ex
 |----------|---------|
 | `InventoryableInterface` | Make any model inventory-trackable |
 | `CheckoutInventoryServiceInterface` | Simplified checkout integration |
-| `CostingMethodInterface` | Custom costing strategy |
+| `CostingMethodInterface` | Built-in costing adapter contract |
 | `ExportInterface` | Custom export formats |
 | `ReportInterface` | Custom report types |
 
-Register your implementations through the **Support registries** in `Support/`:
+Export and report implementations can be registered through the **Support registries** in `Support/`:
 
 ```php
-use AIArmada\Inventory\Support\CostingMethodRegistry;
-
-app(CostingMethodRegistry::class)->register(new MyCustomCostService());
-
-use AIArmada\Inventory\Support\AllocationStrategyRegistry;
 use AIArmada\Inventory\Support\ExportRegistry;
 use AIArmada\Inventory\Support\ReportRegistry;
 ```
 
-Each registry provides `register()` and `get()` methods, making the package fully extensible without modifying core code.
+Costing adapters are named services under `Services/Costing/` and are wired directly into `ValuationService`. Adding a new costing method requires updating that service's explicit method map alongside its adapter.
+
+The export and report registries provide `register()` and `get()` methods, making those surfaces extensible without modifying core code.
+
+> [!WARNING]
+> `CostingMethodRegistry` and `AllocationStrategyRegistry` are removed. Migrate costing integrations to `ValuationService` and keep custom costing adapters in its explicit method map; allocation uses the `AllocationStrategy` enum and service match directly.
 
 ## Next Steps
 

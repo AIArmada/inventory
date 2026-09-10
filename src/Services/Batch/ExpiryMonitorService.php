@@ -32,13 +32,13 @@ final class ExpiryMonitorService
      */
     public function getExpirySummaryByDate(int $days = 90): array
     {
-        $query = InventoryBatch::query()
-            ->active()
-            ->whereNotNull('expires_at')
-            ->whereBetween('expires_at', [CarbonImmutable::now(), CarbonImmutable::now()->addDays($days)])
-            ->orderBy('expires_at');
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->active()
+                ->whereNotNull('expires_at')
+                ->whereBetween('expires_at', [CarbonImmutable::now(), CarbonImmutable::now()->addDays($days)])
+                ->orderBy('expires_at')
+        );
 
         $batches = $query->get();
 
@@ -75,29 +75,27 @@ final class ExpiryMonitorService
      */
     public function getExpiryRiskAssessment(): array
     {
-        $criticalQuery = InventoryBatch::query()
-            ->active()
-            ->expiringSoon(7);
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($criticalQuery, 'location');
+        $criticalQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()->active()->expiringSoon(7)
+        );
 
         $critical = $criticalQuery->get();
 
-        $warningQuery = InventoryBatch::query()
-            ->active()
-            ->whereNotNull('expires_at')
-            ->whereBetween('expires_at', [CarbonImmutable::now()->addDays(8), CarbonImmutable::now()->addDays(30)]);
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($warningQuery, 'location');
+        $warningQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->active()
+                ->whereNotNull('expires_at')
+                ->whereBetween('expires_at', [CarbonImmutable::now()->addDays(8), CarbonImmutable::now()->addDays(30)])
+        );
 
         $warning = $warningQuery->get();
 
-        $attentionQuery = InventoryBatch::query()
-            ->active()
-            ->whereNotNull('expires_at')
-            ->whereBetween('expires_at', [CarbonImmutable::now()->addDays(31), CarbonImmutable::now()->addDays(90)]);
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($attentionQuery, 'location');
+        $attentionQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->active()
+                ->whereNotNull('expires_at')
+                ->whereBetween('expires_at', [CarbonImmutable::now()->addDays(31), CarbonImmutable::now()->addDays(90)])
+        );
 
         $attention = $attentionQuery->get();
 
@@ -120,12 +118,12 @@ final class ExpiryMonitorService
      */
     public function getSlowMovingExpiringBatches(int $averageDailySales = 1): Collection
     {
-        $query = InventoryBatch::query()
-            ->active()
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '>', CarbonImmutable::now());
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->active()
+                ->whereNotNull('expires_at')
+                ->where('expires_at', '>', CarbonImmutable::now())
+        );
 
         return $query->get()
             ->filter(function (InventoryBatch $batch) use ($averageDailySales): bool {
@@ -151,17 +149,17 @@ final class ExpiryMonitorService
      */
     public function getDisposalCandidates(): Collection
     {
-        $query = InventoryBatch::query()
-            ->where(function ($query): void {
-                $query->expired()
-                    ->orWhere(function ($q): void {
-                        $q->expiringSoon(3)
-                            ->where('quantity_on_hand', '>', 0);
-                    });
-            })
-            ->where('quantity_reserved', 0);
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($query, 'location');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->where(function ($query): void {
+                    $query->expired()
+                        ->orWhere(function ($q): void {
+                            $q->expiringSoon(3)
+                                ->where('quantity_on_hand', '>', 0);
+                        });
+                })
+                ->where('quantity_reserved', 0)
+        );
 
         return $query->get();
     }
@@ -196,8 +194,9 @@ final class ExpiryMonitorService
         $alerts = [];
 
         // Critical - expiring in 7 days
-        $criticalQuery = InventoryBatch::query()->active()->expiringSoon(7);
-        InventoryOwnerScope::applyToQueryByLocationRelation($criticalQuery, 'location');
+        $criticalQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()->active()->expiringSoon(7)
+        );
         $critical = $criticalQuery->get();
 
         foreach ($critical as $batch) {
@@ -211,12 +210,12 @@ final class ExpiryMonitorService
         }
 
         // Warning - expiring in 30 days
-        $warningQuery = InventoryBatch::query()
-            ->active()
-            ->whereNotNull('expires_at')
-            ->whereBetween('expires_at', [CarbonImmutable::now()->addDays(8), CarbonImmutable::now()->addDays(30)]);
-
-        InventoryOwnerScope::applyToQueryByLocationRelation($warningQuery, 'location');
+        $warningQuery = InventoryOwnerScope::applyToLocationQuery(
+            InventoryBatch::query()
+                ->active()
+                ->whereNotNull('expires_at')
+                ->whereBetween('expires_at', [CarbonImmutable::now()->addDays(8), CarbonImmutable::now()->addDays(30)])
+        );
 
         $warning = $warningQuery->get();
 

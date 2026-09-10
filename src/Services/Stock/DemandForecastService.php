@@ -54,13 +54,14 @@ final class DemandForecastService
             $periodType,
             $periodDate
         ): InventoryDemandHistory {
-            $existing = InventoryDemandHistory::query()
-                ->where('inventoryable_type', $model->getMorphClass())
-                ->where('inventoryable_id', $model->getKey())
-                ->where('location_id', $locationId)
-                ->where('period_date', $periodDate)
-                ->where('period_type', $periodType->value)
-                ->first();
+            $existing = InventoryOwnerScope::applyToLocationQuery(
+                InventoryDemandHistory::query()
+                    ->where('inventoryable_type', $model->getMorphClass())
+                    ->where('inventoryable_id', $model->getKey())
+                    ->where('location_id', $locationId)
+                    ->where('period_date', $periodDate)
+                    ->where('period_type', $periodType->value)
+            )->first();
 
             if ($existing) {
                 $existing->update([
@@ -95,21 +96,19 @@ final class DemandForecastService
         int $days = 30,
         ?string $locationId = null
     ): float {
-        $query = InventoryDemandHistory::query()
-            ->forModel($model)
-            ->daily()
-            ->lastDays($days);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryDemandHistory::query()
+                ->forModel($model)
+                ->daily()
+                ->lastDays($days)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -151,22 +150,20 @@ final class DemandForecastService
             $weights = $this->generateDefaultWeights($periods);
         }
 
-        $query = InventoryDemandHistory::query()
-            ->forModel($model)
-            ->daily()
-            ->orderBy('period_date', 'desc')
-            ->limit($periods);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryDemandHistory::query()
+                ->forModel($model)
+                ->daily()
+                ->orderBy('period_date', 'desc')
+                ->limit($periods)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -210,22 +207,20 @@ final class DemandForecastService
         int $periods = 30,
         ?string $locationId = null
     ): float {
-        $query = InventoryDemandHistory::query()
-            ->forModel($model)
-            ->daily()
-            ->orderBy('period_date', 'asc')
-            ->limit($periods);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryDemandHistory::query()
+                ->forModel($model)
+                ->daily()
+                ->orderBy('period_date', 'asc')
+                ->limit($periods)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -265,21 +260,19 @@ final class DemandForecastService
         int $days = 30,
         ?string $locationId = null
     ): float {
-        $query = InventoryDemandHistory::query()
-            ->forModel($model)
-            ->daily()
-            ->lastDays($days);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryDemandHistory::query()
+                ->forModel($model)
+                ->daily()
+                ->lastDays($days)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -339,22 +332,20 @@ final class DemandForecastService
         int $days = 30,
         ?string $locationId = null
     ): float {
-        $query = InventoryDemandHistory::query()
-            ->forModel($model)
-            ->daily()
-            ->lastDays($days)
-            ->orderBy('period_date');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryDemandHistory::query()
+                ->forModel($model)
+                ->daily()
+                ->lastDays($days)
+                ->orderBy('period_date')
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {
@@ -412,21 +403,19 @@ final class DemandForecastService
         int $days = 30,
         ?string $locationId = null
     ): array {
-        $query = InventoryDemandHistory::query()
-            ->forModel($model)
-            ->daily()
-            ->lastDays($days);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryDemandHistory::query()
+                ->forModel($model)
+                ->daily()
+                ->lastDays($days)
+        );
 
         if (InventoryOwnerScope::isEnabled()) {
             $includeNullLocation = InventoryOwnerScope::includeGlobal() || InventoryOwnerScope::isCurrentContextGlobalOnly();
 
-            $query->where(function ($builder) use ($includeNullLocation): void {
-                InventoryOwnerScope::applyToQueryByLocationRelation($builder, 'location');
-
-                if ($includeNullLocation) {
-                    $builder->orWhereNull('location_id');
-                }
-            });
+            if (! $includeNullLocation) {
+                $query->whereNotNull('location_id');
+            }
         }
 
         if ($locationId !== null) {

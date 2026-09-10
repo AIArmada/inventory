@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Services\Stock;
 
-use AIArmada\CommerceSupport\Support\OwnerContext;
-use AIArmada\CommerceSupport\Support\OwnerQuery;
 use AIArmada\Inventory\Enums\AllocationStrategy;
 use AIArmada\Inventory\Enums\MovementType;
 use AIArmada\Inventory\Events\InventoryAllocated;
@@ -171,12 +169,14 @@ final class InventoryAllocationService
     public function releaseAllocation(InventoryAllocation $allocation): int
     {
         return DB::transaction(function () use ($allocation): int {
-            $allocationQuery = InventoryAllocation::query()
-                ->whereKey($allocation->getKey())
-                ->lockForUpdate()
-                ->with('location');
+            $allocationQuery = InventoryOwnerScope::applyToLocationQuery(
+                InventoryAllocation::query()
+                    ->whereKey($allocation->getKey())
+                    ->lockForUpdate()
+                    ->with('location')
+            );
 
-            $lockedAllocation = InventoryOwnerScope::applyToQueryByLocationRelation($allocationQuery)->first();
+            $lockedAllocation = $allocationQuery->first();
 
             if ($lockedAllocation === null) {
                 return 0;
@@ -215,14 +215,16 @@ final class InventoryAllocationService
     public function release(Model $model, string $cartId): int
     {
         return DB::transaction(function () use ($model, $cartId): int {
-            $allocationsQuery = InventoryAllocation::query()
-                ->where('inventoryable_type', $model->getMorphClass())
-                ->where('inventoryable_id', $model->getKey())
-                ->forCart($cartId)
-                ->with('location')
-                ->lockForUpdate();
+            $allocationsQuery = InventoryOwnerScope::applyToLocationQuery(
+                InventoryAllocation::query()
+                    ->where('inventoryable_type', $model->getMorphClass())
+                    ->where('inventoryable_id', $model->getKey())
+                    ->forCart($cartId)
+                    ->with('location')
+                    ->lockForUpdate()
+            );
 
-            $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
+            $allocations = $allocationsQuery->get();
 
             $totalReleased = 0;
 
@@ -253,13 +255,15 @@ final class InventoryAllocationService
     public function releaseAllForCart(string $cartId): int
     {
         return DB::transaction(function () use ($cartId): int {
-            $allocationsQuery = InventoryAllocation::query()
-                ->forCart($cartId)
-                ->with('level')
-                ->with('location')
-                ->lockForUpdate();
+            $allocationsQuery = InventoryOwnerScope::applyToLocationQuery(
+                InventoryAllocation::query()
+                    ->forCart($cartId)
+                    ->with('level')
+                    ->with('location')
+                    ->lockForUpdate()
+            );
 
-            $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
+            $allocations = $allocationsQuery->get();
 
             $totalReleased = 0;
 
@@ -283,12 +287,14 @@ final class InventoryAllocationService
     public function releaseAllForReservationGroup(string $reservationGroupId): int
     {
         return DB::transaction(function () use ($reservationGroupId): int {
-            $allocationsQuery = InventoryAllocation::query()
-                ->where('reservation_group_id', $reservationGroupId)
-                ->with(['level', 'location'])
-                ->lockForUpdate();
+            $allocationsQuery = InventoryOwnerScope::applyToLocationQuery(
+                InventoryAllocation::query()
+                    ->where('reservation_group_id', $reservationGroupId)
+                    ->with(['level', 'location'])
+                    ->lockForUpdate()
+            );
 
-            $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
+            $allocations = $allocationsQuery->get();
             $totalReleased = 0;
 
             foreach ($allocations as $allocation) {
@@ -318,13 +324,15 @@ final class InventoryAllocationService
     public function commit(string $cartId, ?string $orderId = null): array
     {
         return DB::transaction(function () use ($cartId, $orderId): array {
-            $allocationsQuery = InventoryAllocation::query()
-                ->forCart($cartId)
-                ->with(['level', 'inventoryable'])
-                ->with('location')
-                ->lockForUpdate();
+            $allocationsQuery = InventoryOwnerScope::applyToLocationQuery(
+                InventoryAllocation::query()
+                    ->forCart($cartId)
+                    ->with(['level', 'inventoryable'])
+                    ->with('location')
+                    ->lockForUpdate()
+            );
 
-            $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
+            $allocations = $allocationsQuery->get();
 
             $movements = [];
 
@@ -370,12 +378,14 @@ final class InventoryAllocationService
     public function commitReservationGroup(string $reservationGroupId, string $reference, ?string $orderId = null): array
     {
         return DB::transaction(function () use ($reservationGroupId, $reference, $orderId): array {
-            $allocationsQuery = InventoryAllocation::query()
-                ->where('reservation_group_id', $reservationGroupId)
-                ->with(['level', 'inventoryable', 'location'])
-                ->lockForUpdate();
+            $allocationsQuery = InventoryOwnerScope::applyToLocationQuery(
+                InventoryAllocation::query()
+                    ->where('reservation_group_id', $reservationGroupId)
+                    ->with(['level', 'inventoryable', 'location'])
+                    ->lockForUpdate()
+            );
 
-            $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
+            $allocations = $allocationsQuery->get();
             $movements = [];
 
             foreach ($allocations as $allocation) {
@@ -421,7 +431,7 @@ final class InventoryAllocationService
     {
         $newExpiry = CarbonImmutable::now()->addMinutes($minutes);
 
-        $query = InventoryOwnerScope::applyToQueryByLocationRelation(
+        $query = InventoryOwnerScope::applyToLocationQuery(
             InventoryAllocation::query()->forCart($cartId)->with('location')
         );
 
@@ -430,7 +440,7 @@ final class InventoryAllocationService
 
     public function extendReservationGroupAllocations(string $reservationGroupId, int $minutes): int
     {
-        return InventoryOwnerScope::applyToQueryByLocationRelation(
+        return InventoryOwnerScope::applyToLocationQuery(
             InventoryAllocation::query()
                 ->where('reservation_group_id', $reservationGroupId)
                 ->with('location')
@@ -444,12 +454,14 @@ final class InventoryAllocationService
      */
     public function getAllocationsForCart(string $cartId): Collection
     {
-        $query = InventoryAllocation::query()
-            ->forCart($cartId)
-            ->active()
-            ->with(['location', 'level', 'inventoryable']);
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryAllocation::query()
+                ->forCart($cartId)
+                ->active()
+                ->with(['location', 'level', 'inventoryable'])
+        );
 
-        return InventoryOwnerScope::applyToQueryByLocationRelation($query)->get();
+        return $query->get();
     }
 
     /**
@@ -459,14 +471,16 @@ final class InventoryAllocationService
      */
     public function getAllocations(Model $model, string $cartId): Collection
     {
-        $query = InventoryAllocation::query()
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->forCart($cartId)
-            ->active()
-            ->with('location');
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryAllocation::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->forCart($cartId)
+                ->active()
+                ->with('location')
+        );
 
-        return InventoryOwnerScope::applyToQueryByLocationRelation($query)->get();
+        return $query->get();
     }
 
     /**
@@ -545,12 +559,14 @@ final class InventoryAllocationService
     public function cleanupExpired(): int
     {
         return DB::transaction(function (): int {
-            $allocationsQuery = InventoryAllocation::query()
-                ->expired()
-                ->with(['level', 'location'])
-                ->lockForUpdate();
+            $allocationsQuery = InventoryOwnerScope::applyToLocationQuery(
+                InventoryAllocation::query()
+                    ->expired()
+                    ->with(['level', 'location'])
+                    ->lockForUpdate()
+            );
 
-            $allocations = InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery)->get();
+            $allocations = $allocationsQuery->get();
 
             return $this->cleanupAllocationCollection($allocations);
         });
@@ -568,6 +584,7 @@ final class InventoryAllocationService
     {
         return DB::transaction(function (): int {
             $allocations = InventoryAllocation::query()
+                ->withoutOwnerScope()
                 ->expired()
                 ->with('level')
                 ->lockForUpdate()
@@ -620,37 +637,6 @@ final class InventoryAllocationService
     /**
      * @return array{enabled: bool, owner: Model|null, includeGlobal: bool}
      */
-    private function ownerScope(): array
-    {
-        $enabled = (bool) config('inventory.owner.enabled', false);
-
-        if (! $enabled) {
-            return [
-                'enabled' => false,
-                'owner' => null,
-                'includeGlobal' => true,
-            ];
-        }
-
-        return [
-            'enabled' => true,
-            'owner' => OwnerContext::resolve(),
-            'includeGlobal' => (bool) config('inventory.owner.include_global', false),
-        ];
-    }
-
-    private function applyOwnerScopeToLocationQuery(Builder $query, array $scope): void
-    {
-        if (! $scope['enabled']) {
-            return;
-        }
-
-        $owner = $scope['owner'];
-        $includeGlobal = $scope['includeGlobal'];
-
-        OwnerQuery::applyToEloquentBuilder($query, $owner, $includeGlobal);
-    }
-
     /**
      * Get inventory levels ordered by allocation strategy.
      *
@@ -658,18 +644,14 @@ final class InventoryAllocationService
      */
     private function getLevelsForAllocation(Model $model, AllocationStrategy $strategy): Collection
     {
-        $scope = $this->ownerScope();
-
-        $query = InventoryLevel::query()
-            ->where('inventoryable_type', $model->getMorphClass())
-            ->where('inventoryable_id', $model->getKey())
-            ->whereHas('location', function (Builder $query) use ($scope): void {
-                $query->where('is_active', true);
-
-                $this->applyOwnerScopeToLocationQuery($query, $scope);
-            })
-            ->with('location')
-            ->lockForUpdate();
+        $query = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->where('inventoryable_type', $model->getMorphClass())
+                ->where('inventoryable_id', $model->getKey())
+                ->whereHas('location', fn (Builder $query): Builder => $query->where('is_active', true))
+                ->with('location')
+                ->lockForUpdate()
+        );
 
         return match ($strategy) {
             AllocationStrategy::Priority => $query

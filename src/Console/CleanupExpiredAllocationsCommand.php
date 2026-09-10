@@ -7,6 +7,8 @@ namespace AIArmada\Inventory\Console;
 use AIArmada\CommerceSupport\Support\OwnerBatchRunner;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryLocation;
+use AIArmada\Inventory\Models\InventoryReservation;
+use AIArmada\Inventory\Services\Stock\CheckoutReservationService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Illuminate\Console\Command;
@@ -18,8 +20,10 @@ final class CleanupExpiredAllocationsCommand extends Command
 
     protected $description = 'Clean up expired inventory allocations';
 
-    public function handle(InventoryAllocationService $allocationService): int
-    {
+    public function handle(
+        InventoryAllocationService $allocationService,
+        CheckoutReservationService $reservationService,
+    ): int {
         $isDryRun = (bool) $this->option('dry-run');
 
         if ($isDryRun) {
@@ -33,25 +37,28 @@ final class CleanupExpiredAllocationsCommand extends Command
             ['enabled' => 'inventory.owner.enabled'],
         );
 
-        $runner->run(function () use ($allocationService, $isDryRun): void {
-            $this->processScoped($allocationService, $isDryRun);
+        $runner->run(function () use ($allocationService, $reservationService, $isDryRun): void {
+            $this->processScoped($allocationService, $reservationService, $isDryRun);
         });
 
         return self::SUCCESS;
     }
 
-    private function processScoped(InventoryAllocationService $allocationService, bool $isDryRun): void
-    {
+    private function processScoped(
+        InventoryAllocationService $allocationService,
+        CheckoutReservationService $reservationService,
+        bool $isDryRun,
+    ): void {
         if ($isDryRun) {
-            $allocationsQuery = InventoryAllocation::query()->expired();
-
-            if (InventoryOwnerScope::isEnabled()) {
-                InventoryOwnerScope::applyToQueryByLocationRelation($allocationsQuery, 'location');
-            }
+            $allocationsQuery = InventoryOwnerScope::applyToLocationQuery(
+                InventoryAllocation::query()->expired()
+            );
 
             $count = $allocationsQuery->count();
 
             $this->info("Would clean up {$count} expired allocations.");
+            $reservationCount = $this->reservationsToCleanupCount();
+            $this->info("Would clean up {$reservationCount} expired reservations.");
 
             return;
         }
@@ -61,5 +68,34 @@ final class CleanupExpiredAllocationsCommand extends Command
             : $allocationService->cleanupExpiredGlobal();
 
         $this->info("Cleaned up {$count} expired allocations.");
+        $reservationCount = $reservationService->cleanupExpiredReservations();
+        $this->info("Cleaned up {$reservationCount} expired reservations.");
+    }
+
+    private function reservationsToCleanupCount(): int
+    {
+        $now = now();
+        $cutoff = $now->copy()->subMinutes(max(0, (int) config('inventory.cleanup.keep_expired_for_minutes', 0)));
+
+        return InventoryOwnerScope::applyToLocationQuery(InventoryReservation::query())
+            ->where(function ($query) use ($now, $cutoff): void {
+                $query
+                    ->where(function ($reserved) use ($now): void {
+                        $reserved
+                            ->where('status', InventoryReservation::STATE_RESERVED)
+                            ->whereNotNull('expires_at')
+                            ->where('expires_at', '<=', $now);
+                    })
+                    ->orWhere(function ($terminal) use ($cutoff): void {
+                        $terminal
+                            ->whereIn('status', [
+                                InventoryReservation::STATE_COMMITTED,
+                                InventoryReservation::STATE_RELEASED,
+                                InventoryReservation::STATE_EXPIRED,
+                            ])
+                            ->where('updated_at', '<=', $cutoff);
+                    });
+            })
+            ->count();
     }
 }
