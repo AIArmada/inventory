@@ -11,6 +11,7 @@ use AIArmada\Inventory\States\SerialStatus;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property-read Collection<int, InventorySerial> $serials
@@ -168,7 +169,7 @@ trait HasSerialNumbers
     public function serialCountsByCondition(): array
     {
         $counts = $this->serials()
-            ->selectRaw('`condition`, count(*) as count')
+            ->select('condition', DB::raw('count(*) as count'))
             ->groupBy('condition')
             ->pluck('count', 'condition')
             ->toArray();

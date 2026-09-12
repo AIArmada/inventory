@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Services\Serial;
 
+use AIArmada\CommerceSupport\Support\ConnectionDriver;
 use AIArmada\Inventory\Enums\SerialCondition;
 use AIArmada\Inventory\Models\InventorySerial;
 use AIArmada\Inventory\States\SerialStatus;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 final class SerialLookupService
 {
@@ -46,8 +48,13 @@ final class SerialLookupService
      */
     public function searchBySerialNumber(string $partialSerialNumber, int $limit = 25): Collection
     {
-        $query = InventorySerial::query()
-            ->where('serial_number', 'like', "%{$partialSerialNumber}%")
+        $query = InventorySerial::query();
+        $likeOperator = ConnectionDriver::name($query->getConnection()) === 'pgsql'
+            ? 'ILIKE'
+            : 'LIKE';
+
+        $query
+            ->where('serial_number', $likeOperator, "%{$partialSerialNumber}%")
             ->orderBy('serial_number')
             ->limit($limit);
 
@@ -287,7 +294,7 @@ final class SerialLookupService
         $countsQuery = InventorySerial::query()
             ->where('inventoryable_type', $model->getMorphClass())
             ->where('inventoryable_id', $model->getKey())
-            ->selectRaw('`condition`, count(*) as count')
+            ->select('condition', DB::raw('count(*) as count'))
             ->groupBy('condition');
 
         InventoryOwnerScope::applyToLocationQuery($countsQuery);
@@ -376,7 +383,11 @@ final class SerialLookupService
     private function applyCriteria(Builder $query, array $criteria): void
     {
         if (isset($criteria['serial_number'])) {
-            $query->where('serial_number', 'like', "%{$criteria['serial_number']}%");
+            $likeOperator = ConnectionDriver::name($query->getConnection()) === 'pgsql'
+                ? 'ILIKE'
+                : 'LIKE';
+
+            $query->where('serial_number', $likeOperator, "%{$criteria['serial_number']}%");
         }
 
         if (isset($criteria['status'])) {

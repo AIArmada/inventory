@@ -277,7 +277,7 @@ final class StockLevelReport
         );
 
         $belowReorderPoint = (int) $belowReorderPointQuery
-            ->selectRaw('COUNT(DISTINCT CONCAT(inventoryable_type, ":", inventoryable_id)) as aggregate')
+            ->selectRaw("COUNT(DISTINCT CONCAT(inventoryable_type, ':', inventoryable_id)) as aggregate")
             ->value('aggregate');
 
         $pendingSuggestionsQuery = InventoryOwnerScope::applyToLocationQuery(

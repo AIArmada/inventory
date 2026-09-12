@@ -35,33 +35,35 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
             throw new ReservationReferenceConflict($reference, 'A reservation requires at least one valid line.');
         }
 
-        return DB::transaction(function () use ($reference, $lines, $ttlSeconds): ReservationOutcome {
-            $existing = $this->findGroup($reference);
+        return DB::transaction(function () use ($reference, $lines, $lineSnapshot, $ttlSeconds): ReservationOutcome {
+            $owner = $this->resolveOwner();
+            $expiresAt = CarbonImmutable::now()->addSeconds($ttlSeconds);
 
-            if ($existing !== null) {
-                if ($existing->status === InventoryReservation::STATE_RESERVED
-                    && $existing->line_snapshot === $this->lineSnapshot($lines)) {
-                    return $this->outcome($existing);
+            $group = InventoryReservation::query()->createOrFirst(
+                [
+                    'reference' => $reference,
+                    'owner_type' => $owner['type'],
+                    'owner_id' => $owner['id'],
+                ],
+                [
+                    'status' => InventoryReservation::STATE_RESERVED,
+                    'line_snapshot' => $lineSnapshot,
+                    'ttl_seconds' => $ttlSeconds,
+                    'expires_at' => $expiresAt,
+                ],
+            );
+
+            if (! $group->wasRecentlyCreated) {
+                if ($group->status === InventoryReservation::STATE_RESERVED
+                    && $group->line_snapshot === $lineSnapshot) {
+                    return $this->outcome($group);
                 }
 
                 throw new ReservationReferenceConflict(
                     $reference,
-                    'A reservation for this reference already exists in state: ' . $existing->status,
+                    'A reservation for this reference already exists in state: ' . $group->status,
                 );
             }
-
-            $owner = $this->resolveOwner();
-            $expiresAt = CarbonImmutable::now()->addSeconds($ttlSeconds);
-
-            $group = InventoryReservation::create([
-                'reference' => $reference,
-                'status' => InventoryReservation::STATE_RESERVED,
-                'line_snapshot' => $this->lineSnapshot($lines),
-                'ttl_seconds' => $ttlSeconds,
-                'expires_at' => $expiresAt,
-                'owner_type' => $owner['type'],
-                'owner_id' => $owner['id'],
-            ]);
 
             foreach ($lines as $line) {
                 $model = $this->resolveInventoryModel($line);
@@ -83,7 +85,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
             $group->refresh();
 
             return $this->outcome($group);
-        });
+        }, 3);
     }
 
     public function release(string $reference): ReservationOutcome
