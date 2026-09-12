@@ -39,6 +39,7 @@ return new class extends Migration
             $table->index('user_id');
             $table->index(['inventoryable_type', 'inventoryable_id', 'type'], 'inventory_movements_inventoryable_type_idx');
             $table->index(['inventoryable_type', 'inventoryable_id', 'occurred_at'], 'inventory_movements_inventoryable_history_idx');
+            $table->index(['from_location_id', 'to_location_id', 'occurred_at'], 'inventory_movements_location_history_index');
             $table->index(['owner_type', 'owner_id'], 'inventory_movements_owner_idx');
         });
     }

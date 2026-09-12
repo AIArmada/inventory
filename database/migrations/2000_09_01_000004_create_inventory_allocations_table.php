@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignUuid('batch_id')->nullable();
             $table->string('cart_id');
             $table->integer('quantity');
+            $table->foreignUuid('reservation_group_id')->nullable();
             $table->timestampTz('expires_at');
             $table->nullableUuidMorphs('owner');
             $table->timestampsTz();
@@ -31,6 +32,7 @@ return new class extends Migration
             $table->index('level_id');
             $table->index('batch_id');
             $table->index(['cart_id', 'expires_at'], 'inventory_allocations_cart_expiry_idx');
+            $table->index('reservation_group_id', 'inv_allocations_reservation_group_idx');
             $table->index(['inventoryable_type', 'inventoryable_id', 'cart_id'], 'inventory_allocations_inventoryable_cart_idx');
             $table->index(['owner_type', 'owner_id'], 'inventory_allocations_owner_idx');
         });

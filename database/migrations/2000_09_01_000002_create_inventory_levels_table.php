@@ -18,9 +18,7 @@ return new class extends Migration
             $table->uuidMorphs('inventoryable');
             $table->foreignUuid('location_id');
             $table->integer('quantity_on_hand')->default(0);
-            $table->decimal('quantity_on_hand_decimal', 15, 4)->nullable();
             $table->integer('quantity_reserved')->default(0);
-            $table->decimal('quantity_reserved_decimal', 15, 4)->nullable();
             $table->integer('reorder_point')->nullable();
             $table->integer('safety_stock')->nullable();
             $table->integer('max_stock')->nullable();
