@@ -15,7 +15,7 @@ return new class extends Migration
 
         $tableName = $tables['cost_layers'] ?? $prefix . 'cost_layers';
 
-        commerce_schema_create_if_missing($tableName, function (Blueprint $table) use ($tableName): void {
+        Schema::create($tableName, function (Blueprint $table) use ($tableName): void {
             $table->uuid('id')->primary();
             $table->uuidMorphs('inventoryable');
             $table->foreignUuid('location_id')->nullable();
