@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Exports;
 
 use Generator;
+use InvalidArgumentException;
 use RuntimeException;
 
 /**
@@ -41,6 +42,8 @@ final class ExportService
      */
     public function toCsvFile(ExportableInterface $export, string $path): string
     {
+        $this->assertSafeExportPath($path, $export->getFilename());
+
         $fullPath = $path . '/' . $export->getFilename() . '.csv';
         $output = fopen($fullPath, 'w');
 
@@ -123,5 +126,25 @@ final class ExportService
         }
 
         return $count;
+    }
+
+    /**
+     * Reject directory traversal and absolute-path escapes in export paths.
+     */
+    private function assertSafeExportPath(string $path, string $filename): void
+    {
+        if ($path === '' || $filename === '') {
+            throw new InvalidArgumentException('Export path and filename must not be empty.');
+        }
+
+        foreach ([$path, $filename] as $segment) {
+            if (str_contains($segment, '..') || str_contains($segment, "\0")) {
+                throw new InvalidArgumentException('Export path must not contain traversal sequences.');
+            }
+        }
+
+        if ($filename !== basename($filename)) {
+            throw new InvalidArgumentException('Export filename must not contain directory separators.');
+        }
     }
 }

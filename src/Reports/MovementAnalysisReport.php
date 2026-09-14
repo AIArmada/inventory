@@ -10,6 +10,8 @@ use AIArmada\Inventory\Models\InventoryLocation;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -223,83 +225,69 @@ final class MovementAnalysisReport
         int $minDaysSinceMovement = 30,
     ): Collection {
         $cutoffDate = CarbonImmutable::now()->subDays($minDaysSinceMovement);
+        $levelsTable = config('inventory.database.tables.levels', 'inventory_levels');
 
-        $lastMovementsQuery = InventoryMovement::query()
+        $lastMovements = InventoryMovement::query()
             ->select([
                 'inventoryable_type',
                 'inventoryable_id',
                 DB::raw('MAX(occurred_at) as last_occurred_at'),
             ])
-            ->groupBy('inventoryable_type', 'inventoryable_id')
-            ->having('last_occurred_at', '<', $cutoffDate);
+            ->groupBy('inventoryable_type', 'inventoryable_id');
 
         if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToMovementQuery($lastMovementsQuery);
+            InventoryOwnerScope::applyToMovementQuery($lastMovements);
         }
 
-        $lastMovements = $lastMovementsQuery->get()
-            ->keyBy(fn ($row) => $row->inventoryable_type . ':' . $row->inventoryable_id);
+        // One bounded query: stocked SKUs joined to their last movement,
+        // keeping SKUs with stale or no movements, stalest first.
+        $query = InventoryLevel::query()
+            ->select([
+                "{$levelsTable}.inventoryable_type",
+                "{$levelsTable}.inventoryable_id",
+                DB::raw("SUM({$levelsTable}.quantity_on_hand) as current_quantity"),
+                'sku_last_movement.last_occurred_at',
+            ])
+            ->where("{$levelsTable}.quantity_on_hand", '>', 0)
+            ->leftJoinSub($lastMovements, 'sku_last_movement', function (JoinClause $join) use ($levelsTable): void {
+                $join->on('sku_last_movement.inventoryable_type', '=', "{$levelsTable}.inventoryable_type")
+                    ->on('sku_last_movement.inventoryable_id', '=', "{$levelsTable}.inventoryable_id");
+            })
+            ->where(function (Builder $query) use ($cutoffDate): void {
+                $query->whereNull('sku_last_movement.last_occurred_at')
+                    ->orWhere('sku_last_movement.last_occurred_at', '<', $cutoffDate);
+            })
+            ->groupBy(
+                "{$levelsTable}.inventoryable_type",
+                "{$levelsTable}.inventoryable_id",
+                'sku_last_movement.last_occurred_at'
+            )
+            ->orderByRaw('CASE WHEN sku_last_movement.last_occurred_at IS NULL THEN 0 ELSE 1 END, sku_last_movement.last_occurred_at ASC')
+            ->limit(max(0, $limit));
 
-        $inventoryablesWithAnyMovementQuery = InventoryMovement::query()
-            ->select(['inventoryable_type', 'inventoryable_id'])
-            ->distinct();
+        $query = InventoryOwnerScope::applyToLocationQuery($query);
 
-        if (InventoryOwnerScope::isEnabled()) {
-            InventoryOwnerScope::applyToMovementQuery($inventoryablesWithAnyMovementQuery);
-        }
+        $now = CarbonImmutable::now();
 
-        $inventoryablesWithAnyMovement = $inventoryablesWithAnyMovementQuery
-            ->get()
-            ->keyBy(fn ($row) => $row->inventoryable_type . ':' . $row->inventoryable_id);
+        /** @var Collection<int, array{inventoryable_type: string, inventoryable_id: string, current_quantity: int, last_movement_at: string|null, days_since_movement: int}> $slowMovers */
+        $slowMovers = $query->get()->map(static function ($row) use ($now): array {
+            $lastOccurredAt = $row->getAttribute('last_occurred_at');
 
-        $levelsQuery = InventoryOwnerScope::applyToLocationQuery(
-            InventoryLevel::query()
-                ->select([
-                    'inventoryable_type',
-                    'inventoryable_id',
-                    DB::raw('SUM(quantity_on_hand) as current_quantity'),
-                ])
-                ->where('quantity_on_hand', '>', 0)
-                ->groupBy('inventoryable_type', 'inventoryable_id')
-        );
-
-        /** @var list<array{inventoryable_type: string, inventoryable_id: string, current_quantity: int, last_movement_at: string|null, days_since_movement: int}> $slowMovers */
-        $slowMovers = [];
-
-        foreach ($levelsQuery->get() as $level) {
-            $key = $level->inventoryable_type . ':' . $level->inventoryable_id;
-
-            if (! $lastMovements->has($key) && $inventoryablesWithAnyMovement->has($key)) {
-                continue;
-            }
-
-            $lastMovement = $lastMovements->get($key);
-
-            $lastOccurredAt = $lastMovement?->last_occurred_at;
-            $lastMovementAt = $lastOccurredAt !== null
-                ? CarbonImmutable::parse($lastOccurredAt)->toDateTimeString()
-                : null;
-            $daysSince = $lastOccurredAt !== null
-                ? CarbonImmutable::parse($lastOccurredAt)->diffInDays(CarbonImmutable::now())
-                : 999;
-
-            $slowMovers[] = [
-                'inventoryable_type' => (string) $level->inventoryable_type,
-                'inventoryable_id' => (string) $level->inventoryable_id,
-                'current_quantity' => (int) $level->current_quantity,
-                'last_movement_at' => $lastMovementAt,
-                'days_since_movement' => (int) $daysSince,
+            return [
+                'inventoryable_type' => (string) $row->inventoryable_type,
+                'inventoryable_id' => (string) $row->inventoryable_id,
+                'current_quantity' => (int) $row->current_quantity,
+                'last_movement_at' => $lastOccurredAt !== null
+                    ? CarbonImmutable::parse($lastOccurredAt)->toDateTimeString()
+                    : null,
+                'days_since_movement' => $lastOccurredAt !== null
+                    ? (int) CarbonImmutable::parse($lastOccurredAt)->diffInDays($now)
+                    : 999,
             ];
-        }
-
-        usort($slowMovers, static function (array $left, array $right): int {
-            return $right['days_since_movement'] <=> $left['days_since_movement'];
         });
 
-        $slowMovers = array_slice($slowMovers, 0, $limit);
-
-        // @phpstan-ignore return.type
-        return collect($slowMovers);
+        // @phpstan-ignore-next-line Collection covariance false positive with exact array shape.
+        return $slowMovers;
     }
 
     /**

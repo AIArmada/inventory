@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Models;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Traits\HasOwner;
 use AIArmada\CommerceSupport\Traits\HasOwnerScopeConfig;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -47,6 +49,9 @@ final class InventoryReservation extends Model
 
     protected static string $ownerScopeConfigKey = 'inventory.owner';
 
+    // NOTE: owner_type/owner_id are deliberately not fillable. The owning
+    // tuple is assigned by services via forceFill and verified by the
+    // saving guard below, so caller input can never spoof ownership.
     protected $fillable = [
         'reference',
         'status',
@@ -54,8 +59,6 @@ final class InventoryReservation extends Model
         'order_id',
         'ttl_seconds',
         'expires_at',
-        'owner_id',
-        'owner_type',
     ];
 
     protected $casts = [
@@ -63,6 +66,40 @@ final class InventoryReservation extends Model
         'line_snapshot' => 'array',
         'expires_at' => 'immutable_datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (InventoryReservation $reservation): void {
+            if (! config('inventory.owner.enabled', false)) {
+                return;
+            }
+
+            $owner = OwnerContext::resolve();
+            $autoAssign = (bool) config('inventory.owner.auto_assign_on_create', true);
+
+            if ($owner === null) {
+                if ($reservation->owner_type !== null || $reservation->owner_id !== null) {
+                    throw new AuthorizationException('Cannot save an owned reservation without an owner context.');
+                }
+
+                return;
+            }
+
+            if ($reservation->owner_type === null && $reservation->owner_id === null) {
+                if ($autoAssign && ! $reservation->exists) {
+                    $reservation->owner_type = $owner->getMorphClass();
+                    $reservation->owner_id = $owner->getKey();
+                }
+
+                return;
+            }
+
+            if ($reservation->owner_type !== $owner->getMorphClass()
+                || (string) $reservation->owner_id !== (string) $owner->getKey()) {
+                throw new AuthorizationException('Reservation owner differs from the current owner context.');
+            }
+        });
+    }
 
     public function getTable(): string
     {

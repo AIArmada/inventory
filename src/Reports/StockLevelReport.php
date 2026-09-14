@@ -162,7 +162,7 @@ final class StockLevelReport
      *     classification: string,
      * }>
      */
-    public function getAbcAnalysis(): Collection
+    public function getAbcAnalysis(int $limit = 500): Collection
     {
         $stocksQuery = InventoryOwnerScope::applyToLocationQuery(
             InventoryLevel::query()
@@ -173,6 +173,7 @@ final class StockLevelReport
                 ])
                 ->groupBy('inventoryable_type', 'inventoryable_id')
                 ->orderByDesc('total_quantity')
+                ->limit(max(1, $limit))
         );
 
         $stocks = $stocksQuery->get();
@@ -226,8 +227,6 @@ final class StockLevelReport
             InventoryBatch::query()->whereNotNull('manufactured_at')
         );
 
-        $batches = $batchesQuery->get();
-
         $ranges = [
             '0-30 days' => [0, 30],
             '31-60 days' => [31, 60],
@@ -237,26 +236,42 @@ final class StockLevelReport
             'Over 1 year' => [366, PHP_INT_MAX],
         ];
 
-        return collect($ranges)->map(function ($range, $label) use ($batches, $now): array {
-            $filtered = $batches->filter(function ($batch) use ($range, $now) {
-                $age = CarbonImmutable::parse($batch->manufactured_at)->diffInDays($now);
+        $buckets = [];
 
-                return $age >= $range[0] && $age <= $range[1];
-            });
-
-            $expiringSoon = $filtered->filter(
-                fn ($batch) => $batch->expires_at !== null &&
-                    CarbonImmutable::parse($batch->expires_at)->diffInDays($now) <= 30
-            )->count();
-
-            return [
+        foreach (array_keys($ranges) as $label) {
+            $buckets[$label] = [
                 'age_range' => (string) $label,
-                'batch_count' => (int) $filtered->count(),
-                'total_quantity' => (int) $filtered->sum('quantity'),
-                'total_value' => (int) $filtered->sum(fn ($b) => $b->quantity * ($b->unit_cost_minor ?? 0)),
-                'expiring_soon' => (int) $expiringSoon,
+                'batch_count' => 0,
+                'total_quantity' => 0,
+                'total_value' => 0,
+                'expiring_soon' => 0,
             ];
-        })->values();
+        }
+
+        // Stream batches in one pass instead of hydrating the table and
+        // re-filtering the full collection per bucket.
+        foreach ($batchesQuery->cursor() as $batch) {
+            $age = CarbonImmutable::parse($batch->manufactured_at)->diffInDays($now);
+
+            foreach ($ranges as $label => $range) {
+                if ($age < $range[0] || $age > $range[1]) {
+                    continue;
+                }
+
+                $buckets[$label]['batch_count']++;
+                $buckets[$label]['total_quantity'] += (int) $batch->quantity;
+                $buckets[$label]['total_value'] += ((int) $batch->quantity) * ((int) ($batch->unit_cost_minor ?? 0));
+
+                if ($batch->expires_at !== null
+                    && CarbonImmutable::parse($batch->expires_at)->diffInDays($now) <= 30) {
+                    $buckets[$label]['expiring_soon']++;
+                }
+
+                break;
+            }
+        }
+
+        return collect(array_values($buckets));
     }
 
     /**
@@ -452,14 +467,15 @@ final class StockLevelReport
             InventoryOwnerScope::applyToMovementQuery($countsQuery);
         }
 
-        $counts = $countsQuery->get();
+        $aggregate = $countsQuery
+            ->selectRaw('COUNT(*) as total_counts')
+            ->selectRaw('SUM(CASE WHEN quantity = 0 THEN 1 ELSE 0 END) as accurate_counts')
+            ->selectRaw('SUM(ABS(quantity)) as total_variance')
+            ->first();
 
-        $totalCounts = $counts->count();
-        $accurateCounts = $counts->filter(
-            fn ($c) => $c->quantity === 0
-        )->count();
-
-        $totalVariance = $counts->sum(fn ($c) => abs($c->quantity));
+        $totalCounts = (int) ($aggregate->total_counts ?? 0);
+        $accurateCounts = (int) ($aggregate->accurate_counts ?? 0);
+        $totalVariance = (int) ($aggregate->total_variance ?? 0);
 
         return [
             'total_counts' => $totalCounts,

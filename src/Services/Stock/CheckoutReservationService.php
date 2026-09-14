@@ -6,6 +6,7 @@ namespace AIArmada\Inventory\Services\Stock;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Inventory\Contracts\CheckoutReservationServiceInterface;
+use AIArmada\Inventory\Contracts\InventoryableInterface;
 use AIArmada\Inventory\Data\ReservationLine;
 use AIArmada\Inventory\Data\ReservationOutcome;
 use AIArmada\Inventory\Exceptions\InvalidReservationTransition;
@@ -18,6 +19,8 @@ use AIArmada\Products\Models\Variant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 final class CheckoutReservationService implements CheckoutReservationServiceInterface
@@ -35,34 +38,92 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
             throw new ReservationReferenceConflict($reference, 'A reservation requires at least one valid line.');
         }
 
+        // Serializes concurrent reserves for the same reference. NULL-owner
+        // rows defeat the composite unique key on MySQL, so the database
+        // alone cannot guarantee idempotent creation on every driver — the
+        // lock is the only serializer there, so losers must wait for it
+        // rather than proceed into the transaction.
+        return Cache::lock($this->reservationLockKey($reference), 10)->block(5, function () use (
+            $reference,
+            $lines,
+            $lineSnapshot,
+            $ttlSeconds,
+        ): ReservationOutcome {
+            return $this->attemptReserve($reference, $lines, $lineSnapshot, $ttlSeconds);
+        });
+    }
+
+    /**
+     * @param  list<ReservationLine>  $lines
+     * @param  array<string, array{requested: int, reserved: int}>  $lineSnapshot
+     */
+    private function attemptReserve(string $reference, array $lines, array $lineSnapshot, int $ttlSeconds): ReservationOutcome
+    {
+        // Transient lock contention (SQLite busy, deadlocks) backs off and
+        // retries with a fresh transaction instead of failing the checkout.
+        $backoffMicros = [50000, 150000];
+
+        for (; ;) {
+            try {
+                return $this->reserveInTransaction($reference, $lines, $lineSnapshot, $ttlSeconds);
+            } catch (QueryException $exception) {
+                if ($backoffMicros === [] || ! $this->isTransientLockError($exception)) {
+                    throw $exception;
+                }
+
+                usleep(array_shift($backoffMicros));
+            }
+        }
+    }
+
+    private function isTransientLockError(QueryException $exception): bool
+    {
+        $sqlState = (string) ($exception->errorInfo[0] ?? '');
+        $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+
+        return ($sqlState === 'HY000' && $driverCode === 5)
+            || $sqlState === '40001'
+            || $sqlState === '40P01'
+            || ($sqlState === 'HY000' && in_array($driverCode, [1205, 1213], true));
+    }
+
+    /**
+     * @param  list<ReservationLine>  $lines
+     * @param  array<string, array{requested: int, reserved: int}>  $lineSnapshot
+     */
+    private function reserveInTransaction(string $reference, array $lines, array $lineSnapshot, int $ttlSeconds): ReservationOutcome
+    {
         return DB::transaction(function () use ($reference, $lines, $lineSnapshot, $ttlSeconds): ReservationOutcome {
             $owner = $this->resolveOwner();
             $expiresAt = CarbonImmutable::now()->addSeconds($ttlSeconds);
 
-            $group = InventoryReservation::query()->createOrFirst(
-                [
-                    'reference' => $reference,
-                    'owner_type' => $owner['type'],
-                    'owner_id' => $owner['id'],
-                ],
-                [
-                    'status' => InventoryReservation::STATE_RESERVED,
-                    'line_snapshot' => $lineSnapshot,
-                    'ttl_seconds' => $ttlSeconds,
-                    'expires_at' => $expiresAt,
-                ],
-            );
+            $group = $this->findGroupForOwner($reference, $owner);
 
-            if (! $group->wasRecentlyCreated) {
-                if ($group->status === InventoryReservation::STATE_RESERVED
-                    && $group->line_snapshot === $lineSnapshot) {
-                    return $this->outcome($group);
+            if ($group instanceof InventoryReservation) {
+                return $this->idempotentOutcome($reference, $group, $lineSnapshot);
+            }
+
+            $group = new InventoryReservation;
+            $group->forceFill([
+                'reference' => $reference,
+                'owner_type' => $owner['type'],
+                'owner_id' => $owner['id'],
+                'status' => InventoryReservation::STATE_RESERVED,
+                'line_snapshot' => $lineSnapshot,
+                'ttl_seconds' => $ttlSeconds,
+                'expires_at' => $expiresAt,
+            ]);
+
+            try {
+                $group->save();
+            } catch (QueryException $exception) {
+                $group = $this->recoverRacedGroup($reference, $owner, $exception);
+
+                if (! $group instanceof InventoryReservation) {
+                    throw $exception;
                 }
 
-                throw new ReservationReferenceConflict(
-                    $reference,
-                    'A reservation for this reference already exists in state: ' . $group->status,
-                );
+                return $this->idempotentOutcome($reference, $group, $lineSnapshot);
             }
 
             foreach ($lines as $line) {
@@ -86,6 +147,63 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
             return $this->outcome($group);
         }, 3);
+    }
+
+    /**
+     * @param  array<string, array{requested: int, reserved: int}>  $lineSnapshot
+     */
+    private function idempotentOutcome(string $reference, InventoryReservation $group, array $lineSnapshot): ReservationOutcome
+    {
+        if ($group->status === InventoryReservation::STATE_RESERVED
+            && $group->line_snapshot === $lineSnapshot) {
+            return $this->outcome($group);
+        }
+
+        throw new ReservationReferenceConflict(
+            $reference,
+            'A reservation for this reference already exists in state: ' . $group->status,
+        );
+    }
+
+    /**
+     * @param  array{type: string|null, id: string|int|null}  $owner
+     */
+    private function findGroupForOwner(string $reference, array $owner): ?InventoryReservation
+    {
+        /** @var InventoryReservation|null $group */
+        $group = InventoryReservation::query()
+            ->where('reference', $reference)
+            ->where('owner_type', $owner['type'])
+            ->where('owner_id', $owner['id'])
+            ->first();
+
+        return $group;
+    }
+
+    /**
+     * Re-read the group after a lost creation race. Returns null when the
+     * failure was not a unique violation or the winner is not visible.
+     *
+     * @param  array{type: string|null, id: string|int|null}  $owner
+     */
+    private function recoverRacedGroup(string $reference, array $owner, QueryException $exception): ?InventoryReservation
+    {
+        if (! in_array((string) ($exception->errorInfo[0] ?? $exception->getCode()), ['23000', '23505'], true)) {
+            return null;
+        }
+
+        return $this->findGroupForOwner($reference, $owner);
+    }
+
+    private function reservationLockKey(string $reference): string
+    {
+        $owner = $this->resolveOwner();
+
+        return 'inventory-reservation:' . hash('sha256', implode('|', [
+            $reference,
+            (string) $owner['type'],
+            (string) $owner['id'],
+        ]));
     }
 
     public function release(string $reference): ReservationOutcome
@@ -320,7 +438,9 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
         if ($line->inventoryableType !== null && $line->inventoryableId !== null) {
             $inventoryableClass = Relation::getMorphedModel($line->inventoryableType) ?? $line->inventoryableType;
 
-            if (class_exists($inventoryableClass) && is_a($inventoryableClass, Model::class, true)) {
+            // The line type is caller-influenced: only resolve classes that
+            // are explicitly inventoryable, never arbitrary Eloquent models.
+            if (is_string($inventoryableClass) && $this->isAllowedInventoryableClass($inventoryableClass)) {
                 /** @var class-string<Model> $inventoryableClass */
                 $inventoryable = $inventoryableClass::query()->find($line->inventoryableId);
 
@@ -349,5 +469,28 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
         }
 
         return $productClass::query()->find($line->productId);
+    }
+
+    private function isAllowedInventoryableClass(string $class): bool
+    {
+        if (! is_a($class, Model::class, true)) {
+            return false;
+        }
+
+        $variantClass = config('inventory.models.variant');
+        $productClass = config('inventory.models.product');
+
+        foreach ([$variantClass, $productClass, Variant::class, Product::class] as $configured) {
+            if (is_string($configured) && ($class === $configured || is_a($class, $configured, true))) {
+                return true;
+            }
+        }
+
+        if (is_a($class, InventoryableInterface::class, true)) {
+            return true;
+        }
+
+        return interface_exists('AIArmada\\Products\\Contracts\\Inventoryable')
+            && is_a($class, 'AIArmada\\Products\\Contracts\\Inventoryable', true);
     }
 }

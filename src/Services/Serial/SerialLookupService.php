@@ -53,14 +53,24 @@ final class SerialLookupService
             ? 'ILIKE'
             : 'LIKE';
 
+        $escaped = $this->escapeLikeWildcard($partialSerialNumber);
+
         $query
-            ->where('serial_number', $likeOperator, "%{$partialSerialNumber}%")
+            ->whereRaw("serial_number {$likeOperator} ? ESCAPE '\\'", ["%{$escaped}%"])
             ->orderBy('serial_number')
             ->limit($limit);
 
         InventoryOwnerScope::applyToLocationQuery($query);
 
         return $query->get();
+    }
+
+    /**
+     * Escape LIKE wildcards so search input is matched literally.
+     */
+    private function escapeLikeWildcard(string $value): string
+    {
+        return addcslashes($value, '%_\\');
     }
 
     /**
@@ -387,7 +397,9 @@ final class SerialLookupService
                 ? 'ILIKE'
                 : 'LIKE';
 
-            $query->where('serial_number', $likeOperator, "%{$criteria['serial_number']}%");
+            $escaped = $this->escapeLikeWildcard((string) $criteria['serial_number']);
+
+            $query->whereRaw("serial_number {$likeOperator} ? ESCAPE '\\'", ["%{$escaped}%"]);
         }
 
         if (isset($criteria['status'])) {

@@ -252,6 +252,10 @@ $hasStock = Inventory::hasInventory($product, 10);
 $product->getTotalAvailable(); // 125
 $product->hasInventory(10); // true
 $product->hasInventory(200); // false
+
+// Bulk totals for many models with one query (variant fan-out, carts)
+$totals = Inventory::getAvailabilityForMany([$variantA, $variantB]);
+// ['App\Models\Variant:uuid-a' => 12, 'App\Models\Variant:uuid-b' => 0]
 ```
 
 ## Allocations (Reservations)

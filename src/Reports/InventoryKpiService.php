@@ -253,9 +253,7 @@ final class InventoryKpiService
                 ->groupBy('inventoryable_type', 'inventoryable_id')
         );
 
-        $stockLevels = $stockLevelsQuery->get();
-
-        $totalSkus = $stockLevels->count();
+        $totalSkus = DB::query()->fromSub($stockLevelsQuery, 'grouped_skus')->count();
         $totalValue = 0; // Value calculation requires cost layer integration
 
         $lowStockQuery = InventoryOwnerScope::applyToLocationQuery(

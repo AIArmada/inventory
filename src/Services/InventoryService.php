@@ -21,6 +21,7 @@ use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
@@ -245,6 +246,9 @@ final class InventoryService
                 throw new InvalidArgumentException('No adjustment needed, quantities are equal');
             }
 
+            // Ledger path: the movement below is the audit record, so the
+            // level's direct-write auto-audit must stand down.
+            $level->suppressLedgerAudit = true;
             $level->update(['quantity_on_hand' => $newQuantity]);
             $this->clearCache($model);
 
@@ -279,33 +283,102 @@ final class InventoryService
      */
     public function getAvailability(Model $model): array
     {
-        return InventoryOwnerScope::applyToLocationQuery(
+        $rows = InventoryOwnerScope::applyToLocationQuery(
             InventoryLevel::query()
                 ->where('inventoryable_type', $model->getMorphClass())
                 ->where('inventoryable_id', $model->getKey())
                 ->whereHas('location', fn (Builder $query): Builder => $query->where('is_active', true))
         )
-            ->get()
-            ->mapWithKeys(fn (InventoryLevel $level): array => [$level->location_id => $level->available])
-            ->toArray();
+            ->select('location_id')
+            ->selectRaw($this->availableAggregateExpression() . ' as available_total')
+            ->groupBy('location_id')
+            ->get();
+
+        $availability = [];
+
+        foreach ($rows as $row) {
+            $availability[$row->location_id] = (int) $row->getAttribute('available_total');
+        }
+
+        return $availability;
     }
 
     /**
      * Get total available quantity across all locations.
-     *
-     * Uses parameter-keyed caching to avoid redundant queries when the same
-     * model is checked multiple times within a single request.
      */
     public function getTotalAvailable(Model $model): int
     {
-        return InventoryOwnerScope::applyToLocationQuery(
+        $total = InventoryOwnerScope::applyToLocationQuery(
             InventoryLevel::query()
                 ->where('inventoryable_type', $model->getMorphClass())
                 ->where('inventoryable_id', $model->getKey())
                 ->whereHas('location', fn (Builder $query): Builder => $query->where('is_active', true))
+        )->sum(DB::raw($this->availablePerLevelExpression()));
+
+        return (int) $total;
+    }
+
+    /**
+     * Get total available quantities for many models with one query.
+     *
+     * Powers per-variant fan-out reads (product pages, carts) without the
+     * N+1 cost of calling getTotalAvailable() per variant. Models without
+     * any active-location level are reported as zero.
+     *
+     * @param  iterable<int, Model>  $models
+     * @return array<string, int> Keyed by "{morph-class}:{key}".
+     */
+    public function getAvailabilityForMany(iterable $models): array
+    {
+        $pairs = [];
+
+        foreach ($models as $model) {
+            $pairs[$model->getMorphClass() . ':' . $model->getKey()] = [
+                'inventoryable_type' => $model->getMorphClass(),
+                'inventoryable_id' => $model->getKey(),
+            ];
+        }
+
+        $totals = array_fill_keys(array_keys($pairs), 0);
+
+        if ($pairs === []) {
+            return $totals;
+        }
+
+        $rows = InventoryOwnerScope::applyToLocationQuery(
+            InventoryLevel::query()
+                ->whereIn('inventoryable_type', array_unique(array_column($pairs, 'inventoryable_type')))
+                ->whereIn('inventoryable_id', array_unique(array_column($pairs, 'inventoryable_id')))
+                ->whereHas('location', fn (Builder $query): Builder => $query->where('is_active', true))
         )
-            ->get()
-            ->sum(fn (InventoryLevel $level): int => $level->available);
+            ->select('inventoryable_type', 'inventoryable_id')
+            ->selectRaw($this->availableAggregateExpression() . ' as available_total')
+            ->groupBy('inventoryable_type', 'inventoryable_id')
+            ->get();
+
+        foreach ($rows as $row) {
+            $key = $row->inventoryable_type . ':' . $row->inventoryable_id;
+
+            if (array_key_exists($key, $totals)) {
+                $totals[$key] = (int) $row->getAttribute('available_total');
+            }
+        }
+
+        return $totals;
+    }
+
+    /**
+     * Per-level available quantity, mirroring InventoryLevel::available
+     * (never negative) in portable SQL.
+     */
+    private function availablePerLevelExpression(): string
+    {
+        return 'CASE WHEN quantity_on_hand > quantity_reserved THEN quantity_on_hand - quantity_reserved ELSE 0 END';
+    }
+
+    private function availableAggregateExpression(): string
+    {
+        return 'SUM(' . $this->availablePerLevelExpression() . ')';
     }
 
     /**
@@ -374,17 +447,37 @@ final class InventoryService
             }
         }
 
-        return InventoryLevel::firstOrCreate(
-            [
-                'inventoryable_type' => $model->getMorphClass(),
-                'inventoryable_id' => $model->getKey(),
-                'location_id' => $locationId,
-            ],
-            [
-                'quantity_on_hand' => 0,
-                'quantity_reserved' => 0,
-            ]
-        );
+        $identity = [
+            'inventoryable_type' => $model->getMorphClass(),
+            'inventoryable_id' => $model->getKey(),
+            'location_id' => $locationId,
+        ];
+
+        try {
+            return InventoryLevel::firstOrCreate(
+                $identity,
+                [
+                    'quantity_on_hand' => 0,
+                    'quantity_reserved' => 0,
+                ]
+            );
+        } catch (QueryException $exception) {
+            // The framework already rescues plain unique races, but its
+            // recovery lookup is over-constrained by the mutable quantity
+            // defaults. Re-select by identity so a loser never 500s when
+            // the winner's row has since moved.
+            if (! in_array((string) ($exception->errorInfo[0] ?? $exception->getCode()), ['23000', '23505'], true)) {
+                throw $exception;
+            }
+
+            $level = InventoryLevel::query()->where($identity)->first();
+
+            if (! $level instanceof InventoryLevel) {
+                throw $exception;
+            }
+
+            return $level;
+        }
     }
 
     /**

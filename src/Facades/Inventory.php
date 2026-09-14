@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \AIArmada\Inventory\Models\InventoryMovement transfer(\Illuminate\Database\Eloquent\Model $model, string $fromLocationId, string $toLocationId, int $quantity, ?string $note = null, ?string $userId = null)
  * @method static \AIArmada\Inventory\Models\InventoryMovement adjust(\Illuminate\Database\Eloquent\Model $model, string $locationId, int $newQuantity, ?string $reason = null, ?string $note = null, ?string $userId = null)
  * @method static array<string, int> getAvailability(\Illuminate\Database\Eloquent\Model $model)
+ * @method static array<string, int> getAvailabilityForMany(iterable<int, \Illuminate\Database\Eloquent\Model> $models)
  * @method static int getTotalAvailable(\Illuminate\Database\Eloquent\Model $model)
  * @method static int getTotalOnHand(\Illuminate\Database\Eloquent\Model $model)
  * @method static bool hasInventory(\Illuminate\Database\Eloquent\Model $model, int $quantity)

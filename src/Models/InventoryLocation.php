@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use InvalidArgumentException;
 use OwenIt\Auditing\Contracts\Auditable;
 
 /**
@@ -396,15 +397,32 @@ final class InventoryLocation extends Model implements Auditable
             $location->updatePathAndDepth();
         });
 
+        static::created(function (InventoryLocation $location): void {
+            // Safety net for keys assigned after the creating hook: a root
+            // path is never left null or placeholder-valued.
+            if ($location->parent_id === null && $location->path === null) {
+                $location->forceFill(['path' => $location->getKey(), 'depth' => 0])->saveQuietly();
+            }
+        });
+
         static::updating(function (InventoryLocation $location): void {
             if ($location->isDirty('parent_id')) {
                 $location->updatePathAndDepth();
             }
+
+            if ($location->isDirty('path')) {
+                $location->rememberPreviousPathForRebuild();
+            }
         });
 
         static::saved(function (InventoryLocation $location): void {
-            if ($location->wasChanged('path')) {
-                $location->rebuildDescendantPaths();
+            if ($location->wasChanged('path') && $location->previousPathForRebuild !== null) {
+                $location->rebuildDescendantPaths(
+                    $location->previousPathForRebuild,
+                    $location->previousDepthForRebuild ?? $location->depth
+                );
+                $location->previousPathForRebuild = null;
+                $location->previousDepthForRebuild = null;
             }
         });
 
@@ -443,16 +461,56 @@ final class InventoryLocation extends Model implements Auditable
         });
 
         static::deleting(function (InventoryLocation $location): void {
-            $location->children()->update([
-                'parent_id' => $location->parent_id,
-            ]);
+            // Re-parent through model saves (not a mass update) so each
+            // child recomputes its path and depth via the normal hooks.
+            $location->children()->chunkById(200, function ($children) use ($location): void {
+                foreach ($children as $child) {
+                    $child->update(['parent_id' => $location->parent_id]);
+                }
+            });
         });
 
         self::deleting(function (InventoryLocation $location): void {
             $location->inventoryLevels()->delete();
             $location->allocations()->delete();
+            $location->movementsFrom()->delete();
+            $location->movementsTo()->delete();
+
+            $batchIds = InventoryBatch::query()
+                ->where('location_id', $location->getKey())
+                ->pluck('id');
+
+            // Cost layers belong to batches, which are removed below with a
+            // query delete that skips model events; clear them first so no
+            // layer outlives its batch. Batch-linked allocations are already
+            // gone via the location-wide allocation delete above.
+            InventoryCostLayer::query()->whereIn('batch_id', $batchIds)->delete();
+            InventoryBatch::query()->where('location_id', $location->getKey())->delete();
+
+            // Per-model deletes so serial history cascades fire.
+            InventorySerial::query()
+                ->where('location_id', $location->getKey())
+                ->chunkById(200, function ($serials): void {
+                    foreach ($serials as $serial) {
+                        $serial->delete();
+                    }
+                });
         });
     }
+
+    /**
+     * Hard ceiling for hierarchy depth. Hierarchies deeper than this are
+     * treated as corrupt (or cyclic) rather than recursed into.
+     */
+    public const int MAX_HIERARCHY_DEPTH = 100;
+
+    /**
+     * Stashed by the updating hook so the saved hook can rewrite
+     * descendant paths without recursion.
+     */
+    public ?string $previousPathForRebuild = null;
+
+    public ?int $previousDepthForRebuild = null;
 
     /**
      * Update path and depth from the current parent.
@@ -460,7 +518,11 @@ final class InventoryLocation extends Model implements Auditable
     protected function updatePathAndDepth(): void
     {
         if ($this->parent_id === null) {
-            $this->path = $this->id ?? 'temp';
+            // HasUuids assigns the key in its own creating listener, which
+            // runs before this one. If the key is somehow still missing,
+            // the created hook backfills the root path instead of writing
+            // a placeholder that would leak into descendant paths.
+            $this->path = $this->getKey();
             $this->depth = 0;
 
             return;
@@ -470,23 +532,107 @@ final class InventoryLocation extends Model implements Auditable
             ->whereKey($this->parent_id)
             ->first();
 
-        if ($parent !== null) {
-            $this->path = $parent->path . '/' . $this->id;
-            $this->depth = $parent->depth + 1;
+        if ($parent === null) {
+            throw new AuthorizationException('Invalid parent location for the current owner context.');
         }
+
+        $this->assertNoHierarchyCycle($parent);
+
+        $depth = $parent->depth + 1;
+
+        if ($depth > self::MAX_HIERARCHY_DEPTH) {
+            throw new InvalidArgumentException('Location hierarchy exceeds the maximum supported depth.');
+        }
+
+        $parentPath = $parent->path ?? $parent->getKey();
+
+        $this->path = $parentPath . '/' . $this->getKey();
+        $this->depth = $depth;
     }
 
     /**
-     * Rebuild descendant paths after a hierarchy change.
+     * Walk the ancestor chain to reject self-parenting and cycles.
      */
-    protected function rebuildDescendantPaths(): void
+    private function assertNoHierarchyCycle(InventoryLocation $parent): void
     {
-        foreach ($this->children()->get() as $child) {
-            $child->path = $this->path . '/' . $child->id;
-            $child->depth = $this->depth + 1;
-            $child->saveQuietly();
-            $child->rebuildDescendantPaths();
+        $seen = [$this->getKey()];
+        $current = $parent;
+        $hops = 0;
+
+        while ($current !== null && $hops <= self::MAX_HIERARCHY_DEPTH) {
+            if (in_array($current->getKey(), $seen, true)) {
+                throw new InvalidArgumentException('Location hierarchy must not contain a cycle.');
+            }
+
+            $seen[] = $current->getKey();
+            $hops++;
+
+            if ($current->parent_id === null) {
+                return;
+            }
+
+            $current = InventoryOwnerScope::applyToLocationQuery(self::query())
+                ->whereKey($current->parent_id)
+                ->first();
         }
+
+        if ($hops > self::MAX_HIERARCHY_DEPTH) {
+            throw new InvalidArgumentException('Location hierarchy exceeds the maximum supported depth.');
+        }
+    }
+
+    private function rememberPreviousPathForRebuild(): void
+    {
+        $previousPath = $this->getOriginal('path');
+        $previousDepth = $this->getOriginal('depth');
+
+        $this->previousPathForRebuild = is_string($previousPath) ? $previousPath : null;
+        $this->previousDepthForRebuild = is_int($previousDepth) ? $previousDepth : null;
+    }
+
+    /**
+     * Rewrite descendant paths after this location moved.
+     *
+     * Iterative and chunked: every descendant path shares the previous
+     * path as a prefix, so each new path is a prefix swap plus a depth
+     * delta. Quiet saves keep the rebuild from cascading hooks, and the
+     * visited set skips rows caught in legacy cycles.
+     */
+    protected function rebuildDescendantPaths(string $previousPath, int $previousDepth): void
+    {
+        if ($this->path === null || $previousPath === '') {
+            return;
+        }
+
+        $newPrefix = $this->path . '/';
+        $oldPrefix = $previousPath . '/';
+        $depthDelta = $this->depth - $previousDepth;
+        $visited = [$this->getKey()];
+
+        InventoryOwnerScope::applyToLocationQuery(self::query())
+            ->where('path', 'like', $oldPrefix . '%')
+            ->chunkById(200, function ($descendants) use ($newPrefix, $oldPrefix, $depthDelta, &$visited): void {
+                foreach ($descendants as $descendant) {
+                    $key = $descendant->getKey();
+
+                    if (in_array($key, $visited, true)) {
+                        continue;
+                    }
+
+                    $visited[] = $key;
+
+                    $suffix = mb_substr((string) $descendant->path, mb_strlen($oldPrefix));
+
+                    if ($suffix === '') {
+                        continue;
+                    }
+
+                    $descendant->forceFill([
+                        'path' => $newPrefix . $suffix,
+                        'depth' => max(0, $descendant->depth + $depthDelta),
+                    ])->saveQuietly();
+                }
+            });
     }
 
     /**

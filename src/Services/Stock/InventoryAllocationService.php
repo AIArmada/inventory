@@ -68,7 +68,7 @@ final class InventoryAllocationService
      * @param  int  $ttlMinutes  How long the allocation remains valid
      * @return Collection<int, InventoryAllocation> Created allocation records
      *
-     * @throws InvalidArgumentException If quantity is not positive
+     * @throws InvalidArgumentException If quantity or TTL is not positive
      * @throws InsufficientInventoryException If insufficient stock available
      */
     public function allocate(
@@ -79,6 +79,10 @@ final class InventoryAllocationService
     ): Collection {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('Quantity must be positive');
+        }
+
+        if ($ttlMinutes <= 0) {
+            throw new InvalidArgumentException('TTL minutes must be positive');
         }
 
         return DB::transaction(function () use ($model, $quantity, $cartId, $ttlMinutes): Collection {
