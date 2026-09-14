@@ -61,7 +61,10 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
     {
         // Transient lock contention (SQLite busy, deadlocks) backs off and
         // retries with a fresh transaction instead of failing the checkout.
-        $backoffMicros = [50000, 150000];
+        // WAL snapshot-upgrade refusals fail immediately ([HY000, 5]) without
+        // engaging SQLite's busy_timeout, so this PHP backstop is the only
+        // thing covering a descheduled writer: budget ~4s across 6 attempts.
+        $backoffMicros = [50000, 150000, 400000, 1000000, 2500000];
 
         for (; ;) {
             try {
