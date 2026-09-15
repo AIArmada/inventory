@@ -54,12 +54,4 @@ return new class extends Migration
             $table->index(['owner_type', 'owner_id'], 'inventory_serial_history_owner_idx');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists(config('inventory.database.tables.serial_history', 'inventory_serial_history'));
-    }
 };

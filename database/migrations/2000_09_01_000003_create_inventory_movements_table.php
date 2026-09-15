@@ -43,12 +43,4 @@ return new class extends Migration
             $table->index(['owner_type', 'owner_id'], 'inventory_movements_owner_idx');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists(config('inventory.database.tables.movements', 'inventory_movements'));
-    }
 };

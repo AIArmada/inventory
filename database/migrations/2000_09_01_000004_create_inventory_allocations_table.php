@@ -37,12 +37,4 @@ return new class extends Migration
             $table->index(['owner_type', 'owner_id'], 'inventory_allocations_owner_idx');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists(config('inventory.database.tables.allocations', 'inventory_allocations'));
-    }
 };

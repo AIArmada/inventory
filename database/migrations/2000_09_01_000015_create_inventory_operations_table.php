@@ -24,9 +24,4 @@ return new class extends Migration
             $table->index(['owner_type', 'owner_id'], 'inventory_operations_owner_idx');
         });
     }
-
-    public function down(): void
-    {
-        Schema::dropIfExists(config('inventory.database.tables.operations', 'inventory_operations'));
-    }
 };

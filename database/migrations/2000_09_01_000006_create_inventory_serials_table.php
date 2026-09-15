@@ -77,12 +77,4 @@ return new class extends Migration
             $table->unique(['owner_type', 'owner_id', 'serial_number'], 'inventory_serials_owner_serial_unique');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists(config('inventory.database.tables.serials', 'inventory_serials'));
-    }
 };

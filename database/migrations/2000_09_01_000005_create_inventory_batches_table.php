@@ -66,9 +66,4 @@ return new class extends Migration
             $table->index(['owner_type', 'owner_id'], 'inventory_batches_owner_idx');
         });
     }
-
-    public function down(): void
-    {
-        Schema::dropIfExists(config('inventory.database.tables.batches', 'inventory_batches'));
-    }
 };

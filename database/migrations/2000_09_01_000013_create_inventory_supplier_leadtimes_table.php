@@ -43,13 +43,4 @@ return new class extends Migration
             $table->index(['owner_type', 'owner_id'], $tableName . '_owner_idx');
         });
     }
-
-    public function down(): void
-    {
-        $tables = config('inventory.database.tables', []);
-        $prefix = config('inventory.database.table_prefix', 'inventory_');
-        $tableName = $tables['supplier_leadtimes'] ?? $prefix . 'supplier_leadtimes';
-
-        Schema::dropIfExists($tableName);
-    }
 };

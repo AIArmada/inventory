@@ -56,12 +56,4 @@ return new class extends Migration
             $table->unique(['owner_scope', 'code'], 'inventory_locations_owner_scope_code_unique');
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists(config('inventory.database.tables.locations', 'inventory_locations'));
-    }
 };
