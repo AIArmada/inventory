@@ -20,7 +20,7 @@ return new class extends Migration
             $table->uuidMorphs('inventoryable');
 
             // Serial identification
-            $table->string('serial_number')->unique();
+            $table->string('serial_number');
             $table->string('sku')->nullable()->index();
 
             // Current location and batch
@@ -71,7 +71,10 @@ return new class extends Migration
             $table->index('order_id');
             $table->index('customer_id');
             $table->index(['inventoryable_type', 'inventoryable_id', 'status'], 'inventory_serials_item_status_idx');
-            $table->index(['owner_type', 'owner_id'], 'inventory_serials_owner_idx');
+            // Serial lookups are owner-scoped, so serials are unique per
+            // owner. The composite leftmost prefix also serves plain owner
+            // queries, replacing a separate owner index.
+            $table->unique(['owner_type', 'owner_id', 'serial_number'], 'inventory_serials_owner_serial_unique');
         });
     }
 

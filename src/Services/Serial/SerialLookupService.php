@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Services\Serial;
 
-use AIArmada\CommerceSupport\Support\ConnectionDriver;
+use AIArmada\CommerceSupport\Support\LikeSearch;
 use AIArmada\Inventory\Enums\SerialCondition;
 use AIArmada\Inventory\Models\InventorySerial;
 use AIArmada\Inventory\States\SerialStatus;
@@ -49,28 +49,16 @@ final class SerialLookupService
     public function searchBySerialNumber(string $partialSerialNumber, int $limit = 25): Collection
     {
         $query = InventorySerial::query();
-        $likeOperator = ConnectionDriver::name($query->getConnection()) === 'pgsql'
-            ? 'ILIKE'
-            : 'LIKE';
 
-        $escaped = $this->escapeLikeWildcard($partialSerialNumber);
+        LikeSearch::whereLike($query, 'serial_number', LikeSearch::contains($partialSerialNumber));
 
         $query
-            ->whereRaw("serial_number {$likeOperator} ? ESCAPE '\\'", ["%{$escaped}%"])
             ->orderBy('serial_number')
             ->limit($limit);
 
         InventoryOwnerScope::applyToLocationQuery($query);
 
         return $query->get();
-    }
-
-    /**
-     * Escape LIKE wildcards so search input is matched literally.
-     */
-    private function escapeLikeWildcard(string $value): string
-    {
-        return addcslashes($value, '%_\\');
     }
 
     /**
@@ -393,13 +381,7 @@ final class SerialLookupService
     private function applyCriteria(Builder $query, array $criteria): void
     {
         if (isset($criteria['serial_number'])) {
-            $likeOperator = ConnectionDriver::name($query->getConnection()) === 'pgsql'
-                ? 'ILIKE'
-                : 'LIKE';
-
-            $escaped = $this->escapeLikeWildcard((string) $criteria['serial_number']);
-
-            $query->whereRaw("serial_number {$likeOperator} ? ESCAPE '\\'", ["%{$escaped}%"]);
+            LikeSearch::whereLike($query, 'serial_number', LikeSearch::contains((string) $criteria['serial_number']));
         }
 
         if (isset($criteria['status'])) {
