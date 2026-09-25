@@ -6,11 +6,12 @@ namespace AIArmada\Inventory\Events;
 
 use AIArmada\CommerceSupport\Contracts\Events\InventoryEventInterface;
 use AIArmada\Inventory\Events\Concerns\HasInventoryEventData;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class InventoryReleased implements InventoryEventInterface
+final class InventoryReleased implements InventoryEventInterface, ShouldDispatchAfterCommit
 {
     use Dispatchable;
     use HasInventoryEventData;

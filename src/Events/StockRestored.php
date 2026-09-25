@@ -6,11 +6,12 @@ namespace AIArmada\Inventory\Events;
 
 use AIArmada\Inventory\Enums\AlertStatus;
 use AIArmada\Inventory\Models\InventoryLevel;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class StockRestored
+final class StockRestored implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
     use SerializesModels;

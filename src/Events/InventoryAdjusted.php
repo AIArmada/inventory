@@ -6,11 +6,12 @@ namespace AIArmada\Inventory\Events;
 
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryMovement;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class InventoryAdjusted
+final class InventoryAdjusted implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
     use SerializesModels;

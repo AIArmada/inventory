@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Events;
 
 use AIArmada\Inventory\Models\InventoryLevel;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class OutOfInventory
+final class OutOfInventory implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
     use SerializesModels;

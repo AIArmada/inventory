@@ -11,7 +11,7 @@ use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use InvalidArgumentException;
+use Illuminate\Support\Facades\DB;
 
 /**
  * CartManager decorator that adds inventory allocation functionality.
@@ -147,40 +147,36 @@ final class CartManagerWithInventory implements CartManagerInterface
      *
      * Call this when entering checkout.
      *
+     * The whole batch runs in one outer transaction so a later item failure
+     * rolls back earlier item allocations instead of leaving them reserved.
+     *
      * @param  int  $ttlMinutes  Allocation expiry time
      * @return array<string, Collection<int, InventoryAllocation>> Results per item ID
      */
     public function allocateAllInventory(int $ttlMinutes = 30): array
     {
-        $cart = $this->getCurrentCart();
-        $results = [];
-        $cartIdentifier = $this->getCartIdentifier();
+        return DB::transaction(function () use ($ttlMinutes): array {
+            $cart = $this->getCurrentCart();
+            $results = [];
+            $cartIdentifier = $this->getCartIdentifier();
 
-        foreach ($cart->getItems() as $item) {
-            $model = $item->getAssociatedModel();
+            foreach ($cart->getItems() as $item) {
+                $model = $item->getAssociatedModel();
 
-            if (! $model instanceof Model) {
-                continue;
-            }
+                if (! $model instanceof Model) {
+                    continue;
+                }
 
-            try {
-                $allocations = $this->getAllocationService()->allocate(
+                $results[$item->id] = $this->getAllocationService()->allocate(
                     $model,
                     $item->quantity,
                     $cartIdentifier,
                     $ttlMinutes
                 );
-
-                $results[$item->id] = $allocations;
-            } catch (InvalidArgumentException $e) {
-                // Rollback any successful allocations on failure
-                $this->releaseAllInventory();
-
-                throw $e;
             }
-        }
 
-        return $results;
+            return $results;
+        });
     }
 
     /**

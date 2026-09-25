@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Events;
 
 use AIArmada\Inventory\Models\InventoryBatch;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-final class BatchExpired
+final class BatchExpired implements ShouldDispatchAfterCommit
 {
     use Dispatchable;
     use SerializesModels;
