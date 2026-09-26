@@ -40,10 +40,6 @@ return new class extends Migration
             $table->date('manufactured_at')->nullable();
             $table->date('received_at')->nullable();
 
-            // Ownership/Assignment
-            $table->nullableUuidMorphs('assigned_to');
-            $table->timestampTz('assigned_at')->nullable();
-
             // Sales tracking
             $table->foreignUuid('order_id')->nullable();
             $table->timestampTz('sold_at')->nullable();

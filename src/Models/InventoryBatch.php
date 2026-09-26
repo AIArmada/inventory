@@ -47,8 +47,6 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $purchase_order_number
  * @property string|null $quarantine_reason
  * @property CarbonImmutable|null $quarantined_at
- * @property CarbonImmutable|null $quality_checked_at
- * @property string|null $quality_status
  * @property string|null $recall_reason
  * @property CarbonImmutable|null $recalled_at
  * @property array<string, mixed>|null $metadata
@@ -109,8 +107,6 @@ final class InventoryBatch extends Model implements Auditable
         'purchase_order_number',
         'quarantine_reason',
         'quarantined_at',
-        'quality_checked_at',
-        'quality_status',
         'recall_reason',
         'recalled_at',
         'metadata',
@@ -493,7 +489,6 @@ final class InventoryBatch extends Model implements Auditable
             'received_at' => 'immutable_datetime',
             'expires_at' => 'immutable_datetime',
             'quarantined_at' => 'immutable_datetime',
-            'quality_checked_at' => 'immutable_datetime',
             'recalled_at' => 'immutable_datetime',
             'metadata' => 'array',
         ];

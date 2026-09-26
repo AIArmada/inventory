@@ -40,8 +40,6 @@ return new class extends Migration
 
             $table->string('quarantine_reason')->nullable();
             $table->timestampTz('quarantined_at')->nullable();
-            $table->timestampTz('quality_checked_at')->nullable();
-            $table->string('quality_status')->nullable();
 
             $table->string('recall_reason')->nullable();
             $table->timestampTz('recalled_at')->nullable();

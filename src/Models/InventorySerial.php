@@ -45,9 +45,6 @@ use Spatie\ModelStates\HasStates;
  * @property CarbonImmutable|null $warranty_expires_at
  * @property CarbonImmutable|null $manufactured_at
  * @property CarbonImmutable|null $received_at
- * @property string|null $assigned_to_type
- * @property string|null $assigned_to_id
- * @property CarbonImmutable|null $assigned_at
  * @property string|null $order_id
  * @property CarbonImmutable|null $sold_at
  * @property string|null $customer_id
@@ -62,7 +59,6 @@ use Spatie\ModelStates\HasStates;
  * @property-read InventoryLocation|null $location
  * @property-read InventoryBatch|null $batch
  * @property-read Model $inventoryable
- * @property-read Model|null $assignedTo
  * @property-read Collection<int, InventorySerialHistory> $history
  */
 final class InventorySerial extends Model implements Auditable
@@ -99,9 +95,6 @@ final class InventorySerial extends Model implements Auditable
         'warranty_expires_at',
         'manufactured_at',
         'received_at',
-        'assigned_to_type',
-        'assigned_to_id',
-        'assigned_at',
         'order_id',
         'sold_at',
         'customer_id',
@@ -127,9 +120,6 @@ final class InventorySerial extends Model implements Auditable
             'warranty_expires_at',
             'manufactured_at',
             'received_at',
-            'assigned_to_type',
-            'assigned_to_id',
-            'assigned_at',
             'order_id',
             'sold_at',
             'customer_id',
@@ -174,14 +164,6 @@ final class InventorySerial extends Model implements Auditable
     public function batch(): BelongsTo
     {
         return $this->belongsTo(InventoryBatch::class, 'batch_id');
-    }
-
-    /**
-     * Get the assigned to model.
-     */
-    public function assignedTo(): MorphTo
-    {
-        return $this->morphTo('assigned_to');
     }
 
     /**
@@ -513,7 +495,6 @@ final class InventorySerial extends Model implements Auditable
             'warranty_expires_at' => 'date',
             'manufactured_at' => 'date',
             'received_at' => 'date',
-            'assigned_at' => 'immutable_datetime',
             'sold_at' => 'immutable_datetime',
             'metadata' => 'array',
         ];

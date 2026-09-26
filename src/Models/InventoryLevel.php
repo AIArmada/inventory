@@ -39,11 +39,9 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property int|null $max_stock
  * @property string|null $alert_status
  * @property CarbonImmutable|null $last_alert_at
- * @property CarbonImmutable|null $last_stock_check_at
  * @property string $unit_of_measure
  * @property float $unit_conversion_factor
  * @property int|null $lead_time_days
- * @property string|null $preferred_supplier_id
  * @property string|null $allocation_strategy
  * @property array<string, mixed>|null $metadata
  * @property CarbonImmutable $created_at
@@ -100,11 +98,9 @@ final class InventoryLevel extends Model implements Auditable
         'max_stock',
         'alert_status',
         'last_alert_at',
-        'last_stock_check_at',
         'unit_of_measure',
         'unit_conversion_factor',
         'lead_time_days',
-        'preferred_supplier_id',
         'allocation_strategy',
         'metadata',
     ];
@@ -462,7 +458,6 @@ final class InventoryLevel extends Model implements Auditable
             'lead_time_days' => 'integer',
             'unit_conversion_factor' => 'decimal:4',
             'last_alert_at' => 'immutable_datetime',
-            'last_stock_check_at' => 'immutable_datetime',
             'metadata' => 'array',
         ];
     }

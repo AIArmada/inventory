@@ -24,7 +24,6 @@ final class InventorySupplierLeadtimeFactory extends Factory
             'inventoryable_type' => Model::class,
             'inventoryable_id' => $this->faker->uuid(),
             'supplier_id' => $this->faker->uuid(),
-            'supplier_name' => $this->faker->company(),
             'lead_time_days' => $this->faker->numberBetween(3, 14),
             'lead_time_variance_days' => $this->faker->numberBetween(0, 5),
             'unit_cost_minor' => $this->faker->numberBetween(1000, 10000),

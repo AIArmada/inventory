@@ -25,11 +25,9 @@ return new class extends Migration
             $table->string('allocation_strategy')->nullable();
             $table->string('alert_status')->nullable();
             $table->timestampTz('last_alert_at')->nullable();
-            $table->timestampTz('last_stock_check_at')->nullable();
             $table->string('unit_of_measure')->default('each');
             $table->decimal('unit_conversion_factor', 10, 4)->default(1);
             $table->unsignedInteger('lead_time_days')->nullable();
-            $table->foreignUuid('preferred_supplier_id')->nullable();
             $table->nullableUuidMorphs('owner');
             $jsonType = commerce_json_column_type('inventory', 'jsonb');
             $table->{$jsonType}('metadata')->nullable();

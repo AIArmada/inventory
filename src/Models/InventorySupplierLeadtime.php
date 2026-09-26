@@ -25,7 +25,6 @@ use OwenIt\Auditing\Contracts\Auditable;
  * @property string|null $owner_type
  * @property int|string|null $owner_id
  * @property string|null $supplier_id
- * @property string|null $supplier_name
  * @property int $lead_time_days
  * @property int $lead_time_variance_days
  * @property int $minimum_order_quantity
@@ -57,7 +56,6 @@ final class InventorySupplierLeadtime extends Model implements Auditable
         'inventoryable_type',
         'inventoryable_id',
         'supplier_id',
-        'supplier_name',
         'lead_time_days',
         'lead_time_variance_days',
         'minimum_order_quantity',
@@ -78,7 +76,6 @@ final class InventorySupplierLeadtime extends Model implements Auditable
             'inventoryable_type',
             'inventoryable_id',
             'supplier_id',
-            'supplier_name',
             'lead_time_days',
             'lead_time_variance_days',
             'minimum_order_quantity',

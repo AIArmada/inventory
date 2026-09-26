@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('inventoryable_type');
             $table->uuid('inventoryable_id');
             $table->foreignUuid('supplier_id')->nullable();
-            $table->string('supplier_name')->nullable();
             $table->integer('lead_time_days');
             $table->integer('lead_time_variance_days')->default(0);
             $table->integer('minimum_order_quantity')->default(1);
