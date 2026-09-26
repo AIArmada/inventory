@@ -60,8 +60,9 @@ InventoryAllocation::extendAllocations($cartId, minutes: 30);
 
 **Solution:**
 ```php
-// Check batch statuses
-$batches = InventoryBatch::forModel($product)
+// Check batch statuses — filter by the inventoryable yourself
+$batches = InventoryBatch::where('inventoryable_type', $product->getMorphClass())
+    ->where('inventoryable_id', $product->getKey())
     ->where('location_id', $location->id)
     ->get();
 
@@ -72,7 +73,6 @@ foreach ($batches as $batch) {
         'on_hand' => $batch->quantity_on_hand,
         'reserved' => $batch->quantity_reserved,
         'available' => $batch->available,
-        'is_quarantined' => $batch->is_quarantined,
         'is_expired' => $batch->isExpired(),
     ]);
 }
@@ -141,10 +141,6 @@ echo "Cost layers: {$layerCount}";
 $stdCostCount = InventoryStandardCost::current()->count();
 echo "Standard costs: {$stdCostCount}";
 
-// Create cost layers when receiving
-Inventory::receive($product, 100, $location->id, [
-    'unit_cost_minor' => 1500,
-]);
 ```
 
 ### "Invalid location for current owner" error
@@ -265,8 +261,7 @@ foreach ($allocations as $alloc) {
 
 1. Review the current package docs in this folder first
 2. Review the test suite in `tests/src/Inventory/` for usage examples
-3. If you need historical fix context, see the [archived audit](archive/AUDIT-2025-12-15.md)
-4. Open an issue on GitHub with:
+3. Open an issue on GitHub with:
    - Laravel version
    - Package version
    - Minimal reproduction code

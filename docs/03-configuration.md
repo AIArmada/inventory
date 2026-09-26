@@ -8,15 +8,32 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 
 ## Database
 
+The shipped config builds every table name from a single prefix variable:
+
 ```php
+$tablePrefix = 'inventory_';
+
 'database' => [
-    'table_prefix' => 'inventory_',
+    'table_prefix' => $tablePrefix,
     'tables' => [
-        'locations' => 'inventory_locations',
-        'levels' => 'inventory_levels',
-        'movements' => 'inventory_movements',
-        // ... all table names
+        'locations' => $tablePrefix . 'locations',
+        'levels' => $tablePrefix . 'levels',
+        'movements' => $tablePrefix . 'movements',
+        'allocations' => $tablePrefix . 'allocations',
+        'batches' => $tablePrefix . 'batches',
+        'serials' => $tablePrefix . 'serials',
+        'serial_history' => $tablePrefix . 'serial_history',
+        'cost_layers' => $tablePrefix . 'cost_layers',
+        'standard_costs' => $tablePrefix . 'standard_costs',
+        'valuation_snapshots' => $tablePrefix . 'valuation_snapshots',
+        'backorders' => $tablePrefix . 'backorders',
+        'demand_history' => $tablePrefix . 'demand_history',
+        'supplier_leadtimes' => $tablePrefix . 'supplier_leadtimes',
+        'reorder_suggestions' => $tablePrefix . 'reorder_suggestions',
+        'reservations' => $tablePrefix . 'reservations',
+        'operations' => $tablePrefix . 'operations',
     ],
+    'json_column_type' => 'jsonb',
 ],
 ```
 
@@ -24,6 +41,7 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 |--------|---------|-------------|
 | `table_prefix` | `inventory_` | Prefix for all inventory tables |
 | `tables` | Array | Override individual table names |
+| `json_column_type` | `jsonb` | JSON column type used by the inventory migrations |
 
 ## Defaults
 
@@ -127,6 +145,18 @@ When enabled, all inventory operations are automatically scoped to the current o
 | `events` | `[]` | Custom payment events to listen for |
 
 By default, the package listens to Cashier/CashierChip payment events. Add custom events to the `events` array.
+
+## Orders Integration
+
+```php
+'orders' => [
+    'enabled' => true,
+],
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `enabled` | `true` | Listen for the orders package's `InventoryDeductionRequired` and `InventoryReleaseRequired` events |
 
 ## Events
 

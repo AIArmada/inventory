@@ -149,7 +149,7 @@ Costing adapters are named services under `Services/Costing/` and are wired dire
 
 The export and report registries provide `register()` and `get()` methods, making those surfaces extensible without modifying core code.
 
-> [!WARNING]
+> **warning**
 > `CostingMethodRegistry` and `AllocationStrategyRegistry` are removed. Migrate costing integrations to `ValuationService` and keep custom costing adapters in its explicit method map; allocation uses the `AllocationStrategy` enum and service match directly.
 
 ## Next Steps

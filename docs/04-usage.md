@@ -190,13 +190,15 @@ use AIArmada\Inventory\Facades\Inventory;
 // Basic receive
 Inventory::receive($product, 100, $location->id);
 
-// With options
-Inventory::receive($product, 100, $location->id, [
-    'reference' => 'PO-2024-001',
-    'unit_cost_minor' => 1500, // $15.00
-    'batch_number' => 'BATCH-001',
-    'expires_at' => now()->addMonths(6),
-]);
+// With options — the 4th argument is a reason string, then note/userId
+Inventory::receive(
+    $product,
+    100,
+    $location->id,
+    reason: 'PO-2024-001',
+    note: 'BATCH-001',
+    userId: (string) auth()->id(),
+);
 ```
 
 ### Shipping Inventory
@@ -206,10 +208,14 @@ Inventory::receive($product, 100, $location->id, [
 Inventory::ship($product, 10, $location->id);
 
 // With options
-Inventory::ship($product, 10, $location->id, [
-    'reference' => 'ORD-2024-001',
-    'actor_id' => auth()->id(),
-]);
+Inventory::ship(
+    $product,
+    10,
+    $location->id,
+    reason: 'Order fulfillment',
+    reference: 'ORD-2024-001',
+    userId: (string) auth()->id(),
+);
 ```
 
 ### Transferring Between Locations
@@ -217,25 +223,18 @@ Inventory::ship($product, 10, $location->id, [
 ```php
 Inventory::transfer(
     $product,
-    quantity: 25,
     fromLocationId: $warehouseA->id,
     toLocationId: $warehouseB->id,
-    options: ['reference' => 'TRF-001']
+    quantity: 25,
+    note: 'TRF-001',
 );
 ```
 
 ### Adjusting Inventory
 
 ```php
-// Positive adjustment (add stock)
-Inventory::adjust($product, 5, $location->id, [
-    'reason' => 'Found during stock count',
-]);
-
-// Negative adjustment (remove stock)
-Inventory::adjust($product, -3, $location->id, [
-    'reason' => 'Damaged goods',
-]);
+// Set stock to an exact counted quantity
+Inventory::adjust($product, newQuantity: 50, locationId: $location->id, reason: 'Stock count reconciliation');
 ```
 
 ### Checking Availability
@@ -304,7 +303,7 @@ $available = InventoryAllocation::getTotalAvailable($product);
 ### Creating Batches
 
 ```php
-use AIArmada\Inventory\Services\BatchService;
+use AIArmada\Inventory\Services\Batch\BatchService;
 
 $batchService = app(BatchService::class);
 
@@ -321,7 +320,7 @@ $batch = $batchService->createBatch(
 ### FEFO Allocation
 
 ```php
-use AIArmada\Inventory\Services\BatchAllocationService;
+use AIArmada\Inventory\Services\Batch\BatchAllocationService;
 
 $batchAllocationService = app(BatchAllocationService::class);
 
@@ -362,7 +361,7 @@ $batchService->recall($batch, 'Product recall notice #123');
 ### Registering Serials
 
 ```php
-use AIArmada\Inventory\Services\SerialService;
+use AIArmada\Inventory\Services\Serial\SerialService;
 
 $serialService = app(SerialService::class);
 
@@ -417,7 +416,7 @@ $options = SerialStatus::options();
 ### Serial Lookup
 
 ```php
-use AIArmada\Inventory\Services\SerialLookupService;
+use AIArmada\Inventory\Services\Serial\SerialLookupService;
 
 $lookup = app(SerialLookupService::class);
 
@@ -439,7 +438,7 @@ $expiring = $lookup->getExpiringWarranty(daysAhead: 30);
 ### FIFO Costing
 
 ```php
-use AIArmada\Inventory\Services\FifoCostService;
+use AIArmada\Inventory\Services\Costing\FifoCostService;
 
 $fifo = app(FifoCostService::class);
 
@@ -458,7 +457,7 @@ $result = $fifo->consume($product, 20);
 ### Weighted Average Costing
 
 ```php
-use AIArmada\Inventory\Services\WeightedAverageCostService;
+use AIArmada\Inventory\Services\Costing\WeightedAverageCostService;
 
 $wac = app(WeightedAverageCostService::class);
 
@@ -473,7 +472,7 @@ $avgCost = $wac->getCurrentAverageCost($product);
 ### Standard Costing
 
 ```php
-use AIArmada\Inventory\Services\StandardCostService;
+use AIArmada\Inventory\Services\Costing\StandardCostService;
 
 $stdCost = app(StandardCostService::class);
 
@@ -493,7 +492,7 @@ $variance = $stdCost->calculateVariance($product, actualCostMinor: 1600);
 ### Valuation Snapshots
 
 ```php
-use AIArmada\Inventory\Services\ValuationService;
+use AIArmada\Inventory\Services\Costing\ValuationService;
 
 $valuationService = app(ValuationService::class);
 
@@ -507,7 +506,7 @@ $historicalSnapshot = $valuationService->getSnapshot($snapshotDate);
 ## Demand Forecasting
 
 ```php
-use AIArmada\Inventory\Services\DemandForecastService;
+use AIArmada\Inventory\Services\Stock\DemandForecastService;
 
 $forecast = app(DemandForecastService::class);
 
@@ -528,7 +527,7 @@ $trend = $forecast->calculateTrend($product); // positive = increasing, negative
 ## Replenishment
 
 ```php
-use AIArmada\Inventory\Services\ReplenishmentService;
+use AIArmada\Inventory\Services\Stock\ReplenishmentService;
 
 $replenishment = app(ReplenishmentService::class);
 
@@ -623,7 +622,15 @@ php artisan inventory:cleanup-allocations --dry-run
 php artisan inventory:create-valuation-snapshot
 php artisan inventory:create-valuation-snapshot --method=weighted_average
 php artisan inventory:create-valuation-snapshot --location=uuid-here
+php artisan inventory:create-valuation-snapshot --date=2026-01-31
 ```
+
+| Command | Option | Default | Purpose |
+|---------|--------|---------|---------|
+| `inventory:cleanup-allocations` | `--dry-run` | off | Report what would be cleaned without changing anything |
+| `inventory:create-valuation-snapshot` | `--method=` | `fifo` | Costing method (`fifo`, `weighted_average`, `standard`, `lifo`, `specific_identification`) |
+| `inventory:create-valuation-snapshot` | `--location=` | all locations | Limit the snapshot to one location UUID |
+| `inventory:create-valuation-snapshot` | `--date=` | today | Snapshot date |
 
 ## Using Traits on Your Models
 
@@ -667,5 +674,5 @@ class Product extends Model
 // Now you can:
 $product->serials;
 $product->availableSerials();
-$product->getSerialByNumber('SN-001');
+$product->findSerial('SN-001');
 ```
