@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Listeners;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryOperation;
 use AIArmada\Inventory\Services\InventoryService;
@@ -11,11 +12,15 @@ use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Orders\Events\InventoryDeductionRequired;
 use AIArmada\Orders\Models\Order;
+use AIArmada\Orders\States\Canceled;
+use AIArmada\Orders\States\Fraud;
+use AIArmada\Orders\States\Refunded;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 /**
  * Deducts inventory when an order payment is confirmed.
@@ -38,11 +43,43 @@ final class DeductInventoryFromOrder
 
     public function handle(InventoryDeductionRequired $event): void
     {
-        $order = $event->order;
-
         if (! config('inventory.orders.enabled', true)) {
             return;
         }
+
+        // A half-null tuple is corrupt data, not a global order: the
+        // resolver maps any null field to global context, so reject the
+        // asymmetric shape before it can run as global work.
+        if (($event->owner_type === null) !== ($event->owner_id === null)) {
+            Log::warning('Inventory deduction skipped: order owner tuple is half-null.', [
+                'order_id' => $event->order->getKey(),
+            ]);
+
+            return;
+        }
+
+        // This chain runs on the queue worker, where no ambient owner
+        // survives serialization. Restore the order's owner from the
+        // event tuple so owner-scoped lookups resolve correctly.
+        try {
+            $owner = OwnerContext::fromTypeAndId($event->owner_type, $event->owner_id);
+        } catch (InvalidArgumentException $exception) {
+            Log::warning('Inventory deduction skipped: order owner tuple is malformed.', [
+                'order_id' => $event->order->getKey(),
+                'reason' => $exception->getMessage(),
+            ]);
+
+            return;
+        }
+
+        OwnerContext::withOwner($owner, function () use ($event): void {
+            $this->handleScoped($event);
+        });
+    }
+
+    private function handleScoped(InventoryDeductionRequired $event): void
+    {
+        $order = $event->order;
 
         $operation = $this->resolveOrCreateOperation($order, InventoryOperation::KIND_DEDUCTION);
 
@@ -63,6 +100,29 @@ final class DeductInventoryFromOrder
             )->firstOrFail();
 
             if ($operation->status === InventoryOperation::STATUS_COMPLETED) {
+                return;
+            }
+
+            // The event carries a serialized copy: re-read the live
+            // lifecycle under a lock so a delayed deduction never
+            // consumes stock after a terminal transition. Same terminal
+            // set as the outbox relay suppression.
+            $fresh = Order::query()->whereKey($order->getKey())->lockForUpdate()->first();
+
+            if (! $fresh instanceof Order
+                || $fresh->status instanceof Canceled
+                || $fresh->status instanceof Refunded
+                || $fresh->status instanceof Fraud
+            ) {
+                Log::info('Inventory deduction skipped: order no longer deductible.', [
+                    'order_id' => $order->getKey(),
+                ]);
+
+                $operation->update([
+                    'status' => InventoryOperation::STATUS_COMPLETED,
+                    'completed_at' => CarbonImmutable::now(),
+                ]);
+
                 return;
             }
 

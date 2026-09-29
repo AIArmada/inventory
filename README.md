@@ -106,9 +106,6 @@ Set in config or environment:
 ```php
 // config/inventory.php
 'allocation_strategy' => 'priority',
-
-// Or via .env
-INVENTORY_ALLOCATION_STRATEGY=priority
 ```
 
 ### Per-Product Strategy
@@ -169,8 +166,8 @@ $allocations = Cart::allocateAllInventory(30);  // 30 min TTL
 // Validate availability
 $validation = Cart::validateInventory();
 if (!$validation['available']) {
-    foreach ($validation['issues'] as $issue) {
-        // $issue['itemId'], $issue['requested'], $issue['available']
+    foreach ($validation['issues'] as $itemId => $issue) {
+        // $issue['requested'], $issue['available']
     }
 }
 

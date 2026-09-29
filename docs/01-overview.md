@@ -33,7 +33,7 @@ The `aiarmada/inventory` package owns stock state, warehouse structure, allocati
 
 - **Models** — `InventoryLocation`, `InventoryLevel`, `InventoryMovement`, `InventoryAllocation`, `InventoryBatch`, `InventorySerial`, `InventoryCostLayer`, `InventoryValuationSnapshot`, `InventoryBackorder`, `InventoryDemandHistory`, `InventorySupplierLeadtime`, `InventoryReorderSuggestion`
 - **Actions (16)** — `ReceiveInventory`, `ShipInventory`, `TransferInventory`, `AdjustInventory`, `AllocateStock`, `CommitStock`, `ReleaseStock`, `CreateBatch`, `RecordSerial`, `CreateBackorder`, `ResolveBackorder`, `ProcessExpiredBatches`, `CheckLowInventory`, `ApproveReorderSuggestion`, `RejectReorderSuggestion`, `CreateValuationSnapshot`
-- **Contracts (6)** — `InventoryableInterface`, `CheckoutInventoryServiceInterface`, `CostingMethodInterface`, `ProvidesInventoryCommitContext`, `ExportInterface`, `ReportInterface`
+- **Contracts (6)** — `InventoryableInterface`, `CheckoutReservationServiceInterface`, `CostingMethodInterface`, `ProvidesInventoryCommitContext`, `ExportInterface`, `ReportInterface`
 - **Facades** — `Inventory`, `InventoryAllocation`
 - **Services** — reorganized into subdirectories: `Batch/`, `Costing/`, `Serial/`, `Stock/`
 - **Support registries** — `ExportRegistry`, `ReportRegistry`
@@ -51,13 +51,13 @@ The `aiarmada/inventory` package owns stock state, warehouse structure, allocati
 - **Temperature zones** for cold chain compliance
 - **Hazmat certification** tracking per location
 - **Capacity management** with current/max utilization tracking
-- **Coordinates** (lat/lng) for logistics optimization
+- **Coordinates** (x/y/z warehouse coordinates) for logistics optimization
 
 ### Stock Management
 - **Real-time stock levels** per SKU per location
 - **Reserved quantity** tracking for cart allocations
 - **Reorder points** and **safety stock** thresholds
-- **Alert statuses**: None, LowStock, SafetyBreached, OutOfStock, OverStock
+- **Alert statuses**: None, LowStock, SafetyBreached, OutOfStock, OverStock, Expiring, Expired
 - **Lead time** tracking for replenishment calculations
 
 ### Batch/Lot Tracking
@@ -69,7 +69,7 @@ The `aiarmada/inventory` package owns stock state, warehouse structure, allocati
 
 ### Serial Number Management
 - **Full lifecycle tracking**: Available → Reserved → Sold → Returned → Disposed
-- **Condition tracking**: New, Refurbished, Used, Damaged, ForParts
+- **Condition tracking**: New, LikeNew, Refurbished, Used, Damaged, ForParts
 - **Warranty expiry** management
 - **Customer/order** association
 - **Complete audit history** via serial history records
@@ -110,7 +110,7 @@ The `aiarmada/inventory` package owns stock state, warehouse structure, allocati
                                 │
 ┌─────────────────────────────────────────────────────────────────┐
 │                   Contracts (6)                                 │
-│  InventoryableInterface       CheckoutInventoryServiceInterface │
+│  InventoryableInterface       CheckoutReservationServiceInterface │
 │  CostingMethodInterface       ProvidesInventoryCommitContext    │
 │  ExportInterface              ReportInterface                   │
 └─────────────────────────────────────────────────────────────────┘

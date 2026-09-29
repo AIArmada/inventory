@@ -42,9 +42,9 @@ keywords:
 - Owner/security: Custom InventoryOwnerScope; key inventory.owner.
 
 ## Key surfaces
-- Models: `InventoryAllocation`, `InventoryBackorder`, `InventoryBatch`, `InventoryCostLayer`, `InventoryDemandHistory`, `InventoryLevel`, `InventoryLocation`, `InventoryMovement`, `InventoryOperation`, `InventoryReorderSuggestion`, `InventoryReservation`, `InventorySerial`, `InventorySerialHistory`, `InventoryStandardCost`, `InventorySupplierLeadtime`, `InventoryValuationSnapshot` (all 16 are owner-scoped)
+- Models: `InventoryAllocation`, `InventoryBackorder`, `InventoryBatch`, `InventoryCostLayer`, `InventoryDemandHistory`, `InventoryLevel`, `InventoryLocation`, `InventoryMovement`, `InventoryOperation`, `InventoryReorderSuggestion`
 - Actions/Services: `Actions/AdjustInventory`, `Actions/AllocateStock`, `Actions/ApproveReorderSuggestion`, `Actions/CheckLowInventory`, `Actions/CommitStock`, `Actions/CreateBackorder`, `Actions/CreateBatch`, `Actions/CreateValuationSnapshot`
-- Config `inventory.php`: `database` (→ `table_prefix`, `json_column_type`, `tables.*`), `defaults` (→ `currency`), `models` (→ `product`, `variant`), `default_reorder_point`, `allocation_strategy`, `allocation_ttl_minutes`, `allow_split_allocation`, `owner` (→ `enabled`, `include_global`, `auto_assign_on_create`), `cart` (→ `enabled`, `validate_on_add`, `auto_allocate_on_add`, `reserve_on_checkout`, `block_checkout_on_insufficient`, `allow_backorder`, `max_backorder_quantity`, `allocation_metadata_key`, `backorder_metadata_key`), `payment` (→ `auto_commit`, `events`), `orders` (→ `enabled`), `events` (→ `low_inventory`, `out_of_inventory`), `cleanup` (→ `keep_expired_for_minutes`)
+- Config `inventory.php`: `locations`, `levels`, `movements`, `allocations`, `batches`, `serials`, `serial_history`, `cost_layers`, `standard_costs`, `valuation_snapshots`
 
 ## Docs map
 - Start: `01-overview` → `03-configuration` → `04-usage` → `99-troubleshooting`

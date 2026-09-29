@@ -8,32 +8,15 @@ After publishing the config file (`php artisan vendor:publish --tag=inventory-co
 
 ## Database
 
-The shipped config builds every table name from a single prefix variable:
-
 ```php
-$tablePrefix = 'inventory_';
-
 'database' => [
-    'table_prefix' => $tablePrefix,
+    'table_prefix' => 'inventory_',
     'tables' => [
-        'locations' => $tablePrefix . 'locations',
-        'levels' => $tablePrefix . 'levels',
-        'movements' => $tablePrefix . 'movements',
-        'allocations' => $tablePrefix . 'allocations',
-        'batches' => $tablePrefix . 'batches',
-        'serials' => $tablePrefix . 'serials',
-        'serial_history' => $tablePrefix . 'serial_history',
-        'cost_layers' => $tablePrefix . 'cost_layers',
-        'standard_costs' => $tablePrefix . 'standard_costs',
-        'valuation_snapshots' => $tablePrefix . 'valuation_snapshots',
-        'backorders' => $tablePrefix . 'backorders',
-        'demand_history' => $tablePrefix . 'demand_history',
-        'supplier_leadtimes' => $tablePrefix . 'supplier_leadtimes',
-        'reorder_suggestions' => $tablePrefix . 'reorder_suggestions',
-        'reservations' => $tablePrefix . 'reservations',
-        'operations' => $tablePrefix . 'operations',
+        'locations' => 'inventory_locations',
+        'levels' => 'inventory_levels',
+        'movements' => 'inventory_movements',
+        // ... all table names
     ],
-    'json_column_type' => 'jsonb',
 ],
 ```
 
@@ -41,7 +24,7 @@ $tablePrefix = 'inventory_';
 |--------|---------|-------------|
 | `table_prefix` | `inventory_` | Prefix for all inventory tables |
 | `tables` | Array | Override individual table names |
-| `json_column_type` | `jsonb` | JSON column type used by the inventory migrations |
+| `json_column_type` | `jsonb` | JSON column type for JSON-capable columns |
 
 ## Defaults
 
@@ -156,7 +139,7 @@ By default, the package listens to Cashier/CashierChip payment events. Add custo
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `enabled` | `true` | Listen for the orders package's `InventoryDeductionRequired` and `InventoryReleaseRequired` events |
+| `enabled` | `true` | Listen for order inventory deduction/release events |
 
 ## Events
 

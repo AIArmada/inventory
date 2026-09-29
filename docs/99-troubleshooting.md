@@ -60,8 +60,9 @@ InventoryAllocation::extendAllocations($cartId, minutes: 30);
 
 **Solution:**
 ```php
-// Check batch statuses — filter by the inventoryable yourself
-$batches = InventoryBatch::where('inventoryable_type', $product->getMorphClass())
+// Check batch statuses
+$batches = InventoryBatch::query()
+    ->where('inventoryable_type', $product->getMorphClass())
     ->where('inventoryable_id', $product->getKey())
     ->where('location_id', $location->id)
     ->get();
@@ -73,6 +74,7 @@ foreach ($batches as $batch) {
         'on_hand' => $batch->quantity_on_hand,
         'reserved' => $batch->quantity_reserved,
         'available' => $batch->available,
+        'quarantined_at' => $batch->quarantined_at,
         'is_expired' => $batch->isExpired(),
     ]);
 }
@@ -141,6 +143,10 @@ echo "Cost layers: {$layerCount}";
 $stdCostCount = InventoryStandardCost::current()->count();
 echo "Standard costs: {$stdCostCount}";
 
+// Create cost layers alongside receiving (receive() takes no cost options)
+Inventory::receive($product, $location->id, 100);
+app(\AIArmada\Inventory\Services\Costing\FifoCostService::class)
+    ->addLayer($product, 100, unitCostMinor: 1500, locationId: $location->id);
 ```
 
 ### "Invalid location for current owner" error
@@ -179,7 +185,7 @@ Check for exceptions in logs. Wrap critical operations:
 ```php
 try {
     DB::transaction(function () use ($product, $location) {
-        Inventory::receive($product, 100, $location->id);
+        Inventory::receive($product, $location->id, 100);
     });
 } catch (Throwable $e) {
     Log::error('Inventory receive failed', ['error' => $e->getMessage()]);
@@ -209,7 +215,7 @@ $schedule->command('inventory:cleanup-allocations')->everyFifteenMinutes();
 $items->chunk(100)->each(function ($chunk) use ($location) {
     DB::transaction(function () use ($chunk, $location) {
         foreach ($chunk as $item) {
-            Inventory::receive($item['product'], $item['quantity'], $location->id);
+            Inventory::receive($item['product'], $location->id, $item['quantity']);
         }
     });
 });
@@ -231,9 +237,9 @@ $items->chunk(100)->each(function ($chunk) use ($location) {
 Then log in your listeners:
 ```php
 Log::channel('inventory')->debug('Inventory received', [
-    'product_id' => $event->model->id,
-    'quantity' => $event->quantity,
-    'location_id' => $event->locationId,
+    'inventoryable_id' => $event->inventoryable->id,
+    'quantity' => $event->movement->quantity,
+    'location_id' => $event->movement->to_location_id,
 ]);
 ```
 

@@ -36,20 +36,22 @@ This creates the following tables (with configurable prefix):
 
 | Table | Purpose |
 |-------|---------|
-| `inv_locations` | Warehouse/bin locations |
-| `inv_levels` | Stock levels per SKU per location |
-| `inv_movements` | Movement audit trail |
-| `inv_allocations` | Cart/order reservations |
-| `inv_batches` | Batch/lot tracking |
-| `inv_serials` | Serial number tracking |
-| `inv_serial_history` | Serial number audit trail |
-| `inv_cost_layers` | FIFO cost layers |
-| `inv_standard_costs` | Standard cost records |
-| `inv_valuation_snapshots` | Period-end valuations |
-| `inv_backorders` | Backorder tracking |
-| `inv_demand_history` | Demand records for forecasting |
-| `inv_supplier_leadtimes` | Supplier lead time data |
-| `inv_reorder_suggestions` | Auto-generated reorder recommendations |
+| `inventory_locations` | Warehouse/bin locations |
+| `inventory_levels` | Stock levels per SKU per location |
+| `inventory_movements` | Movement audit trail |
+| `inventory_allocations` | Cart/order reservations |
+| `inventory_batches` | Batch/lot tracking |
+| `inventory_serials` | Serial number tracking |
+| `inventory_serial_history` | Serial number audit trail |
+| `inventory_cost_layers` | FIFO cost layers |
+| `inventory_standard_costs` | Standard cost records |
+| `inventory_valuation_snapshots` | Period-end valuations |
+| `inventory_backorders` | Backorder tracking |
+| `inventory_demand_history` | Demand records for forecasting |
+| `inventory_supplier_leadtimes` | Supplier lead time data |
+| `inventory_reorder_suggestions` | Auto-generated reorder recommendations |
+| `inventory_reservations` | Checkout reservation groups |
+| `inventory_operations` | Idempotent order-driven operation log |
 
 ## Optional: Cart Integration
 
@@ -100,9 +102,9 @@ class Product extends Model
 This provides:
 - `$product->inventoryLevels()` - Stock levels across locations
 - `$product->inventoryMovements()` - Movement history
-- `$product->batches()` - Batch/lot records
-- `$product->serials()` - Serial numbers
-- And read helpers such as `getTotalAvailable()` and `hasInventory()`
+- And read helpers such as `getTotalAvailable()`, `getTotalOnHand()`, `getAvailability()`, and `hasInventory()`
+
+Serial numbers come from the separate `HasSerialNumbers` trait, and batch records via `Services\Batch\BatchService::getBatchesForModel()`.
 
 Stock mutations belong to `InventoryService`; cart allocations belong to
 `InventoryAllocationService` or the checkout reservation contract.
@@ -133,8 +135,9 @@ The package defines **6 contracts** in `Contracts/` that you can implement to ex
 | Contract | Purpose |
 |----------|---------|
 | `InventoryableInterface` | Make any model inventory-trackable |
-| `CheckoutInventoryServiceInterface` | Simplified checkout integration |
+| `CheckoutReservationServiceInterface` | Checkout reservation groups |
 | `CostingMethodInterface` | Built-in costing adapter contract |
+| `ProvidesInventoryCommitContext` | Cart/order context for payment commit listeners |
 | `ExportInterface` | Custom export formats |
 | `ReportInterface` | Custom report types |
 
@@ -149,7 +152,7 @@ Costing adapters are named services under `Services/Costing/` and are wired dire
 
 The export and report registries provide `register()` and `get()` methods, making those surfaces extensible without modifying core code.
 
-> **warning**
+> [!WARNING]
 > `CostingMethodRegistry` and `AllocationStrategyRegistry` are removed. Migrate costing integrations to `ValuationService` and keep custom costing adapters in its explicit method map; allocation uses the `AllocationStrategy` enum and service match directly.
 
 ## Next Steps

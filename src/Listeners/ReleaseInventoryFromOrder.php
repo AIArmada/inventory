@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AIArmada\Inventory\Listeners;
 
+use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Inventory\Enums\MovementType;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Models\InventoryOperation;
@@ -16,6 +17,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use InvalidArgumentException;
 
 /**
  * Releases inventory when an order is cancelled.
@@ -37,11 +39,43 @@ final class ReleaseInventoryFromOrder
 
     public function handle(InventoryReleaseRequired $event): void
     {
-        $order = $event->order;
-
         if (! config('inventory.orders.enabled', true)) {
             return;
         }
+
+        // A half-null tuple is corrupt data, not a global order: the
+        // resolver maps any null field to global context, so reject the
+        // asymmetric shape before it can run as global work.
+        if (($event->owner_type === null) !== ($event->owner_id === null)) {
+            Log::warning('Inventory release skipped: order owner tuple is half-null.', [
+                'order_id' => $event->order->getKey(),
+            ]);
+
+            return;
+        }
+
+        // This chain runs on the queue worker, where no ambient owner
+        // survives serialization. Restore the order's owner from the
+        // event tuple so owner-scoped lookups resolve correctly.
+        try {
+            $owner = OwnerContext::fromTypeAndId($event->owner_type, $event->owner_id);
+        } catch (InvalidArgumentException $exception) {
+            Log::warning('Inventory release skipped: order owner tuple is malformed.', [
+                'order_id' => $event->order->getKey(),
+                'reason' => $exception->getMessage(),
+            ]);
+
+            return;
+        }
+
+        OwnerContext::withOwner($owner, function () use ($event): void {
+            $this->handleScoped($event);
+        });
+    }
+
+    private function handleScoped(InventoryReleaseRequired $event): void
+    {
+        $order = $event->order;
 
         $operation = $this->resolveOrCreateOperation($order, InventoryOperation::KIND_RELEASE);
 
