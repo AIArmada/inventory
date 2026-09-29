@@ -60,9 +60,8 @@ InventoryAllocation::extendAllocations($cartId, minutes: 30);
 
 **Solution:**
 ```php
-// Check batch statuses
-$batches = InventoryBatch::query()
-    ->where('inventoryable_type', $product->getMorphClass())
+// Check batch statuses — filter by the inventoryable yourself
+$batches = InventoryBatch::where('inventoryable_type', $product->getMorphClass())
     ->where('inventoryable_id', $product->getKey())
     ->where('location_id', $location->id)
     ->get();
@@ -144,7 +143,7 @@ $stdCostCount = InventoryStandardCost::current()->count();
 echo "Standard costs: {$stdCostCount}";
 
 // Create cost layers alongside receiving (receive() takes no cost options)
-Inventory::receive($product, $location->id, 100);
+Inventory::receive($product, 100, $location->id);
 app(\AIArmada\Inventory\Services\Costing\FifoCostService::class)
     ->addLayer($product, 100, unitCostMinor: 1500, locationId: $location->id);
 ```

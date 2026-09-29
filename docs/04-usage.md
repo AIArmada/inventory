@@ -191,8 +191,15 @@ use AIArmada\Inventory\Facades\Inventory;
 // Basic receive
 Inventory::receive($product, $location->id, 100);
 
-// With reason and note
-Inventory::receive($product, $location->id, 100, reason: 'PO-2024-001', note: 'First shipment');
+// With options — the 4th argument is a reason string, then note/userId
+Inventory::receive(
+    $product,
+    100,
+    $location->id,
+    reason: 'PO-2024-001',
+    note: 'BATCH-001',
+    userId: (string) auth()->id(),
+);
 ```
 
 ### Shipping Inventory
@@ -201,8 +208,15 @@ Inventory::receive($product, $location->id, 100, reason: 'PO-2024-001', note: 'F
 // Basic ship
 Inventory::ship($product, $location->id, 10);
 
-// With reason and reference
-Inventory::ship($product, $location->id, 10, reason: 'sale', reference: 'ORD-2024-001');
+// With options
+Inventory::ship(
+    $product,
+    10,
+    $location->id,
+    reason: 'Order fulfillment',
+    reference: 'ORD-2024-001',
+    userId: (string) auth()->id(),
+);
 ```
 
 ### Transferring Between Locations
@@ -213,15 +227,15 @@ Inventory::transfer(
     fromLocationId: $warehouseA->id,
     toLocationId: $warehouseB->id,
     quantity: 25,
-    note: 'TRF-001'
+    note: 'TRF-001',
 );
 ```
 
 ### Adjusting Inventory
 
 ```php
-// Set stock to an exact count (adjust takes the new absolute quantity)
-Inventory::adjust($product, $location->id, 55, reason: 'Stock count reconciliation');
+// Set stock to an exact counted quantity
+Inventory::adjust($product, newQuantity: 50, locationId: $location->id, reason: 'Stock count reconciliation');
 ```
 
 ### Checking Availability
@@ -614,7 +628,15 @@ php artisan inventory:cleanup-allocations --dry-run
 php artisan inventory:create-valuation-snapshot
 php artisan inventory:create-valuation-snapshot --method=weighted_average
 php artisan inventory:create-valuation-snapshot --location=uuid-here
+php artisan inventory:create-valuation-snapshot --date=2026-01-31
 ```
+
+| Command | Option | Default | Purpose |
+|---------|--------|---------|---------|
+| `inventory:cleanup-allocations` | `--dry-run` | off | Report what would be cleaned without changing anything |
+| `inventory:create-valuation-snapshot` | `--method=` | `fifo` | Costing method (`fifo`, `weighted_average`, `standard`, `lifo`, `specific_identification`) |
+| `inventory:create-valuation-snapshot` | `--location=` | all locations | Limit the snapshot to one location UUID |
+| `inventory:create-valuation-snapshot` | `--date=` | today | Snapshot date |
 
 ## Using Traits on Your Models
 
