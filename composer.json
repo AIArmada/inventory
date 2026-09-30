@@ -9,7 +9,7 @@
   },
   "require": {
     "aiarmada/commerce-support": "self.version",
-    "php": "^8.4"
+    "php": "^8.5"
   },
   "suggest": {
     "aiarmada/cart": "Required for cart integration features (stock reservation, allocation on checkout)",

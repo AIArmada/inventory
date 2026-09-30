@@ -187,7 +187,7 @@ Inventory::ship($product, $location->id, 5, 'sale', 'ORD-2024-001');
 
 ## Requirements
 
-- PHP 8.4+
+- PHP 8.5+
 - `aiarmada/commerce-support` (required)
 - `aiarmada/cart` (optional, for cart integration)
 
