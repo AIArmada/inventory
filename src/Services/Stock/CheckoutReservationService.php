@@ -39,10 +39,9 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
         }
 
         // Serializes concurrent reserves for the same reference. NULL-owner
-        // rows defeat the composite unique key on MySQL, so the database
-        // alone cannot guarantee idempotent creation on every driver — the
-        // lock is the only serializer there, so losers must wait for it
-        // rather than proceed into the transaction.
+        // rows defeat the composite unique key, so the service lock remains
+        // the serializer for global references even when a partial unique
+        // index provides an additional database guard.
         return Cache::lock($this->reservationLockKey($reference), 10)->block(5, function () use (
             $reference,
             $lines,

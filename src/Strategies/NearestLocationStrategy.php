@@ -132,7 +132,7 @@ final class NearestLocationStrategy implements AllocationStrategyInterface
             $preferred = array_values($context->preferLocationIds);
 
             if (count($preferred) > 0) {
-                // Use CASE WHEN for cross-database compatibility (MySQL FIELD() doesn't work in SQLite)
+                // Use CASE WHEN so this ordering works in PostgreSQL and SQLite.
                 // Bind parameters to avoid SQL injection.
                 $cases = [];
                 $bindings = [];
