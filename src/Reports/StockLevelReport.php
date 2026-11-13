@@ -354,7 +354,7 @@ final class StockLevelReport
      * @return Collection<int, array{
      *     inventoryable_type: string,
      *     inventoryable_id: string,
-     *     location_count: int,
+     *     location_count: non-negative-int,
      *     total_quantity: int,
      *     max_location_quantity: int,
      *     min_location_quantity: int,

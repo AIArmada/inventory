@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Listeners;
 
 use AIArmada\Cart\Cart;
+use AIArmada\Inventory\Cart\InventoryDemandResolver;
 use AIArmada\Inventory\Exceptions\InsufficientInventoryException;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * Reserves (allocates) stock when checkout is initiated.
  *
- * This listener ensures inventory is reserved for the duration
- * of the checkout process to prevent overselling.
+ * Composite lines reserve their actual components multiplied by the package
+ * quantity. Demand for the same inventory model is merged across composite
+ * and standalone cart lines and allocated once, so the parent SKU is never
+ * reserved and components are never double-allocated.
  */
 class ReserveStockOnCheckout
 {
@@ -48,47 +50,51 @@ class ReserveStockOnCheckout
 
         $cartId = (string) $cart->getId();
         $ttlMinutes = (int) config('inventory.allocation_ttl_minutes', 30);
+        $demand = InventoryDemandResolver::forCart($cart->getItems());
         $allocations = [];
         $errors = [];
 
-        foreach ($cart->getItems() as $item) {
-            $model = $item->getAssociatedModel();
-
-            if (! $model instanceof Model) {
-                continue;
-            }
-
+        foreach ($demand as $entry) {
             try {
                 $itemAllocations = $this->allocationService->allocate(
-                    $model,
-                    $item->quantity,
+                    $entry['model'],
+                    $entry['quantity'],
                     $cartId,
                     $ttlMinutes
                 );
 
-                if ($itemAllocations->isNotEmpty()) {
-                    $allocations[$item->id] = [
-                        'item_id' => $item->id,
-                        'item_name' => $item->name,
-                        'quantity' => $item->quantity,
+                if ($itemAllocations->isEmpty()) {
+                    continue;
+                }
+
+                $allocatedAt = CarbonImmutable::now()->toISOString();
+
+                foreach ($entry['sources'] as $itemId => $source) {
+                    $allocations[$itemId] = [
+                        'item_id' => $itemId,
+                        'item_name' => $source['name'],
+                        'quantity' => $source['quantity'],
                         'allocation_count' => $itemAllocations->count(),
-                        'allocated_at' => CarbonImmutable::now()->toISOString(),
+                        'allocated_at' => $allocatedAt,
                     ];
                 }
             } catch (InsufficientInventoryException $e) {
                 if (config('inventory.cart.block_checkout_on_insufficient', true)) {
-                    // Release any allocations we've made so far
+                    // Release every allocation made for this checkout so a
+                    // later component shortage cannot leave partial demand.
                     $this->releaseAllocations($cart, $cartId);
 
                     throw $e;
                 }
 
-                $errors[$item->id] = $e->getMessage();
+                foreach (array_keys($entry['sources']) as $itemId) {
+                    $errors[$itemId] = $e->getMessage();
+                }
             }
         }
 
         // Store allocation metadata in cart
-        if (count($allocations) > 0) {
+        if (count($allocations) > 0 || count($errors) > 0) {
             $cart->setMetadata(self::ALLOCATION_METADATA_KEY, [
                 'allocations' => $allocations,
                 'errors' => $errors,
@@ -115,12 +121,6 @@ class ReserveStockOnCheckout
      */
     private function releaseAllocations(Cart $cart, string $cartId): void
     {
-        foreach ($cart->getItems() as $item) {
-            $model = $item->getAssociatedModel();
-
-            if ($model instanceof Model) {
-                $this->allocationService->release($model, $cartId);
-            }
-        }
+        $this->allocationService->releaseAllForCart($cartId);
     }
 }

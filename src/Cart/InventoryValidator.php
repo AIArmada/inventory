@@ -9,7 +9,6 @@ use AIArmada\Cart\Contracts\CartValidationResult;
 use AIArmada\Cart\Contracts\CartValidatorInterface;
 use AIArmada\Cart\Models\CartItem;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
-use Illuminate\Database\Eloquent\Model;
 
 /**
  * Validates cart items against inventory availability.
@@ -29,19 +28,23 @@ final readonly class InventoryValidator implements CartValidatorInterface
 
     /**
      * Validate the entire cart for inventory availability.
+     *
+     * Composite lines validate their actual component demand, and demand for
+     * the same inventory model is combined across composite and standalone
+     * lines before comparing it with available stock.
      */
     public function validateCart(Cart $cart): CartValidationResult
     {
         $errors = [];
         $metadata = [];
 
-        foreach ($cart->getItems() as $item) {
-            $itemResult = $this->validateItem($item, $cart);
+        if ($this->allowsBackorder()) {
+            return CartValidationResult::valid();
+        }
 
-            if (! $itemResult->isValid) {
-                $errors[$item->id] = $itemResult->message ?? 'Insufficient inventory';
-                $metadata[$item->id] = $itemResult->metadata;
-            }
+        foreach ($this->demandIssues($cart) as $itemId => $issue) {
+            $errors[$itemId] = $issue['message'];
+            $metadata[$itemId] = $issue['metadata'];
         }
 
         if (count($errors) > 0) {
@@ -59,39 +62,74 @@ final readonly class InventoryValidator implements CartValidatorInterface
 
     /**
      * Validate a specific cart item for inventory availability.
+     *
+     * The item's own demand is merged with every other cart line that targets
+     * the same actual inventory model before the availability check.
      */
     public function validateItem(CartItem $item, Cart $cart): CartValidationResult
     {
-        $model = $item->getAssociatedModel();
-
-        if (! $model instanceof Model) {
-            // Items without models are not inventory-tracked
+        if ($this->allowsBackorder()) {
             return CartValidationResult::valid();
         }
 
-        $requestedQuantity = $item->quantity;
-        $availableQuantity = $this->allocationService->getTotalAvailable($model);
+        $issues = $this->demandIssues($cart, $item);
+        $issue = $issues[$item->id] ?? null;
 
-        if ($availableQuantity >= $requestedQuantity) {
-            return CartValidationResult::valid();
-        }
-
-        $allowBackorder = config('inventory.cart.allow_backorder', false);
-
-        if ($allowBackorder) {
+        if ($issue === null) {
             return CartValidationResult::valid();
         }
 
         return CartValidationResult::invalid(
-            message: "Insufficient inventory for {$item->name}. Available: {$availableQuantity}, Requested: {$requestedQuantity}",
-            metadata: [
-                'item_id' => $item->id,
-                'item_name' => $item->name,
-                'available_quantity' => $availableQuantity,
-                'requested_quantity' => $requestedQuantity,
-                'shortfall' => $requestedQuantity - $availableQuantity,
-            ]
+            message: $issue['message'],
+            metadata: $issue['metadata']
         );
+    }
+
+    /**
+     * @return array<string, array{message: string, metadata: array<string, mixed>}>
+     */
+    private function demandIssues(Cart $cart, ?CartItem $include = null): array
+    {
+        $items = [];
+
+        foreach ($cart->getItems() as $cartItem) {
+            $items[(string) $cartItem->id] = $cartItem;
+        }
+
+        if ($include !== null) {
+            $items[(string) $include->id] = $include;
+        }
+
+        $issues = [];
+
+        foreach (InventoryDemandResolver::forCart($items) as $entry) {
+            $availableQuantity = $this->allocationService->getTotalAvailable($entry['model']);
+            $requestedQuantity = $entry['quantity'];
+
+            if ($availableQuantity >= $requestedQuantity) {
+                continue;
+            }
+
+            foreach ($entry['sources'] as $itemId => $source) {
+                $issues[$itemId] = [
+                    'message' => "Insufficient inventory for {$source['name']}. Available: {$availableQuantity}, Requested: {$requestedQuantity}",
+                    'metadata' => [
+                        'item_id' => $itemId,
+                        'item_name' => $source['name'],
+                        'available_quantity' => $availableQuantity,
+                        'requested_quantity' => $requestedQuantity,
+                        'shortfall' => $requestedQuantity - $availableQuantity,
+                    ],
+                ];
+            }
+        }
+
+        return $issues;
+    }
+
+    private function allowsBackorder(): bool
+    {
+        return (bool) config('inventory.cart.allow_backorder', false);
     }
 
     /**

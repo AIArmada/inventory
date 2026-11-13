@@ -8,7 +8,9 @@ use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\Inventory\Enums\MovementType;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Models\InventoryOperation;
+use AIArmada\Inventory\Models\InventoryReservation;
 use AIArmada\Inventory\Services\InventoryService;
+use AIArmada\Inventory\Services\Stock\CheckoutReservationService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Orders\Events\InventoryReleaseRequired;
@@ -139,6 +141,17 @@ final class ReleaseInventoryFromOrder
      */
     private function releaseAllocations(Order $order): void
     {
+        $reference = $order->metadata['inventory_reservation_reference'] ?? null;
+        if (is_string($reference)) {
+            $reservations = app(CheckoutReservationService::class);
+
+            if ($reservations->find($reference)->state === InventoryReservation::STATE_RESERVED) {
+                $reservations->release($reference);
+            }
+
+            return;
+        }
+
         $cartId = $this->extractCartId($order);
 
         if ($cartId === null) {
@@ -164,7 +177,7 @@ final class ReleaseInventoryFromOrder
         // Find shipment movements for this order
         $movements = InventoryMovement::query()
             ->where('type', MovementType::Shipment->value)
-            ->where('reference', $order->order_number)
+            ->whereIn('reference', [$order->order_number, $order->getKey()])
             ->get();
 
         if ($movements->isEmpty()) {

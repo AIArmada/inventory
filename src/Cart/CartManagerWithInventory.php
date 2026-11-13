@@ -147,11 +147,15 @@ final class CartManagerWithInventory implements CartManagerInterface
      *
      * Call this when entering checkout.
      *
-     * The whole batch runs in one outer transaction so a later item failure
-     * rolls back earlier item allocations instead of leaving them reserved.
+     * Composite lines expand to their component models; the parent is never
+     * allocated. Demand is merged per actual inventory model so a standalone
+     * line and a component line for the same SKU reserve one combined
+     * quantity. The whole batch runs in one outer transaction so a later
+     * model failure rolls back earlier allocations instead of leaving them
+     * reserved.
      *
      * @param  int  $ttlMinutes  Allocation expiry time
-     * @return array<string, Collection<int, InventoryAllocation>> Results per item ID
+     * @return array<string, Collection<int, InventoryAllocation>> Results per source item ID
      */
     public function allocateAllInventory(int $ttlMinutes = 30): array
     {
@@ -160,19 +164,18 @@ final class CartManagerWithInventory implements CartManagerInterface
             $results = [];
             $cartIdentifier = $this->getCartIdentifier();
 
-            foreach ($cart->getItems() as $item) {
-                $model = $item->getAssociatedModel();
-
-                if (! $model instanceof Model) {
-                    continue;
-                }
-
-                $results[$item->id] = $this->getAllocationService()->allocate(
-                    $model,
-                    $item->quantity,
+            foreach (InventoryDemandResolver::forCart($cart->getItems()) as $entry) {
+                $allocations = $this->getAllocationService()->allocate(
+                    $entry['model'],
+                    $entry['quantity'],
                     $cartIdentifier,
                     $ttlMinutes
                 );
+
+                foreach (array_keys($entry['sources']) as $itemId) {
+                    $existing = $results[$itemId] ?? new Collection;
+                    $results[$itemId] = $existing->merge($allocations);
+                }
             }
 
             return $results;
@@ -231,6 +234,9 @@ final class CartManagerWithInventory implements CartManagerInterface
     /**
      * Check if all items in cart have sufficient inventory.
      *
+     * Composite lines are checked by their actual component models. Demand is
+     * combined per inventory model across composite and standalone lines.
+     *
      * @return array{available: bool, issues: array<string, array{name: string, requested: int, available: int, allocations: array<array{location_id: string, location_name: string, quantity: int}>}>}
      */
     public function validateInventory(): array
@@ -240,13 +246,8 @@ final class CartManagerWithInventory implements CartManagerInterface
         $allAvailable = true;
         $cartIdentifier = $this->getCartIdentifier();
 
-        foreach ($cart->getItems() as $item) {
-            $model = $item->getAssociatedModel();
-
-            if (! $model instanceof Model) {
-                continue;
-            }
-
+        foreach (InventoryDemandResolver::forCart($cart->getItems()) as $entry) {
+            $model = $entry['model'];
             $totalAvailable = $this->getAllocationService()->getTotalAvailable($model);
 
             // Add back own allocations to availability check
@@ -254,22 +255,26 @@ final class CartManagerWithInventory implements CartManagerInterface
             $ownAllocatedQty = $ownAllocations->sum('quantity');
             $effectiveAvailable = $totalAvailable + $ownAllocatedQty;
 
-            if ($effectiveAvailable < $item->quantity) {
-                $allAvailable = false;
+            if ($effectiveAvailable >= $entry['quantity']) {
+                continue;
+            }
 
-                // Get breakdown by location
-                $locationBreakdown = [];
-                foreach ($ownAllocations as $allocation) {
-                    $locationBreakdown[] = [
-                        'location_id' => $allocation->location_id,
-                        'location_name' => $allocation->location->name ?? 'Unknown',
-                        'quantity' => $allocation->quantity,
-                    ];
-                }
+            $allAvailable = false;
 
-                $issues[$item->id] = [
-                    'name' => $item->name,
-                    'requested' => $item->quantity,
+            // Get breakdown by location
+            $locationBreakdown = [];
+            foreach ($ownAllocations as $allocation) {
+                $locationBreakdown[] = [
+                    'location_id' => $allocation->location_id,
+                    'location_name' => $allocation->location->name ?? 'Unknown',
+                    'quantity' => $allocation->quantity,
+                ];
+            }
+
+            foreach ($entry['sources'] as $itemId => $source) {
+                $issues[$itemId] = [
+                    'name' => $source['name'],
+                    'requested' => $entry['quantity'],
                     'available' => $effectiveAvailable,
                     'allocations' => $locationBreakdown,
                 ];

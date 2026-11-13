@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Listeners;
 
 use AIArmada\CommerceSupport\Support\OwnerContext;
+use AIArmada\Inventory\Cart\InventoryDemandResolver;
+use AIArmada\Inventory\Exceptions\InvalidReservationTransition;
 use AIArmada\Inventory\Models\InventoryLevel;
 use AIArmada\Inventory\Models\InventoryOperation;
+use AIArmada\Inventory\Models\InventoryReservation;
 use AIArmada\Inventory\Services\InventoryService;
+use AIArmada\Inventory\Services\Stock\CheckoutReservationService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Support\InventoryOwnerScope;
 use AIArmada\Orders\Events\InventoryDeductionRequired;
@@ -21,6 +25,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
+use RuntimeException;
 
 /**
  * Deducts inventory when an order payment is confirmed.
@@ -28,10 +33,11 @@ use InvalidArgumentException;
  * This listener bridges the orders package with inventory management.
  * It handles two scenarios:
  *
- * 1. **With cart allocations**: If inventory was pre-allocated during checkout
- *    (via cart integration), commit those allocations.
+ * 1. **With a checkout reservation**: If checkout reserved the composition,
+ *    commit that reservation group so the reserved units become one shipment
+ *    deduction and the group reaches its committed state.
  *
- * 2. **Without allocations**: If the order was created directly without cart
+ * 2. **Without a reservation**: If the order was created directly without cart
  *    allocations (API, admin, etc.), deduct inventory directly.
  */
 final class DeductInventoryFromOrder
@@ -39,6 +45,7 @@ final class DeductInventoryFromOrder
     public function __construct(
         private readonly InventoryService $inventoryService,
         private readonly InventoryAllocationService $allocationService,
+        private readonly ?CheckoutReservationService $reservationService = null,
     ) {}
 
     public function handle(InventoryDeductionRequired $event): void
@@ -126,19 +133,17 @@ final class DeductInventoryFromOrder
                 return;
             }
 
+            $reference = $order->metadata['inventory_reservation_reference'] ?? null;
             $cartId = $this->extractCartId($order);
 
-            if ($cartId !== null) {
-                $committed = $this->tryCommitAllocations($cartId, $order);
+            if ((is_string($reference) && $this->commitReservation($reference, $order))
+                || ($reference === null && $cartId !== null && $this->tryCommitAllocations($cartId, $order))) {
+                $operation->update([
+                    'status' => InventoryOperation::STATUS_COMPLETED,
+                    'completed_at' => CarbonImmutable::now(),
+                ]);
 
-                if ($committed) {
-                    $operation->update([
-                        'status' => InventoryOperation::STATUS_COMPLETED,
-                        'completed_at' => CarbonImmutable::now(),
-                    ]);
-
-                    return;
-                }
+                return;
             }
 
             $this->deductDirectly($order);
@@ -182,10 +187,7 @@ final class DeductInventoryFromOrder
     {
         $metadata = $order->metadata ?? [];
 
-        return $metadata['cart_id']
-            ?? $metadata['cartId']
-            ?? $metadata['cart_identifier']
-            ?? null;
+        return $metadata['cart_id'] ?? null;
     }
 
     /**
@@ -193,6 +195,10 @@ final class DeductInventoryFromOrder
      */
     private function tryCommitAllocations(string $cartId, Order $order): bool
     {
+        if ($this->commitReservation($cartId, $order)) {
+            return true;
+        }
+
         $allocations = $this->allocationService->getAllocationsForCart($cartId);
 
         if ($allocations->isEmpty()) {
@@ -211,6 +217,37 @@ final class DeductInventoryFromOrder
     }
 
     /**
+     * Commit the checkout reservation that owns this cart, when one exists and
+     * still holds stock. An expired reservation has already released its units,
+     * so the caller must fall back to direct deduction.
+     */
+    private function commitReservation(string $cartId, Order $order): bool
+    {
+        if (! $this->reservationService instanceof CheckoutReservationService) {
+            return false;
+        }
+
+        try {
+            $outcome = $this->reservationService->commit($cartId, (string) $order->getKey());
+        } catch (InvalidReservationTransition) {
+            $this->reservationService->find($cartId);
+
+            return false;
+        }
+
+        if ($outcome->state !== InventoryReservation::STATE_COMMITTED) {
+            return false;
+        }
+
+        Log::info('Inventory committed from checkout reservation', [
+            'order_id' => $order->id,
+            'cart_id' => $cartId,
+        ]);
+
+        return true;
+    }
+
+    /**
      * Deduct inventory directly for orders without allocations.
      */
     private function deductDirectly(Order $order): void
@@ -218,28 +255,19 @@ final class DeductInventoryFromOrder
         DB::transaction(function () use ($order): void {
             $order->loadMissing('items.purchasable');
 
+            $demand = InventoryDemandResolver::forOrder($order->items);
+            $hasComposite = $order->items->contains(static fn ($item): bool => array_key_exists('components', $item->metadata ?? []));
+
             /** @var list<array{0: Model, 1: int}> $deductibles */
             $deductibles = [];
 
-            foreach ($order->items as $item) {
-                $purchasable = $item->purchasable;
-
-                if (! $purchasable instanceof Model) {
-                    continue;
-                }
-
-                // Check if this model tracks inventory
-                if (! $this->tracksInventory($purchasable)) {
-                    continue;
-                }
-
-                $deductibles[] = [$purchasable, (int) $item->quantity];
+            foreach ($demand as $entry) {
+                $deductibles[] = [$entry['model'], $entry['quantity']];
             }
 
             // One query for every level the order may touch, instead of a
-            // location search per line. In-memory tracking mirrors the
-            // previous fresh-read-per-line semantics for sequential lines
-            // sharing a SKU, while ship() still re-checks under a row lock.
+            // location search per line. Composite parent lines are absent
+            // from the demand and their frozen components carry the quantity.
             $availability = $this->preloadLevelAvailability($deductibles);
 
             foreach ($deductibles as [$purchasable, $quantity]) {
@@ -247,6 +275,10 @@ final class DeductInventoryFromOrder
                 $locationId = $this->pickDeductionLocation($key, $quantity, $order, $availability);
 
                 if ($locationId === null) {
+                    if ($hasComposite) {
+                        throw new RuntimeException('Insufficient inventory to deduct the complete composite order.');
+                    }
+
                     Log::warning('No inventory location found for deduction', [
                         'order_id' => $order->id,
                         'model_type' => $purchasable->getMorphClass(),
@@ -381,18 +413,5 @@ final class DeductInventoryFromOrder
         }
 
         return null;
-    }
-
-    /**
-     * Check if a model tracks inventory.
-     */
-    private function tracksInventory(Model $model): bool
-    {
-        if (method_exists($model, 'tracksInventory')) {
-            return $model->tracksInventory();
-        }
-
-        // Default: assume it tracks inventory if it's a purchasable
-        return true;
     }
 }

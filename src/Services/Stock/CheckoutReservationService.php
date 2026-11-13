@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 final class CheckoutReservationService implements CheckoutReservationServiceInterface
 {
@@ -32,12 +33,6 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
     /** @param list<ReservationLine> $lines */
     public function reserve(string $reference, array $lines, int $ttlSeconds): ReservationOutcome
     {
-        $lineSnapshot = $this->lineSnapshot($lines);
-
-        if ($lineSnapshot === []) {
-            throw new ReservationReferenceConflict($reference, 'A reservation requires at least one valid line.');
-        }
-
         // Serializes concurrent reserves for the same reference. NULL-owner
         // rows defeat the composite unique key, so the service lock remains
         // the serializer for global references even when a partial unique
@@ -45,18 +40,16 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
         return Cache::lock($this->reservationLockKey($reference), 10)->block(5, function () use (
             $reference,
             $lines,
-            $lineSnapshot,
             $ttlSeconds,
         ): ReservationOutcome {
-            return $this->attemptReserve($reference, $lines, $lineSnapshot, $ttlSeconds);
+            return $this->attemptReserve($reference, $lines, $ttlSeconds);
         });
     }
 
     /**
      * @param  list<ReservationLine>  $lines
-     * @param  array<string, array{requested: int, reserved: int}>  $lineSnapshot
      */
-    private function attemptReserve(string $reference, array $lines, array $lineSnapshot, int $ttlSeconds): ReservationOutcome
+    private function attemptReserve(string $reference, array $lines, int $ttlSeconds): ReservationOutcome
     {
         // Transient lock contention (SQLite busy, deadlocks) backs off and
         // retries with a fresh transaction instead of failing the checkout.
@@ -67,7 +60,7 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
         for (; ;) {
             try {
-                return $this->reserveInTransaction($reference, $lines, $lineSnapshot, $ttlSeconds);
+                return $this->reserveInTransaction($reference, $lines, $ttlSeconds);
             } catch (QueryException $exception) {
                 if ($backoffMicros === [] || ! $this->isTransientLockError($exception)) {
                     throw $exception;
@@ -91,11 +84,16 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
     /**
      * @param  list<ReservationLine>  $lines
-     * @param  array<string, array{requested: int, reserved: int}>  $lineSnapshot
      */
-    private function reserveInTransaction(string $reference, array $lines, array $lineSnapshot, int $ttlSeconds): ReservationOutcome
+    private function reserveInTransaction(string $reference, array $lines, int $ttlSeconds): ReservationOutcome
     {
-        return DB::transaction(function () use ($reference, $lines, $lineSnapshot, $ttlSeconds): ReservationOutcome {
+        return DB::transaction(function () use ($reference, $lines, $ttlSeconds): ReservationOutcome {
+            $resolvedLines = $this->resolveLines($reference, $lines);
+            $lineSnapshot = array_map(
+                static fn (array $line): array => ['requested' => $line['quantity'], 'reserved' => $line['quantity']],
+                $resolvedLines,
+            );
+
             $owner = $this->resolveOwner();
             $expiresAt = CarbonImmutable::now()->addSeconds($ttlSeconds);
 
@@ -128,16 +126,10 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
                 return $this->idempotentOutcome($reference, $group, $lineSnapshot);
             }
 
-            foreach ($lines as $line) {
-                $model = $this->resolveInventoryModel($line);
-
-                if ($model === null) {
-                    throw new ReservationReferenceConflict($reference, 'Inventory model could not be resolved for a requested line.');
-                }
-
+            foreach ($resolvedLines as $resolvedLine) {
                 $allocations = $this->allocationService->allocate(
-                    model: $model,
-                    quantity: $line->quantity,
+                    model: $resolvedLine['model'],
+                    quantity: $resolvedLine['quantity'],
                     cartId: $reference,
                     ttlMinutes: max(1, (int) ceil($ttlSeconds / 60)),
                 );
@@ -290,15 +282,17 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
     public function find(string $reference): ReservationOutcome
     {
-        $group = $this->findGroup($reference);
+        return DB::transaction(function () use ($reference): ReservationOutcome {
+            $group = $this->lockGroup($reference);
 
-        if ($group === null) {
-            return new ReservationOutcome(reference: $reference, state: 'not_found');
-        }
+            if ($group === null) {
+                return new ReservationOutcome(reference: $reference, state: 'not_found');
+            }
 
-        $this->expireIfNeeded($group);
+            $this->expireIfNeeded($group);
 
-        return $this->outcome($group->refresh());
+            return $this->outcome($group);
+        });
     }
 
     /**
@@ -364,29 +358,37 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
 
     /**
      * @param  list<ReservationLine>  $lines
-     * @return array<string, array{requested: int, reserved: int}>
+     * @return array<string, array{model: Model, quantity: int}>
      */
-    private function lineSnapshot(array $lines): array
+    private function resolveLines(string $reference, array $lines): array
     {
-        $snapshot = [];
+        if ($lines === []) {
+            throw new ReservationReferenceConflict($reference, 'A reservation requires at least one valid line.');
+        }
+
+        $resolved = [];
 
         foreach ($lines as $line) {
             if ($line->quantity <= 0) {
-                continue;
+                throw new InvalidArgumentException('Quantity must be positive');
             }
 
-            $key = $line->inventoryableType !== null && $line->inventoryableId !== null
-                ? $line->inventoryableType . ':' . $line->inventoryableId . ':' . ($line->variantId ?? '')
-                : $line->productId . ':' . ($line->variantId ?? '');
-            $current = $snapshot[$key] ?? ['requested' => 0, 'reserved' => 0];
-            $current['requested'] += $line->quantity;
-            $current['reserved'] += $line->quantity;
-            $snapshot[$key] = $current;
+            $model = $this->resolveInventoryModel($line);
+
+            if ($model === null) {
+                throw new ReservationReferenceConflict($reference, 'Inventory model could not be resolved for a requested line.');
+            }
+
+            $key = $model->getMorphClass() . ':' . $model->getKey();
+            $resolved[$key] = [
+                'model' => $model,
+                'quantity' => ($resolved[$key]['quantity'] ?? 0) + $line->quantity,
+            ];
         }
 
-        ksort($snapshot);
+        ksort($resolved);
 
-        return $snapshot;
+        return $resolved;
     }
 
     private function expireIfNeeded(InventoryReservation $group): void
@@ -398,15 +400,6 @@ final class CheckoutReservationService implements CheckoutReservationServiceInte
         $this->allocationService->releaseAllForReservationGroup($group->id);
         $group->update(['status' => InventoryReservation::STATE_EXPIRED]);
         $group->refresh();
-    }
-
-    private function findGroup(string $reference): ?InventoryReservation
-    {
-        $query = InventoryOwnerScope::applyToLocationQuery(
-            InventoryReservation::query()->where('reference', $reference)
-        );
-
-        return $query->first();
     }
 
     private function lockGroup(string $reference): ?InventoryReservation
