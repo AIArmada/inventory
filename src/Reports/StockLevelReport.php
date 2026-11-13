@@ -354,7 +354,7 @@ final class StockLevelReport
      * @return Collection<int, array{
      *     inventoryable_type: string,
      *     inventoryable_id: string,
-     *     location_count: non-negative-int,
+     *     location_count: int,
      *     total_quantity: int,
      *     max_location_quantity: int,
      *     min_location_quantity: int,
@@ -383,7 +383,7 @@ final class StockLevelReport
             ->map(fn ($row): array => [
                 'inventoryable_type' => (string) $row->inventoryable_type,
                 'inventoryable_id' => (string) $row->inventoryable_id,
-                'location_count' => (int) $row->location_count,
+                'location_count' => (int) $row->getAttribute('location_count'),
                 'total_quantity' => (int) $row->total_quantity,
                 'max_location_quantity' => (int) $row->max_quantity,
                 'min_location_quantity' => (int) $row->min_quantity,
