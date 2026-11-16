@@ -87,6 +87,12 @@ final class CompositeComponents
      */
     public static function isCompositeModel(Model $model): bool
     {
+        // Services such as TicketType do not have a product type column.
+        // Do not access an undefined attribute with strict Eloquent enabled.
+        if (! array_key_exists('type', $model->getAttributes())) {
+            return false;
+        }
+
         $type = $model->getAttribute('type');
 
         if ($type instanceof BackedEnum) {
