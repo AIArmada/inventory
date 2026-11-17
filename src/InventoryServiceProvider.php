@@ -16,6 +16,7 @@ use AIArmada\Inventory\Cart\ValidateInventoryOnAdd;
 use AIArmada\Inventory\Console\CleanupExpiredAllocationsCommand;
 use AIArmada\Inventory\Console\CreateValuationSnapshotCommand;
 use AIArmada\Inventory\Contracts\CheckoutReservationServiceInterface;
+use AIArmada\Inventory\Contracts\ScopedCapacityReservationServiceInterface;
 use AIArmada\Inventory\Exports\ExportService;
 use AIArmada\Inventory\Integrations\FulfillmentLocationService;
 use AIArmada\Inventory\Listeners\CommitInventoryOnPayment;
@@ -39,6 +40,7 @@ use AIArmada\Inventory\Services\Stock\CheckoutReservationService;
 use AIArmada\Inventory\Services\Stock\DemandForecastService;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 use AIArmada\Inventory\Services\Stock\ReplenishmentService;
+use AIArmada\Inventory\Services\Stock\ScopedCapacityReservationService;
 use AIArmada\Orders\Events\InventoryDeductionRequired;
 use AIArmada\Orders\Events\InventoryReleaseRequired;
 use Illuminate\Support\Facades\Event;
@@ -104,6 +106,8 @@ final class InventoryServiceProvider extends PackageServiceProvider
             FulfillmentLocationService::class,
             CheckoutReservationServiceInterface::class,
             CheckoutReservationService::class,
+            ScopedCapacityReservationServiceInterface::class,
+            ScopedCapacityReservationService::class,
             'inventory',
             'inventory.allocations',
         ];
@@ -181,6 +185,7 @@ final class InventoryServiceProvider extends PackageServiceProvider
         // Checkout reservation group service
         $this->app->singleton(CheckoutReservationService::class);
         $this->app->bind(CheckoutReservationServiceInterface::class, CheckoutReservationService::class);
+        $this->app->bind(ScopedCapacityReservationServiceInterface::class, ScopedCapacityReservationService::class);
     }
 
     /**

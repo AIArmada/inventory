@@ -108,6 +108,42 @@ $outcome = $reservation->find($cartId);
 
 Each group creates a durable `InventoryReservation` record that retains its terminal state after allocations are cleaned up. Duplicate active reservations for the same reference throw `ReservationReferenceConflict`.
 
+### Scoped Capacity Reservations (non-warehouse)
+
+Applications may sell time-windowed, limited resource capacity without creating
+warehouse stock. The `ScopedCapacityReservationServiceInterface` handles
+immutable resource+scope identities, atomic holds, expiry, release and commit.
+It is independent of appointment, event, media and rental models.
+
+```php
+use AIArmada\Inventory\Contracts\ScopedCapacityReservationServiceInterface;
+use AIArmada\Inventory\Data\ScopedCapacityLine;
+
+$capacity = app(ScopedCapacityReservationServiceInterface::class);
+$capacity->setCapacity('resource-id', '2026-12-01-morning', 100);
+
+$capacity->reserve('checkout-123', [
+    new ScopedCapacityLine('resource-id', '2026-12-01-morning', 12),
+], ttlSeconds: 900);
+
+$capacity->available('resource-id', '2026-12-01-morning'); // 88
+$capacity->extend('checkout-123', ttlSeconds: 900);
+$capacity->commit('checkout-123', 'order-123');
+// Or, before commit: $capacity->release('checkout-123');
+```
+
+Pool rows are locked transactionally. The scope key isolates independent
+windows, and different Buyables may compete for the same pool. A reference
+cannot be reused for different lines after a reservation is created.
+Expired holds release capacity when the pool is next accessed. Committed
+capacity is consumed and cannot be released as an uncommitted hold.
+Applications provision their own pools and choose scope identity; generic
+inventory never interprets dates or booking business rules.
+
+Use a shared cache-lock backend (Redis recommended) across all checkout
+workers to serialize reference transitions. No booking has been created by
+a read-only availability check or purchase context alone.
+
 ### Batch & Serial Operations
 
 ```php
