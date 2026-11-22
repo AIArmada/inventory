@@ -28,14 +28,14 @@ return new class extends Migration
             $table->unique(['resource_key', 'scope_key', 'owner_type', 'owner_id'], 'inv_capacity_pool_identity_unique');
         });
 
-        Schema::create($holds, function (Blueprint $table) use ($pools): void {
+        Schema::create($holds, function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('pool_id')->constrained($pools)->restrictOnDelete();
+            $table->foreignUuid('pool_id');
             $table->nullableUuidMorphs('owner');
             $table->string('reference');
             $table->unsignedBigInteger('quantity');
             $table->string('state')->default('held');
-            $table->uuid('order_id')->nullable();
+            $table->uuid('order_id')->nullable()->index();
             $table->timestampTz('expires_at');
             $table->timestampsTz();
 

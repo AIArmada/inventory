@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('status')->default('reserved');
             $table->{$jsonType}('line_snapshot');
             $table->nullableUuidMorphs('owner');
-            $table->uuid('order_id')->nullable();
+            $table->uuid('order_id')->nullable()->index();
             $table->integer('ttl_seconds')->default(900);
             $table->timestampTz('expires_at')->nullable();
             $table->timestampsTz();

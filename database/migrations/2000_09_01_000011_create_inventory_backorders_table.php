@@ -19,7 +19,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuidMorphs('inventoryable');
             $table->foreignUuid('location_id')->nullable();
-            $table->foreignUuid('order_id')->nullable();
+            $table->foreignUuid('order_id')->nullable()->index();
             $table->foreignUuid('customer_id')->nullable();
             $table->integer('quantity_requested');
             $table->integer('quantity_fulfilled')->default(0);

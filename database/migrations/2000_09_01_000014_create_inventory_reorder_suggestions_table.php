@@ -32,7 +32,7 @@ return new class extends Migration
             $table->string('trigger_reason');
             $table->foreignUuid('approved_by')->nullable();
             $table->timestampTz('approved_at')->nullable();
-            $table->foreignUuid('order_id')->nullable();
+            $table->foreignUuid('order_id')->nullable()->index();
             $table->timestampTz('ordered_at')->nullable();
             $jsonType = commerce_json_column_type('inventory', 'jsonb');
             $table->addColumn($jsonType, 'calculation_details')->nullable();
