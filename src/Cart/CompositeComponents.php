@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Cart;
 
 use AIArmada\Cart\Models\CartItem;
+use AIArmada\CommerceSupport\Data\OwnerScopeConfig;
 use AIArmada\CommerceSupport\Support\CompositeComponents as ComponentSnapshot;
 use AIArmada\CommerceSupport\Support\OwnerContext;
 use AIArmada\CommerceSupport\Support\OwnerQuery;
 use AIArmada\CommerceSupport\Support\OwnerScope;
-use AIArmada\CommerceSupport\Support\OwnerScopeConfig;
 use AIArmada\Inventory\Contracts\InventoryableInterface;
 use AIArmada\Inventory\Traits\HasInventory;
 use AIArmada\Orders\Models\OrderItem;

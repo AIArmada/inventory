@@ -492,11 +492,13 @@ final class InventorySerial extends Model implements Auditable
         return [
             'status' => SerialStatus::class,
             'unit_cost_minor' => 'integer',
-            'warranty_expires_at' => 'date',
-            'manufactured_at' => 'date',
-            'received_at' => 'date',
+            'warranty_expires_at' => 'immutable_date',
+            'manufactured_at' => 'immutable_date',
+            'received_at' => 'immutable_date',
             'sold_at' => 'immutable_datetime',
             'metadata' => 'array',
+            'created_at' => 'immutable_datetime',
+            'updated_at' => 'immutable_datetime',
         ];
     }
 }

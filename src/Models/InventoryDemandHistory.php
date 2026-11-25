@@ -194,7 +194,7 @@ final class InventoryDemandHistory extends Model
     protected function casts(): array
     {
         return [
-            'period_date' => 'date',
+            'period_date' => 'immutable_date',
             'period_type' => DemandPeriodType::class,
             'quantity_demanded' => 'integer',
             'quantity_fulfilled' => 'integer',

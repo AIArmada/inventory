@@ -167,7 +167,7 @@ final class InventoryValuationSnapshot extends Model implements Auditable
     {
         return [
             'costing_method' => CostingMethod::class,
-            'snapshot_date' => 'date',
+            'snapshot_date' => 'immutable_date',
             'total_quantity' => 'integer',
             'total_value_minor' => 'integer',
             'average_unit_cost_minor' => 'integer',
