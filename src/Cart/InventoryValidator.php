@@ -6,8 +6,8 @@ namespace AIArmada\Inventory\Cart;
 
 use AIArmada\Cart\Cart;
 use AIArmada\Cart\Contracts\CartValidationResult;
-use AIArmada\Cart\Contracts\CartValidatorInterface;
 use AIArmada\Cart\Models\CartItem;
+use AIArmada\Cart\Runtime\CartValidatorInterface;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
 
 /**

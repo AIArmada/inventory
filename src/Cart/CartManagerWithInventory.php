@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AIArmada\Inventory\Cart;
 
 use AIArmada\Cart\Cart;
-use AIArmada\Cart\Contracts\CartManagerInterface;
+use AIArmada\Cart\Runtime\CartManagerInterface;
 use AIArmada\Inventory\Models\InventoryAllocation;
 use AIArmada\Inventory\Models\InventoryMovement;
 use AIArmada\Inventory\Services\Stock\InventoryAllocationService;
